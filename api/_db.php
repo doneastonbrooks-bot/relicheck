@@ -22,6 +22,22 @@ function relicheck_config(): array
     if (!is_array($cfg)) {
         throw new RuntimeException('_config.php must return an array.');
     }
+
+    // Validate before returning. We want scrambled or placeholder values
+    // to fail loudly with a precise message, not silently break.
+    require_once __DIR__ . '/_config_validator.php';
+    $errors = relicheck_validate_config($cfg);
+    if (!empty($errors)) {
+        http_response_code(500);
+        header('Content-Type: application/json');
+        echo json_encode([
+            'error'   => 'config_invalid',
+            'message' => 'Server config (_config.php) failed validation. Fix these and reload:',
+            'issues'  => $errors,
+        ], JSON_PRETTY_PRINT);
+        exit;
+    }
+
     return $cfg;
 }
 
