@@ -380,6 +380,51 @@
     }
     .nav-badge.muted { background: var(--bg-soft, var(--bg)); color: var(--text-mute); }
 
+    /* Standalone top-level link (no dropdown) — Home. Visually matches a
+       .nav-drop-trigger so the strip reads as a single row of peers, but
+       no chevron and no panel. Inherits .nav-item active styling so the
+       existing route-active highlighter ($all('.nav-item')) lights it
+       up when the user is on /#/home. */
+    .nav-toplink {
+      padding: 7px 12px;
+      font: 500 13.5px/1 'Inter', system-ui, sans-serif;
+      color: var(--text-soft);
+      text-decoration: none;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      white-space: nowrap;
+      border-left: 0;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .nav-toplink:hover { background: var(--accent-tint); color: var(--text); }
+    .nav-toplink.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+    /* The global .nav-item rules add icon styling — neutralize for the
+       standalone link since it has no icon child. */
+    .nav-toplink .icon { display: none; }
+
+    /* Plan label inside the Workspace dropdown — small footer under the
+       items, separated by a thin rule. */
+    .nav-drop-foot {
+      margin-top: 8px;
+      padding: 10px 12px 6px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-drop-foot-eyebrow {
+      font: 600 10px/1 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+    }
+    .nav-drop-foot strong {
+      font: 600 13px/1.3 'Inter', system-ui, sans-serif;
+      color: var(--text);
+    }
+
     /* === Topbar — slimmed to a thin crumbs strip beneath the topnav.
        The right side (search/notifs/avatar/user menu) has moved into
        the topnav itself, so the topbar is just for breadcrumbs now. */
@@ -5650,6 +5695,10 @@
     </a>
     <nav role="navigation" aria-label="Top menu">
 
+      <!-- HOME — explicit top-level link (the brand is also clickable,
+           but the wordmark isn\'t self-evidently a button to everyone). -->
+      <a class="nav-item nav-toplink" data-route="home" role="link">Home</a>
+
       <!-- STUDIOS — where you work -->
       <div class="nav-drop" data-drop="studios" data-routes="home projects builder analyze distribute reports mm tests panels">
         <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
@@ -5739,17 +5788,21 @@
             <div class="dropt">Account &amp; settings</div>
             <div class="dropb">Profile, security, and billing.</div>
           </a>
+          <!-- Plan label — populated by the existing fetch path that sets
+               #sidePlanLabel. Lives inside Workspace so the user can
+               check their plan without leaving the dropdown. -->
+          <div class="nav-drop-foot">
+            <span class="nav-drop-foot-eyebrow">Current plan</span>
+            <strong id="sidePlanLabel">Loading&hellip;</strong>
+          </div>
         </div>
       </div>
 
     </nav>
 
-    <!-- Old elements kept hidden so any legacy code that queries them
-         doesn\'t throw. Sidebar-foot used to show the plan label; if you
-         want that back, surface it inside the Workspace dropdown. -->
-    <div class="sidebar-foot" hidden>
-      <strong id="sidePlanLabel">Loading plan...</strong>
-    </div>
+    <!-- Old sidebar-foot wrapper kept (now empty) so any legacy CSS or
+         querySelector that targets it doesn\'t throw. -->
+    <div class="sidebar-foot" hidden></div>
     <button type="button" class="sidebar-toggle" id="appSidebarToggle" hidden>
       <span class="toggle-chev">&lsaquo;</span>
     </button>
