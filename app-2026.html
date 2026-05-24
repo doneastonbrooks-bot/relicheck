@@ -236,10 +236,10 @@
       transition: background 0.12s;
     }
     .sidebar-brand:hover { background: var(--accent-tint); }
-    .sidebar-brand .brand-logo { display: none; } /* white logo doesn\'t read on light bg */
-    .sidebar-brand::before {
-      content: 'ReliCheck';
-      color: var(--text);
+    .sidebar-brand .brand-logo {
+      height: 32px;
+      width: auto;
+      display: block;
     }
     .sidebar-brand .tag {
       font: 600 9.5px/1 'Inter', system-ui, sans-serif;
@@ -5690,7 +5690,7 @@
        per-route active highlighter ($all(.nav-item)) still works. -->
   <aside class="sidebar" aria-label="Site navigation">
     <a href="#/home" class="sidebar-brand" data-route="home" aria-label="ReliCheck home">
-      <img src="/logo-brand-white.svg" alt="ReliCheck" class="brand-logo" />
+      <img src="/logo-brand.svg" alt="ReliCheck" class="brand-logo" />
       <span class="tag" aria-hidden="true">2.0</span>
     </a>
     <nav role="navigation" aria-label="Top menu">
