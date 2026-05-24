@@ -1,0 +1,39 @@
+{
+  "_about": "Expected analytical outputs for test_data/dei.xlsx, verified against independent Python (pandas/scipy) computations on 2026-05-23. If the site produces numbers that drift from these by more than rounding error, something is broken in the analysis code.",
+  "dataset": "dei.xlsx",
+  "n_responses": 150,
+  "likert_items": ["L1_OrgPromotesEquity", "L2_ContributionsValued", "L3_LeadershipCommitment"],
+  "reliability": {
+    "cronbach_alpha": 0.6224,
+    "mcdonald_omega": 0.6330,
+    "items": {
+      "L1_OrgPromotesEquity":     { "mean": 3.220, "sd": 0.802, "item_total_r": 0.361, "alpha_if_dropped": 0.618 },
+      "L2_ContributionsValued":   { "mean": 2.820, "sd": 0.852, "item_total_r": 0.449, "alpha_if_dropped": 0.498 },
+      "L3_LeadershipCommitment":  { "mean": 2.680, "sd": 0.797, "item_total_r": 0.489, "alpha_if_dropped": 0.442 }
+    }
+  },
+  "validity_factor_analysis": {
+    "kmo_overall": 0.6243,
+    "factors_retained_kaiser": 1,
+    "variance_explained_pct": 37.3,
+    "loadings_factor_1": {
+      "L1_OrgPromotesEquity":    0.46,
+      "L2_ContributionsValued":  0.62,
+      "L3_LeadershipCommitment": 0.72
+    },
+    "_note_loadings": "Sign of loadings can be inverted depending on factor extraction direction; absolute values are what matter."
+  },
+  "comparison_anova_gender": {
+    "_filter_note": "Site excludes single-respondent gender groups. Comparison uses Man, Woman, Non-binary (N=148).",
+    "f_statistic": 11.47,
+    "df_between": 2,
+    "df_within": 145,
+    "p_value_lt": 0.001,
+    "eta_squared": 0.137,
+    "group_means": {
+      "Man":         { "n": 80, "mean": 3.083, "sd": 0.622 },
+      "Woman":       { "n": 64, "mean": 2.771, "sd": 0.514 },
+      "Non-binary":  { "n":  4, "mean": 1.917, "sd": 0.500 }
+    }
+  }
+}
