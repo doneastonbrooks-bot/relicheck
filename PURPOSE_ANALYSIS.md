@@ -32,15 +32,17 @@ These are the gaps. Each is fixable; each matters.
 - It self-selects: visitors not in that headspace get a soft signal that this isn't for them
 - It opens space for the positioning to land in the supporting copy, where it reads as *relevant* rather than as *sales*
 
-**Sketch of how this lands on the marketing homepage:**
+**Recommended hero + subhead for the marketing homepage:**
 
 > ## What would you like to work on today?
 >
-> Whether you're checking that your survey is strong enough to defend, comparing groups, building a 360 process that actually drives growth, or asking whether your evidence can carry a real decision — ReliCheck is for the moment between collecting your data and acting on it.
+> When the question matters, you need answers you can trust. ReliCheck helps you build stronger surveys, run defensible analyses, and turn your responses into decisions you can explain, stand behind, and act on.
 >
 > [See how it works] [Start free]
 
-The question carries the warmth and the invitation. The subhead carries the positioning. The CTAs carry the path forward. Nothing in the incumbent category (Qualtrics / SurveyMonkey / SPSS) reads anything like this.
+The question carries the warmth and the invitation. The subhead opens with the trust line — the platform's most distinctive positioning, which no incumbent (Qualtrics / SurveyMonkey / SPSS) could write without abandoning their own framing — then connects to the action chain ("build / run / turn into decisions") ending on the defensibility verbs ("explain, stand behind, act on"). The audience list is intentionally dropped: the hero question + "when the question matters" already self-selects the audience, and a six-item list dilutes positioning ("for everyone" reads as "for nobody in particular").
+
+**Voice principle:** the dashboard greeting and the marketing hero use the SAME voice. Most platforms have a sales voice for outsiders and a productivity voice for insiders. ReliCheck speaks in one voice across both surfaces — which is itself differentiating.
 
 ### 2. The Strength Index is buried as a tab
 The composite credibility score is the most distinctive thing the platform does. It currently sits as the first tab in a strip of 13. It should be the **headline outcome** of any analysis — visible on every project card, in the project header, in the report. Right now the user has to know to click it. That undersells the differentiator.
