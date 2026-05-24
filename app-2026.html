@@ -37497,6 +37497,21 @@ async function mmTabQuantAnalysis(body) {
   const cat2plusCols = colsAll.filter(c => !c.isLikert && c.distinct >= 2 && c.distinct <= 20);
   const cat2Cols     = colsAll.filter(c => !c.isLikert && c.distinct === 2);
   const cat3plusCols = colsAll.filter(c => !c.isLikert && c.distinct >= 3 && c.distinct <= 12);
+  // Outcome-eligible: Likert items first, then anything else that COULD
+  // be a continuous numeric outcome (>= 5 distinct values; excludes IDs
+  // where every row is unique, and excludes purely binary/categorical
+  // columns the user is unlikely to want as an outcome). The user
+  // chooses; if they pick a non-numeric column the test will surface a
+  // clear error rather than silently producing nonsense.
+  const outcomeCols = (function () {
+    const out = likertCols.slice();
+    colsAll.forEach(c => {
+      if (c.isLikert) return;
+      // Skip likely IDs (distinct equals roughly row count) and pure binary.
+      if (c.distinct >= 5 && c.distinct <= 100) out.push(c);
+    });
+    return out;
+  })();
   const escAttr = (s) => String(s == null ? '' : s).replace(/"/g, '&quot;');
   const optEsc = (s) => MM.esc(s);
   const buildPicker = (selectId, label, options, defaultIdx, extraFirst) => {
@@ -37527,11 +37542,11 @@ async function mmTabQuantAnalysis(body) {
 
   const pickersFor = (tid) => {
     if (tid === 't_test') {
-      return buildPicker('mmRecPick_t_test_y', 'Outcome', likertCols, tTestOutcomeDefault, meanLikertSentinel) +
+      return buildPicker('mmRecPick_t_test_y', 'Outcome', outcomeCols, tTestOutcomeDefault, meanLikertSentinel) +
              buildPicker('mmRecPick_t_test_g', 'Group (2 levels)', cat2plusCols, tTestGroupDefault, null);
     }
     if (tid === 'anova') {
-      return buildPicker('mmRecPick_anova_y', 'Outcome', likertCols, tTestOutcomeDefault, meanLikertSentinel) +
+      return buildPicker('mmRecPick_anova_y', 'Outcome', outcomeCols, tTestOutcomeDefault, meanLikertSentinel) +
              buildPicker('mmRecPick_anova_g', 'Group (2+ levels)', cat2plusCols, anovaGroupDefault, null);
     }
     if (tid === 'pearson') {
