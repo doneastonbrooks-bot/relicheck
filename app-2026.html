@@ -14468,64 +14468,13 @@ function renderAnalyzeForSurvey(root, survey) {
   ];
   const activeTab = state.analyzeTab || 'strength';
 
-  root.innerHTML =
-    // Project header bar with title, response count, action buttons, and tab strip.
-    '<div class="analyze-head">' +
-      '<div class="analyze-title-row">' +
-        '<div class="analyze-title">' +
-          '<h1>' + escapeHtml(survey.title || 'Untitled survey') + '</h1>' +
-          '<div class="pt-meta">' + items + ' item' + (items === 1 ? '' : 's') +
-            (likert ? ' . ' + likert + ' Likert' : '') +
-            ' . ' + responses + ' response' + (responses === 1 ? '' : 's') +
-            (updated ? ' . updated ' + updated : '') +
-          '</div>' +
-        '</div>' +
-        '<div class="analyze-actions">' +
-          '<a class="btn ghost" data-route="projects">All projects</a>' +
-          '<a class="btn ghost" data-route="builder" data-id="' + escapeHtml(survey.id) + '">Edit survey</a>' +
-          '<button class="btn ghost" type="button" id="analyzeSettingsBtn" data-id="' + escapeHtml(survey.id) + '">Settings</button>' +
-          '<a class="btn primary" data-route="distribute" data-id="' + escapeHtml(survey.id) + '">Distribute</a>' +
-          '<button class="btn ghost" id="analyzeExportPdfBtn" type="button">Export PDF</button>' +
-          '<button class="btn ghost" id="analyzeFullReportBtn" type="button" title="Compile every tab into one PDF">Full Report</button>' +
-          '<button class="btn ghost" id="analyzeDraftReportBtn" type="button" title="Draft an executive paragraph from the SSI snapshot">Draft report paragraph</button>' +
-          '<button class="btn ghost" id="analyzeDeleteBtn" type="button" style="color:var(--bad);">Delete</button>' +
-        '</div>' +
-      '</div>' +
-      '<nav class="analyze-tabs">' +
-        tabs.map(t =>
-          '<a class="analyze-tab' + (t.key === activeTab ? ' on' : '') + (t.native ? '' : ' handoff') + (t.forthcoming ? ' forthcoming' : '') + '"' +
-            ' data-tab-key="' + t.key + '"' +
-            ' data-handoff="' + (t.native ? '0' : '1') + '">' +
-            escapeHtml(t.label) +
-            (t.forthcoming ? ' <span class="tab-soon">soon</span>' : '') +
-          '</a>'
-        ).join('') +
-      '</nav>' +
-    '</div>' +
-
-    // Per-tab body: two-column layout. Main col holds KPIs/charts/tables;
-    // AI rail holds the narrator card sticky to the right.
-    '<div class="analyze-body-wrap">' +
-      '<div class="analyze-main-col" id="analyzeTabBody"></div>' +
-      '<aside class="analyze-ai-rail" id="analyzeAiRail"></aside>' +
-    '</div>';
-
-  // Tab click handler: all tabs are native; flip state.analyzeTab and re-render.
-  $all('.analyze-tab').forEach(t => {
-    t.addEventListener('click', (e) => {
-      e.preventDefault();
-      const key = t.getAttribute('data-tab-key');
-      if (!key || key === state.analyzeTab) return;
-      state.analyzeTab = key;
-      // Clear the AI rail so the previous tab's narrator doesn't linger.
-      const rail = document.getElementById('analyzeAiRail');
-      if (rail) rail.innerHTML = '';
-      // Update active state in-place.
-      $all('.analyze-tab').forEach(x => x.classList.remove('on'));
-      t.classList.add('on');
-      renderAnalyzeTabBody(survey);
-    });
-  });
+  // Render the Survey Workstation shell (same pattern as Builder). The
+  // analytics body still mounts into #analyzeTabBody, so renderAnalyzeTabBody
+  // and every per-tab renderer continue to work unchanged.
+  swEnsureBuilderShellStyles();
+  root.innerHTML = swBuildAnalyzeShellHTML(survey, tabs, activeTab);
+  swWireAnalyzeShell(survey);
+  swPaintAnalyzeGuidance(activeTab);
 
   // Delete this project from the Analyze header.
   const del = $('#analyzeDeleteBtn');
@@ -15621,6 +15570,17 @@ function swEnsureBuilderShellStyles() {
     '.sw-ssi-label .eyebrow { font:600 9.5px/1 Inter,system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mute); }',
     '.sw-ssi-label .status  { font:600 11px/1 Inter,system-ui,sans-serif; color:var(--text-soft); }',
     '.sw-ssi-wrap { display:inline-flex; align-items:center; gap:4px; }',
+
+    // Analyze-specific: action buttons row sits above the analytics body
+    // inside the workspace column. Replaces the cluttered analyze-title-row
+    // (moved into the shell topbar).
+    '.sw-workspace-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; padding:10px 12px; background:#fff; border:1px solid var(--border); border-radius:8px; }',
+    // Within the shell, the legacy analyze-body-wrap is just the main
+    // column. The inner analyze-ai-rail is hidden because the AI summary
+    // role is now owned by the outer guidance pane.
+    '.sw-shell-analyze .analyze-body-wrap { display:block; }',
+    '.sw-shell-analyze .analyze-ai-rail { display:none; }',
+    '.sw-shell-analyze .analyze-main-col { width:100%; }',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -15692,6 +15652,338 @@ function swPaintBuilderGuidance(tab) {
   const bodyEl  = document.getElementById('swGBody');
   if (titleEl) titleEl.textContent = g.title;
   if (bodyEl)  bodyEl.innerHTML    = g.html;
+}
+
+// Per-tab methodology guidance for the Analyze shell right rail. Same
+// structural pattern as _swBuilderGuidance. Tight, methodology-first
+// copy — never feature lists, never marketing.
+const _swAnalyzeGuidance = {
+  strength: {
+    title: 'The headline number',
+    html:
+      '<p>The Strength Index combines reliability, validity, sampling adequacy, and response quality into a single 0&ndash;100 score. It is not an average — weak components drag the score harder than strong components lift it, because credibility is bottlenecked by its weakest link.</p>' +
+      '<p>Treat the score as a defense-readiness check, not a grade. A score in the <em>Watch</em> or <em>Weak</em> band tells you what to fix before relying on the data; it does not say the data is meaningless.</p>',
+  },
+  readiness: {
+    title: 'Is this dataset ready to defend?',
+    html:
+      '<p>Readiness checks the gates that have to pass before any inferential analysis is honest: enough responses for the test, enough variance to detect effects, complete-enough cases, and clean column types.</p>' +
+      '<p>A failing readiness gate is a stop sign, not a warning. Address the gate before reading the deeper analyses.</p>',
+  },
+  reliability: {
+    title: 'Are items measuring the same thing?',
+    html:
+      '<p>Reliability asks whether items intended to measure a single construct actually hang together. Cronbach\'s alpha is the headline; item-total correlations diagnose which items are pulling away from the rest.</p>' +
+      '<p>Low reliability rarely means the construct is wrong — it usually means one or two items are off-construct and should be cut or rewritten.</p>',
+  },
+  description: {
+    title: 'What does the response distribution look like?',
+    html:
+      '<p>Frequency and central-tendency stats reveal the shape of responses: ceiling effects, floor effects, bimodality. These shape interpretation more than the mean alone.</p>' +
+      '<p>Tables here follow APA convention so you can lift them into a report without reformatting.</p>',
+  },
+  validity: {
+    title: 'Does the survey measure what it claims to?',
+    html:
+      '<p>Validity is harder than reliability because it is partly a judgment call. The numerical pieces — convergent, discriminant, factor structure — support the argument; they do not make it for you.</p>' +
+      '<p>If validity evidence is mixed, name the construct more narrowly in the report rather than overclaiming.</p>',
+  },
+  openended: {
+    title: 'Themes in the words',
+    html:
+      '<p>Open-ended responses carry evidence the closed-ended items often miss. ReliCheck extracts candidate themes; you decide which themes are real and which are artifacts of phrasing or sample.</p>' +
+      '<p>The AI summary is supplemental — read a sample of the raw responses yourself before adopting any theme as a finding.</p>',
+  },
+  quality: {
+    title: 'Did respondents answer honestly?',
+    html:
+      '<p>Quality checks flag careless responding: too-fast completions, straight-lining, contradictory answer pairs, and impossible value combinations.</p>' +
+      '<p>Flagged respondents are not automatically removed — they are flagged for you to inspect. Removal is a methodological choice you have to defend.</p>',
+  },
+  completion: {
+    title: 'Who finished and who dropped?',
+    html:
+      '<p>Completion patterns tell you where the survey lost respondents. A drop spike on one item usually means the item is confusing, sensitive, or technically broken.</p>' +
+      '<p>Compare completer and non-completer demographics; if they differ, your findings generalize only to completers — not to the population you sampled.</p>',
+  },
+  compare: {
+    title: 'Group differences with the right test',
+    html:
+      '<p>Compare runs the appropriate inferential test based on variable types — t-test, ANOVA, chi-square, Mann-Whitney — and reports effect size alongside the p-value. Effect size is the part you should lead with in the report; p-value alone is sample-size-dependent.</p>',
+  },
+  prepost: {
+    title: 'Change over time, within respondents',
+    html:
+      '<p>Pre/post analyses are about within-person change, not between-group difference. Use the matched-sample test (paired t-test, Wilcoxon signed-rank) so the test honors the design.</p>' +
+      '<p>Report change scores and confidence intervals; a significant mean change with a tight CI is the only kind that supports a causal-sounding sentence.</p>',
+  },
+  subgroups: {
+    title: 'Where the pattern is, and is not',
+    html:
+      '<p>Subgroup analyses split the data by a categorical variable to see whether the pattern holds. They are inherently lower-powered than the full-sample test, so be cautious with effects that appear in only one subgroup.</p>' +
+      '<p>Pre-register subgroup hypotheses if you can; otherwise label exploratory subgroup findings clearly in the report.</p>',
+  },
+  equity: {
+    title: 'Differences that matter for fairness',
+    html:
+      '<p>Equity Gaps compares outcomes across demographic groups using effect-size thresholds drawn from the equity-measurement literature. A statistically significant gap that falls below the minimum-important-difference is still a small gap.</p>' +
+      '<p>The goal is to inform action, not assign blame. Pair each gap with the context that would let a leader respond.</p>',
+  },
+  predictors: {
+    title: 'What variables relate to the outcome?',
+    html:
+      '<p>Predictor analyses (multiple regression, logistic regression) describe association, not causation. A coefficient says how the outcome shifts with the predictor when the others are held constant — it does not say the predictor caused the outcome.</p>' +
+      '<p>Check for multicollinearity before trusting individual coefficients; predictors that move together can swap significance unpredictably.</p>',
+  },
+  drivers: {
+    title: 'Which items move the outcome most',
+    html:
+      '<p>Driver analyses rank predictors by their importance to the outcome. The ranking is most stable when the sample is large and the predictors are not too correlated.</p>' +
+      '<p>Use drivers as a starting point for action — they tell you where the leverage is, not what intervention will work.</p>',
+  },
+  mlm: {
+    title: 'Nested data, modeled honestly',
+    html:
+      '<p>Multilevel models (MLM) account for the fact that respondents are clustered — within schools, departments, teams. Ignoring nesting underestimates standard errors and overstates significance.</p>' +
+      '<p>Report intraclass correlation and design effect; they tell the reader whether nesting mattered in this dataset.</p>',
+  },
+  irt: {
+    title: 'Item-level psychometrics',
+    html:
+      '<p>Item Response Theory characterizes each item by its difficulty and discrimination — the precision the item adds across the trait scale. Items with poor discrimination are candidates for revision.</p>' +
+      '<p>IRT requires larger N than classical reliability; treat results from small samples as suggestive.</p>',
+  },
+  trends: {
+    title: 'Patterns across time',
+    html:
+      '<p>Trend analyses across waves will surface here once the time-series pipeline is wired in. In the meantime, run Compare across wave-labelled subsets if you need a quick view.</p>' +
+      '<p style="color:var(--text-mute);font-size:12.5px;">Forthcoming.</p>',
+  },
+  ipm: {
+    title: 'What to fix first',
+    html:
+      '<p>The Importance-Performance Map plots driver importance against current performance so you can see which items are both impactful and under-performing — the natural action priorities.</p>' +
+      '<p style="color:var(--text-mute);font-size:12.5px;">Forthcoming.</p>',
+  },
+};
+
+function swPaintAnalyzeGuidance(tab) {
+  const g = _swAnalyzeGuidance[tab] || _swAnalyzeGuidance.strength;
+  const titleEl = document.getElementById('swGTitle');
+  const bodyEl  = document.getElementById('swGBody');
+  if (titleEl) titleEl.textContent = g.title;
+  if (bodyEl)  bodyEl.innerHTML    = g.html;
+}
+
+// Canonical tab switcher for the Analyze shell. Mirrors swSetBuilderTab —
+// updates state.analyzeTab, re-renders the tab body, repaints guidance,
+// syncs the left-nav active state.
+function swSetAnalyzeTab(survey, tab) {
+  if (!tab || tab === state.analyzeTab) return;
+  state.analyzeTab = tab;
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
+    el.classList.toggle('on', el.getAttribute('data-swnav') === tab);
+  });
+  // Clear the legacy AI rail so the previous tab\'s narrator doesn\'t linger.
+  const rail = document.getElementById('analyzeAiRail');
+  if (rail) rail.innerHTML = '';
+  swPaintAnalyzeGuidance(tab);
+  try { renderAnalyzeTabBody(survey); } catch (_) {}
+}
+
+// Build the Analyze shell HTML. Groups the 16 tabs in the left-nav by
+// methodological role so a reader of the sidebar gets a one-glance map
+// of what the platform offers.
+function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
+  const id = escapeHtml(survey.id);
+  const title = escapeHtml(survey.title || 'Untitled survey');
+  const items     = survey.item_count    || 0;
+  const responses = survey.response_count|| 0;
+  const likert    = survey.likert_count  || 0;
+  const updated   = timeAgo(survey.updated_at);
+  const meta =
+    items + ' item' + (items === 1 ? '' : 's') +
+    (likert ? ' &middot; ' + likert + ' Likert' : '') +
+    ' &middot; ' + responses + ' response' + (responses === 1 ? '' : 's') +
+    (updated ? ' &middot; updated ' + escapeHtml(updated) : '');
+
+  // Ribbon — Analyze stage is active here.
+  const st = swDeriveWorkflowStatus(survey);
+  const stageBtn = (key, label, route, isActive) => {
+    const cls = isActive ? 'sw-stage on' : 'sw-stage';
+    const dotCls = 'dot' + (st[key] === 'done' ? ' done' : st[key] === 'half' ? ' half' : '');
+    const dataRoute = route ? (' data-route="' + route + '" data-id="' + id + '"') : '';
+    return '<button class="' + cls + '"' + dataRoute + ' data-stage="' + key + '" type="button">' +
+      '<span class="' + dotCls + '"></span><span class="lbl">' + label + '</span></button>';
+  };
+  const sep = '<span class="sep" aria-hidden="true">&rsaquo;</span>';
+  const ribbon =
+    stageBtn('build',      'Build',      'builder',    false) + sep +
+    stageBtn('distribute', 'Distribute', 'distribute', false) + sep +
+    stageBtn('collect',    'Collect',    null,         false) + sep +
+    stageBtn('analyze',    'Analyze',    null,         true)  + sep +
+    stageBtn('defend',     'Defend',     null,         false);
+
+  // Tab groups for the left-nav. Order encodes a methodological flow:
+  // strength leads, instrument quality next, then patterns, then modeling.
+  const groups = [
+    { head: 'Strength',         keys: ['strength','readiness'] },
+    { head: 'Instrument quality', keys: ['reliability','validity','description','quality','completion'] },
+    { head: 'Patterns',         keys: ['openended','compare','prepost','subgroups','equity'] },
+    { head: 'Modeling',         keys: ['predictors','drivers','mlm','irt'] },
+    { head: 'Forthcoming',      keys: ['trends','ipm'] },
+  ];
+  const tabByKey = {};
+  tabs.forEach(t => { tabByKey[t.key] = t; });
+  const navItem = (k) => {
+    const t = tabByKey[k];
+    if (!t) return '';
+    const onCls = k === activeTab ? ' on' : '';
+    const soon = t.forthcoming ? ' <span style="font-size:10.5px;color:var(--text-mute);font-weight:500;">soon</span>' : '';
+    return '<button class="sw-leftnav-item' + onCls + '" data-swnav="' + escapeHtml(k) + '" type="button"><span class="dot"></span>' + escapeHtml(t.label) + soon + '</button>';
+  };
+  const groupsHtml = groups.map(g =>
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">' + g.head + '</div>' +
+      g.keys.map(navItem).join('') +
+    '</div>'
+  ).join('');
+
+  return '' +
+    '<div class="sw-shell sw-shell-analyze" id="swShell">' +
+      '<div class="sw-topbar">' +
+        '<div class="sw-topbar-title">' +
+          '<h1>' + title + '</h1>' +
+          '<div class="meta">' + meta + '</div>' +
+        '</div>' +
+        '<div class="sw-topbar-spacer"></div>' +
+        '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
+        '<div class="sw-ssi-wrap">' +
+          '<button type="button" class="sw-ssi-ring" id="swAnalyzeSsiChip" title="Strength Index">' +
+            '<svg viewBox="0 0 36 36" aria-hidden="true">' +
+              '<circle class="ring-track" cx="18" cy="18" r="15.915" />' +
+              '<circle class="ring-arc"   cx="18" cy="18" r="15.915" id="swAnalyzeSsiArc" />' +
+            '</svg>' +
+            '<span class="sw-ssi-ring-num">' +
+              '<span class="num" id="swAnalyzeSsiScore">--</span>' +
+              '<span class="den">/ 100</span>' +
+            '</span>' +
+          '</button>' +
+          '<div class="sw-ssi-label">' +
+            '<span class="eyebrow">Strength</span>' +
+            '<span class="status" id="swAnalyzeSsiStatus">Pending</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sw-studio" id="swStudio">' +
+        '<aside class="sw-leftnav" aria-label="Analyses">' +
+          '<div class="sw-leftnav-eyebrow">Workflow &middot; Analyze</div>' +
+          groupsHtml +
+          '<div class="sw-leftnav-section">' +
+            '<div class="sw-leftnav-section-head">Next stage</div>' +
+            '<a class="sw-leftnav-item" data-route="reports" data-id="' + id + '"><span class="dot"></span>Defend &amp; report</a>' +
+          '</div>' +
+        '</aside>' +
+        '<main class="sw-workspace" id="swWorkspace">' +
+          // Workspace head holds the action buttons that previously lived
+          // in analyze-title-row. Kept here so they\'re visible above the
+          // analytics body but out of the topbar (which carries chrome).
+          '<div class="sw-workspace-actions">' +
+            '<a class="btn ghost" data-route="projects">All projects</a>' +
+            '<a class="btn ghost" data-route="builder" data-id="' + id + '">Edit survey</a>' +
+            '<button class="btn ghost" type="button" id="analyzeSettingsBtn" data-id="' + id + '">Settings</button>' +
+            '<a class="btn primary" data-route="distribute" data-id="' + id + '">Distribute</a>' +
+            '<button class="btn ghost" id="analyzeExportPdfBtn" type="button">Export PDF</button>' +
+            '<button class="btn ghost" id="analyzeFullReportBtn" type="button" title="Compile every tab into one PDF">Full Report</button>' +
+            '<button class="btn ghost" id="analyzeDraftReportBtn" type="button" title="Draft an executive paragraph from the SSI snapshot">Draft report paragraph</button>' +
+            '<button class="btn ghost" id="analyzeDeleteBtn" type="button" style="color:var(--bad);margin-left:auto;">Delete</button>' +
+          '</div>' +
+          // Hidden legacy tab strip — kept so any code that queries
+          // .analyze-tab continues to no-op safely.
+          '<nav class="analyze-tabs" hidden></nav>' +
+          '<div class="analyze-body-wrap">' +
+            '<div class="analyze-main-col" id="analyzeTabBody"></div>' +
+            '<aside class="analyze-ai-rail" id="analyzeAiRail"></aside>' +
+          '</div>' +
+        '</main>' +
+        '<aside class="sw-guidance" id="swGuidance" aria-label="Methodology guidance">' +
+          '<button class="sw-guidance-toggle" id="swGuidanceToggle" title="Hide guidance" type="button">&rsaquo;</button>' +
+          '<div class="sw-g-eyebrow"><span>Methodology</span></div>' +
+          '<div class="sw-g-title" id="swGTitle">The headline number</div>' +
+          '<div class="sw-g-body" id="swGBody"></div>' +
+        '</aside>' +
+        '<button class="sw-guidance-popout" id="swGuidancePopout" title="Show guidance" type="button">&lsaquo;</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function swWireAnalyzeShell(survey) {
+  const studio = document.getElementById('swStudio');
+  if (!studio) return;
+  const applyGuidance = () => {
+    let collapsed = false;
+    try { collapsed = localStorage.getItem('sw.analyze.guidance') === '0'; } catch (_) {}
+    studio.classList.toggle('no-guidance', collapsed);
+  };
+  const toggle = document.getElementById('swGuidanceToggle');
+  if (toggle) toggle.onclick = () => { try { localStorage.setItem('sw.analyze.guidance', '0'); } catch (_) {} applyGuidance(); };
+  const popout = document.getElementById('swGuidancePopout');
+  if (popout) popout.onclick = () => { try { localStorage.setItem('sw.analyze.guidance', '1'); } catch (_) {} applyGuidance(); };
+  applyGuidance();
+
+  // Left-nav owns Analyze tab switching now.
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
+    el.onclick = (e) => {
+      e.preventDefault();
+      const tab = el.getAttribute('data-swnav');
+      swSetAnalyzeTab(survey, tab);
+    };
+  });
+
+  // SSI ring in the topbar — Analyze already has the data in-process via
+  // loadAnalyzeData; same harvest as Builder for visual consistency.
+  swPaintAnalyzeSSI(survey);
+}
+
+function swPaintAnalyzeSSI(survey) {
+  const ring   = document.getElementById('swAnalyzeSsiChip');
+  const arc    = document.getElementById('swAnalyzeSsiArc');
+  const scoreEl  = document.getElementById('swAnalyzeSsiScore');
+  const statusEl = document.getElementById('swAnalyzeSsiStatus');
+  if (!ring || !arc || !scoreEl || !statusEl || !survey) return;
+  const toneFor = (n) => n >= 80 ? 'good' : n >= 65 ? 'usable' : n >= 50 ? 'warn' : 'bad';
+  const paint = (score, status) => {
+    const pct = Math.max(0, Math.min(100, Number(score) || 0));
+    scoreEl.textContent  = String(score);
+    statusEl.textContent = status || (pct >= 80 ? 'Strong' : pct >= 65 ? 'Usable' : pct >= 50 ? 'Watch' : 'Weak');
+    arc.setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+    ring.classList.remove('tone-good','tone-usable','tone-warn','tone-bad');
+    ring.classList.add('tone-' + toneFor(pct));
+    ring.setAttribute('title', 'Strength Index: ' + score + ' / 100' + (status ? ' (' + status + ')' : ''));
+  };
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('sw.builder.ssi.' + survey.id) || 'null'); } catch (_) {}
+  if (cached && Number.isFinite(cached.score)) paint(cached.score, cached.status);
+  if (typeof loadAnalyzeData !== 'function' || typeof renderSSICard !== 'function') return;
+  (async () => {
+    try {
+      const cache = await loadAnalyzeData(survey.id);
+      if (!cache || !cache.full || !cache.responses) return;
+      const hidden = document.createElement('div');
+      hidden.style.cssText = 'position:absolute;left:-99999px;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;';
+      document.body.appendChild(hidden);
+      try { renderSSICard(hidden, cache.full, cache.responses); } catch (_) {}
+      const nEl = hidden.querySelector('.ssi-ring .num .n');
+      const raw = nEl ? parseInt(String(nEl.textContent || '').replace(/[^0-9]/g, ''), 10) : NaN;
+      if (Number.isFinite(raw) && raw > 0) {
+        const pillEl = hidden.querySelector('.verdict-pill');
+        const status = pillEl ? String(pillEl.textContent || '').trim() : '';
+        paint(raw, status);
+        try { localStorage.setItem('sw.builder.ssi.' + survey.id, JSON.stringify({ score: raw, status: status })); } catch (_) {}
+      }
+      try { hidden.remove(); } catch (_) {}
+    } catch (_) {}
+  })();
 }
 
 // Off-screen Strength Index harvest for the Builder topbar ring. Mirrors
