@@ -37645,12 +37645,19 @@ async function mmTabQuantAnalysis(body) {
              buildPicker('mmRecPick_anova_g', 'Group (2+ levels)', cat2plusCols, anovaGroupDefault, null);
     }
     if (tid === 'pearson') {
-      return buildPicker('mmRecPick_pearson_x', 'Variable 1', likertCols, pearsonXDefault, null) +
-             buildPicker('mmRecPick_pearson_y', 'Variable 2', likertCols, pearsonYDefault, null);
+      // Pearson needs two numeric variables. Likert items qualify; so do
+      // continuous numerics (income, count, age, etc.). Excludes ID
+      // columns where every row is unique.
+      return buildPicker('mmRecPick_pearson_x', 'Variable 1', outcomeCols, pearsonXDefault, null) +
+             buildPicker('mmRecPick_pearson_y', 'Variable 2', outcomeCols, pearsonYDefault, null);
     }
     if (tid === 'chi_square') {
-      return buildPicker('mmRecPick_chi_r', 'Row variable', cat2plusCols, chiRowDefault, null) +
-             buildPicker('mmRecPick_chi_c', 'Column variable', cat2plusCols, chiColDefault, null);
+      // Chi-square tests association between two categorical variables.
+      // Likert items ARE categorical (ordered categories), so they
+      // belong here too. Anything with 2-20 distinct values is eligible.
+      const chiCols = colsAll.filter(c => c.distinct >= 2 && c.distinct <= 20 || c.isLikert);
+      return buildPicker('mmRecPick_chi_r', 'Row variable', chiCols, chiRowDefault, null) +
+             buildPicker('mmRecPick_chi_c', 'Column variable', chiCols, chiColDefault, null);
     }
     return '';
   };
