@@ -223,14 +223,19 @@
     }
     .sidebar-brand {
       display: flex; align-items: center; gap: 8px;
-      padding: 0;
+      padding: 4px 8px;
       border-bottom: 0;
       margin-bottom: 0;
+      margin-right: 8px;
       flex-shrink: 0;
       font: 700 17px/1 'Inter', system-ui, sans-serif;
       color: var(--text);
       letter-spacing: -0.01em;
+      text-decoration: none;
+      border-radius: 6px;
+      transition: background 0.12s;
     }
+    .sidebar-brand:hover { background: var(--accent-tint); }
     .sidebar-brand .brand-logo { display: none; } /* white logo doesn\'t read on light bg */
     .sidebar-brand::before {
       content: 'ReliCheck';
@@ -283,19 +288,19 @@
       stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
     }
     .nav-item:hover .icon, .nav-item.active .icon { opacity: 1; color: currentColor; }
-    /* Items flagged data-priority="more" live in the overflow dropdown,
-       not the main strip. Hidden everywhere except inside .nav-more-panel. */
-    .nav-item[data-priority="more"]:not(.in-more-panel) { display: none; }
-
-    /* === Overflow "More" dropdown ==================================== */
-    .nav-more {
+    /* === Themed dropdowns (Studios / Suites / Resources / Workspace) ==
+       Four parallel triggers in the topnav; each opens a richer panel
+       than the old More dropdown — items carry a title + one-line
+       descriptor so the panels feel like macOS menu bars rather than
+       quick-access lists. */
+    .nav-drop {
       position: relative;
       display: inline-flex;
       align-items: center;
       flex-shrink: 0;
     }
-    .nav-more-trigger {
-      padding: 7px 11px;
+    .nav-drop-trigger {
+      padding: 7px 12px;
       background: transparent;
       border: 0;
       color: var(--text-soft);
@@ -307,44 +312,73 @@
       gap: 5px;
       white-space: nowrap;
     }
-    .nav-more-trigger:hover { background: var(--accent-tint); color: var(--text); }
-    .nav-more-trigger.has-active { color: var(--primary); font-weight: 600; }
-    .nav-more-trigger .chev { font-size: 9px; transition: transform 0.15s; opacity: 0.7; }
-    .nav-more[data-open="1"] .nav-more-trigger { background: var(--primary-soft); color: var(--primary); }
-    .nav-more[data-open="1"] .nav-more-trigger .chev { transform: rotate(180deg); }
-    .nav-more-panel {
+    .nav-drop-trigger:hover { background: var(--accent-tint); color: var(--text); }
+    /* Trigger lights up whenever the active route lives in its panel.
+       has-active is set by the JS at boot + on every route change. */
+    .nav-drop-trigger.has-active { color: var(--primary); font-weight: 600; }
+    .nav-drop-trigger .chev { font-size: 9px; transition: transform 0.15s; opacity: 0.7; }
+    .nav-drop[data-open="1"] .nav-drop-trigger { background: var(--primary-soft); color: var(--primary); }
+    .nav-drop[data-open="1"] .nav-drop-trigger .chev { transform: rotate(180deg); }
+    .nav-drop-panel {
       position: absolute;
       top: calc(100% + 6px);
-      right: 0;
-      min-width: 240px;
+      left: 0;
+      min-width: 320px;
       background: #fff;
       border: 1px solid var(--border);
-      border-radius: 10px;
-      box-shadow: 0 12px 32px rgba(11,23,51,0.12), 0 2px 6px rgba(11,23,51,0.06);
-      padding: 6px;
+      border-radius: 12px;
+      box-shadow: 0 14px 40px rgba(11,23,51,0.14), 0 2px 6px rgba(11,23,51,0.06);
+      padding: 8px;
       z-index: 100;
       display: none;
       max-height: 70vh;
       overflow-y: auto;
     }
-    .nav-more[data-open="1"] .nav-more-panel { display: block; }
-    .nav-more-panel .nav-item.in-more-panel {
-      display: flex !important;
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      width: 100%;
-      gap: 9px;
-    }
-    .nav-more-panel .nav-item.in-more-panel .icon { width: 18px; height: 18px; }
-    .nav-more-panel .nav-item.in-more-panel .icon svg { width: 16px; height: 16px; }
-    .nav-more-panel-section {
+    .nav-drop[data-open="1"] .nav-drop-panel { display: block; }
+    /* Last dropdown anchors to the right edge so its panel doesn\'t
+       overflow the viewport. */
+    .nav-drop:last-of-type .nav-drop-panel { left: auto; right: 0; }
+    .nav-drop-eyebrow {
       font: 600 10px/1 'Inter', system-ui, sans-serif;
-      letter-spacing: 0.06em;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
       color: var(--text-mute);
-      padding: 10px 10px 4px;
+      padding: 8px 12px 10px;
+    }
+    .nav-drop-item {
+      display: block;
+      padding: 10px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: var(--text);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .nav-drop-item:hover { background: var(--accent-tint); }
+    .nav-drop-item.active { background: var(--primary-soft); }
+    .nav-drop-item.active .dropt { color: var(--primary); }
+    .nav-drop-item .dropt {
+      font: 600 13.5px/1.3 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-drop-item .dropb {
+      font: 400 12px/1.45 'Inter', system-ui, sans-serif;
+      color: var(--text-mute);
+      margin-top: 2px;
+    }
+    .nav-badge {
+      font: 600 9.5px/1 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.04em;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--primary-soft);
+      color: var(--primary);
       text-transform: uppercase;
     }
+    .nav-badge.muted { background: var(--bg-soft, var(--bg)); color: var(--text-mute); }
 
     /* === Topbar — slimmed to a thin crumbs strip beneath the topnav.
        The right side (search/notifs/avatar/user menu) has moved into
@@ -5602,63 +5636,126 @@
 
 <div class="app" id="appRoot" style="display:none;">
 
-  <!-- Top nav (Option A: horizontal stacked layout). The element is still
-       named .sidebar so existing JS keeps working, but it's now the first
-       row of the .app grid. data-priority="primary" marks the 6 inline
-       items; everything else gets moved into the More dropdown at boot. -->
-  <aside class="sidebar" aria-label="Workspace navigation">
-    <div class="sidebar-brand">
+  <!-- Top nav (Option A, themed dropdown variant). Site-level navigation
+       only — workstation-specific routes live in each shell\'s sw-leftnav.
+       Brand on the left is a clickable home link. Four dropdowns themed
+       by what the user thinks about ("where you work / what you\'re
+       working on / tools that span studios / your org and account").
+       The .nav-item class on dropdown items is kept so the existing
+       per-route active highlighter ($all(.nav-item)) still works. -->
+  <aside class="sidebar" aria-label="Site navigation">
+    <a href="#/home" class="sidebar-brand" data-route="home" aria-label="ReliCheck home">
       <img src="/logo-brand-white.svg" alt="ReliCheck" class="brand-logo" />
       <span class="tag" aria-hidden="true">2.0</span>
-    </div>
-    <nav role="navigation" aria-label="Main menu">
-    <a class="nav-item" data-priority="primary" data-route="home" role="tab" aria-selected="false" tabindex="0"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 11L12 4l9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span>Home</a>
-    <a class="nav-item" data-priority="primary" data-route="projects" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Projects</a>
-    <a class="nav-item" data-priority="more" data-route="datasets" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>Datasets</a>
-    <a class="nav-item" data-priority="more" data-route="tests" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg></span>Tests</a>
-    <a class="nav-item" data-priority="more" data-route="create" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>Create / Upload</a>
-    <a class="nav-item" data-priority="primary" data-route="builder" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 7l3-3 4 4-3 3"/><path d="M14 7l-9 9v4h4l9-9"/></svg></span>Builder</a>
-    <a class="nav-item" data-priority="primary" data-route="analyze" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></span>Analyze</a>
-    <a class="nav-item" data-priority="primary" data-route="distribute" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span>Distribute</a>
-    <a class="nav-item" data-priority="primary" data-route="reports" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h8M8 9h3"/></svg></span>Reports</a>
+    </a>
+    <nav role="navigation" aria-label="Top menu">
 
-    <div class="sidebar-section" data-more-section="Tools" aria-hidden="true">Tools</div>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="templates" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>Templates</a>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="ai" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 5.4 5.6.6-4.3 4 1.2 5.8L12 14.8l-4.9 3 1.2-5.8L4 8l5.6-.6z"/></svg></span>ReliCheck Intelligence</a>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="mm" role="tab" aria-selected="false" tabindex="-1" data-draft-only="1" style="display:none;"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="16" r="3"/><path d="M10 8h7M7 11v5"/></svg></span>MM Studio (BETA)</a>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="webhooks" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="12" cy="6" r="3"/><path d="M9 18h6M10 8.5l-4 6.5M14 8.5l4 6.5"/></svg></span>Webhooks</a>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="panels" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>Panels (360)</a>
-    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="suites" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Suites</a>
+      <!-- STUDIOS — where you work -->
+      <div class="nav-drop" data-drop="studios" data-routes="home projects builder analyze distribute reports mm tests panels">
+        <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
+          Studios <span class="chev" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="nav-drop-panel" role="menu">
+          <div class="nav-drop-eyebrow">Where you work</div>
+          <a class="nav-item nav-drop-item" data-route="home" data-studio="survey" role="menuitem">
+            <div class="dropt">Survey Studio</div>
+            <div class="dropb">Build, distribute, and analyze surveys end-to-end.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="mm" data-studio="mm" role="menuitem">
+            <div class="dropt">Mixed-Methods Studio <span class="nav-badge">BETA</span></div>
+            <div class="dropb">When the numbers do not tell the whole story.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="tests" data-studio="testitem" role="menuitem">
+            <div class="dropt">Test &amp; Item Analysis <span class="nav-badge muted">early</span></div>
+            <div class="dropb">Classical and IRT psychometrics for instruments.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="panels" data-studio="360" role="menuitem">
+            <div class="dropt">360 Studio <span class="nav-badge muted">early</span></div>
+            <div class="dropb">Multi-source feedback that drives growth, not judgment.</div>
+          </a>
+        </div>
+      </div>
 
-    <div class="sidebar-section" data-more-section="Workspace" aria-hidden="true">Workspace</div>
-    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="team" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M14 20c0-2 2-3.5 4-3.5s3.5 1.5 3.5 3.5"/></svg></span>Team</a>
-    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="manager" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/><path d="M15 4l2 2-2 2"/></svg></span>Manager</a>
-    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="account" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></span>Account</a>
-    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="help" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg></span>Help</a>
+      <!-- SUITES — what you are working on (cross-survey collections) -->
+      <div class="nav-drop" data-drop="suites" data-routes="suites">
+        <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
+          Suites <span class="chev" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="nav-drop-panel" role="menu">
+          <div class="nav-drop-eyebrow">Linked surveys</div>
+          <a class="nav-item nav-drop-item" data-route="suites" role="menuitem">
+            <div class="dropt">All suites</div>
+            <div class="dropb">Browse the suites in your workspace.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-suites-action="new" role="menuitem">
+            <div class="dropt">+ New suite</div>
+            <div class="dropb">Group related surveys for longitudinal or multi-instrument work.</div>
+          </a>
+        </div>
+      </div>
 
-    <!-- More dropdown trigger + panel. Panel is populated at boot by
-         hoisting every [data-priority="more"] item into it; the items
-         retain their data-route attributes so click handling stays in
-         one place. -->
-    <div class="nav-more" id="navMore">
-      <button type="button" class="nav-more-trigger" id="navMoreTrigger" aria-haspopup="true" aria-expanded="false">
-        More <span class="chev" aria-hidden="true">&#9662;</span>
-      </button>
-      <div class="nav-more-panel" id="navMorePanel" role="menu"></div>
-    </div>
+      <!-- RESOURCES — tools that span studios -->
+      <div class="nav-drop" data-drop="resources" data-routes="ai templates help">
+        <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
+          Resources <span class="chev" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="nav-drop-panel" role="menu">
+          <div class="nav-drop-eyebrow">Tools that span studios</div>
+          <a class="nav-item nav-drop-item" data-route="ai" role="menuitem">
+            <div class="dropt">ReliCheck Intelligence</div>
+            <div class="dropb">AI helpers, narration, draft paragraphs.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="templates" role="menuitem">
+            <div class="dropt">Templates</div>
+            <div class="dropb">Validated scales and starter surveys.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="help" role="menuitem">
+            <div class="dropt">Help center</div>
+            <div class="dropb">Guides, FAQ, and support contact.</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- WORKSPACE — your org and account -->
+      <div class="nav-drop" data-drop="workspace" data-routes="team manager webhooks account">
+        <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
+          Workspace <span class="chev" aria-hidden="true">&#9662;</span>
+        </button>
+        <div class="nav-drop-panel" role="menu">
+          <div class="nav-drop-eyebrow">Your org and account</div>
+          <a class="nav-item nav-drop-item" data-route="team" role="menuitem">
+            <div class="dropt">Team</div>
+            <div class="dropb">Members and roles.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="manager" role="menuitem">
+            <div class="dropt">Manager</div>
+            <div class="dropb">Org admin and plan.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="webhooks" role="menuitem">
+            <div class="dropt">Webhooks</div>
+            <div class="dropb">Outbound event subscriptions.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="account" role="menuitem">
+            <div class="dropt">Account &amp; settings</div>
+            <div class="dropb">Profile, security, and billing.</div>
+          </a>
+        </div>
+      </div>
+
     </nav>
 
-    <div class="sidebar-foot">
+    <!-- Old elements kept hidden so any legacy code that queries them
+         doesn\'t throw. Sidebar-foot used to show the plan label; if you
+         want that back, surface it inside the Workspace dropdown. -->
+    <div class="sidebar-foot" hidden>
       <strong id="sidePlanLabel">Loading plan...</strong>
     </div>
-    <button type="button" class="sidebar-toggle" id="appSidebarToggle" title="Collapse sidebar" aria-label="Toggle sidebar">
+    <button type="button" class="sidebar-toggle" id="appSidebarToggle" hidden>
       <span class="toggle-chev">&lsaquo;</span>
     </button>
 
     <!-- Right side of the topnav: search, notifications, avatar, user
-         menu. Moved here from .topbar so the avatar sits in the same
-         row as the brand + nav (Option A layout). IDs unchanged so all
-         existing handlers keep working. -->
+         menu. IDs unchanged so all existing handlers keep working. -->
     <div class="sidebar-right">
       <button class="topbar-btn" id="btnSearch" aria-label="Search" type="button">S</button>
       <button class="topbar-btn" id="btnNotifs" aria-label="Notifications" type="button">N</button>
@@ -46561,81 +46658,73 @@ function mmShowNotesPanel(projectId, sectionKey, initialNotes, onCountChange) {
     }
     apply();
 
-    // ====== Topnav "More" dropdown =======================================
-    // Hoist every [data-priority="more"] nav-item into the dropdown panel,
-    // grouped by the data-more-section label so the panel reads like the
-    // old sidebar sections (Tools / Workspace). The original click handlers
-    // (which key off data-route) still fire because we move the same DOM
-    // nodes — not clones.
-    (function initNavMore() {
-      const panel = document.getElementById('navMorePanel');
-      const trigger = document.getElementById('navMoreTrigger');
-      const navMore = document.getElementById('navMore');
-      const nav = document.querySelector('.sidebar > nav');
-      if (!panel || !trigger || !navMore || !nav) return;
+    // ====== Topnav themed dropdowns ======================================
+    // Studios / Suites / Resources / Workspace. Each .nav-drop element
+    // has a trigger that toggles its panel, and a data-routes attribute
+    // listing the route names whose presence should highlight the
+    // trigger. Click outside / Esc close any open dropdown.
+    (function initNavDrops() {
+      const drops = Array.from(document.querySelectorAll('.sidebar .nav-drop'));
+      if (!drops.length) return;
 
-      const moreItems = Array.from(nav.querySelectorAll('[data-priority="more"]'));
-      // Group by section, preserving original order within each group.
-      const sections = [];
-      const seen = new Map();
-      moreItems.forEach(it => {
-        const sec = it.getAttribute('data-more-section') || 'More';
-        if (!seen.has(sec)) { seen.set(sec, []); sections.push(sec); }
-        seen.get(sec).push(it);
+      const closeAll = (except) => drops.forEach(d => {
+        if (d === except) return;
+        d.setAttribute('data-open', '0');
+        const t = d.querySelector('.nav-drop-trigger');
+        if (t) t.setAttribute('aria-expanded', 'false');
       });
-      // Drop the old in-strip section headers; we\'ll rebuild them inside
-      // the panel as .nav-more-panel-section headings.
-      nav.querySelectorAll('[data-more-section].sidebar-section').forEach(el => el.remove());
 
-      sections.forEach(secName => {
-        const head = document.createElement('div');
-        head.className = 'nav-more-panel-section';
-        head.textContent = secName;
-        panel.appendChild(head);
-        seen.get(secName).forEach(item => {
-          item.classList.add('in-more-panel');
-          panel.appendChild(item);
+      drops.forEach(drop => {
+        const trigger = drop.querySelector('.nav-drop-trigger');
+        const panel   = drop.querySelector('.nav-drop-panel');
+        if (!trigger || !panel) return;
+        trigger.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const wasOpen = drop.getAttribute('data-open') === '1';
+          closeAll(drop);
+          drop.setAttribute('data-open', wasOpen ? '0' : '1');
+          trigger.setAttribute('aria-expanded', wasOpen ? 'false' : 'true');
+        });
+        // Item click closes the dropdown so users see the route change.
+        panel.addEventListener('click', (e) => {
+          if (e.target.closest('.nav-item, [data-route], [data-suites-action]')) closeAll(null);
         });
       });
 
-      // Toggle the panel open/closed.
-      const setOpen = (open) => {
-        navMore.setAttribute('data-open', open ? '1' : '0');
-        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-      };
-      trigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setOpen(navMore.getAttribute('data-open') !== '1');
-      });
-      // Click anywhere else closes the panel. Items inside use the global
-      // data-route nav delegation, so we also close on item click via the
-      // same path.
+      // Click outside closes any open dropdown.
       document.addEventListener('click', (e) => {
-        if (!navMore.contains(e.target)) setOpen(false);
-      });
-      panel.addEventListener('click', (e) => {
-        if (e.target.closest('.nav-item')) setOpen(false);
+        if (!e.target.closest('.nav-drop')) closeAll(null);
       });
       // Esc closes.
       document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && navMore.getAttribute('data-open') === '1') setOpen(false);
+        if (e.key === 'Escape') closeAll(null);
       });
 
-      // When the active route lives inside the More panel, mark the
-      // trigger so the user can see at a glance that they\'re in a
-      // secondary route. Observer watches the .active class on the
-      // hoisted items.
-      const refreshHasActive = () => {
-        const anyActive = !!panel.querySelector('.nav-item.active');
-        trigger.classList.toggle('has-active', anyActive);
-      };
-      refreshHasActive();
-      try {
-        const mo = new MutationObserver(refreshHasActive);
-        panel.querySelectorAll('.nav-item').forEach(it => {
-          mo.observe(it, { attributes: true, attributeFilter: ['class'] });
+      // Trigger highlighting — mark trigger.has-active whenever the
+      // current hash route falls under that dropdown\'s data-routes
+      // list. Runs on boot AND on every hashchange so the highlight
+      // tracks navigation in real time.
+      const refreshActiveTriggers = () => {
+        const hash = (location.hash || '#/home').replace(/^#\/?/, '').toLowerCase();
+        const route = hash.split(/[\/?]/)[0] || 'home';
+        drops.forEach(drop => {
+          const routes = (drop.getAttribute('data-routes') || '').split(/\s+/).filter(Boolean);
+          const trigger = drop.querySelector('.nav-drop-trigger');
+          if (!trigger) return;
+          trigger.classList.toggle('has-active', routes.indexOf(route) !== -1);
         });
-      } catch (_) {}
+      };
+      refreshActiveTriggers();
+      window.addEventListener('hashchange', refreshActiveTriggers);
+
+      // Stub: + New suite action. Until the suite-create modal lands
+      // we just route to /#/suites where the user can create one inline.
+      document.querySelectorAll('[data-suites-action="new"]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          location.hash = '#/suites';
+        });
+      });
     })();
   }
   if (document.readyState === 'loading') {
