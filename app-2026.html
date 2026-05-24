@@ -29746,12 +29746,131 @@ function mmStartWizard() {
   navigate('mm', 'new');
 }
 
+// Teaching content for the landing-page sidebar. Each key matches a
+// MM_V3_NAV entry. The Studio is meant to *teach* — clicking a sidebar
+// item before a project exists shows what the method is, when to use it,
+// and where it fits in a mixed-methods design. AI is supplemental, not
+// the driver: this content is hand-authored methodology guidance.
+const MM_V3_TEACH = {
+  // ---------- Workflow ----------
+  'data':           { title: 'Data Upload',                 what: 'Bring data in: upload a CSV/XLSX, link a survey from the main site, or paste responses.', when: 'First step of every project. The Studio inspects your columns to figure out which are scales, which are categorical, and which are open-ended.', fit: 'Step 1 of the workflow. Nothing else unlocks until data is in.' },
+  'wiz:data-kind':  { title: 'What kind of data do you have?', what: 'A short questionnaire that classifies your data — numeric scales only, open text only, or both.', when: 'Immediately after Data Upload. The answer shapes which analyses are available.', fit: 'Step 2 of the workflow, before you choose a design.' },
+  'wiz:intent':     { title: 'What are you trying to understand?', what: 'Your research intent: confirming an expected pattern, exploring something new, comparing groups, or building theory.', when: 'After classifying the data. Intent narrows the recommended design.', fit: 'Step 3 of the workflow. Outputs feed the design recommendation.' },
+  'wiz:design':     { title: 'Choose your mixed-methods design', what: 'Pick one of three classic designs: Explanatory Sequential (quan → qual), Exploratory Sequential (qual → quan), or Convergent Parallel (both at once).', when: 'After data-kind and intent. The Studio recommends a design but the choice is yours.', fit: 'Step 4 of the workflow. The chosen design controls the order of the sidebar — explanatory leads with QUAN, exploratory leads with QUAL.' },
+  'builder':        { title: 'Design (category builder)', what: 'Optional helper that proposes initial qualitative categories from your open-ended responses. AI may suggest a starting point; you edit, replace, or reject.', when: 'When you want a draft codebook to react to rather than starting from a blank page.', fit: 'Step 5 of the workflow, between the wizard and active coding. Optional — skip if you prefer to write your own codebook.' },
+
+  // ---------- Quan analysis ----------
+  'v3:survey':        { title: 'Survey Analysis (foundation)', what: 'Internal-consistency reliability (Cronbach α, McDonald ω) and structural validity (factor analysis, KMO) for your instrument.', when: 'Before any inferential test. If the items don\'t hang together, the analyses that follow won\'t mean much.', fit: 'The foundation of the quant track. Always start here when you have Likert/scale items.' },
+  'dataset':          { title: 'Coded Variables', what: 'Map raw columns to scales, demographics, and outcomes. Confirm the Studio guessed right about each column.', when: 'After Data Upload, before running comparisons or regressions.', fit: 'Quant prep step. Lives between data loading and the analytical tabs.' },
+  'v3:descriptives':  { title: 'Descriptives', what: 'Means, standard deviations, distributions, missingness, response patterns. The basic shape of the data.', when: 'Always — before any inferential test. Spot ceiling effects, skew, and missing-data patterns early.', fit: 'Foundation of the quant track. Every report should include descriptives.' },
+  'v3:recommended':   { title: 'Recommendations', what: 'Data-aware eligibility: the Studio inspects sample sizes, scale of measurement, and groupings to suggest which inferential tests are defensible on this dataset.', when: 'When you have data but aren\'t sure which test fits. The recommendations are method-rule driven, not AI guesses.', fit: 'Sits between Descriptives and the test-specific tabs.' },
+  'v3:ttest':         { title: 't-test', what: 'Compares two groups\' means. Welch\'s t by default (no equal-variance assumption). Independent samples or paired.', when: 'Two groups, one continuous outcome. For three or more groups, use ANOVA instead.', fit: 'Inferential. Pairs with descriptives for the two-group comparison story.' },
+  'v3:anova':         { title: 'One-way ANOVA', what: 'Compares three or more groups\' means. Includes eta-squared effect size and pairwise follow-ups.', when: 'Three or more groups, one continuous outcome. The Studio drops groups with N < 3 automatically.', fit: 'Inferential. The natural next step when t-test isn\'t enough.' },
+  'v3:chi-square':    { title: 'Chi-square', what: 'Tests whether two categorical variables are associated. Reports χ², p, and Cramér\'s V for effect size.', when: 'Two categorical variables. Inspect standardized residuals to see where the association sits.', fit: 'Inferential, categorical track. Often paired with a contingency table.' },
+  'v3:compare':       { title: 'Group Differences', what: 'A unified comparison view across whatever groups are tagged in the dataset, with effect sizes and confidence intervals.', when: 'When you want to see all the group-level differences in one place instead of one test at a time.', fit: 'Synthesis view for the comparison track.' },
+  'v3:relationships': { title: 'Relationships', what: 'Pearson / Spearman correlations and bivariate plots between continuous variables.', when: 'When the question is "do these things move together?" rather than "do these groups differ?"', fit: 'Foundation for the regression track that follows.' },
+  'v3:regression':    { title: 'Linear / Logistic', what: 'Linear regression for continuous outcomes; logistic for binary. Coefficient table, fit indices, and predicted-vs-actual plot.', when: 'When one variable predicts another and you want effect direction, magnitude, and significance.', fit: 'Extension of the relationships track. Still in development for some advanced options.' },
+  'v3:mlm':           { title: 'MLM (multilevel)', what: 'Multilevel/hierarchical models — when responses are nested (students in classrooms, employees in departments, repeated measures over time).', when: 'When ignoring nesting would inflate Type I error. Single-level regression is wrong if your data is grouped.', fit: 'Advanced inferential. Still in development.' },
+  'v3:overview':      { title: 'Overview (quant)', what: 'Quick orientation to the full quant suite with the Strength Index and what to run next.', when: 'Whenever you want the bird\'s-eye view before diving into a specific test.', fit: 'Entry point to the quant track.' },
+  'score':            { title: 'Score-to-Theme', what: 'Connect a numeric score (e.g., engagement total) to qualitative themes from the same respondents.', when: 'When you have both scores and comments and want to see what kinds of comments low-scorers and high-scorers tend to give.', fit: 'Integration. Only available when the pathway includes both scores and comments.' },
+  'alignment':        { title: 'Alignment', what: 'Where do the numbers and narratives agree? Where do they diverge? Alignment-disagreement is often the most interesting finding.', when: 'After both quant and qual analyses have been run.', fit: 'Integration. The heart of why mixed-methods matters.' },
+
+  // ---------- Qual analysis ----------
+  'qual':             { title: 'Overview (qual)', what: 'Summary of qualitative findings across all coded open-ended items.', when: 'After the codebook is built and responses are coded.', fit: 'Entry point to the qual track.' },
+  'themes':           { title: 'Codebook & Themes', what: 'Define categories, code responses, and refine the codebook iteratively. Human-led; AI suggests categories only if you ask.', when: 'Always. The codebook is the backbone of the qual track.', fit: 'Foundation of qual analysis. Every qual finding traces back to a codebook entry.' },
+  'qual:quotes':      { title: 'Quote Selection', what: 'Pull representative quotes by theme, group, or sentiment to illustrate findings.', when: 'When writing up findings. Good reports anchor each theme with a quote.', fit: 'Reporting prep, after coding.' },
+  'qual:sentiment':   { title: 'Sentiment', what: 'Polarity and intensity scoring of open-ended responses.', when: 'When tone matters and themes alone don\'t capture it. Sentiment is a supplemental layer, not a replacement for thematic coding.', fit: 'Add-on to the qual track.' },
+  'qual:intercoder':  { title: 'Intercoder Check', what: 'When multiple coders work the same data, compute agreement statistics (Krippendorff\'s α, Cohen\'s κ).', when: 'Any time multiple coders are involved. Required for defensible qualitative claims in many fields.', fit: 'Quality assurance for the qual track. Still in development for some agreement metrics.' },
+  'qual:strength':    { title: 'Theme Strength', what: 'Frequency, coverage, and uniqueness of each theme — how strongly the data supports each one.', when: 'After coding, before writing up. Strong themes belong in the headline; weak themes get a footnote or get dropped.', fit: 'Quality check for the qual track.' },
+  'qual:compare':     { title: 'Code Comparison', what: 'How themes show up across groups, time points, or design conditions.', when: 'When the qual story might differ between subgroups (e.g., themes managers raise vs. themes employees raise).', fit: 'Group-comparison view for the qual track.' },
+  'qual:map':         { title: 'Theme Map', what: 'Network or hierarchy visualization of how themes relate to each other.', when: 'When you want to see the architecture of the themes rather than just a list.', fit: 'Synthesis view for the qual track.' },
+
+  // ---------- Integrate ----------
+  'joint':       { title: 'Joint Display', what: 'A side-by-side table or matrix showing quant findings next to qual themes — same rows, both kinds of evidence.', when: 'Once both tracks have results to bring together. This is the core integration artifact in mixed methods.', fit: 'Integration. The first place to bring the two tracks into conversation.' },
+  'integration': { title: 'Integration', what: 'Where do quant and qual converge, diverge, or expand on each other? Convergence builds confidence; divergence is the most interesting finding.', when: 'After both tracks have stable findings.', fit: 'Integration. The conceptual heart of mixed methods, not just a step.' },
+  'strength':    { title: 'Strength Check', what: 'Confidence assessment for each integrated finding — what\'s defensible, what\'s tentative, what needs more data.', when: 'Before writing the report. The Studio flags findings that lean on weak evidence.', fit: 'Integration. The "can we say this?" gate before the report.' },
+  'matrix':      { title: 'Matrix', what: 'Cross-tab of themes by groups with quant overlays — e.g., theme prevalence by department with engagement-score means.', when: 'When the integration story involves subgroups.', fit: 'Integration. Specialized joint display for subgroup analysis.' },
+
+  // ---------- Defend the Report ----------
+  'report':          { title: 'Report', what: 'Assemble the writeup. The Studio drafts paragraphs grounded in your actual findings; you edit, keep, or replace.', when: 'When the integrated findings are stable and you\'re ready to communicate them.', fit: 'Final step. Lives at the end of the workflow.' },
+  'strength_report': { title: 'Strength + Report', what: 'A report variant that includes a strength panel — what\'s defensible, what\'s not, and what would need more data.', when: 'When the audience needs to know how much weight each finding can carry.', fit: 'Final step. Use this version for any high-stakes audience.' },
+};
+
+// Render teaching content for a sidebar item in the right-side ReliCheck
+// Guidance pane. Called when a user clicks any sidebar entry on the
+// landing page — there's no project yet, so we explain rather than navigate.
+function mmLandingShowTeach(container, key, label) {
+  const teach = MM_V3_TEACH[key];
+  const titleEl = container.querySelector('#mmV3GTitle');
+  const bodyEl  = container.querySelector('#mmV3GBody');
+  if (!titleEl || !bodyEl) return;
+  container.querySelectorAll('[data-mm-v3-key]').forEach(el => {
+    el.classList.toggle('active', el.getAttribute('data-mm-v3-key') === key);
+  });
+  if (!teach) {
+    titleEl.textContent = label || key;
+    bodyEl.innerHTML = '<p style="color:var(--v3-text-mute, #5a6470);">Open this in a project to see results.</p>';
+    return;
+  }
+  titleEl.textContent = teach.title;
+  bodyEl.innerHTML =
+    '<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#5a6470;margin-bottom:4px;">What this is</div><div style="font-size:14px;line-height:1.5;">' + MM.esc(teach.what) + '</div></div>' +
+    '<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#5a6470;margin-bottom:4px;">When to use it</div><div style="font-size:14px;line-height:1.5;">' + MM.esc(teach.when) + '</div></div>' +
+    '<div style="margin-bottom:14px;"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#5a6470;margin-bottom:4px;">Where it fits</div><div style="font-size:14px;line-height:1.5;">' + MM.esc(teach.fit) + '</div></div>' +
+    '<div style="padding-top:8px;border-top:1px solid #e5e7eb;font-size:12px;color:#5a6470;">To run this on your own data, <a href="#/mm" style="color:#4338ca;" data-mm-action="start-new">start a new project</a> from the cards on the left.</div>';
+}
+
+// Render the methodological sidebar on the landing page. Same data
+// (MM_V3_NAV) as the project shell, but click handlers show teaching
+// content in the right Guidance pane instead of navigating into a
+// workspace (there's no project yet). Section order flips when the user
+// previews Exploratory Sequential, matching the project-page behavior.
+function mmLandingPaintLeftNav(container, design) {
+  const host = container.querySelector('#mmV3LeftNavBody');
+  if (!host) return;
+  const section = (title, items, cls) => {
+    const rows = items.map(e => {
+      let trailing = '';
+      if (e.status) trailing = '<span class="status ' + e.status + '"></span>';
+      else if (e.beta) trailing = '<span class="pill" style="background:#fff4d6;color:#8a5a00;">Beta</span>';
+      return '<div class="mm-v3-nav-item ' + cls + '" data-mm-v3-key="' + e.key + '" data-mm-v3-label="' + MM.esc(e.label) + '">' +
+        '<span class="dot"></span><span class="lbl">' + MM.esc(e.label) + '</span>' + trailing +
+      '</div>';
+    }).join('');
+    return '<div class="mm-v3-leftnav-section ' + cls + '">' + title + '</div>' + rows;
+  };
+  const qualFirst = (design === 'design_b');
+  const analysisSections = qualFirst
+    ? [['Qual Analysis', MM_V3_NAV.qual, 'qual'], ['Quan Analysis', MM_V3_NAV.quant, 'quant']]
+    : [['Quan Analysis', MM_V3_NAV.quant, 'quant'], ['Qual Analysis', MM_V3_NAV.qual, 'qual']];
+  let html = section('Workflow', MM_V3_NAV.workflow, 'workflow');
+  analysisSections.forEach(([t, items, cls]) => { html += '<div class="mm-v3-nav-divider"></div>' + section(t, items, cls); });
+  html +=
+    '<div class="mm-v3-nav-divider"></div>' + section('Integrate', MM_V3_NAV.connect, 'connect') +
+    '<div class="mm-v3-nav-divider"></div>' + section('Defend the Report', MM_V3_NAV.report, 'report');
+  host.innerHTML = html;
+  host.querySelectorAll('[data-mm-v3-key]').forEach(el => {
+    el.addEventListener('click', () => mmLandingShowTeach(container, el.getAttribute('data-mm-v3-key'), el.getAttribute('data-mm-v3-label')));
+  });
+}
+
 async function mmRenderLanding(container) {
-  // Dashboard-style landing for the Studio. Welcome card with a brief
-  // description, four quick-action tiles, recent projects list, recent
-  // activity feed. Distinct from the Home page (purple accent, "Studio"
-  // wordmark, two-column lower area weighted toward projects).
-  container.innerHTML =
+  // Landing uses the same three-column V3 shell as project pages so the
+  // methodological structure (Workflow / Quan / Qual / Integrate / Report)
+  // is always visible — the sidebar is part of the Studio's teaching
+  // surface, not just navigation. Without a project, sidebar clicks show
+  // hand-authored teaching content in the right Guidance pane via
+  // mmLandingShowTeach. The Methods Design dropdown is a *preview* that
+  // flips section order to show what each design's pipeline looks like
+  // before the user commits.
+  mmEnsureV3Styles();
+  const mmLogoSrc = 'MM-Logo.png';
+
+  // Center column content. This is the original landing content (six-stop
+  // banner, quick actions, recent projects, recent activity) — preserved
+  // so users still see the dashboard. It now lives inside the V3 shell's
+  // center column instead of taking up the full width.
+  const centerHTML =
     '<div class="mm-shell">' +
 
     // Six-stop overview banner. Same purple identity as before; the body now
@@ -29832,7 +29951,84 @@ async function mmRenderLanding(container) {
       '</div>' +
     '</div>' +
 
-    '</div>'; // close .mm-shell
+    '</div>'; // close .mm-shell (center column)
+
+  // Wrap the center content in the V3 three-column shell. Left column is
+  // the methodological sidebar (clickable for teaching content); right
+  // column is the ReliCheck Guidance pane that displays that content.
+  container.innerHTML =
+    '<div class="mm-v3-root" id="mmV3Root">' +
+      '<div class="mm-v3-main">' +
+        '<div class="mm-v3-topbar">' +
+          '<div class="mm-v3-topbar-left">' +
+            '<img src="' + mmLogoSrc + '" alt="ReliCheck Mixed Methods Studio" class="mm-v3-topbar-logo" />' +
+          '</div>' +
+          '<div class="mm-v3-ribbon"></div>' +
+          '<div class="mm-v3-project"><div style="font-size:11px;">Studio overview</div><strong>No project open</strong></div>' +
+        '</div>' +
+        '<div class="mm-v3-studio" id="mmV3Studio">' +
+          '<aside class="mm-v3-leftnav" id="mmV3LeftNav">' +
+            '<div class="mm-v3-design-tile">' +
+              '<div class="mm-v3-design-pick">' +
+                '<span class="mm-v3-design-eyebrow">Preview a design</span>' +
+                '<span class="mm-v3-design-pill"><span id="mmV3DesignLabel">Convergent Parallel</span><span class="caret">&#9662;</span></span>' +
+                '<select id="mmV3DesignSelect" aria-label="Preview a methods design">' +
+                  '<option value="design_c">Convergent Parallel</option>' +
+                  '<option value="design_a">Explanatory Sequential</option>' +
+                  '<option value="design_b">Exploratory Sequential</option>' +
+                '</select>' +
+              '</div>' +
+            '</div>' +
+            '<div id="mmV3LeftNavBody"></div>' +
+          '</aside>' +
+          '<main class="mm-v3-workspace" id="mmV3Workspace">' +
+            '<div class="mm-v3-workspace-head">' +
+              '<div class="mm-v3-crumb">Mixed-Methods Studio &middot; <strong>Overview</strong></div>' +
+            '</div>' +
+            '<div id="mmTabBody">' + centerHTML + '</div>' +
+          '</main>' +
+          '<aside class="mm-v3-guidance" id="mmV3Guidance">' +
+            '<button class="mm-v3-guidance-toggle" id="mmV3GuidanceToggle" title="Hide guidance">&rsaquo;</button>' +
+            '<div class="mm-v3-g-eyebrow">ReliCheck Guidance</div>' +
+            '<div class="mm-v3-g-title" id="mmV3GTitle">Welcome to the Studio</div>' +
+            '<div class="mm-v3-g-body" id="mmV3GBody">' +
+              '<p style="margin:0 0 10px;font-size:14px;line-height:1.5;">Mixed-methods research brings numbers and narratives into one structured analysis. The Studio guides you from data to defensible conclusions, with method rules — not AI — in the driver\'s seat.</p>' +
+              '<p style="margin:0 0 10px;font-size:14px;line-height:1.5;"><strong>Click any item in the sidebar</strong> to learn what it does, when to use it, and where it fits in your design.</p>' +
+              '<p style="margin:0;font-size:14px;line-height:1.5;">Use the <em>Preview a design</em> dropdown at the top of the sidebar to see how the order of analyses changes between Explanatory, Exploratory, and Convergent designs.</p>' +
+            '</div>' +
+          '</aside>' +
+        '</div>' +
+        '<button class="mm-v3-guidance-popout" id="mmV3GuidancePopout" title="Show guidance">&lsaquo;</button>' +
+      '</div>' +
+    '</div>';
+
+  // Paint the sidebar (default to Convergent — its sidebar order is the
+  // neutral case, equal weight to quan and qual).
+  mmLandingPaintLeftNav(container, 'design_c');
+
+  // Design preview dropdown — flips section order so the user can see
+  // exactly how the workflow changes between designs without committing.
+  const designSelect = container.querySelector('#mmV3DesignSelect');
+  if (designSelect) {
+    designSelect.addEventListener('change', (e) => {
+      const d = e.target.value;
+      mmLandingPaintLeftNav(container, d);
+      const lbl = container.querySelector('#mmV3DesignLabel');
+      if (lbl) lbl.textContent = (d === 'design_a' ? 'Explanatory Sequential' : d === 'design_b' ? 'Exploratory Sequential' : 'Convergent Parallel');
+    });
+  }
+
+  // Guidance toggle (collapse/expand right pane), parallels project view.
+  const studio = container.querySelector('#mmV3Studio');
+  function applyGuidance() {
+    const collapsed = localStorage.getItem('mmStudio.v3.guidance') === '0';
+    if (studio) studio.classList.toggle('no-guidance', collapsed);
+  }
+  const gtog = container.querySelector('#mmV3GuidanceToggle');
+  if (gtog) gtog.addEventListener('click', () => { try { localStorage.setItem('mmStudio.v3.guidance', '0'); } catch (_) {} applyGuidance(); });
+  const gpop = container.querySelector('#mmV3GuidancePopout');
+  if (gpop) gpop.addEventListener('click', () => { try { localStorage.setItem('mmStudio.v3.guidance', '1'); } catch (_) {} applyGuidance(); });
+  applyGuidance();
 
   // Quick action click handlers.
   const qa = (sel, fn) => { const el = container.querySelector(sel); if (el) el.addEventListener('click', (e) => { e.preventDefault(); fn(); }); };
