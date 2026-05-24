@@ -11550,20 +11550,28 @@ async function renderHome(root) {
   if (!state.homeOrder) state.homeOrder = HOME_DEFAULT_ORDER.slice();
   if (typeof state.homeEditMode !== 'boolean') state.homeEditMode = false;
 
-  root.innerHTML =
-    '<div class="greeting">' +
-      '<h1>' + escapeHtml(greeting()) + ', ' + escapeHtml(name) + '.</h1>' +
-      '<p>What would you like to work on today?</p>' +
-    '</div>' +
-    '<div class="home-customize-bar">' +
-      (state.homeEditMode
-        ? '<button type="button" class="btn ghost small" id="btnHomeReset">Reset to default</button>'
-        : '') +
-      '<button type="button" class="btn ghost small" id="btnHomeCustomize">' +
-        (state.homeEditMode ? 'Done customizing' : 'Customize layout') +
-      '</button>' +
-    '</div>' +
-    '<div class="home-grid' + (state.homeEditMode ? ' edit' : '') + '" id="homeGrid"></div>';
+  // Build the at-a-glance summary line + recent project list for the
+  // Home shell. Both come straight from state.surveys so the topbar and
+  // left-nav match whatever the rest of the app shows.
+  const surveys = Array.isArray(state.surveys) ? state.surveys : [];
+  const drafts  = surveys.filter(s => (s.status || '').toLowerCase() === 'draft').length;
+  const active  = surveys.filter(s => (s.status || '').toLowerCase() !== 'draft').length;
+  const summary =
+    surveys.length + ' project' + (surveys.length === 1 ? '' : 's') +
+    (active ? ' &middot; ' + active + ' active' : '') +
+    (drafts ? ' &middot; ' + drafts + ' draft' + (drafts === 1 ? '' : 's') : '');
+  const recents = surveys
+    .slice()
+    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+    .slice(0, 5);
+
+  swEnsureBuilderShellStyles();
+  root.innerHTML = swBuildHomeShellHTML({
+    greetingHtml: escapeHtml(greeting()) + ', ' + escapeHtml(name) + '.',
+    summary: summary,
+    recents: recents,
+  });
+  swWireHomeShell();
 
   drawHomeGrid();
   wireHomeCustomize();
@@ -15581,6 +15589,14 @@ function swEnsureBuilderShellStyles() {
     '.sw-shell-analyze .analyze-body-wrap { display:block; }',
     '.sw-shell-analyze .analyze-ai-rail { display:none; }',
     '.sw-shell-analyze .analyze-main-col { width:100%; }',
+
+    // Home-specific bits. The ribbon is shown in an educational mode
+    // (no stage active, with an eyebrow label) since Home is the picker,
+    // not a stage itself.
+    '.sw-shell-home .sw-ribbon { opacity:.85; }',
+    '.sw-ribbon-edu { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }',
+    '.sw-ribbon-edu-eyebrow { font:600 9.5px/1 Inter,system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mute); }',
+    '.sw-leftnav-empty { padding:6px 10px; font:400 12px/1.4 Inter,system-ui,sans-serif; color:var(--text-mute); font-style:italic; }',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -15652,6 +15668,106 @@ function swPaintBuilderGuidance(tab) {
   const bodyEl  = document.getElementById('swGBody');
   if (titleEl) titleEl.textContent = g.title;
   if (bodyEl)  bodyEl.innerHTML    = g.html;
+}
+
+// Home shell — same three-column pattern, but Home isn\'t project-scoped
+// so the workflow ribbon is shown in an educational mode (no stage
+// active) and the SSI ring is omitted. Left-nav becomes "Start /
+// Continue / Explore" rather than within-project navigation.
+function swBuildHomeShellHTML(opts) {
+  const greetingHtml = opts.greetingHtml || '';
+  const summary      = opts.summary || '';
+  const recents      = Array.isArray(opts.recents) ? opts.recents.slice(0, 5) : [];
+  const sep = '<span class="sep" aria-hidden="true">&rsaquo;</span>';
+  const stageBtn = (label, route, id) => {
+    const dataRoute = route ? (' data-route="' + route + (id ? '" data-id="' + escapeHtml(id) : '') + '"') : '';
+    return '<button class="sw-stage"' + dataRoute + ' type="button"><span class="dot"></span><span class="lbl">' + label + '</span></button>';
+  };
+  const ribbon =
+    stageBtn('Build')      + sep +
+    stageBtn('Distribute') + sep +
+    stageBtn('Collect')    + sep +
+    stageBtn('Analyze')    + sep +
+    stageBtn('Defend');
+
+  const recentLinks = recents.map(p =>
+    '<a class="sw-leftnav-item" data-route="analyze" data-id="' + escapeHtml(p.id) + '"><span class="dot"></span>' + escapeHtml(p.title || 'Untitled') + '</a>'
+  ).join('') || '<div class="sw-leftnav-empty">No recent projects yet.</div>';
+
+  return '' +
+    '<div class="sw-shell sw-shell-home" id="swShell">' +
+      '<div class="sw-topbar">' +
+        '<div class="sw-topbar-title">' +
+          '<h1>' + greetingHtml + '</h1>' +
+          '<div class="meta">' + summary + '</div>' +
+        '</div>' +
+        '<div class="sw-topbar-spacer"></div>' +
+        '<div class="sw-ribbon-edu" title="Every survey moves through these five stages — Home is where you pick which one to work on.">' +
+          '<span class="sw-ribbon-edu-eyebrow">The journey</span>' +
+          '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sw-studio" id="swStudio">' +
+        '<aside class="sw-leftnav" aria-label="Quick navigation">' +
+          '<div class="sw-leftnav-eyebrow">Home</div>' +
+          '<div class="sw-leftnav-section">' +
+            '<div class="sw-leftnav-section-head">Start</div>' +
+            '<a class="sw-leftnav-item" data-route="create"><span class="dot"></span>Create new project</a>' +
+            '<a class="sw-leftnav-item" data-route="upload-dataset"><span class="dot"></span>Upload data</a>' +
+            '<a class="sw-leftnav-item" data-route="templates"><span class="dot"></span>Pick a template</a>' +
+          '</div>' +
+          '<div class="sw-leftnav-section">' +
+            '<div class="sw-leftnav-section-head">Continue</div>' +
+            recentLinks +
+          '</div>' +
+          '<div class="sw-leftnav-section">' +
+            '<div class="sw-leftnav-section-head">Explore</div>' +
+            '<a class="sw-leftnav-item" data-route="projects"><span class="dot"></span>All projects</a>' +
+            '<a class="sw-leftnav-item" data-route="datasets"><span class="dot"></span>Datasets</a>' +
+            '<a class="sw-leftnav-item" data-route="reports"><span class="dot"></span>Reports</a>' +
+            '<a class="sw-leftnav-item" data-route="ai"><span class="dot"></span>ReliCheck Intelligence</a>' +
+          '</div>' +
+        '</aside>' +
+        '<main class="sw-workspace" id="swWorkspace">' +
+          '<div class="home-customize-bar">' +
+            (state.homeEditMode
+              ? '<button type="button" class="btn ghost small" id="btnHomeReset">Reset to default</button>'
+              : '') +
+            '<button type="button" class="btn ghost small" id="btnHomeCustomize">' +
+              (state.homeEditMode ? 'Done customizing' : 'Customize layout') +
+            '</button>' +
+          '</div>' +
+          '<div class="home-grid' + (state.homeEditMode ? ' edit' : '') + '" id="homeGrid"></div>' +
+        '</main>' +
+        '<aside class="sw-guidance" id="swGuidance" aria-label="Where to start">' +
+          '<button class="sw-guidance-toggle" id="swGuidanceToggle" title="Hide guidance" type="button">&rsaquo;</button>' +
+          '<div class="sw-g-eyebrow"><span>Methodology</span></div>' +
+          '<div class="sw-g-title" id="swGTitle">Where to start today</div>' +
+          '<div class="sw-g-body" id="swGBody">' +
+            '<p>ReliCheck is one platform with several studios. Each studio is a different door into the same data and the same trust journey.</p>' +
+            '<p><strong>Survey Studio</strong> (this workstation) is for building, sending, and analyzing surveys end-to-end. <strong>Mixed-Methods Studio</strong> is for designs where numbers and words travel together. The other studios add doors for tests, 360s, and program evaluation.</p>' +
+            '<p>If you are not sure where to start, the pattern that works for most people: <em>Create a project</em> on the left, or <em>Continue</em> a recent one if the question you carry is already in motion.</p>' +
+            '<p style="color:var(--text-mute);font-size:12.5px;">The five-stage strip in the topbar is the journey every survey runs through. Open a project to see where it is on the journey.</p>' +
+          '</div>' +
+        '</aside>' +
+        '<button class="sw-guidance-popout" id="swGuidancePopout" title="Show guidance" type="button">&lsaquo;</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function swWireHomeShell() {
+  const studio = document.getElementById('swStudio');
+  if (!studio) return;
+  const applyGuidance = () => {
+    let collapsed = false;
+    try { collapsed = localStorage.getItem('sw.home.guidance') === '0'; } catch (_) {}
+    studio.classList.toggle('no-guidance', collapsed);
+  };
+  const toggle = document.getElementById('swGuidanceToggle');
+  if (toggle) toggle.onclick = () => { try { localStorage.setItem('sw.home.guidance', '0'); } catch (_) {} applyGuidance(); };
+  const popout = document.getElementById('swGuidancePopout');
+  if (popout) popout.onclick = () => { try { localStorage.setItem('sw.home.guidance', '1'); } catch (_) {} applyGuidance(); };
+  applyGuidance();
 }
 
 // Per-tab methodology guidance for the Analyze shell right rail. Same
