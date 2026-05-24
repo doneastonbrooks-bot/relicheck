@@ -60,67 +60,25 @@
        its container instead of inflating to its intrinsic min-content,
        which is what was previously letting wide children blow out the
        grid and forcing the centered cap to feel "boxed". */
+    /* === Top-nav layout (Option A: stacked rows) ====================
+       Replaces the previous 2-column grid (240px sidebar + content).
+       Now: row 1 = topnav, row 2 = thin crumbs strip, row 3 = content.
+       The .sidebar element still exists in the DOM but is restyled
+       below as a horizontal top strip. */
     .app {
       display: grid;
-      grid-template-columns: var(--app-sidebar-w, 240px) minmax(0, 1fr);
+      grid-template-rows: 56px auto 1fr;
+      grid-template-columns: minmax(0, 1fr);
       min-height: 100vh; width: 100%;
-      --app-sidebar-w: 240px;
     }
-    .app.sidebar-collapsed { --app-sidebar-w: 56px; }
     .app > main { width: 100%; min-width: 0; }
-
-    /* ==== App sidebar — collapsible ==== */
-    /* When collapsed: hide labels, hide section headers, hide brand
-       wordmark + version pill, hide footer text. Icons remain visible
-       as a 56px-wide rail. Hover tooltips show the label. */
-    .app.sidebar-collapsed .sidebar-brand .brand-logo,
-    .app.sidebar-collapsed .sidebar-brand .tag,
-    .app.sidebar-collapsed .sidebar-section,
-    .app.sidebar-collapsed .sidebar-foot,
-    .app.sidebar-collapsed .nav-item-label { display: none; }
-    .app.sidebar-collapsed .sidebar-brand { padding: 14px 0; justify-content: center; border-bottom: 1px solid var(--side-line); }
-    .app.sidebar-collapsed .nav-item { padding: 10px 0; justify-content: center; gap: 0; position: relative; }
-    .app.sidebar-collapsed .nav-item .icon { margin: 0; }
-    .app.sidebar-collapsed .nav-item:hover::after {
-      content: attr(data-label);
-      position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
-      margin-left: 8px;
-      background: #1a1f2b; color: #fff;
-      padding: 5px 10px; border-radius: 4px;
-      font-size: 12px; white-space: nowrap;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      z-index: 100; pointer-events: none;
-    }
-    /* Collapse / expand toggle — small tab pinned to the right edge of the
-       sidebar, vertically centered. Mirrors the v3 prototype's design. */
-    .sidebar-toggle {
-      position: absolute;
-      top: 50%; right: -12px;
-      transform: translateY(-50%);
-      background: #fff;
-      border: 1px solid var(--border);
-      color: var(--text-mute);
-      width: 24px; height: 32px;
-      border-radius: 0 6px 6px 0;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; line-height: 1;
-      padding: 0;
-      z-index: 22;
-      box-shadow: 1px 0 4px rgba(0,0,0,0.08);
-      transition: background 0.1s, color 0.1s, border-color 0.1s;
-    }
-    .sidebar-toggle:hover {
-      background: #f4f5f7;
-      color: #1a1f2b;
-      border-color: #8b95a3;
-    }
-    .sidebar-toggle .toggle-chev { transition: transform 0.18s; }
-    .app.sidebar-collapsed .sidebar-toggle .toggle-chev { transform: rotate(180deg); }
-    .sidebar-toggle .toggle-label { display: none; }
-    /* Sidebar needs position:relative so the absolutely-positioned toggle anchors correctly. */
-    .sidebar { position: sticky; }
-    .sidebar-foot { position: relative; }
+    /* Collapse class becomes a no-op now that there's no left rail to
+       collapse. Kept so any legacy code that sets the class doesn\'t
+       throw, but it has no visual effect. */
+    .app.sidebar-collapsed { /* no-op */ }
+    /* The old collapse-toggle button is hidden — horizontal nav doesn\'t
+       collapse the same way. */
+    .sidebar-toggle { display: none; }
     /* ============================================================
        MOBILE & RESPONSIVE POLISH
        ============================================================ */
@@ -246,109 +204,189 @@
       }
     }
 
-    /* Sidebar */
+    /* === Sidebar restyled as horizontal top nav (Option A) ===========
+       The DOM element is still <aside class="sidebar"> but it now sits
+       as the first row of the .app grid: 56px tall, full width, sticky.
+       Apple-product-page aesthetic — translucent white with a subtle
+       backdrop blur, navy text, coral active state. */
     .sidebar {
-      background: var(--side-bg);
-      color: var(--side-ink);
-      padding: 20px 0;
-      display: flex; flex-direction: column; gap: 4px;
-      position: sticky; top: 0; height: 100vh; overflow-y: visible;
-      /* overflow visible so the edge toggle tab can escape the right edge */
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      display: flex; flex-direction: row; gap: 22px; align-items: center;
+      position: sticky; top: 0; height: 56px;
+      z-index: 50;
+      overflow: visible;
     }
     .sidebar-brand {
-      display: flex; align-items: center; gap: 10px;
-      padding: 14px 22px 18px;
-      border-bottom: 1px solid var(--side-line);
-      margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+      padding: 0;
+      border-bottom: 0;
+      margin-bottom: 0;
+      flex-shrink: 0;
+      font: 700 17px/1 'Inter', system-ui, sans-serif;
+      color: var(--text);
+      letter-spacing: -0.01em;
     }
-    .sidebar-brand .brand-logo {
-      height: 32px; width: auto; max-width: 100%;
-      display: block;
+    .sidebar-brand .brand-logo { display: none; } /* white logo doesn\'t read on light bg */
+    .sidebar-brand::before {
+      content: 'ReliCheck';
+      color: var(--text);
     }
     .sidebar-brand .tag {
-      font-size: 11px; font-weight: 700;
+      font: 600 9.5px/1 'Inter', system-ui, sans-serif;
       background: var(--primary-soft); color: var(--primary);
-      padding: 2px 8px; border-radius: 999px;
-      margin-left: auto;
+      padding: 3px 6px; border-radius: 4px;
+      margin-left: 0;
       letter-spacing: 0.04em;
     }
-    .sidebar-section {
-      font-size: 14px; font-weight: 700; letter-spacing: 0.1em;
-      text-transform: none; color: var(--side-mute);
-      padding: 14px 22px 6px;
+    /* Section dividers are vertical-mode concepts. Hidden in topnav. */
+    .sidebar-section { display: none; }
+    .sidebar-foot { display: none; }
+    /* The <nav> wrapper inside .sidebar becomes a horizontal flex strip
+       that holds primary nav items + the More dropdown. */
+    .sidebar > nav {
+      display: flex; flex-direction: row; gap: 2px;
+      align-items: center; flex: 1 1 auto; min-width: 0;
+      overflow: visible;
     }
     .nav-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 22px;
-      color: var(--side-ink);
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 12px;
+      color: var(--text-soft);
       text-decoration: none;
-      font-size: 14px; font-weight: 500;
-      border-left: 3px solid transparent;
+      font: 500 13.5px/1 'Inter', system-ui, sans-serif;
+      border-left: 0;
+      border-radius: 8px;
       transition: background 0.12s, color 0.12s;
       cursor: pointer;
+      white-space: nowrap;
     }
-    .nav-item:hover { background: var(--side-line); color: #ffffff; }
+    .nav-item:hover { background: var(--accent-tint); color: var(--text); }
     .nav-item.active {
-      background: var(--side-line); color: #ffffff;
-      border-left-color: var(--primary);
+      background: var(--primary-soft); color: var(--primary);
+      border-left-color: transparent;
+      font-weight: 600;
     }
     .nav-item .icon {
-      width: 20px; height: 20px; flex: 0 0 20px;
-      opacity: 0.85;
+      width: 16px; height: 16px; flex: 0 0 16px;
+      opacity: 0.7;
       display: inline-flex; align-items: center; justify-content: center;
-      color: var(--side-ink);
+      color: currentColor;
     }
     .nav-item .icon svg {
-      width: 18px; height: 18px;
+      width: 14px; height: 14px;
       stroke: currentColor; fill: none;
       stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
     }
-    .nav-item:hover .icon, .nav-item.active .icon { opacity: 1; color: #fff; }
-    .sidebar-foot {
-      margin-top: auto;
-      padding: 16px 22px;
-      border-top: 1px solid var(--side-line);
-      font-size: 14px; color: var(--side-mute);
-    }
-    .sidebar-foot strong { color: #ffffff; display: block; font-size: 14px; }
-    .sidebar-foot a {
-      display: block; margin-top: 8px;
-      color: var(--side-mute); font-size: 14px;
-      text-decoration: none;
-    }
-    .sidebar-foot a:hover { color: #ffffff; }
+    .nav-item:hover .icon, .nav-item.active .icon { opacity: 1; color: currentColor; }
+    /* Items flagged data-priority="more" live in the overflow dropdown,
+       not the main strip. Hidden everywhere except inside .nav-more-panel. */
+    .nav-item[data-priority="more"]:not(.in-more-panel) { display: none; }
 
-    /* Topbar */
+    /* === Overflow "More" dropdown ==================================== */
+    .nav-more {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .nav-more-trigger {
+      padding: 7px 11px;
+      background: transparent;
+      border: 0;
+      color: var(--text-soft);
+      font: 500 13.5px/1 'Inter', system-ui, sans-serif;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      white-space: nowrap;
+    }
+    .nav-more-trigger:hover { background: var(--accent-tint); color: var(--text); }
+    .nav-more-trigger.has-active { color: var(--primary); font-weight: 600; }
+    .nav-more-trigger .chev { font-size: 9px; transition: transform 0.15s; opacity: 0.7; }
+    .nav-more[data-open="1"] .nav-more-trigger { background: var(--primary-soft); color: var(--primary); }
+    .nav-more[data-open="1"] .nav-more-trigger .chev { transform: rotate(180deg); }
+    .nav-more-panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 240px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(11,23,51,0.12), 0 2px 6px rgba(11,23,51,0.06);
+      padding: 6px;
+      z-index: 100;
+      display: none;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+    .nav-more[data-open="1"] .nav-more-panel { display: block; }
+    .nav-more-panel .nav-item.in-more-panel {
+      display: flex !important;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      width: 100%;
+      gap: 9px;
+    }
+    .nav-more-panel .nav-item.in-more-panel .icon { width: 18px; height: 18px; }
+    .nav-more-panel .nav-item.in-more-panel .icon svg { width: 16px; height: 16px; }
+    .nav-more-panel-section {
+      font: 600 10px/1 'Inter', system-ui, sans-serif;
+      letter-spacing: 0.06em;
+      color: var(--text-mute);
+      padding: 10px 10px 4px;
+      text-transform: uppercase;
+    }
+
+    /* === Topbar — slimmed to a thin crumbs strip beneath the topnav.
+       The right side (search/notifs/avatar/user menu) has moved into
+       the topnav itself, so the topbar is just for breadcrumbs now. */
     .topbar {
-      background: var(--panel);
+      background: var(--panel-2);
       border-bottom: 1px solid var(--border);
-      padding: 14px 32px;
+      padding: 7px 22px;
       display: flex; align-items: center; justify-content: space-between;
-      position: sticky; top: 0; z-index: 10;
+      position: sticky; top: 56px; z-index: 9;
       gap: 16px;
+      min-height: 34px;
     }
     .crumbs {
       display: flex; gap: 6px; align-items: center;
-      font-size: 14px; color: var(--text-mute);
+      font-size: 12.5px; color: var(--text-mute);
     }
     .crumbs a { color: var(--text-mute); text-decoration: none; cursor: pointer; }
     .crumbs a:hover { color: var(--text); }
     .crumbs strong { color: var(--text); font-weight: 600; }
     .crumbs .sep { color: var(--border-strong); }
-    .topbar-right { display: flex; gap: 12px; align-items: center; position: relative; }
+    /* topbar-right now lives INSIDE .sidebar (the topnav) as .sidebar-right.
+       Styles below apply there. The original .topbar-right selectors are
+       kept as aliases in case any legacy code still queries them. */
+    .sidebar-right, .topbar-right {
+      display: flex; gap: 8px; align-items: center; position: relative;
+      flex-shrink: 0;
+    }
     .topbar-btn {
-      width: 36px; height: 36px; border-radius: 8px;
+      width: 30px; height: 30px; border-radius: 7px;
       border: 1px solid var(--border); background: var(--panel);
       display: flex; align-items: center; justify-content: center;
       cursor: pointer; color: var(--text-mute);
-      font-size: 16px;
+      font-size: 13px;
+      transition: background 0.12s, color 0.12s;
     }
-    .topbar-btn:hover { background: var(--bg); color: var(--text); }
+    .topbar-btn:hover { background: var(--accent-tint); color: var(--text); border-color: var(--border-strong); }
     .avatar {
-      width: 36px; height: 36px; border-radius: 50%;
+      width: 30px; height: 30px; border-radius: 50%;
       background: linear-gradient(135deg, var(--primary), var(--primary-2));
       display: flex; align-items: center; justify-content: center;
-      color: #ffffff; font-weight: 700; font-size: 13px;
+      color: #ffffff; font-weight: 700; font-size: 11.5px;
       cursor: pointer; user-select: none;
     }
     /* User menu */
@@ -5564,36 +5602,50 @@
 
 <div class="app" id="appRoot" style="display:none;">
 
-  <!-- Sidebar -->
+  <!-- Top nav (Option A: horizontal stacked layout). The element is still
+       named .sidebar so existing JS keeps working, but it's now the first
+       row of the .app grid. data-priority="primary" marks the 6 inline
+       items; everything else gets moved into the More dropdown at boot. -->
   <aside class="sidebar" aria-label="Workspace navigation">
     <div class="sidebar-brand">
       <img src="/logo-brand-white.svg" alt="ReliCheck" class="brand-logo" />
       <span class="tag" aria-hidden="true">2.0</span>
     </div>
     <nav role="navigation" aria-label="Main menu">
-    <a class="nav-item" data-route="home" role="tab" aria-selected="false" tabindex="0"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 11L12 4l9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span>Home</a>
-    <a class="nav-item" data-route="projects" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Projects</a>
-    <a class="nav-item" data-route="datasets" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>Datasets</a>
-    <a class="nav-item" data-route="tests" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg></span>Tests</a>
-    <a class="nav-item" data-route="create" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>Create / Upload</a>
-    <a class="nav-item" data-route="builder" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 7l3-3 4 4-3 3"/><path d="M14 7l-9 9v4h4l9-9"/></svg></span>Builder</a>
-    <a class="nav-item" data-route="analyze" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></span>Analyze</a>
-    <a class="nav-item" data-route="distribute" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span>Distribute</a>
-    <a class="nav-item" data-route="reports" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h8M8 9h3"/></svg></span>Reports</a>
+    <a class="nav-item" data-priority="primary" data-route="home" role="tab" aria-selected="false" tabindex="0"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 11L12 4l9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></span>Home</a>
+    <a class="nav-item" data-priority="primary" data-route="projects" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span>Projects</a>
+    <a class="nav-item" data-priority="more" data-route="datasets" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></span>Datasets</a>
+    <a class="nav-item" data-priority="more" data-route="tests" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg></span>Tests</a>
+    <a class="nav-item" data-priority="more" data-route="create" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></span>Create / Upload</a>
+    <a class="nav-item" data-priority="primary" data-route="builder" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M14 7l3-3 4 4-3 3"/><path d="M14 7l-9 9v4h4l9-9"/></svg></span>Builder</a>
+    <a class="nav-item" data-priority="primary" data-route="analyze" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></span>Analyze</a>
+    <a class="nav-item" data-priority="primary" data-route="distribute" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg></span>Distribute</a>
+    <a class="nav-item" data-priority="primary" data-route="reports" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M8 13h8M8 17h8M8 9h3"/></svg></span>Reports</a>
 
-    <div class="sidebar-section" aria-hidden="true">Tools</div>
-    <a class="nav-item" data-route="templates" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>Templates</a>
-    <a class="nav-item" data-route="ai" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 5.4 5.6.6-4.3 4 1.2 5.8L12 14.8l-4.9 3 1.2-5.8L4 8l5.6-.6z"/></svg></span>ReliCheck Intelligence</a>
-    <a class="nav-item" data-route="mm" role="tab" aria-selected="false" tabindex="-1" data-draft-only="1" style="display:none;"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="16" r="3"/><path d="M10 8h7M7 11v5"/></svg></span>MM Studio (BETA)</a>
-    <a class="nav-item" data-route="webhooks" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="12" cy="6" r="3"/><path d="M9 18h6M10 8.5l-4 6.5M14 8.5l4 6.5"/></svg></span>Webhooks</a>
-    <a class="nav-item" data-route="panels" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>Panels (360)</a>
-    <a class="nav-item" data-route="suites" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Suites</a>
+    <div class="sidebar-section" data-more-section="Tools" aria-hidden="true">Tools</div>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="templates" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></span>Templates</a>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="ai" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 5.4 5.6.6-4.3 4 1.2 5.8L12 14.8l-4.9 3 1.2-5.8L4 8l5.6-.6z"/></svg></span>ReliCheck Intelligence</a>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="mm" role="tab" aria-selected="false" tabindex="-1" data-draft-only="1" style="display:none;"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="7" cy="8" r="3"/><circle cx="17" cy="16" r="3"/><path d="M10 8h7M7 11v5"/></svg></span>MM Studio (BETA)</a>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="webhooks" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><circle cx="12" cy="6" r="3"/><path d="M9 18h6M10 8.5l-4 6.5M14 8.5l4 6.5"/></svg></span>Webhooks</a>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="panels" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></span>Panels (360)</a>
+    <a class="nav-item" data-priority="more" data-more-section="Tools" data-route="suites" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>Suites</a>
 
-    <div class="sidebar-section" aria-hidden="true">Workspace</div>
-    <a class="nav-item" data-route="team" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M14 20c0-2 2-3.5 4-3.5s3.5 1.5 3.5 3.5"/></svg></span>Team</a>
-    <a class="nav-item" data-route="manager" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/><path d="M15 4l2 2-2 2"/></svg></span>Manager</a>
-    <a class="nav-item" data-route="account" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></span>Account</a>
-    <a class="nav-item" data-route="help" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg></span>Help</a>
+    <div class="sidebar-section" data-more-section="Workspace" aria-hidden="true">Workspace</div>
+    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="team" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/><path d="M14 20c0-2 2-3.5 4-3.5s3.5 1.5 3.5 3.5"/></svg></span>Team</a>
+    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="manager" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-6 7-6s7 2 7 6"/><path d="M15 4l2 2-2 2"/></svg></span>Manager</a>
+    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="account" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/></svg></span>Account</a>
+    <a class="nav-item" data-priority="more" data-more-section="Workspace" data-route="help" role="tab" aria-selected="false" tabindex="-1"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/><circle cx="12" cy="17" r="0.6" fill="currentColor"/></svg></span>Help</a>
+
+    <!-- More dropdown trigger + panel. Panel is populated at boot by
+         hoisting every [data-priority="more"] item into it; the items
+         retain their data-route attributes so click handling stays in
+         one place. -->
+    <div class="nav-more" id="navMore">
+      <button type="button" class="nav-more-trigger" id="navMoreTrigger" aria-haspopup="true" aria-expanded="false">
+        More <span class="chev" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="nav-more-panel" id="navMorePanel" role="menu"></div>
+    </div>
     </nav>
 
     <div class="sidebar-foot">
@@ -5602,27 +5654,32 @@
     <button type="button" class="sidebar-toggle" id="appSidebarToggle" title="Collapse sidebar" aria-label="Toggle sidebar">
       <span class="toggle-chev">&lsaquo;</span>
     </button>
+
+    <!-- Right side of the topnav: search, notifications, avatar, user
+         menu. Moved here from .topbar so the avatar sits in the same
+         row as the brand + nav (Option A layout). IDs unchanged so all
+         existing handlers keep working. -->
+    <div class="sidebar-right">
+      <button class="topbar-btn" id="btnSearch" aria-label="Search" type="button">S</button>
+      <button class="topbar-btn" id="btnNotifs" aria-label="Notifications" type="button">N</button>
+      <div class="avatar" id="userAvatar" tabindex="0" role="button" aria-label="Account menu">--</div>
+      <div class="user-menu" id="userMenu" style="display:none;">
+        <div class="um-head">
+          <div class="um-name" id="umName">User</div>
+          <div class="um-email" id="umEmail">email</div>
+        </div>
+        <a class="um-item" data-route="account">Account &amp; settings</a>
+        <a class="um-item" data-route="team">Team workspace</a>
+        <div class="um-divider"></div>
+        <a class="um-item danger" id="umLogout">Log out</a>
+      </div>
+    </div>
   </aside>
 
   <!-- Main -->
   <main>
     <div class="topbar">
       <div class="crumbs" id="crumbs"><strong>Home</strong></div>
-      <div class="topbar-right">
-        <button class="topbar-btn" id="btnSearch" aria-label="Search" type="button">S</button>
-        <button class="topbar-btn" id="btnNotifs" aria-label="Notifications" type="button">N</button>
-        <div class="avatar" id="userAvatar" tabindex="0" role="button" aria-label="Account menu">--</div>
-        <div class="user-menu" id="userMenu" style="display:none;">
-          <div class="um-head">
-            <div class="um-name" id="umName">User</div>
-            <div class="um-email" id="umEmail">email</div>
-          </div>
-          <a class="um-item" data-route="account">Account &amp; settings</a>
-          <a class="um-item" data-route="team">Team workspace</a>
-          <div class="um-divider"></div>
-          <a class="um-item danger" id="umLogout">Log out</a>
-        </div>
-      </div>
     </div>
 
     <div class="content" id="content">
@@ -15543,7 +15600,7 @@ function swEnsureBuilderShellStyles() {
   s.id = 'swBuilderShellStyles';
   s.textContent = [
     // Tokens reuse the global ones; the namespace just protects layout.
-    '.sw-shell { display:flex; flex-direction:column; height:calc(100vh - 96px); overflow:hidden; background:var(--bg-soft); }',
+    '.sw-shell { display:flex; flex-direction:column; height:calc(100vh - 110px); overflow:hidden; background:var(--bg-soft); }',
     '.sw-shell * { box-sizing:border-box; }',
 
     // Topbar = title block + workflow ribbon. Survey-level chrome.
@@ -46503,6 +46560,83 @@ function mmShowNotesPanel(projectId, sectionKey, initialNotes, onCountChange) {
       });
     }
     apply();
+
+    // ====== Topnav "More" dropdown =======================================
+    // Hoist every [data-priority="more"] nav-item into the dropdown panel,
+    // grouped by the data-more-section label so the panel reads like the
+    // old sidebar sections (Tools / Workspace). The original click handlers
+    // (which key off data-route) still fire because we move the same DOM
+    // nodes — not clones.
+    (function initNavMore() {
+      const panel = document.getElementById('navMorePanel');
+      const trigger = document.getElementById('navMoreTrigger');
+      const navMore = document.getElementById('navMore');
+      const nav = document.querySelector('.sidebar > nav');
+      if (!panel || !trigger || !navMore || !nav) return;
+
+      const moreItems = Array.from(nav.querySelectorAll('[data-priority="more"]'));
+      // Group by section, preserving original order within each group.
+      const sections = [];
+      const seen = new Map();
+      moreItems.forEach(it => {
+        const sec = it.getAttribute('data-more-section') || 'More';
+        if (!seen.has(sec)) { seen.set(sec, []); sections.push(sec); }
+        seen.get(sec).push(it);
+      });
+      // Drop the old in-strip section headers; we\'ll rebuild them inside
+      // the panel as .nav-more-panel-section headings.
+      nav.querySelectorAll('[data-more-section].sidebar-section').forEach(el => el.remove());
+
+      sections.forEach(secName => {
+        const head = document.createElement('div');
+        head.className = 'nav-more-panel-section';
+        head.textContent = secName;
+        panel.appendChild(head);
+        seen.get(secName).forEach(item => {
+          item.classList.add('in-more-panel');
+          panel.appendChild(item);
+        });
+      });
+
+      // Toggle the panel open/closed.
+      const setOpen = (open) => {
+        navMore.setAttribute('data-open', open ? '1' : '0');
+        trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setOpen(navMore.getAttribute('data-open') !== '1');
+      });
+      // Click anywhere else closes the panel. Items inside use the global
+      // data-route nav delegation, so we also close on item click via the
+      // same path.
+      document.addEventListener('click', (e) => {
+        if (!navMore.contains(e.target)) setOpen(false);
+      });
+      panel.addEventListener('click', (e) => {
+        if (e.target.closest('.nav-item')) setOpen(false);
+      });
+      // Esc closes.
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && navMore.getAttribute('data-open') === '1') setOpen(false);
+      });
+
+      // When the active route lives inside the More panel, mark the
+      // trigger so the user can see at a glance that they\'re in a
+      // secondary route. Observer watches the .active class on the
+      // hoisted items.
+      const refreshHasActive = () => {
+        const anyActive = !!panel.querySelector('.nav-item.active');
+        trigger.classList.toggle('has-active', anyActive);
+      };
+      refreshHasActive();
+      try {
+        const mo = new MutationObserver(refreshHasActive);
+        panel.querySelectorAll('.nav-item').forEach(it => {
+          mo.observe(it, { attributes: true, attributeFilter: ['class'] });
+        });
+      } catch (_) {}
+    })();
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
