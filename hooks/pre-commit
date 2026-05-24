@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+# Pre-commit safety net for ReliCheck.
+#
+# Runs on every `git commit`. Blocks commits that:
+#   1. Introduce JS syntax errors in app-2026.html
+#   2. Cause dei.xlsx regression-test values to drift
+#   3. Cause test-retest regression-test values to drift
+#
+# This is the first line of defense between AI/manual edits and the
+# 15-second auto-upload to production. If any check fails, the commit is
+# rejected and you fix the issue before the file lands on Ionos.
+
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+CHANGED=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$CHANGED" ]; then
+  exit 0
+fi
+
+# --- 1. JS syntax check on app-2026.html if it changed ---
+if echo "$CHANGED" | grep -q "^app-2026.html$"; then
+  echo "[pre-commit] Checking JS syntax in app-2026.html..."
+  if ! command -v node >/dev/null 2>&1; then
+    echo "  [SKIP] node not installed — install with: brew install node"
+  else
+    TMPJS=$(mktemp /tmp/relicheck-precommit.XXXXXX.js)
+    awk '/<script/,/<\/script>/' app-2026.html | grep -v '^<script\|^</script>' > "$TMPJS"
+    if ! node --check "$TMPJS" 2>&1; then
+      echo "  [FAIL] JS syntax error in app-2026.html — commit blocked."
+      rm -f "$TMPJS"
+      exit 1
+    fi
+    rm -f "$TMPJS"
+    echo "  [OK] JS parses."
+  fi
+fi
+
+# --- 2. Regression tests on test_data fixtures ---
+# Only run if a Python venv with pandas/scipy is available. Skip cleanly
+# otherwise so committing doc-only changes from elsewhere isn't blocked.
+VENV_PY="/tmp/relicheck_stats_venv/bin/python3"
+if [ -x "$VENV_PY" ]; then
+  if echo "$CHANGED" | grep -qE "^(app-2026.html|test_data/)"; then
+    echo "[pre-commit] Running dei regression checks..."
+    if ! "$VENV_PY" test_data/verify_dei_analyses.py >/dev/null 2>&1; then
+      echo "  [FAIL] dei reference values drifted. Run:"
+      echo "    $VENV_PY test_data/verify_dei_analyses.py"
+      echo "  to see what changed. Commit blocked."
+      exit 1
+    fi
+    echo "  [OK] dei values match fixture."
+
+    echo "[pre-commit] Running test-retest regression checks..."
+    if ! "$VENV_PY" test_data/verify_test_retest.py >/dev/null 2>&1; then
+      echo "  [FAIL] test-retest reference values drifted. Run:"
+      echo "    $VENV_PY test_data/verify_test_retest.py"
+      echo "  to see what changed. Commit blocked."
+      exit 1
+    fi
+    echo "  [OK] test-retest values match fixture."
+  fi
+else
+  echo "[pre-commit] Stats venv missing at $VENV_PY — skipping regression checks."
+  echo "  (Recreate with: python3 -m venv /tmp/relicheck_stats_venv && /tmp/relicheck_stats_venv/bin/pip install pandas scipy openpyxl)"
+fi
+
+echo "[pre-commit] All checks passed."
+exit 0
