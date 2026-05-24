@@ -21,12 +21,26 @@ These are working. Don't dilute them.
 
 These are the gaps. Each is fixable; each matters.
 
-### 1. The *anonymous* homepage doesn't carry the positioning weight
+### 1. The *anonymous* homepage doesn't yet carry the positioning weight
 **Important distinction:** there are two first screens with two different jobs.
 - The **logged-in dashboard** ("What would you like to work on today?" + Quick Actions) is for someone who's already chosen ReliCheck and wants to start work. That line is *good* on this surface — warm, personal, respects the user's agency. Keep it.
-- The **anonymous homepage** at relichecksurvey.com (for someone who's never heard of ReliCheck) is where the positioning weight belongs. That's the surface that needs the moment-of-doubt language: *Your survey is in. The numbers look right. Are they strong enough to support the decision you're about to make?* — not a feature pitch.
+- The **anonymous homepage** at relichecksurvey.com (for someone who's never heard of ReliCheck) is where the positioning weight belongs. The same hero line — *"What would you like to work on today?"* — can carry this surface too, with the positioning living in the subhead rather than the hero.
 
-The original drift in this analysis was applying the positioning critique to the dashboard. Correction: dashboard is fine; the *anonymous landing page* is the one that needs to do the positioning work.
+**Why the question works as a marketing hero (not just a dashboard greeting):**
+- It positions the user as the agent, not the target — same stance the vision document takes
+- It speaks the internal monologue of the audience (researchers, evaluators, educators, leaders all think in terms of "what am I working on")
+- It self-selects: visitors not in that headspace get a soft signal that this isn't for them
+- It opens space for the positioning to land in the supporting copy, where it reads as *relevant* rather than as *sales*
+
+**Sketch of how this lands on the marketing homepage:**
+
+> ## What would you like to work on today?
+>
+> Whether you're checking that your survey is strong enough to defend, comparing groups, building a 360 process that actually drives growth, or asking whether your evidence can carry a real decision — ReliCheck is for the moment between collecting your data and acting on it.
+>
+> [See how it works] [Start free]
+
+The question carries the warmth and the invitation. The subhead carries the positioning. The CTAs carry the path forward. Nothing in the incumbent category (Qualtrics / SurveyMonkey / SPSS) reads anything like this.
 
 ### 2. The Strength Index is buried as a tab
 The composite credibility score is the most distinctive thing the platform does. It currently sits as the first tab in a strip of 13. It should be the **headline outcome** of any analysis — visible on every project card, in the project header, in the report. Right now the user has to know to click it. That undersells the differentiator.
