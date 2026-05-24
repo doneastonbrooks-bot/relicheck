@@ -25064,22 +25064,45 @@ function parseDelimitedText(text, delim) {
 }
 
 function inferColumnMeta(parsed, k) {
-  // Classic's dataset endpoint validates column_meta.type and only accepts
-  // 'likert' or 'open'. Anything else fails the whole save. Non-Likert columns
-  // (text labels, IDs, etc.) get stored as 'open' and the analytics tabs
-  // (Compare grouping, Pre/Post wave detection, etc.) figure out what to do
-  // with them at read-time based on actual values, not on the stored type.
+  // The dataset endpoint accepts 'likert' | 'single' | 'multi' | 'open' |
+  // 'ignore'. We detect three of them automatically:
+  //   - 'likert': numeric column where values fit a 1..k scale AND the
+  //               distinct value count is large enough to look like a
+  //               scale rather than a small set of category codes.
+  //   - 'single': numeric or string column with a small set of distinct
+  //               values that look like categories (e.g. Gender coded
+  //               1/2/3, Department codes, Likert-looking ints with only
+  //               2-3 distinct values which are almost certainly groups).
+  //   - 'open':   everything else (free text, IDs, long strings).
+  // The user can override any of these in the wizard's "Confirm what we
+  // found" step — auto-detect *proposes*, the user *confirms*.
   return parsed.headers.map((name, i) => {
-    const sample = parsed.rows.slice(0, 50).map(r => r[i]);
-    let likertish = 0, total = 0;
-    for (const v of sample) {
-      const s = String(v == null ? '' : v).trim();
+    // Scan ALL rows to find distinct values; small samples can miss a
+    // categorical that has rare 4th/5th codes.
+    const distinct = new Set();
+    let nonEmpty = 0;
+    let intInRange = 0;
+    let allInteger = true;
+    for (const row of parsed.rows) {
+      const s = String((row && row[i]) == null ? '' : row[i]).trim();
       if (s === '') continue;
-      total++;
+      nonEmpty++;
+      distinct.add(s);
       const n = Number(s);
-      if (Number.isFinite(n) && n >= 1 && n <= k && Math.round(n) === n) likertish++;
+      if (!Number.isFinite(n) || Math.round(n) !== n) allInteger = false;
+      if (Number.isFinite(n) && n >= 1 && n <= k && Math.round(n) === n) intInRange++;
     }
-    const type = (total > 0 && likertish / total >= 0.8) ? 'likert' : 'open';
+    let type = 'open';
+    if (nonEmpty > 0 && allInteger && distinct.size >= 2 && distinct.size <= 7) {
+      // Small set of integer codes — almost certainly categorical groups
+      // (Gender 1/2/3, Department 1-5, etc.). Even if the values fall in
+      // 1..k, low cardinality means it's not a real Likert scale.
+      type = 'single';
+    } else if (nonEmpty > 0 && (intInRange / nonEmpty) >= 0.8 && distinct.size >= Math.max(3, Math.floor(k / 2))) {
+      // 80%+ of values fit the Likert range AND we see at least half the
+      // scale points used. Real Likert items use most of their range.
+      type = 'likert';
+    }
     return { name: name, type: type, reverse: false, construct: '' };
   });
 }
@@ -30911,27 +30934,99 @@ function mmWizardStep4Upload(body) {
     MM.wizard.fieldMap = { response_id: '', open: [firstHeader], closed: [], outcome: [], group: [], time: [] };
   }
 
-  const counts = { likert: 0, open: 0 };
+  // Compute per-column hints (distinct value count, sample values) so the
+  // user has context when picking a role. This is data-aware — the same
+  // pass that inferColumnMeta makes, surfaced for human review.
+  const hints = parsed.headers.map((name, i) => {
+    const distinct = new Set();
+    let nonEmpty = 0;
+    for (const row of parsed.rows) {
+      const s = String((row && row[i]) == null ? '' : row[i]).trim();
+      if (s === '') continue;
+      nonEmpty++;
+      distinct.add(s);
+      if (distinct.size > 12) break; // we only need to know "more than 12"
+    }
+    // Re-scan to actually count distinct fully (cheap if small)
+    if (distinct.size <= 12) {
+      distinct.clear();
+      for (const row of parsed.rows) {
+        const s = String((row && row[i]) == null ? '' : row[i]).trim();
+        if (s !== '') distinct.add(s);
+      }
+    }
+    const sampleVals = Array.from(distinct).slice(0, 5).join(', ');
+    const more = distinct.size > 5 ? ' …' : '';
+    return { distinct: distinct.size, sample: sampleVals + more };
+  });
+
+  const counts = { likert: 0, single: 0, open: 0, ignore: 0 };
   meta.forEach(m => { if (counts[m.type] != null) counts[m.type]++; });
   const summaryParts = [];
   if (counts.likert) summaryParts.push(counts.likert + ' Likert');
+  if (counts.single) summaryParts.push(counts.single + ' group');
   if (counts.open)   summaryParts.push(counts.open + ' open / text');
   summaryParts.push(parsed.rows.length + ' rows');
 
+  const TYPE_OPTIONS = [
+    { value: 'likert', label: 'Likert scale item' },
+    { value: 'single', label: 'Categorical group' },
+    { value: 'open',   label: 'Open text / ID' },
+    { value: 'ignore', label: 'Ignore this column' }
+  ];
+
+  const rowsHtml = meta.map((m, i) => {
+    const h = hints[i];
+    const distinctLabel = (h.distinct > 12 ? '12+' : String(h.distinct)) + (h.distinct === 1 ? ' value' : ' values');
+    const opts = TYPE_OPTIONS.map(o =>
+      '<option value="' + o.value + '"' + (o.value === m.type ? ' selected' : '') + '>' + MM.esc(o.label) + '</option>'
+    ).join('');
+    return '<tr data-mm-col-idx="' + i + '" style="border-bottom:1px solid #f0f2f4;">' +
+      '<td style="padding:8px 10px 8px 0;vertical-align:top;">' +
+        '<div style="font-weight:600;color:#1f2937;font-size:13px;">' + MM.esc(m.name) + '</div>' +
+        '<div style="color:#5a6470;font-size:11px;margin-top:2px;">' + MM.esc(distinctLabel) + (h.sample ? ' · ' + MM.esc(h.sample) : '') + '</div>' +
+      '</td>' +
+      '<td style="padding:8px 0;vertical-align:top;width:200px;">' +
+        '<select class="mm-col-type" data-idx="' + i + '" style="width:100%;padding:6px 8px;border:1px solid #d3d8de;border-radius:6px;font-size:13px;background:#fff;">' + opts + '</select>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
   body.innerHTML =
-    '<p style="color:#5a6470;margin:0 0 12px;">Here is what we found. Click Continue to upload it as a ReliCheck dataset. The Studio reads it directly &mdash; no flattening, no field map. Multi-Likert columns stay intact for Reliability and Validity.</p>' +
+    '<p style="color:#5a6470;margin:0 0 12px;">Here is what we found. <strong>We made guesses</strong> based on each column\'s values — please confirm or change them. The Studio will use these roles for every analysis downstream.</p>' +
     '<div class="card" style="padding:18px;">' +
       '<h3 style="margin:0 0 6px;font-size:16px;">' + MM.esc(parsed.filename || 'Uploaded file') + '</h3>' +
-      '<p style="margin:0 0 12px;color:#5a6470;font-size:13px;">' + MM.esc(summaryParts.join(' . ')) + '</p>' +
-      '<div style="font-size:11px;font-weight:600;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">Columns</div>' +
-      '<ul style="margin:0;padding-left:20px;font-size:13px;color:#3a4252;max-height:240px;overflow:auto;">' +
-        meta.map(m => '<li><strong>' + MM.esc(m.name) + '</strong> <span style="color:#5a6470;">(' + MM.esc(m.type) + ')</span></li>').join('') +
-      '</ul>' +
-      '<p style="margin:14px 0 0;color:#5a6470;font-size:12px;">Likert columns drive Reliability and Validity. Open / text columns are available for qualitative coding on the Qual Analysis tab.</p>' +
+      '<p style="margin:0 0 14px;color:#5a6470;font-size:13px;">' + MM.esc(summaryParts.join(' · ')) + '</p>' +
+      '<div style="max-height:360px;overflow:auto;border:1px solid #f0f2f4;border-radius:8px;">' +
+        '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+          '<thead><tr style="background:#fafbfc;border-bottom:1px solid #e5e7eb;">' +
+            '<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;">Column</th>' +
+            '<th style="text-align:left;padding:8px 0;font-size:11px;font-weight:700;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;">Role</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div>' +
+      '<p style="margin:14px 0 0;color:#5a6470;font-size:12px;">' +
+        '<strong>Likert</strong> drives Reliability and Validity. ' +
+        '<strong>Categorical group</strong> is for variables like Gender or Department (use as a grouping variable in comparisons). ' +
+        '<strong>Open text</strong> is for free-response answers and IDs. ' +
+        '<strong>Ignore</strong> excludes the column from analyses.' +
+      '</p>' +
     '</div>';
 
   // Stash the inferred meta so the advance step doesn't redo the work.
   MM.wizard.uploadColumnMeta = meta;
+
+  // Wire the dropdowns: any change mutates the stashed meta in place so
+  // the dataset save uses the user's final choices, not the auto-guesses.
+  body.querySelectorAll('select.mm-col-type').forEach(sel => {
+    sel.addEventListener('change', (e) => {
+      const idx = Number(e.target.getAttribute('data-idx'));
+      if (Number.isFinite(idx) && MM.wizard.uploadColumnMeta[idx]) {
+        MM.wizard.uploadColumnMeta[idx].type = e.target.value;
+      }
+    });
+  });
 }
 
 function mmWizardStep4Paste(body) {
