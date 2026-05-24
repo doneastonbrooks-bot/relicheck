@@ -11799,28 +11799,34 @@ async function renderHome(root) {
   if (!state.homeOrder) state.homeOrder = HOME_DEFAULT_ORDER.slice();
   if (typeof state.homeEditMode !== 'boolean') state.homeEditMode = false;
 
-  // Build the at-a-glance summary line + recent project list for the
-  // Home shell. Both come straight from state.surveys so the topbar and
-  // left-nav match whatever the rest of the app shows.
+  // Live counts for the landing's stats strip — read straight off
+  // state.surveys so the numbers always match the rest of the app.
   const surveys = Array.isArray(state.surveys) ? state.surveys : [];
   const drafts  = surveys.filter(s => (s.status || '').toLowerCase() === 'draft').length;
   const active  = surveys.filter(s => (s.status || '').toLowerCase() !== 'draft').length;
-  const summary =
-    surveys.length + ' project' + (surveys.length === 1 ? '' : 's') +
-    (active ? ' &middot; ' + active + ' active' : '') +
-    (drafts ? ' &middot; ' + drafts + ' draft' + (drafts === 1 ? '' : 's') : '');
-  const recents = surveys
-    .slice()
-    .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
-    .slice(0, 5);
+  const responses = surveys.reduce((sum, s) => sum + (Number(s.response_count) || 0), 0);
 
+  // Survey Studio landing hero on top, then the existing customizable
+  // home dashboard grid below it. Sw-shell is intentionally NOT used on
+  // Home — the landing is the front door and the grid is the daily-work
+  // surface that scrolls into view beneath it. The landing CSS uses a
+  // negative top/side margin so it bleeds to the edges of #content.
   swEnsureBuilderShellStyles();
-  root.innerHTML = swBuildHomeShellHTML({
-    greetingHtml: escapeHtml(greeting()) + ', ' + escapeHtml(name) + '.',
-    summary: summary,
-    recents: recents,
-  });
-  swWireHomeShell();
+  swEnsureLandingStyles();
+  root.innerHTML =
+    swBuildSurveyLandingHTML({
+      name: name,
+      counts: { active: active, drafts: drafts, responses: responses },
+    }) +
+    '<div class="home-customize-bar">' +
+      (state.homeEditMode
+        ? '<button type="button" class="btn ghost small" id="btnHomeReset">Reset to default</button>'
+        : '') +
+      '<button type="button" class="btn ghost small" id="btnHomeCustomize">' +
+        (state.homeEditMode ? 'Done customizing' : 'Customize layout') +
+      '</button>' +
+    '</div>' +
+    '<div class="home-grid' + (state.homeEditMode ? ' edit' : '') + '" id="homeGrid"></div>';
 
   drawHomeGrid();
   wireHomeCustomize();
@@ -15937,6 +15943,147 @@ function swPaintBuilderGuidance(tab) {
   const bodyEl  = document.getElementById('swGBody');
   if (titleEl) titleEl.textContent = g.title;
   if (bodyEl)  bodyEl.innerHTML    = g.html;
+}
+
+// Inject the studio-landing styles once. Scoped under .sw-landing so the
+// page-wide bleeds (asymmetric blob, watermark letters, full-width grid)
+// can never leak into other routes. Mirrors the studio-landing-preview.html
+// file the user approved.
+function swEnsureLandingStyles() {
+  if (document.getElementById('swLandingStyles')) return;
+  const s = document.createElement('style');
+  s.id = 'swLandingStyles';
+  s.textContent = [
+    // Per-studio palette — applied via data-studio on .sw-landing. Survey
+    // Studio is the platform default so its tokens match the global ones,
+    // but we set them explicitly here for clarity + parity with MM/Test/360
+    // when those land.
+    '.sw-landing[data-studio="survey"]   { --la-accent:#e85d3a; --la-accent-hover:#cc4a2a; --la-accent-soft:#fdeee9; --la-accent-tint:#fff7f3; --la-accent-deep:#a83e23; }',
+    '.sw-landing[data-studio="mm"]       { --la-accent:#7c3aed; --la-accent-hover:#6d28d9; --la-accent-soft:#f0e7ff; --la-accent-tint:#faf6ff; --la-accent-deep:#5b21b6; }',
+    '.sw-landing[data-studio="testitem"] { --la-accent:#2563eb; --la-accent-hover:#1d4ed8; --la-accent-soft:#e0ecff; --la-accent-tint:#f4f8ff; --la-accent-deep:#1e40af; }',
+    '.sw-landing[data-studio="360"]      { --la-accent:#0d9488; --la-accent-hover:#0b7f74; --la-accent-soft:#d2f0ec; --la-accent-tint:#f0faf8; --la-accent-deep:#0f766e; }',
+
+    '.sw-landing { position:relative; background:linear-gradient(180deg, #ffffff 0%, var(--la-accent-tint) 100%); padding:0; overflow:hidden; margin:-32px clamp(-56px,-3vw,-24px) 32px; border-radius:0 0 16px 16px; }',
+    '.sw-landing * { box-sizing:border-box; }',
+
+    // Asymmetric brand blob anchors the studio identity top-left.
+    '.sw-landing .la-blob { position:absolute; top:-40px; left:-40px; width:220px; height:180px; background:var(--la-accent); border-radius:0 0 60% 35% / 0 0 100% 70%; z-index:1; box-shadow:0 8px 24px rgba(11,23,51,0.10); }',
+    '.sw-landing .la-blob::after { content:""; position:absolute; bottom:28px; left:48px; width:44px; height:44px; border-radius:50%; background:#fff; display:block; }',
+    '.sw-landing .la-blob-icon { position:absolute; top:88px; left:48px; width:44px; height:44px; display:flex; align-items:center; justify-content:center; color:var(--la-accent); z-index:2; }',
+    '.sw-landing .la-blob-icon svg { width:22px; height:22px; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }',
+
+    // Faded watermark letters scattered behind. Decorative texture only.
+    '.sw-landing .la-wm { position:absolute; opacity:0.06; color:var(--la-accent); font:800 80px/1 Fraunces,serif; user-select:none; pointer-events:none; z-index:0; }',
+    '.sw-landing .la-wm.wm1 { top:16px;  left:220px; transform:rotate(-8deg); }',
+    '.sw-landing .la-wm.wm2 { top:220px; left:80px;  transform:rotate(4deg);  }',
+    '.sw-landing .la-wm.wm3 { bottom:24px; right:280px; transform:rotate(-6deg); font-size:64px; }',
+    '.sw-landing .la-wm.wm4 { top:60px; right:80px; transform:rotate(8deg); font-size:100px; opacity:0.04; }',
+
+    // Hero grid — text on the left, illustration on the right.
+    '.sw-landing .la-hero { position:relative; display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:center; padding:80px 64px 32px; min-height:320px; z-index:2; }',
+    '.sw-landing .la-text { z-index:2; }',
+    '.sw-landing .la-eyebrow { font:500 14px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); margin:0 0 6px; opacity:0; animation:laFade 600ms ease forwards 100ms; }',
+    '.sw-landing .la-title { font:600 44px/1 Fraunces,serif; color:var(--la-accent); margin:0 0 4px; letter-spacing:-0.02em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 200ms; }',
+    '.sw-landing .la-sub { font:600 28px/1.15 Fraunces,serif; color:var(--text); margin:0 0 18px; letter-spacing:-0.01em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 320ms; }',
+    '.sw-landing .la-body { font:400 14.5px/1.6 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:460px; margin:0 0 22px; opacity:0; animation:laFade 700ms ease forwards 480ms; }',
+    '.sw-landing .la-cta { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; background:var(--la-accent); color:#fff; border:0; border-radius:999px; font:600 14px/1 Inter,system-ui,sans-serif; cursor:pointer; box-shadow:0 6px 16px var(--la-accent-soft); text-decoration:none; opacity:0; transform:translateY(6px); animation:laRise 600ms cubic-bezier(.2,.7,.2,1) forwards 620ms; transition:transform .18s, box-shadow .18s, background .18s; }',
+    '.sw-landing .la-cta:hover { background:var(--la-accent-hover); transform:translateY(-2px); box-shadow:0 12px 24px rgba(11,23,51,0.16); }',
+    '.sw-landing .la-cta .arr { font:700 16px/1 Inter,sans-serif; }',
+
+    // Illustration floats gently to keep the page alive.
+    '.sw-landing .la-graphic { position:relative; z-index:1; width:100%; max-width:340px; aspect-ratio:1/1; margin-left:auto; display:flex; align-items:center; justify-content:center; opacity:0; animation:laFade 800ms ease forwards 500ms, laFloat 5s ease-in-out infinite 1.3s; }',
+    '.sw-landing .la-graphic svg { width:100%; height:100%; }',
+    '@keyframes laFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }',
+    '@keyframes laRise  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }',
+    '@keyframes laFade  { from { opacity:0; } to { opacity:1; } }',
+
+    // Quick-action tiles row.
+    '.sw-landing .la-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; padding:8px 64px 64px; position:relative; z-index:2; }',
+    '.sw-landing .la-tile { background:#fff; border:1px solid var(--border); border-radius:12px; padding:18px 16px 16px; display:flex; flex-direction:column; align-items:center; gap:10px; cursor:pointer; text-decoration:none; transition:transform .18s, border-color .18s, box-shadow .18s; }',
+    '.sw-landing .la-tile:hover { transform:translateY(-3px); border-color:var(--la-accent); box-shadow:0 10px 24px rgba(11,23,51,0.08); }',
+    '.sw-landing .la-tile-ico { width:56px; height:56px; border-radius:12px; background:var(--panel-2); color:var(--text-mute); display:flex; align-items:center; justify-content:center; transition:background .18s, color .18s; }',
+    '.sw-landing .la-tile:hover .la-tile-ico { background:var(--la-accent-soft); color:var(--la-accent); }',
+    '.sw-landing .la-tile-ico svg { width:28px; height:28px; stroke:currentColor; stroke-width:1.8; fill:none; stroke-linecap:round; stroke-linejoin:round; }',
+    '.sw-landing .la-tile-lab { font:600 13px/1.2 Inter,sans-serif; color:var(--text); text-align:center; }',
+    '.sw-landing .la-tile-sub { font:400 11.5px/1.4 Inter,sans-serif; color:var(--text-mute); text-align:center; }',
+
+    // Live stats strip at the bottom of the landing.
+    '.sw-landing .la-strip { background:var(--panel-2); border-top:1px solid var(--border); padding:18px 64px; display:flex; align-items:center; gap:24px; font:500 12.5px/1.4 Inter,sans-serif; color:var(--text-soft); }',
+    '.sw-landing .la-stat { display:inline-flex; flex-direction:column; gap:2px; }',
+    '.sw-landing .la-stat strong { font:700 18px/1 Inter,sans-serif; color:var(--text); }',
+    '.sw-landing .la-stat span   { font:500 11px/1 Inter,sans-serif; color:var(--text-mute); letter-spacing:.04em; text-transform:uppercase; }',
+    '.sw-landing .la-strip-arrow { margin-left:auto; color:var(--text-mute); font-size:14px; }',
+
+    '@media (max-width:900px) {' +
+      '.sw-landing .la-hero { grid-template-columns:1fr; padding:70px 28px 24px; }' +
+      '.sw-landing .la-tiles { grid-template-columns:repeat(2,1fr); padding:8px 28px 36px; }' +
+      '.sw-landing .la-strip { padding:16px 28px; flex-wrap:wrap; }' +
+    '}',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+// Build the Survey Studio landing HTML — the hero moment when a user
+// arrives on /#/home. Live stats are computed from state.surveys.
+function swBuildSurveyLandingHTML(opts) {
+  const name   = opts.name || 'there';
+  const counts = opts.counts || { active: 0, drafts: 0, responses: 0 };
+  return '' +
+    '<section class="sw-landing" data-studio="survey">' +
+      '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><path d="M3 11L12 4l9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div></div>' +
+      '<span class="la-wm wm1">S</span><span class="la-wm wm2">S</span><span class="la-wm wm3">S</span><span class="la-wm wm4">S</span>' +
+      '<div class="la-hero">' +
+        '<div class="la-text">' +
+          '<p class="la-eyebrow">Welcome back, ' + escapeHtml(name) + '.</p>' +
+          '<h2 class="la-title">Survey Studio</h2>' +
+          '<h3 class="la-sub">Evidence you can defend.</h3>' +
+          '<p class="la-body">Build, send, and analyze surveys end-to-end &mdash; with reliability, validity, and a Strength Index built in so every claim you make rests on evidence reviewers will trust.</p>' +
+          '<a class="la-cta" data-route="create">+ Start a new survey <span class="arr">&rarr;</span></a>' +
+        '</div>' +
+        '<div class="la-graphic">' +
+          '<svg viewBox="0 0 200 200" aria-hidden="true">' +
+            '<rect x="30" y="30" width="140" height="140" rx="14" fill="var(--la-accent)" opacity="0.08"/>' +
+            '<rect x="44" y="50" width="112" height="18" rx="6" fill="var(--la-accent)" opacity="0.85"/>' +
+            '<rect x="44" y="78" width="112" height="10" rx="4" fill="var(--la-accent)" opacity="0.35"/>' +
+            '<rect x="44" y="92" width="80"  height="10" rx="4" fill="var(--la-accent)" opacity="0.35"/>' +
+            '<circle cx="52" cy="124" r="5" fill="var(--la-accent)"/>' +
+            '<rect x="64" y="119" width="80" height="10" rx="5" fill="var(--la-accent)" opacity="0.55"/>' +
+            '<circle cx="52" cy="144" r="5" fill="none" stroke="var(--la-accent)" stroke-width="1.6"/>' +
+            '<rect x="64" y="139" width="64" height="10" rx="5" fill="var(--la-accent)" opacity="0.25"/>' +
+            '<circle cx="166" cy="46" r="14" fill="var(--la-accent)"/>' +
+            '<path d="M160 46 l4 4 l8 -8" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="la-tiles">' +
+        '<a class="la-tile" data-route="create">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
+          '<div class="la-tile-lab">New survey</div>' +
+          '<div class="la-tile-sub">Start from scratch or a template</div>' +
+        '</a>' +
+        '<a class="la-tile" data-route="upload-dataset">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>' +
+          '<div class="la-tile-lab">Upload data</div>' +
+          '<div class="la-tile-sub">CSV, Excel, or paste</div>' +
+        '</a>' +
+        '<a class="la-tile" data-route="templates">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>' +
+          '<div class="la-tile-lab">Browse templates</div>' +
+          '<div class="la-tile-sub">Validated scales, ready to clone</div>' +
+        '</a>' +
+        '<a class="la-tile" data-route="projects">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>' +
+          '<div class="la-tile-lab">Open recent</div>' +
+          '<div class="la-tile-sub">' + counts.active + ' active &middot; ' + counts.drafts + ' draft' + (counts.drafts === 1 ? '' : 's') + '</div>' +
+        '</a>' +
+      '</div>' +
+      '<div class="la-strip">' +
+        '<div class="la-stat"><strong>' + counts.active + '</strong><span>Active projects</span></div>' +
+        '<div class="la-stat"><strong>' + counts.responses + '</strong><span>Total responses</span></div>' +
+        '<div class="la-stat"><strong>' + counts.drafts + '</strong><span>Drafts in progress</span></div>' +
+        '<span class="la-strip-arrow">&darr; Scroll for dashboard</span>' +
+      '</div>' +
+    '</section>';
 }
 
 // Home shell — same three-column pattern, but Home isn\'t project-scoped
