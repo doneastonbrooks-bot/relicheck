@@ -31500,12 +31500,40 @@ function mmNewProjectModal(pathway) {
 
 async function mmRenderProject(container, id) {
   container.innerHTML = '<div class="loading-row"><div class="spinner"></div><div>Loading project...</div></div>';
-  try {
-    const r = await api.mmGetProject(id);
-    MM.state.current = r.project;
-    MM.state.counts  = r.counts || { responses: 0, categories: 0, coded: 0 };
-  } catch (e) {
-    container.innerHTML = '<div class="card"><p>Could not load project: ' + MM.esc(e.message) + '</p><a class="btn" href="#/mm">Back</a></div>';
+  // The first attempt sometimes fails when PHP-FPM opcache is mid-refresh
+  // (we saw this during the May 2026 incident: API returned a transient
+  // 500 with the Ionos parking page as body). Retry once after a short
+  // wait before showing an error. Also sanitize the error message — if
+  // the body looks like HTML, don't dump it into the UI.
+  const sanitizeErr = (msg) => {
+    msg = String(msg || '');
+    if (msg.includes('<') && msg.includes('>')) return 'The server returned an unexpected response. This usually clears in a few seconds.';
+    if (msg.length > 200) return msg.slice(0, 200) + '...';
+    return msg;
+  };
+  let lastErr = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await api.mmGetProject(id);
+      MM.state.current = r.project;
+      MM.state.counts  = r.counts || { responses: 0, categories: 0, coded: 0 };
+      lastErr = null;
+      break;
+    } catch (e) {
+      lastErr = e;
+      if (attempt === 0) {
+        container.innerHTML = '<div class="loading-row"><div class="spinner"></div><div>Loading project (retrying)...</div></div>';
+        await new Promise(res => setTimeout(res, 1500));
+      }
+    }
+  }
+  if (lastErr) {
+    container.innerHTML = '<div class="card"><h3 style="margin:0 0 8px;">Could not load project</h3>' +
+      '<p style="color:#5a6470;">' + MM.esc(sanitizeErr(lastErr.message)) + '</p>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;">' +
+        '<a class="btn" href="#/mm/' + encodeURIComponent(id) + '" onclick="location.reload()">Try again</a>' +
+        '<a class="btn" href="#/mm" style="background:#f4f6fb;color:#1f2937;">Back to Studio</a>' +
+      '</div></div>';
     return;
   }
 
