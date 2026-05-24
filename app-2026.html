@@ -2192,7 +2192,49 @@
     .up-preview-table tbody td.likert { color: var(--primary); font-weight: 600; }
     .up-preview-table tbody td.single { color: var(--info); font-weight: 600; }
     .up-preview-table tbody td.multi  { color: var(--info); font-weight: 600; }
+    .up-preview-table tbody td.ignore { color: var(--text-mute); text-decoration: line-through; opacity: 0.6; }
     .up-preview-table tbody tr:hover td { background: var(--panel-2); }
+
+    /* Mirror MM Studio\'s mmEditColumns layout: each column shows a
+       hint line (distinct value count + a few sample values) and an
+       explicit suggested/confirmed status under the role dropdown.
+       Auto-detect proposes; the user confirms. */
+    .up-preview-table thead th .up-col-hint {
+      display: block;
+      margin-top: 3px;
+      font: 400 11px/1.35 Inter, system-ui, sans-serif;
+      color: var(--text-mute);
+      letter-spacing: 0;
+      text-transform: none;
+      font-weight: 500;
+      white-space: normal;
+    }
+    .up-col-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 6px;
+      font: 600 10px/1 Inter, system-ui, sans-serif;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 7px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-soft);
+      color: var(--text-mute);
+    }
+    .up-col-status.suggested { background: #fff7f3; border-color: #fde2d7; color: var(--accent-active); }
+    .up-col-status.confirmed { background: #ecfdf3; border-color: #b6e6c8; color: #1f7a3a; }
+    .up-col-status a { color: inherit; text-decoration: underline; margin-left: 4px; cursor: pointer; font-weight: 500; text-transform: none; letter-spacing: 0; }
+    .up-bulk-actions {
+      display: flex;
+      gap: 12px;
+      padding: 10px 22px 0;
+      font-size: 12.5px;
+      color: var(--text-mute);
+    }
+    .up-bulk-actions a { color: var(--accent-active); cursor: pointer; text-decoration: underline; font-weight: 600; }
+    .up-bulk-actions a + a { margin-left: 4px; }
 
     .up-foot {
       padding: 14px 22px;
@@ -26148,9 +26190,30 @@ function inferColumnMeta(parsed, k) {
       // scale points used. Real Likert items use most of their range.
       type = 'likert';
     }
-    return { name: name, type: type, reverse: false, construct: '' };
+    // Sample values for the column hint line — first 5 distinct
+    // non-empty values plus an ellipsis when truncated. Mirrors
+    // mmEditColumns so the upload review feels like one platform.
+    const sampleVals = Array.from(distinct).slice(0, 5);
+    const hint = {
+      distinct: distinct.size,
+      sample: sampleVals.join(', ') + (distinct.size > 5 ? ' …' : ''),
+    };
+    // `auto: true` flags that the user hasn\'t touched this row yet —
+    // the UI surfaces a "Suggested" pill until the user confirms or
+    // changes the type. `suggested` remembers what we proposed so the
+    // user can revert a manual change.
+    return { name: name, type: type, reverse: false, construct: '', auto: true, suggested: type, hint: hint };
   });
 }
+
+// Human-readable labels for the four roles. Used by the upload review
+// UI to render the "Suggested: X" / "Changed from X" status pills.
+const UP_TYPE_LABELS = {
+  likert: 'Likert',
+  single: 'Category',
+  open:   'Open / text',
+  ignore: 'Ignore',
+};
 
 function loadScriptOnce(src) {
   return new Promise((resolve, reject) => {
@@ -26212,18 +26275,53 @@ function renderUploadStep2() {
         '</div>' +
       '</div>' +
 
+      // Bulk actions for the role suggestions — methodology-first stance
+      // is that auto-detect proposes, the user confirms. These give the
+      // user one-click control without forcing per-column edits.
+      '<div class="up-bulk-actions">' +
+        '<span>ReliCheck suggested roles based on the values in each column.</span>' +
+        '<a id="upConfirmAll">Confirm all suggestions</a>' +
+        '<a id="upResetAll">Reset to suggestions</a>' +
+        '<a id="upClearAll">Clear all to Open</a>' +
+      '</div>' +
+
       '<div class="up-preview">' +
         '<table class="up-preview-table">' +
           '<thead>' +
-            '<tr>' + p.headers.map(h => '<th>' + escapeHtml(h) + '</th>').join('') + '</tr>' +
-            '<tr>' + meta.map((m, i) =>
-              '<th class="type-row">' +
-                '<select data-col-idx="' + i + '">' +
-                  '<option value="likert"' + (m.type === 'likert' ? ' selected' : '') + '>Likert</option>' +
-                  '<option value="open"'   + (m.type === 'open'   ? ' selected' : '') + '>Open / text</option>' +
-                '</select>' +
-              '</th>'
-            ).join('') + '</tr>' +
+            '<tr>' + p.headers.map((h, i) => {
+              const hint = (meta[i] && meta[i].hint) || { distinct: 0, sample: '' };
+              const hintLabel = (hint.distinct > 12 ? '12+' : String(hint.distinct)) +
+                (hint.distinct === 1 ? ' value' : ' values');
+              return '<th>' + escapeHtml(h) +
+                '<span class="up-col-hint">' + escapeHtml(hintLabel) +
+                  (hint.sample ? ' &middot; ' + escapeHtml(hint.sample) : '') +
+                '</span>' +
+              '</th>';
+            }).join('') + '</tr>' +
+            '<tr>' + meta.map((m, i) => {
+              const opts = ['likert','single','open','ignore'].map(v =>
+                '<option value="' + v + '"' + (m.type === v ? ' selected' : '') + '>' + UP_TYPE_LABELS[v] + '</option>'
+              ).join('');
+              // Status pill: "Suggested" when untouched, "Confirmed"
+              // when the user has acted (whether they confirmed the
+              // suggestion or changed it). Revert link appears when the
+              // current type differs from the original suggestion.
+              const confirmed = !m.auto;
+              const sugType   = m.suggested || m.type;
+              const sugLabel  = UP_TYPE_LABELS[sugType] || sugType;
+              const showRevert = confirmed && sugType && sugType !== m.type;
+              const statusHtml =
+                '<div class="up-col-status ' + (confirmed ? 'confirmed' : 'suggested') + '" data-col-status="' + i + '">' +
+                  (confirmed
+                    ? 'Confirmed' + (showRevert ? '<a data-up-revert="' + i + '">revert to ' + escapeHtml(sugLabel) + '</a>' : '')
+                    : 'Suggested: ' + escapeHtml(sugLabel)
+                  ) +
+                '</div>';
+              return '<th class="type-row">' +
+                '<select data-col-idx="' + i + '">' + opts + '</select>' +
+                statusHtml +
+              '</th>';
+            }).join('') + '</tr>' +
           '</thead>' +
           '<tbody>' +
             previewRows.map(r =>
@@ -26245,17 +26343,91 @@ function renderUploadStep2() {
 
   updateUploadSummary();
 
-  // Wire column-type changes.
+  // Helper to repaint a single column\'s status pill after a type change.
+  // Keeps the "Suggested" → "Confirmed" transition visible.
+  const repaintStatus = (i) => {
+    const m = UPLOAD_STATE.columnMeta[i];
+    const el = document.querySelector('[data-col-status="' + i + '"]');
+    if (!el || !m) return;
+    const sugType = m.suggested || m.type;
+    const sugLabel = UP_TYPE_LABELS[sugType] || sugType;
+    const confirmed = !m.auto;
+    el.className = 'up-col-status ' + (confirmed ? 'confirmed' : 'suggested');
+    const showRevert = confirmed && sugType && sugType !== m.type;
+    el.innerHTML = confirmed
+      ? 'Confirmed' + (showRevert ? '<a data-up-revert="' + i + '">revert to ' + escapeHtml(sugLabel) + '</a>' : '')
+      : 'Suggested: ' + escapeHtml(sugLabel);
+    if (showRevert) {
+      const link = el.querySelector('[data-up-revert]');
+      if (link) link.addEventListener('click', () => { revertColumn(i); });
+    }
+  };
+
+  // Set a column\'s type, mark it confirmed (touched), repaint cells +
+  // status pill, refresh summary. Used by the dropdown handler and the
+  // bulk-action wiring below.
+  const setColumnType = (i, value, confirmed) => {
+    const m = UPLOAD_STATE.columnMeta[i];
+    if (!m) return;
+    m.type = value;
+    m.auto = !confirmed;
+    const colCells = $all('.up-preview-table tbody tr td:nth-child(' + (i + 1) + ')');
+    colCells.forEach(c => { c.className = value; });
+    const sel = document.querySelector('[data-col-idx="' + i + '"]');
+    if (sel && sel.value !== value) sel.value = value;
+    repaintStatus(i);
+  };
+
+  const revertColumn = (i) => {
+    const m = UPLOAD_STATE.columnMeta[i];
+    if (!m || !m.suggested) return;
+    setColumnType(i, m.suggested, false);
+    m.auto = true;
+    repaintStatus(i);
+    updateUploadSummary();
+  };
+
+  // Wire column-type changes. Changing the dropdown flips auto -> false
+  // so the status pill switches from "Suggested" to "Confirmed".
   $all('[data-col-idx]').forEach(sel => {
     sel.addEventListener('change', () => {
       const i = parseInt(sel.getAttribute('data-col-idx'), 10);
-      UPLOAD_STATE.columnMeta[i].type = sel.value;
-      // Re-color the column cells in the preview.
-      const colCells = $all('.up-preview-table tbody tr td:nth-child(' + (i + 1) + ')');
-      colCells.forEach(c => { c.className = sel.value; });
+      setColumnType(i, sel.value, true);
       updateUploadSummary();
     });
   });
+
+  // Bulk actions: confirm-all marks every column as touched without
+  // changing types; reset-all snaps everything back to the auto-detected
+  // suggestion; clear-all puts everything in Open so the user can pick
+  // roles from scratch.
+  const confirmAll = $('#upConfirmAll');
+  if (confirmAll) confirmAll.addEventListener('click', () => {
+    UPLOAD_STATE.columnMeta.forEach((m, i) => { m.auto = false; repaintStatus(i); });
+    updateUploadSummary();
+  });
+  const resetAll = $('#upResetAll');
+  if (resetAll) resetAll.addEventListener('click', () => {
+    UPLOAD_STATE.columnMeta.forEach((m, i) => {
+      if (m.suggested) setColumnType(i, m.suggested, false);
+      UPLOAD_STATE.columnMeta[i].auto = true;
+      repaintStatus(i);
+    });
+    updateUploadSummary();
+  });
+  const clearAll = $('#upClearAll');
+  if (clearAll) clearAll.addEventListener('click', () => {
+    UPLOAD_STATE.columnMeta.forEach((_, i) => setColumnType(i, 'open', true));
+    updateUploadSummary();
+  });
+
+  // Initial-paint revert links (status pills rendered server-side as
+  // strings need their click handlers attached now).
+  $all('[data-up-revert]').forEach(link => {
+    const i = parseInt(link.getAttribute('data-up-revert'), 10);
+    if (Number.isFinite(i)) link.addEventListener('click', () => revertColumn(i));
+  });
+
   $('#upLikertPts').addEventListener('change', () => {
     UPLOAD_STATE.likertPoints = parseInt($('#upLikertPts').value, 10);
     // Re-infer types since likert range changed.
@@ -26271,14 +26443,21 @@ function renderUploadStep2() {
 function updateUploadSummary() {
   const el = $('#upSummary');
   if (!el) return;
-  const counts = { likert: 0, single: 0, multi: 0, open: 0 };
-  UPLOAD_STATE.columnMeta.forEach(m => { counts[m.type] = (counts[m.type] || 0) + 1; });
+  const counts = { likert: 0, single: 0, multi: 0, open: 0, ignore: 0 };
+  let unconfirmed = 0;
+  UPLOAD_STATE.columnMeta.forEach(m => {
+    counts[m.type] = (counts[m.type] || 0) + 1;
+    if (m.auto) unconfirmed++;
+  });
   const parts = [];
   if (counts.likert) parts.push(counts.likert + ' Likert');
-  if (counts.single) parts.push(counts.single + ' single');
+  if (counts.single) parts.push(counts.single + ' Category');
   if (counts.multi)  parts.push(counts.multi  + ' multi');
-  if (counts.open)   parts.push(counts.open   + ' open');
-  el.textContent = parts.join(' . ') + ' . ' + UPLOAD_STATE.parsed.rows.length + ' rows';
+  if (counts.open)   parts.push(counts.open   + ' Open');
+  if (counts.ignore) parts.push(counts.ignore + ' Ignored');
+  const tail = ' . ' + UPLOAD_STATE.parsed.rows.length + ' rows' +
+    (unconfirmed ? ' . ' + unconfirmed + ' column' + (unconfirmed === 1 ? '' : 's') + ' still on auto-suggestion' : '');
+  el.textContent = parts.join(' . ') + tail;
 }
 
 async function saveUploadDataset() {
