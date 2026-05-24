@@ -15601,6 +15601,26 @@ function swEnsureBuilderShellStyles() {
     '.sw-guidance-toggle:hover { color:var(--text); border-color:var(--border-strong); }',
     '.sw-guidance-popout { display:none; position:absolute; top:90px; right:0; width:24px; height:48px; background:#fff; border:1px solid var(--border); border-right:0; border-radius:6px 0 0 6px; color:var(--text-mute); cursor:pointer; align-items:center; justify-content:center; font-size:14px; }',
     '.sw-guidance-popout:hover { color:var(--text); }',
+
+    // Strength Index ring in the topbar — always-visible credibility
+    // signal. DOM mirrors mm-v3-ssi-ring so the visual stays consistent
+    // across studios. Painted by swPaintBuilderSSI off a hidden render
+    // of renderSSICard so the topbar never has to wait on Analyze.
+    '.sw-ssi-ring { position:relative; display:inline-flex; align-items:center; justify-content:center; width:52px; height:52px; padding:0; background:transparent; border:0; cursor:pointer; flex-shrink:0; }',
+    '.sw-ssi-ring svg { width:52px; height:52px; transform:rotate(-90deg); }',
+    '.sw-ssi-ring .ring-track { fill:none; stroke:#eef0f3; stroke-width:3.4; }',
+    '.sw-ssi-ring .ring-arc   { fill:none; stroke:#d3d9e6; stroke-width:3.4; stroke-linecap:round; stroke-dasharray:0 100; transition:stroke-dasharray .4s ease, stroke .2s; }',
+    '.sw-ssi-ring.tone-good   .ring-arc { stroke:#1f7a3a; }',
+    '.sw-ssi-ring.tone-usable .ring-arc { stroke:#3a7bd5; }',
+    '.sw-ssi-ring.tone-warn   .ring-arc { stroke:#d48a00; }',
+    '.sw-ssi-ring.tone-bad    .ring-arc { stroke:#a33; }',
+    '.sw-ssi-ring-num { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; pointer-events:none; }',
+    '.sw-ssi-ring-num .num { font:700 14px/1 Inter,system-ui,sans-serif; color:var(--text); }',
+    '.sw-ssi-ring-num .den { font:500 8.5px/1 Inter,system-ui,sans-serif; color:var(--text-mute); margin-top:1px; letter-spacing:.04em; }',
+    '.sw-ssi-label { display:flex; flex-direction:column; align-items:flex-start; gap:1px; padding-left:6px; }',
+    '.sw-ssi-label .eyebrow { font:600 9.5px/1 Inter,system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mute); }',
+    '.sw-ssi-label .status  { font:600 11px/1 Inter,system-ui,sans-serif; color:var(--text-soft); }',
+    '.sw-ssi-wrap { display:inline-flex; align-items:center; gap:4px; }',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -15674,6 +15694,55 @@ function swPaintBuilderGuidance(tab) {
   if (bodyEl)  bodyEl.innerHTML    = g.html;
 }
 
+// Off-screen Strength Index harvest for the Builder topbar ring. Mirrors
+// the mmV3 pattern: render the SSI card into a detached host, scrape the
+// score + verdict pill, paint the SVG arc + center number, cache the
+// result per project so the next visit paints instantly.
+function swPaintBuilderSSI(surveyMeta) {
+  const ring   = document.getElementById('swBuilderSsiChip');
+  const arc    = document.getElementById('swBuilderSsiArc');
+  const scoreEl  = document.getElementById('swBuilderSsiScore');
+  const statusEl = document.getElementById('swBuilderSsiStatus');
+  if (!ring || !arc || !scoreEl || !statusEl || !surveyMeta) return;
+  const toneFor = (n) => n >= 80 ? 'good' : n >= 65 ? 'usable' : n >= 50 ? 'warn' : 'bad';
+  const paint = (score, status) => {
+    const pct = Math.max(0, Math.min(100, Number(score) || 0));
+    scoreEl.textContent  = String(score);
+    statusEl.textContent = status || (pct >= 80 ? 'Strong' : pct >= 65 ? 'Usable' : pct >= 50 ? 'Watch' : 'Weak');
+    arc.setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
+    ring.classList.remove('tone-good','tone-usable','tone-warn','tone-bad');
+    ring.classList.add('tone-' + toneFor(pct));
+    ring.setAttribute('title', 'Strength Index: ' + score + ' / 100' + (status ? ' (' + status + ')' : '') + ' — click for the full breakdown');
+  };
+  // Cached score per project — paint immediately on render so the ring is
+  // never blank, then refresh below.
+  let cached = null;
+  try { cached = JSON.parse(localStorage.getItem('sw.builder.ssi.' + surveyMeta.id) || 'null'); } catch (_) {}
+  if (cached && Number.isFinite(cached.score)) paint(cached.score, cached.status);
+  // Live recompute. The harvest renders into a hidden detached node so
+  // the user never sees the placeholder DOM that renderSSICard produces.
+  if (typeof loadAnalyzeData !== 'function' || typeof renderSSICard !== 'function') return;
+  (async () => {
+    try {
+      const cache = await loadAnalyzeData(surveyMeta.id);
+      if (!cache || !cache.full || !cache.responses) return;
+      const hidden = document.createElement('div');
+      hidden.style.cssText = 'position:absolute;left:-99999px;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden;pointer-events:none;';
+      document.body.appendChild(hidden);
+      try { renderSSICard(hidden, cache.full, cache.responses); } catch (_) {}
+      const nEl = hidden.querySelector('.ssi-ring .num .n');
+      const raw = nEl ? parseInt(String(nEl.textContent || '').replace(/[^0-9]/g, ''), 10) : NaN;
+      if (Number.isFinite(raw) && raw > 0) {
+        const pillEl = hidden.querySelector('.verdict-pill');
+        const status = pillEl ? String(pillEl.textContent || '').trim() : '';
+        paint(raw, status);
+        try { localStorage.setItem('sw.builder.ssi.' + surveyMeta.id, JSON.stringify({ score: raw, status: status })); } catch (_) {}
+      }
+      try { hidden.remove(); } catch (_) {}
+    } catch (_) {}
+  })();
+}
+
 // Canonical tab switcher for the Builder. Called from the left-nav and
 // from any deep-link consumer. Sets state, re-renders the body, repaints
 // guidance, and syncs left-nav active state. Kept tiny on purpose so all
@@ -15721,6 +15790,26 @@ function swBuildBuilderShellHTML(surveyMeta) {
         '</div>' +
         '<div class="sw-topbar-spacer"></div>' +
         '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
+        // Strength Index ring — always-on credibility signal. Score is
+        // harvested off-screen on load (see swPaintBuilderSSI) and cached
+        // per-project so the ring shows the last-known value instantly on
+        // subsequent renders. Click opens the Analyze Strength tab.
+        '<div class="sw-ssi-wrap">' +
+          '<button type="button" class="sw-ssi-ring" id="swBuilderSsiChip" data-route="analyze" data-id="' + id + '" title="Strength Index — click for the full breakdown">' +
+            '<svg viewBox="0 0 36 36" aria-hidden="true">' +
+              '<circle class="ring-track" cx="18" cy="18" r="15.915" />' +
+              '<circle class="ring-arc"   cx="18" cy="18" r="15.915" id="swBuilderSsiArc" />' +
+            '</svg>' +
+            '<span class="sw-ssi-ring-num">' +
+              '<span class="num" id="swBuilderSsiScore">--</span>' +
+              '<span class="den">/ 100</span>' +
+            '</span>' +
+          '</button>' +
+          '<div class="sw-ssi-label">' +
+            '<span class="eyebrow">Strength</span>' +
+            '<span class="status" id="swBuilderSsiStatus">Pending</span>' +
+          '</div>' +
+        '</div>' +
       '</div>' +
       '<div class="sw-studio" id="swStudio">' +
         '<aside class="sw-leftnav" aria-label="Builder sections">' +
@@ -15833,6 +15922,9 @@ async function renderBuilder(root, surveyId) {
   // Paint the default tab's guidance immediately so the right rail is
   // never empty even while the survey is still loading.
   swPaintBuilderGuidance('questions');
+  // Kick off the off-screen Strength Index harvest. Renders the cached
+  // value (if any) instantly, then refreshes in the background.
+  try { swPaintBuilderSSI(surveyMeta); } catch (_) {}
 
   // Fetch the full survey.
   let full;
