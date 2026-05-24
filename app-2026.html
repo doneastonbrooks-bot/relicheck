@@ -22284,14 +22284,28 @@ function adaptDatasetToSurvey(d) {
   const points = settings.likertPoints || 5;
   // Synthesize a question per column. ID is stable and matches what
   // adaptDatasetResponses uses for the answer-keyed map below.
-  const questions = cols.map((c, i) => ({
-    id:           'col_' + i,
-    type:         c.type || 'open',
-    prompt:       c.name || ('Column ' + (i + 1)),
-    likertPoints: points,
-    reverse:      !!c.reverse,
-    construct:    c.construct || '',
-  }));
+  const questions = cols.map((c, i) => {
+    const realName = c.name || ('Column ' + (i + 1));
+    return {
+      id:           'col_' + i,
+      type:         c.type || 'open',
+      prompt:       realName,
+      // label + text mirror prompt so the many display sites that look
+      // for question.label or question.text (most of the analyze + MM
+      // Studio code) show the real column name instead of falling back
+      // to "col_1", "col_2". Without this, dataset-backed projects
+      // display anonymous variable labels everywhere.
+      label:        realName,
+      text:         realName,
+      likertPoints: points,
+      reverse:      !!c.reverse,
+      construct:    c.construct || '',
+      // Stash the raw column meta so downstream auto-detection (e.g.
+      // recognizing numeric-coded categoricals as groups, not Likert)
+      // can see what the server actually saw on ingestion.
+      _columnMeta:  c,
+    };
+  });
   return {
     id:           d.id,
     title:        d.title || 'Untitled dataset',
