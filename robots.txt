@@ -1,0 +1,24 @@
+# ReliCheck — robots policy
+
+User-agent: *
+
+# Don't crawl auth flows or the application itself.
+Disallow: /login.html
+Disallow: /signup.html
+Disallow: /reset.html
+Disallow: /accept-invite.html
+Disallow: /app.html
+Disallow: /take.html
+Disallow: /api/
+Disallow: /db/
+Disallow: /preview/
+
+# Don't crawl error or diagnostic pages.
+Disallow: /404.html
+Disallow: /admin-check.html
+
+# Allow everything else (the redesigned marketing site).
+Allow: /
+
+# Public sitemap.
+Sitemap: https://relichecksurvey.com/sitemap.xml

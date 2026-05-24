@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Smoke check &middot; ReliCheck</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; margin: 0; background: #f4f6fa; color: #1f2937; }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 24px 80px; }
+    h1 { font-size: 24px; margin: 0 0 6px; }
+    .sub { color: #6b7280; font-size: 14px; margin-bottom: 18px; }
+    .card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+    .card h2 { font-size: 16px; margin: 0 0 10px; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 8px 0; border-bottom: 1px solid #f0f1f4; font-size: 14px; }
+    .row:last-child { border-bottom: 0; }
+    .pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .pill.good { background: #e6f6ed; color: #0a7d35; }
+    .pill.bad  { background: #fdecec; color: #a01a1a; }
+    .pill.warn { background: #fff5e6; color: #b95800; }
+    .pill.mute { background: #eef0f5; color: #6b7280; }
+    .keybox { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .keybox input { flex: 1; padding: 8px 10px; border: 1px solid #cfd4dc; border-radius: 8px; font-size: 14px; }
+    .keybox button { padding: 8px 16px; border: 0; border-radius: 8px; background: #1F3A8A; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .keybox button:hover { background: #2549b0; }
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+    .summary-tile { background: #f4f6fa; border-radius: 8px; padding: 10px 12px; }
+    .summary-tile .n { font-size: 22px; font-weight: 700; color: #1f2937; }
+    .summary-tile .lbl { font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.04em; margin-top: 2px; }
+    .summary-tile.bad .n { color: #a01a1a; }
+    .summary-tile.bad { background: #fdecec; }
+    .finding-list { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #374151; }
+    .finding { padding: 6px 0; border-bottom: 1px solid #f0f1f4; }
+    .finding-file { font-weight: 600; color: #1f2937; }
+    .empty { color: #9ca3af; font-size: 13px; padding: 10px 0; }
+    .banner { padding: 18px 20px; border-radius: 12px; margin-bottom: 18px; }
+    .banner.pass { background: #e6f6ed; border: 1px solid #0a7d35; color: #0a7d35; }
+    .banner.fail { background: #fdecec; border: 1px solid #a01a1a; color: #a01a1a; }
+    .banner h2 { margin: 0; font-size: 20px; }
+    .banner p { margin: 6px 0 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Smoke check</h1>
+    <p class="sub">Sweeps every PHP file under /api/ for parse errors, stray close-tags inside comments, orphan catch blocks, and non-ASCII bytes. Confirms canonical schema tables exist. Designed to catch the kinds of regressions that have bitten ReliCheck deploys.</p>
+
+    <div class="keybox">
+      <input type="text" id="keyInput" placeholder="email_cron_key" autocomplete="off" />
+      <button id="runBtn" type="button">Run check</button>
+    </div>
+
+    <div id="output"></div>
+  </div>
+
+<script>
+  (function () {
+    const keyInput = document.getElementById('keyInput');
+    const runBtn   = document.getElementById('runBtn');
+    const output   = document.getElementById('output');
+
+    // Remember the key in localStorage so the operator does not retype each time.
+    try {
+      const saved = localStorage.getItem('relicheck.smoke.key');
+      if (saved) keyInput.value = saved;
+    } catch (_) {}
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+      });
+    }
+
+    function renderTile(n, lbl, bad) {
+      return '<div class="summary-tile' + (bad && n > 0 ? ' bad' : '') + '">' +
+        '<div class="n">' + n + '</div>' +
+        '<div class="lbl">' + escapeHtml(lbl) + '</div>' +
+      '</div>';
+    }
+
+    function renderFindings(title, list, renderRow) {
+      let html = '<div class="card"><h2>' + escapeHtml(title) + ' <span class="pill ' + (list.length ? 'bad' : 'good') + '">' + list.length + '</span></h2>';
+      if (!list.length) {
+        html += '<div class="empty">No findings.</div></div>';
+        return html;
+      }
+      html += '<div class="finding-list">' + list.map(renderRow).join('') + '</div></div>';
+      return html;
+    }
+
+    function run() {
+      const key = (keyInput.value || '').trim();
+      if (!key) { output.innerHTML = '<div class="card">Paste the email_cron_key (from /api/_config.php) above and click Run check.</div>'; return; }
+      try { localStorage.setItem('relicheck.smoke.key', key); } catch (_) {}
+
+      output.innerHTML = '<div class="card">Running smoke check...</div>';
+      const url = '/api/smoke.php?key=' + encodeURIComponent(key);
+      fetch(url, { credentials: 'same-origin' })
+        .then(function (r) { return r.json().then(function (d) { return { status: r.status, data: d }; }); })
+        .then(function (res) {
+          const d = res.data || {};
+          if (!d.ok) {
+            output.innerHTML = '<div class="banner fail"><h2>Smoke check failed to run</h2><p>' + escapeHtml(d.message || d.error || ('HTTP ' + res.status)) + '</p></div>';
+            return;
+          }
+          const summary = d.summary || {};
+          const banner = d.pass
+            ? '<div class="banner pass"><h2>All clear</h2><p>Swept ' + d.php_files + ' PHP files and ' + d.tables_checked + ' tables. Zero issues.</p></div>'
+            : '<div class="banner fail"><h2>' + summary.total_issues + ' issue' + (summary.total_issues === 1 ? '' : 's') + ' found</h2><p>Swept ' + d.php_files + ' PHP files and ' + d.tables_checked + ' tables. Review the sections below.</p></div>';
+
+          const tiles =
+            '<div class="card"><h2>Summary</h2><div class="summary-grid">' +
+              renderTile(d.php_files, 'PHP files scanned', false) +
+              renderTile(summary.parse_errors || 0, 'Parse errors', true) +
+              renderTile(summary.stray_close_tag || 0, 'Stray ?> in //', true) +
+              renderTile(summary.orphan_catch || 0, 'Orphan catch', true) +
+              renderTile(summary.non_ascii || 0, 'Non-ASCII bytes', true) +
+              renderTile(summary.missing_tables || 0, 'Missing tables', true) +
+            '</div></div>';
+
+          const findings = d.findings || {};
+          const parseHtml = renderFindings('Parse errors', findings.parse_errors || [], function (f) {
+            return '<div class="finding"><span class="finding-file">' + escapeHtml(f.file) + ':' + f.line + '</span> ' + escapeHtml(f.msg) + '</div>';
+          });
+          const closeHtml = renderFindings('Stray ?> inside // comments', findings.stray_close_tag || [], function (f) {
+            return '<div class="finding"><span class="finding-file">' + escapeHtml(f.file) + ':' + f.line + '</span> ' + escapeHtml(f.preview) + '</div>';
+          });
+          const catchHtml = renderFindings('Orphan catch (catch_count > try_count)', findings.orphan_catch || [], function (f) {
+            return '<div class="finding"><span class="finding-file">' + escapeHtml(f.file) + '</span> try=' + f.try_count + ' catch=' + f.catch_count + '</div>';
+          });
+          const asciiHtml = renderFindings('Non-ASCII bytes in PHP source', findings.non_ascii || [], function (f) {
+            return '<div class="finding"><span class="finding-file">' + escapeHtml(f.file) + ':' + f.line + '</span> ' + escapeHtml(f.preview) + '</div>';
+          });
+
+          const tables = d.tables || [];
+          const missing = tables.filter(function (t) { return t.status !== 'present'; });
+          let tablesHtml = '<div class="card"><h2>Canonical schema tables <span class="pill ' + (missing.length ? 'bad' : 'good') + '">' + missing.length + ' missing</span></h2>';
+          if (missing.length) {
+            tablesHtml += '<div class="finding-list">' + missing.map(function (t) {
+              return '<div class="finding"><span class="finding-file">' + escapeHtml(t.table) + '</span> &middot; ' + escapeHtml(t.status) + (t.msg ? ' &middot; ' + escapeHtml(t.msg) : '') + '</div>';
+            }).join('') + '</div>';
+          } else {
+            tablesHtml += '<div class="empty">All ' + tables.length + ' tables present.</div>';
+          }
+          tablesHtml += '</div>';
+
+          output.innerHTML = banner + tiles + parseHtml + closeHtml + catchHtml + asciiHtml + tablesHtml;
+        })
+        .catch(function (err) {
+          output.innerHTML = '<div class="banner fail"><h2>Network error</h2><p>' + escapeHtml(err.message || 'fetch failed') + '</p></div>';
+        });
+    }
+
+    runBtn.addEventListener('click', run);
+    keyInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') run(); });
+  })();
+</script>
+</body>
+</html>

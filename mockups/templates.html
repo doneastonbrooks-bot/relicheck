@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . Templates</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: #f6f7fb; color: #1a1f33; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    .sidebar { background: #0f172a; color: #d1d5e0; padding: 20px 0; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 22px 24px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+    .sidebar-brand .logo { width: 28px; height: 28px; border-radius: 6px; background: #e85d3a; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; color: #ffffff; font-size: 16px; }
+    .sidebar-brand .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: #ffffff; }
+    .sidebar-section { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7088; padding: 14px 22px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 22px; color: #d1d5e0; text-decoration: none; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active { background: #1e293b; color: #ffffff; border-left-color: #e85d3a; }
+    .nav-item .icon { width: 18px; flex: 0 0 18px; opacity: 0.85; }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot { margin-top: auto; padding: 16px 22px; border-top: 1px solid #1e293b; font-size: 12px; color: #6b7088; }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+    .topbar { background: #ffffff; border-bottom: 1px solid #e5e8ed; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .crumbs { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #6b7088; }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e5e8ed; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7088; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #e85d3a, #d44e2c); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 13px; }
+    .btn { background: #1a1f33; color: #ffffff; padding: 9px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost { background: #ffffff; color: #1a1f33; border: 1px solid #e5e8ed; }
+    .btn.primary { background: #e85d3a; }
+    .btn.primary:hover { background: #d44e2c; }
+    .btn.small { padding: 7px 12px; font-size: 12px; }
+
+    .page-head { padding: 32px 40px 0; max-width: 1320px; }
+    .page-head h1 { font-family: 'Fraunces', serif; font-size: 28px; margin: 0 0 6px 0; letter-spacing: -0.01em; }
+    .page-head p { margin: 0; color: #6b7088; font-size: 15px; max-width: 600px; }
+
+    /* Filter strip */
+    .filters { padding: 24px 40px 16px; max-width: 1320px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .search { flex: 1; max-width: 360px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e5e8ed; border-radius: 8px; background: #ffffff; }
+    .search input { border: none; flex: 1; font-size: 13px; outline: none; font-family: inherit; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #ffffff; border: 1px solid #e5e8ed; border-radius: 999px; font-size: 12px; font-weight: 600; color: #1a1f33; cursor: pointer; }
+    .chip.on { background: #fde2d7; color: #c2410c; border-color: #fde2d7; }
+
+    /* Featured row */
+    .featured {
+      padding: 0 40px 16px;
+      max-width: 1320px;
+    }
+    .feat-card {
+      background: linear-gradient(135deg, #1a1f33 0%, #2a3354 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 28px 32px;
+      display: grid;
+      grid-template-columns: 1fr 200px;
+      gap: 24px;
+      align-items: center;
+    }
+    @media (max-width: 720px) { .feat-card { grid-template-columns: 1fr; } }
+    .feat-card .tag { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #e85d3a; }
+    .feat-card h2 { font-family: 'Fraunces', serif; font-size: 22px; margin: 6px 0 10px 0; line-height: 1.2; }
+    .feat-card p { margin: 0 0 14px 0; color: #c5cbd4; font-size: 14px; }
+    .feat-card .stats { display: flex; gap: 18px; font-size: 12px; color: #c5cbd4; }
+    .feat-card .stats strong { color: #ffffff; font-family: 'Fraunces', serif; font-size: 16px; }
+    .feat-card .actions { display: flex; gap: 8px; margin-top: 8px; }
+    .feat-card .actions .btn.ghost { background: rgba(255,255,255,0.10); color: #ffffff; border-color: rgba(255,255,255,0.20); }
+    .feat-card .actions .btn.ghost:hover { background: rgba(255,255,255,0.20); }
+
+    /* Grid */
+    .grid-section { padding: 12px 40px 80px; max-width: 1320px; }
+    .section-title { font-family: 'Fraunces', serif; font-size: 18px; margin: 24px 0 14px 0; letter-spacing: -0.01em; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    @media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+    .t-card {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 10px;
+      transition: border-color 0.12s, transform 0.12s, box-shadow 0.12s;
+      text-decoration: none;
+      color: inherit;
+    }
+    .t-card:hover {
+      border-color: #e85d3a;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 22px rgba(15,23,42,0.06);
+    }
+    .t-card .lab {
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      font-weight: 700;
+      color: #c2410c;
+      padding: 3px 9px;
+      background: #fde2d7;
+      border-radius: 999px;
+      display: inline-block;
+      align-self: flex-start;
+    }
+    .t-card.blue .lab { color: #3a4dc8; background: #eef1ff; }
+    .t-card.green .lab { color: #166534; background: #ecfdf3; }
+    .t-card h3 { font-family: 'Fraunces', serif; font-size: 17px; margin: 4px 0 4px 0; line-height: 1.25; }
+    .t-card .desc { font-size: 13px; color: #6b7088; line-height: 1.45; }
+    .t-card .stats {
+      display: flex; gap: 16px; font-size: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f2f6;
+      margin-top: auto;
+    }
+    .t-card .stats strong { color: #1a1f33; font-family: 'Fraunces', serif; font-weight: 700; font-size: 14px; }
+    .t-card .stats div { color: #6b7088; line-height: 1.2; }
+    .t-card .cite { font-size: 11px; color: #6b7088; font-style: italic; }
+    .t-card .actions { display: flex; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><span class="logo">R</span><span class="name">ReliCheck</span></div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item active" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+    <div class="sidebar-foot"><strong>Professional plan</strong>Renewed May 15</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumbs"><a href="home.html">Home</a><span class="sep">&rsaquo;</span><strong>Templates</strong></div>
+      <div class="topbar-right">
+        <button class="topbar-btn">&#8981;</button>
+        <button class="topbar-btn">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="page-head">
+      <h1>Templates</h1>
+      <p>Validated scales and ready-made surveys. Start with one, edit anything, keep the citation.</p>
+    </div>
+
+    <div class="filters">
+      <div class="search"><span style="color:#6b7088;">&#8981;</span><input type="text" placeholder="Search by construct, domain, or author..." /></div>
+      <span class="chip on">All domains</span>
+      <span class="chip">HR / Workplace</span>
+      <span class="chip">Education</span>
+      <span class="chip">Health / Wellbeing</span>
+      <span class="chip">Brand / Marketing</span>
+      <span class="chip">Tests</span>
+    </div>
+
+    <div class="featured">
+      <div class="feat-card">
+        <div>
+          <div class="tag">FEATURED THIS MONTH</div>
+          <h2>UCLA Loneliness Scale (3-item version)</h2>
+          <p>A short, validated scale for measuring loneliness across populations. Used in over 200 published studies. Three Likert items, takes under a minute to complete.</p>
+          <div class="stats">
+            <span>Recommended N: <strong>&gt;= 100</strong></span>
+            <span>Target &alpha;: <strong>0.72+</strong></span>
+            <span>Items: <strong>3</strong></span>
+          </div>
+          <div class="actions">
+            <a class="btn primary small" href="builder.html">Use this scale</a>
+            <a class="btn ghost small" href="#">Preview items</a>
+          </div>
+        </div>
+        <div style="text-align:center;font-family:'Fraunces',serif;font-size:48px;font-weight:700;color:rgba(232,93,58,0.40);">&loz;</div>
+      </div>
+    </div>
+
+    <div class="grid-section">
+
+      <div class="section-title">Validated scales</div>
+      <div class="grid">
+
+        <a class="t-card blue" href="builder.html">
+          <span class="lab">RESILIENCE</span>
+          <h3>Connor-Davidson Resilience Scale (CD-RISC-10)</h3>
+          <div class="desc">Ten items capturing trait resilience. Used widely in clinical and workplace research.</div>
+          <div class="cite">Campbell-Sills &amp; Stein, 2007</div>
+          <div class="stats">
+            <div><strong>10</strong><br>items</div>
+            <div><strong>&gt;= 150</strong><br>recommended N</div>
+            <div><strong>0.85</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+        <a class="t-card" href="builder.html">
+          <span class="lab">SELF-EFFICACY</span>
+          <h3>General Self-Efficacy Scale (GSE)</h3>
+          <div class="desc">Ten Likert items measuring perceived ability to cope with difficult demands.</div>
+          <div class="cite">Schwarzer &amp; Jerusalem, 1995</div>
+          <div class="stats">
+            <div><strong>10</strong><br>items</div>
+            <div><strong>&gt;= 100</strong><br>recommended N</div>
+            <div><strong>0.82</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+        <a class="t-card green" href="builder.html">
+          <span class="lab">STRESS</span>
+          <h3>Perceived Stress Scale (PSS-10)</h3>
+          <div class="desc">Ten items measuring stress perception over the past month. Standard in occupational and student samples.</div>
+          <div class="cite">Cohen, Kamarck, &amp; Mermelstein, 1983</div>
+          <div class="stats">
+            <div><strong>10</strong><br>items</div>
+            <div><strong>&gt;= 100</strong><br>recommended N</div>
+            <div><strong>0.78</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+        <a class="t-card" href="builder.html">
+          <span class="lab">LONELINESS</span>
+          <h3>UCLA Loneliness Scale (3-item)</h3>
+          <div class="desc">Short-form loneliness scale, suitable for surveys where length is constrained.</div>
+          <div class="cite">Hughes et al., 2004</div>
+          <div class="stats">
+            <div><strong>3</strong><br>items</div>
+            <div><strong>&gt;= 100</strong><br>recommended N</div>
+            <div><strong>0.72</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+        <a class="t-card blue" href="builder.html">
+          <span class="lab">ACADEMIC EFFICACY</span>
+          <h3>Academic Self-Efficacy Scale</h3>
+          <div class="desc">Eight items capturing students' beliefs about their academic capability across subjects.</div>
+          <div class="cite">Midgley et al., 2000</div>
+          <div class="stats">
+            <div><strong>8</strong><br>items</div>
+            <div><strong>&gt;= 120</strong><br>recommended N</div>
+            <div><strong>0.81</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+        <a class="t-card green" href="builder.html">
+          <span class="lab">WELLBEING</span>
+          <h3>Warwick-Edinburgh Mental Wellbeing Scale (short)</h3>
+          <div class="desc">Seven items measuring positive mental wellbeing. Population-screening friendly.</div>
+          <div class="cite">Stewart-Brown et al., 2009</div>
+          <div class="stats">
+            <div><strong>7</strong><br>items</div>
+            <div><strong>&gt;= 150</strong><br>recommended N</div>
+            <div><strong>0.84</strong><br>target &alpha;</div>
+          </div>
+        </a>
+
+      </div>
+
+      <div class="section-title">Starter surveys</div>
+      <div class="grid">
+
+        <a class="t-card" href="builder.html">
+          <span class="lab">HR</span>
+          <h3>Employee Engagement Pulse</h3>
+          <div class="desc">12-item pulse covering engagement, recognition, growth, and intent to stay. Anonymous by default.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>12</strong><br>items</div>
+            <div><strong>&gt;= 60</strong><br>recommended N</div>
+            <div><strong>3 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+        <a class="t-card" href="builder.html">
+          <span class="lab">HR</span>
+          <h3>Leadership 360 Panel</h3>
+          <div class="desc">Multi-rater leadership feedback covering communication, decision-making, coaching, and inclusion.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>20</strong><br>items</div>
+            <div><strong>5-12</strong><br>raters / subject</div>
+            <div><strong>8 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+        <a class="t-card blue" href="builder.html">
+          <span class="lab">EDUCATION</span>
+          <h3>Student Course Evaluation</h3>
+          <div class="desc">Mid-term and end-of-term course feedback with two open-ended prompts.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>14</strong><br>items</div>
+            <div><strong>&gt;= 25</strong><br>recommended N</div>
+            <div><strong>4 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+        <a class="t-card green" href="builder.html">
+          <span class="lab">MARKETING</span>
+          <h3>Post-Purchase Customer Experience</h3>
+          <div class="desc">NPS, satisfaction, ease of use, plus an open-ended what-could-be-better prompt.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>9</strong><br>items</div>
+            <div><strong>&gt;= 100</strong><br>recommended N</div>
+            <div><strong>2 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+        <a class="t-card blue" href="builder.html">
+          <span class="lab">TEST</span>
+          <h3>Math Diagnostic (Grades 6-8)</h3>
+          <div class="desc">Twenty-item multiple choice with answer key, skill tags, and built-in item analysis.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>20</strong><br>items</div>
+            <div><strong>&gt;= 60</strong><br>recommended N</div>
+            <div><strong>25 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+        <a class="t-card green" href="builder.html">
+          <span class="lab">PROGRAM EVAL</span>
+          <h3>Program Pre/Post Survey</h3>
+          <div class="desc">Identical pre and post wave with respondent ID and wave fields pre-wired for RCI analysis.</div>
+          <div class="cite">ReliCheck starter</div>
+          <div class="stats">
+            <div><strong>15</strong><br>items</div>
+            <div><strong>&gt;= 30</strong><br>per wave</div>
+            <div><strong>4 min</strong><br>est. time</div>
+          </div>
+        </a>
+
+      </div>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

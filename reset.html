@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Set a new password · ReliCheck</title>
+  <meta name="description" content="Set a new ReliCheck password from the link in your email." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  
+</head>
+<body class="auth-page">
+<header class="auth-topbar">
+  <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="logo-brand.svg" alt="ReliCheck" /></a>
+  <a href="help.html">Need help?</a>
+</header>
+<div class="auth-split">
+<aside class="auth-aside">
+  <span class="kicker">Almost there</span>
+  <h2>One more step and you're back in.</h2>
+  <p class="lede">Choose a new password (at least 8 characters with one number) and we'll log you in.</p>
+  <div class="auth-aside-figure">
+    <div class="uv-card">
+      <h6>Live right now</h6>
+      <div class="v">3 surveys</div>
+      <div class="meta">247 new responses since you last logged in</div>
+      <div class="uv-bar"><span style="width:74%"></span></div>
+    </div>
+    <div class="uv-card">
+      <h6>Latest reliability check</h6>
+      <div class="v">α = 0.89</div>
+      <div class="meta">Q2 NPS pulse · 12 items · holding strong</div>
+    </div>
+    <div class="uv-card">
+      <h6>Waiting on you</h6>
+      <div class="v">2 reports</div>
+      <div class="meta">Climate 2026 ready for sign-off</div>
+    </div>
+  </div>
+</aside>
+<main class="auth-main">
+<section class="auth-card">
+  <div class="top-link"><a href="login.html">← Back to sign in</a></div>
+  <h1 id="reset-title">Set a new password</h1>
+        <p class="sub">Pick a password with at least 8 characters and one number.</p>
+
+        <div id="banner" class="banner" role="status" aria-live="polite"></div>
+
+        <form id="reset-form" novalidate>
+          <div class="field" id="f-password">
+            <label for="password">New password</label>
+            <input type="password" id="password" name="password" autocomplete="new-password" required minlength="8" />
+            <div class="hint">At least 8 characters, with one number.</div>
+            <div class="err">Password must be at least 8 characters and include a number.</div>
+          </div>
+          <div class="field" id="f-confirm">
+            <label for="confirm">Confirm password</label>
+            <input type="password" id="confirm" name="confirm" autocomplete="new-password" required />
+            <div class="err">Passwords don't match.</div>
+          </div>
+          <button class="btn btn-primary btn-block btn-lg" type="submit">Set new password</button>
+        </form>
+</section>
+</main>
+</div>
+<script>
+    (function () {
+      const form = document.getElementById('reset-form');
+      const banner = document.getElementById('banner');
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      function setInvalid(id, invalid) { document.getElementById(id).classList.toggle('invalid', invalid); }
+      function isValidPassword(v) { return v.length >= 8 && /\d/.test(v); }
+      function showBanner(kind, text) { banner.className = 'banner show ' + kind; banner.textContent = text; }
+
+      const params = new URLSearchParams(location.search);
+      const token = params.get('token') || '';
+      if (!/^[a-f0-9]{64}$/.test(token)) {
+        showBanner('error', 'This reset link is invalid. Please request a new one from the login page.');
+        submitBtn.disabled = true;
+      }
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        banner.className = 'banner';
+        banner.textContent = '';
+        const password = document.getElementById('password').value;
+        const confirm = document.getElementById('confirm').value;
+
+        const pwBad = !isValidPassword(password);
+        setInvalid('f-password', pwBad);
+        const cBad = password !== confirm || confirm.length === 0;
+        setInvalid('f-confirm', cBad);
+        if (pwBad || cBad) {
+          showBanner('error', 'Please fix the highlighted fields and try again.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        const orig = submitBtn.textContent;
+        submitBtn.textContent = 'Saving…';
+        try {
+          const res = await fetch('/api/auth/reset.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: token, password: password }),
+          });
+          let data = {};
+          try { data = await res.json(); } catch (_) {}
+          if (!res.ok) {
+            showBanner('error', data.message || 'We could not reset your password. The link may have expired.');
+            return;
+          }
+          showBanner('success', 'Password updated. Redirecting to your dashboard…');
+          setTimeout(() => { location.href = 'app.html'; }, 700);
+        } catch (err) {
+          showBanner('error', 'Network error. Check your connection and try again.');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = orig;
+        }
+      });
+
+      ['password', 'confirm'].forEach(id => {
+        document.getElementById(id).addEventListener('input', () => setInvalid('f-' + id, false));
+      });
+    })();
+  </script>
+</body>
+</html>

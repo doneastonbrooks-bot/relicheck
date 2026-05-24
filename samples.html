@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sample reports &middot; ReliCheck</title>
+  <meta name="description" content="Browse the ReliCheck dashboards: Survey assessment, Data analysis, and Test analytics. Faithful previews of every dashboard, plus full sample reports across course evaluation, customer feedback, and engagement use cases." />
+  <link rel="canonical" href="https://relichecksurvey.com/samples.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Sample reports &middot; ReliCheck" />
+  <meta property="og:description" content="Browse the ReliCheck dashboards and sample reports across every use case." />
+  <meta property="og:url" content="https://relichecksurvey.com/samples.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Sample reports &middot; ReliCheck" />
+  <meta name="twitter:description" content="Browse the ReliCheck dashboards and sample reports across every use case." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    /* --- Dashboards carousel --- */
+    .dc-wrap { position: relative; }
+    .dc-viewport { overflow: hidden; border-radius: 18px; background: #0b1733; box-shadow: 0 30px 60px rgba(11, 23, 51, 0.18); }
+    .dc-track { display: flex; transition: transform 0.5s cubic-bezier(0.22, 0.61, 0.36, 1); }
+    .dc-slide { flex: 0 0 100%; min-width: 0; display: grid; grid-template-columns: 1.1fr 1fr; gap: 0; align-items: stretch; }
+    @media (max-width: 860px) { .dc-slide { grid-template-columns: 1fr; } }
+    .dc-mock { background: linear-gradient(155deg, #1e2a4d 0%, #0b1733 100%); padding: 38px 36px; min-height: 420px; display: flex; align-items: center; justify-content: center; }
+    @media (max-width: 860px) { .dc-mock { min-height: 320px; padding: 28px 22px; } }
+    .dc-mock-card { width: 100%; max-width: 460px; background: #fff; border-radius: 12px; padding: 18px 18px 16px; box-shadow: 0 18px 40px rgba(11, 23, 51, 0.35); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .dc-mock-ctx { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid #e3e6ee; margin-bottom: 10px; font-size: 11px; color: #6b7088; }
+    .dc-mock-ctx .l { display: flex; align-items: center; gap: 6px; font-weight: 600; color: #0b1733; }
+    .dc-mock-ctx .dot { width: 7px; height: 7px; border-radius: 50%; background: #1f9d55; }
+    .dc-mock-tabs { display: flex; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid #e3e6ee; margin-bottom: 12px; flex-wrap: nowrap; overflow: hidden; }
+    .dc-mock-tab { font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: #f6f7fb; color: #6b7088; white-space: nowrap; }
+    .dc-mock-tab.is-active { background: #fff3eb; color: #e85d3a; }
+    .dc-mock-row { display: flex; align-items: center; gap: 14px; }
+    .dc-mock-ring { position: relative; width: 88px; height: 88px; flex: 0 0 auto; }
+    .dc-mock-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .dc-mock-ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .dc-mock-ring .n { font-family: Fraunces, Georgia, serif; font-size: 24px; font-weight: 700; color: #0b1733; }
+    .dc-mock-ring .of { font-size: 10px; color: #6b7088; margin-top: 2px; }
+    .dc-mock-body h5 { font-family: Fraunces, Georgia, serif; font-size: 16px; font-weight: 600; color: #0b1733; margin: 0 0 4px; }
+    .dc-mock-pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 999px; }
+    .dc-mock-pill.good { background: #ecfdf3; color: #1f9d55; }
+    .dc-mock-pill.warn { background: #fff8e6; color: #8a5b00; }
+    .dc-mock-pill.brand { background: #fff3eb; color: #e85d3a; }
+    .dc-mock-read { font-size: 11px; color: #454a63; margin-top: 6px; line-height: 1.45; }
+    .dc-mock-kpi { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 12px; }
+    .dc-mock-kpi .k { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 6px; padding: 7px 8px; }
+    .dc-mock-kpi .l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7088; }
+    .dc-mock-kpi .v { font-family: Fraunces, Georgia, serif; font-size: 15px; font-weight: 700; color: #0b1733; }
+    .dc-mock-bars { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .dc-mock-bar { display: grid; grid-template-columns: 70px 1fr 28px; gap: 8px; align-items: center; font-size: 10px; }
+    .dc-mock-bar .lab { color: #0b1733; font-weight: 500; }
+    .dc-mock-bar .track { height: 7px; background: #eef1f5; border-radius: 999px; overflow: hidden; }
+    .dc-mock-bar .track > span { display: block; height: 100%; border-radius: 999px; background: #4a8af4; }
+    .dc-mock-bar .track > span.alt { background: #1f9d55; }
+    .dc-mock-bar .track > span.warn { background: #d4a017; }
+    .dc-mock-bar .v { text-align: right; font-variant-numeric: tabular-nums; color: #454a63; }
+    .dc-mock-hist { margin-top: 12px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; align-items: end; height: 90px; }
+    .dc-mock-hist .b { background: linear-gradient(180deg, #4a8af4 0%, #2940c9 100%); border-radius: 4px 4px 2px 2px; }
+    .dc-meta { background: #fff; padding: 38px 38px; display: flex; flex-direction: column; justify-content: center; gap: 14px; }
+    @media (max-width: 860px) { .dc-meta { padding: 26px 22px; } }
+    .dc-meta .kicker { font-size: 12px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #e85d3a; }
+    .dc-meta h3 { font-family: Fraunces, Georgia, serif; font-size: 30px; font-weight: 600; line-height: 1.15; color: #0b1733; margin: 0; }
+    @media (max-width: 860px) { .dc-meta h3 { font-size: 24px; } }
+    .dc-meta p { font-size: 16px; color: #454a63; line-height: 1.55; margin: 0; }
+    .dc-meta .stats { display: flex; gap: 24px; padding-top: 6px; }
+    .dc-meta .stats div { font-size: 13px; color: #6b7088; }
+    .dc-meta .stats strong { display: block; font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 600; color: #0b1733; }
+    .dc-meta .cta { display: inline-flex; align-items: center; gap: 6px; padding: 12px 22px; background: #e85d3a; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; align-self: flex-start; transition: background 0.15s; }
+    .dc-meta .cta:hover { background: #d44e2c; }
+    .dc-arrows { position: absolute; top: 50%; left: 0; right: 0; transform: translateY(-50%); display: flex; justify-content: space-between; pointer-events: none; padding: 0 14px; }
+    .dc-arrow { pointer-events: auto; width: 44px; height: 44px; border-radius: 50%; background: #fff; border: 1px solid #e3e6ee; box-shadow: 0 4px 12px rgba(11, 23, 51, 0.12); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 22px; color: #0b1733; transition: background 0.15s, color 0.15s, transform 0.15s; }
+    .dc-arrow:hover { background: #e85d3a; color: #fff; transform: scale(1.05); }
+    .dc-dots { display: flex; justify-content: center; gap: 8px; margin-top: 20px; }
+    .dc-dot { width: 10px; height: 10px; border-radius: 50%; background: #d4d8e0; border: 0; cursor: pointer; padding: 0; transition: background 0.15s, transform 0.15s; }
+    .dc-dot:hover { background: #b0b6c2; }
+    .dc-dot.is-active { background: #e85d3a; transform: scale(1.2); }
+    .dc-counter { text-align: center; font-size: 12px; color: #6b7088; margin-top: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .dc-counter strong { color: #0b1733; }
+  </style>
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+<header class="article-header is-centered">
+  <div class="container-content">
+    <span class="kicker">Sample reports &amp; dashboards</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:24ch;">See what every ReliCheck dashboard actually looks like.</h1>
+    <p class="lede" style="margin:0 auto;">Three families of dashboards cover the full ReliCheck workflow: Survey assessment for credibility, Data analysis for results, and Test analytics for classroom assessments. Each preview below mirrors what you see in the live app.</p>
+  </div>
+</header>
+
+<!-- Dashboards carousel -->
+<section class="section">
+  <div class="container-content">
+    <div class="dc-wrap">
+      <div class="dc-viewport">
+        <div class="dc-track" id="dcTrack">
+
+          <!-- Slide 1: Survey assessment -->
+          <article class="dc-slide" aria-roledescription="slide" aria-label="Slide 1 of 3">
+            <div class="dc-mock" aria-hidden="true">
+              <div class="dc-mock-card">
+                <div class="dc-mock-ctx"><span class="l"><span class="dot"></span>Workplace Engagement Pulse</span><span>Strong &middot; 86 / 100</span></div>
+                <div class="dc-mock-tabs"><span class="dc-mock-tab is-active">Strength Index</span><span class="dc-mock-tab">Readiness</span><span class="dc-mock-tab">Reliability</span><span class="dc-mock-tab">+5</span></div>
+                <div class="dc-mock-row">
+                  <div class="dc-mock-ring">
+                    <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#1f8a4d" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="35"/></svg>
+                    <div class="num"><span class="n">86</span><span class="of">/ 100</span></div>
+                  </div>
+                  <div class="dc-mock-body">
+                    <h5>Strength Index</h5>
+                    <span class="dc-mock-pill good">Strong</span>
+                    <div class="dc-mock-read">McDonald's omega 0.91; alpha-omega gap 0.02 holds the 1-factor assumption.</div>
+                  </div>
+                </div>
+                <div class="dc-mock-kpi">
+                  <div class="k"><div class="l">Reliability</div><div class="v">22 / 25</div></div>
+                  <div class="k"><div class="l">Factor</div><div class="v">17 / 20</div></div>
+                  <div class="k"><div class="l">Items</div><div class="v">17 / 20</div></div>
+                  <div class="k"><div class="l">Quality</div><div class="v">14 / 15</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="dc-meta">
+              <span class="kicker">Level 1 of 3 &middot; 6 dashboards</span>
+              <h3>Survey assessment dashboards</h3>
+              <p>Is the survey ready, do the questions hold together, can you trust what came back? Strength Index, Survey Readiness, Reliability, Validity, Response Quality, and Completion.</p>
+              <div class="stats">
+                <div><strong>6</strong>dashboards</div>
+                <div><strong>5</strong>surfaced tabs</div>
+                <div><strong>1</strong>scorecard</div>
+              </div>
+              <a href="/dashboards/survey-assessment.html" class="cta">Open Survey assessment &rarr;</a>
+            </div>
+          </article>
+
+          <!-- Slide 2: Data analysis -->
+          <article class="dc-slide" aria-roledescription="slide" aria-label="Slide 2 of 3">
+            <div class="dc-mock" aria-hidden="true">
+              <div class="dc-mock-card">
+                <div class="dc-mock-ctx"><span class="l"><span class="dot"></span>Q4 Customer Sentiment</span><span>312 responses</span></div>
+                <div class="dc-mock-tabs"><span class="dc-mock-tab">Description</span><span class="dc-mock-tab is-active">Comparison</span><span class="dc-mock-tab">Predictors</span><span class="dc-mock-tab">+8</span></div>
+                <div class="dc-mock-row">
+                  <div class="dc-mock-body" style="flex:1;">
+                    <h5>Mean satisfaction by region</h5>
+                    <span class="dc-mock-pill brand">ANOVA p &lt; .001</span>
+                    <div class="dc-mock-read">Significant difference across four regions; Cohen's f = 0.34 (large).</div>
+                  </div>
+                </div>
+                <div class="dc-mock-bars">
+                  <div class="dc-mock-bar"><span class="lab">Northeast</span><span class="track"><span style="width:84%;"></span></span><span class="v">4.2</span></div>
+                  <div class="dc-mock-bar"><span class="lab">Southeast</span><span class="track"><span class="alt" style="width:92%;"></span></span><span class="v">4.6</span></div>
+                  <div class="dc-mock-bar"><span class="lab">Midwest</span><span class="track"><span style="width:76%;"></span></span><span class="v">3.8</span></div>
+                  <div class="dc-mock-bar"><span class="lab">West</span><span class="track"><span class="warn" style="width:60%;"></span></span><span class="v">3.0</span></div>
+                </div>
+                <div class="dc-mock-kpi">
+                  <div class="k"><div class="l">Mean</div><div class="v">3.95</div></div>
+                  <div class="k"><div class="l">SD</div><div class="v">1.12</div></div>
+                  <div class="k"><div class="l">F(3,308)</div><div class="v">14.2</div></div>
+                  <div class="k"><div class="l">eta-sq</div><div class="v">.12</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="dc-meta">
+              <span class="kicker">Level 2 of 3 &middot; 11 dashboards</span>
+              <h3>Data analysis dashboards</h3>
+              <p>What is the data showing across descriptive, comparative, regression, longitudinal, and equity views? Eleven analytics tabs from Description and Open-Ended through Predictors, MLM, IRT, and Key Drivers.</p>
+              <div class="stats">
+                <div><strong>11</strong>dashboards</div>
+                <div><strong>2</strong>surfaced</div>
+                <div><strong>9</strong>in dropdown</div>
+              </div>
+              <a href="/dashboards/data-analysis.html" class="cta">Open Data analysis &rarr;</a>
+            </div>
+          </article>
+
+          <!-- Slide 3: Test analytics -->
+          <article class="dc-slide" aria-roledescription="slide" aria-label="Slide 3 of 3">
+            <div class="dc-mock" aria-hidden="true">
+              <div class="dc-mock-card">
+                <div class="dc-mock-ctx"><span class="l"><span class="dot"></span>Bio 201 Midterm</span><span>178 students</span></div>
+                <div class="dc-mock-tabs"><span class="dc-mock-tab is-active">Difficulty</span><span class="dc-mock-tab">Reliability</span><span class="dc-mock-tab">Distractors</span><span class="dc-mock-tab">+5</span></div>
+                <div class="dc-mock-row">
+                  <div class="dc-mock-body" style="flex:1;">
+                    <h5>Item difficulty distribution</h5>
+                    <span class="dc-mock-pill good">Well-targeted</span>
+                    <div class="dc-mock-read">Most items in the 0.4 to 0.7 difficulty range; 2 items flagged as too easy.</div>
+                  </div>
+                </div>
+                <div class="dc-mock-hist">
+                  <div class="b" style="height:18%;"></div>
+                  <div class="b" style="height:32%;"></div>
+                  <div class="b" style="height:55%;"></div>
+                  <div class="b" style="height:78%;"></div>
+                  <div class="b" style="height:92%;"></div>
+                  <div class="b" style="height:70%;"></div>
+                  <div class="b" style="height:48%;"></div>
+                  <div class="b" style="height:25%;"></div>
+                </div>
+                <div class="dc-mock-kpi">
+                  <div class="k"><div class="l">Items</div><div class="v">35</div></div>
+                  <div class="k"><div class="l">alpha</div><div class="v">0.84</div></div>
+                  <div class="k"><div class="l">Mean</div><div class="v">0.62</div></div>
+                  <div class="k"><div class="l">SEM</div><div class="v">2.1</div></div>
+                </div>
+              </div>
+            </div>
+            <div class="dc-meta">
+              <span class="kicker">Level 3 of 3 &middot; 8 tabs</span>
+              <h3>Test analytics dashboards</h3>
+              <p>The eight-tab test analytics dashboard, built for classroom assessments where each item has a single correct answer. Reliability, item difficulty, distractor analysis, skill rollups, item health.</p>
+              <div class="stats">
+                <div><strong>8</strong>tabs</div>
+                <div><strong>1</strong>entity</div>
+                <div><strong>0</strong>setup</div>
+              </div>
+              <a href="/dashboards/test-analytics.html" class="cta">Open Test analytics &rarr;</a>
+            </div>
+          </article>
+
+        </div>
+      </div>
+      <div class="dc-arrows">
+        <button class="dc-arrow" id="dcPrev" aria-label="Previous dashboard">&#8249;</button>
+        <button class="dc-arrow" id="dcNext" aria-label="Next dashboard">&#8250;</button>
+      </div>
+      <div class="dc-dots" id="dcDots">
+        <button class="dc-dot is-active" data-dc="0" aria-label="Slide 1"></button>
+        <button class="dc-dot" data-dc="1" aria-label="Slide 2"></button>
+        <button class="dc-dot" data-dc="2" aria-label="Slide 3"></button>
+      </div>
+      <div class="dc-counter">Slide <strong id="dcCurrent">1</strong> of 3</div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured sample: lead with the answer -->
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Featured sample report</span>
+      <h2>A real survey, scored end to end.</h2>
+    </div>
+    <div class="sample-featured">
+      <div class="sample-featured-grid">
+        <div class="sample-featured-ring">
+          <svg viewBox="0 0 160 160" width="220" height="220" aria-hidden="true">
+            <circle cx="80" cy="80" r="64" fill="none" stroke="#eef1f5" stroke-width="14"/>
+            <circle cx="80" cy="80" r="64" fill="none" stroke="#1f9d55" stroke-width="14" stroke-linecap="round"
+                    stroke-dasharray="402" stroke-dashoffset="72" transform="rotate(-90 80 80)"/>
+          </svg>
+          <div class="sample-featured-ring-num">
+            <span class="n">82</span>
+            <span class="of">/ 100</span>
+          </div>
+        </div>
+        <div class="sample-featured-body">
+          <div class="kicker" style="margin-bottom:8px;">Featured sample &middot; Employee Engagement Pulse 2026</div>
+          <h2 style="margin:0 0 12px;">Can this survey be trusted?</h2>
+          <p style="font-size:18px;color:var(--ink-7);margin:0 0 18px;line-height:1.55;"><strong style="color:var(--ink);">Mostly yes.</strong> The survey is statistically strong and ready to use for internal planning and quarterly reporting, with minor cautions on two items.</p>
+          <div class="sample-featured-facts">
+            <div><span class="lab">Strength Score</span><span class="val">82 / 100 &middot; Strong</span></div>
+            <div><span class="lab">Use case</span><span class="val">Safe for internal planning and reporting</span></div>
+            <div><span class="lab">Main caution</span><span class="val">Two items weaken the teamwork scale</span></div>
+            <div><span class="lab">Recommended action</span><span class="val">Revise or remove those items before the next administration</span></div>
+          </div>
+          <div class="hero-actions" style="margin-top:var(--s-5);">
+            <a href="samples/hybrid-engagement.html" class="btn btn-primary btn-lg">Open the full sample</a>
+            <a href="samples/interactive-course-evaluation.html" class="btn btn-outline btn-lg">Try the interactive demo</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- What every report contains -->
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">What every ReliCheck report contains</span>
+      <h2>Nine sections, written for the people who have to defend the numbers.</h2>
+    </div>
+    <div class="cards-3">
+      <article class="card" style="cursor:default;"><h3>Survey Strength Score</h3><p>The headline number, status band, and band-specific guidance you can paste into a deck.</p></article>
+      <article class="card" style="cursor:default;"><h3>Executive summary</h3><p>AI-assisted plain-language overview of the finding, the sample, and the caveats.</p></article>
+      <article class="card" style="cursor:default;"><h3>Key findings</h3><p>Bullets pulled from the strongest signals across reliability, factor structure, response quality, and themes.</p></article>
+      <article class="card" style="cursor:default;"><h3>Reliability check</h3><p>Cronbach's alpha, split-half, item-total correlations, and "alpha if deleted" per scale.</p></article>
+      <article class="card" style="cursor:default;"><h3>Factor analysis summary</h3><p>Number of factors retained, variance explained, KMO, Bartlett's significance, factor names (AI-suggested, user-editable).</p></article>
+      <article class="card" style="cursor:default;"><h3>Open-ended themes</h3><p>Theme names, counts, sentiment, and example quotes pulled from written responses.</p></article>
+      <article class="card" style="cursor:default;"><h3>Item flags</h3><p>Items that hurt the scale, items with ceiling or floor effects, items with negative loadings.</p></article>
+      <article class="card" style="cursor:default;"><h3>Recommended fixes</h3><p>Per-item revision guidance, scales to split, scales to drop, and decisions you can defend.</p></article>
+      <article class="card" style="cursor:default;"><h3>Technical appendix</h3><p>The full math, for the reader who wants it. Reviewers, auditors, and peer readers find what they need.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- Sample gallery -->
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">More samples</span><h2>Other surveys, other audiences.</h2></div>
+    <div class="cards-3">
+      <a class="intent" href="samples/course-evaluation.html"><h3>Course evaluation</h3><p>End-of-term feedback for a 200-student undergraduate course, 24 items, alpha and KMO per dimension.</p><span class="arrow">Open report &rarr;</span></a>
+      <a class="intent" href="samples/customer-feedback.html"><h3>Customer feedback</h3><p>Quarterly CSAT for a B2B SaaS, 8 items plus open-ended, theme extraction across 312 responses.</p><span class="arrow">Open report &rarr;</span></a>
+      <a class="intent" href="samples/hybrid-engagement.html"><h3>Hybrid engagement</h3><p>Mixed-mode engagement survey for a 600-person organization, k-anonymity rollups by department.</p><span class="arrow">Open report &rarr;</span></a>
+      <a class="intent" href="samples/suite-rollup.html"><h3>HR Suite roll-up</h3><p>Cross-survey quarterly roll-up across a Workplace Engagement plus Exit Interview suite, this quarter vs last, with the AI narrator and the shared-construct trend.</p><span class="arrow">Open report &rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Interactive demo -->
+<section class="section">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">Interactive demo</span><h2>Try it without an account</h2></div>
+    <div style="max-width:560px;margin:0 auto;">
+      <a class="intent" href="samples/interactive-course-evaluation.html"><h3>Interactive course evaluation</h3><p>Click through a live ReliCheck report, change dimensions, surface item flags, read the AI summary.</p><span class="arrow">Try it &rarr;</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="section"><div class="container-content"><div class="cta-band">
+  <h2>Run a sample on your own data</h2>
+  <p>Free to start, paid plans add unlimited responses and team sharing. Reliability and report-writing are included from day one.</p>
+  <div class="hero-actions"><a href="signup.html" class="btn btn-primary btn-lg">Start free</a><a href="pricing.html" class="btn btn-outline btn-lg">See pricing</a></div>
+</div></div></section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+<script>
+  (function () {
+    var track = document.getElementById('dcTrack');
+    var prev  = document.getElementById('dcPrev');
+    var next  = document.getElementById('dcNext');
+    var dotsWrap = document.getElementById('dcDots');
+    var counter = document.getElementById('dcCurrent');
+    if (!track || !prev || !next) return;
+    var slides = track.children.length;
+    var idx = 0;
+    var autoplay = null;
+    var AUTO_MS = 7000;
+
+    function go(i) {
+      idx = (i + slides) % slides;
+      track.style.transform = 'translateX(' + (-idx * 100) + '%)';
+      if (counter) counter.textContent = String(idx + 1);
+      var dots = dotsWrap ? dotsWrap.querySelectorAll('.dc-dot') : [];
+      for (var k = 0; k < dots.length; k++) {
+        if (k === idx) dots[k].classList.add('is-active');
+        else dots[k].classList.remove('is-active');
+      }
+    }
+
+    function startAuto() {
+      stopAuto();
+      autoplay = setInterval(function () { go(idx + 1); }, AUTO_MS);
+    }
+    function stopAuto() {
+      if (autoplay) { clearInterval(autoplay); autoplay = null; }
+    }
+
+    prev.addEventListener('click', function () { stopAuto(); go(idx - 1); startAuto(); });
+    next.addEventListener('click', function () { stopAuto(); go(idx + 1); startAuto(); });
+
+    if (dotsWrap) {
+      dotsWrap.addEventListener('click', function (e) {
+        var btn = e.target.closest('.dc-dot');
+        if (!btn) return;
+        var i = parseInt(btn.getAttribute('data-dc'), 10) || 0;
+        stopAuto(); go(i); startAuto();
+      });
+    }
+
+    var wrap = track.closest('.dc-wrap');
+    if (wrap) {
+      wrap.addEventListener('mouseenter', stopAuto);
+      wrap.addEventListener('mouseleave', startAuto);
+    }
+
+    document.addEventListener('keydown', function (e) {
+      if (!document.activeElement) return;
+      if (!document.activeElement.closest('.dc-wrap')) return;
+      if (e.key === 'ArrowLeft')  { stopAuto(); go(idx - 1); startAuto(); }
+      if (e.key === 'ArrowRight') { stopAuto(); go(idx + 1); startAuto(); }
+    });
+
+    startAuto();
+  })();
+</script>
+
+</body>
+</html>

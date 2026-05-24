@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Survey dashboard - ReliCheck</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-2: #f4f5fb;
+      --border: #e2e4ea;
+      --text: #1a2238;
+      --text-soft: #4a5168;
+      --text-mute: #7a8499;
+      --primary: #e85d3a;
+      --good: #1f9d55;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: -apple-system, "Segoe UI", Roboto, Inter, sans-serif; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 60px; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 22px; }
+    .brand { font-weight: 700; letter-spacing: -0.01em; font-size: 16px; color: var(--text); text-decoration: none; }
+    .brand .dot { color: var(--primary); }
+    .badge { font-size: 14px; padding: 2px 9px; background: var(--panel); border: 1px solid var(--border); border-radius: 999px; color: var(--text-mute); }
+
+    h1 { margin: 0 0 8px; font-size: 26px; letter-spacing: -0.015em; }
+    .desc { margin: 0 0 18px; color: var(--text-soft); font-size: 15px; line-height: 1.55; }
+
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-bottom: 14px; }
+    .card h2 { margin: 0 0 12px; font-size: 16px; letter-spacing: -0.01em; }
+    .empty { text-align: center; color: var(--text-mute); padding: 40px 20px; font-size: 15px; }
+
+    .pwd-form input[type=password] { width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font: inherit; font-size: 15px; }
+    .pwd-form .btn { margin-top: 10px; padding: 10px 16px; background: var(--primary); color: #fff; border: 0; border-radius: 8px; font: inherit; font-weight: 600; cursor: pointer; }
+    .pwd-form .err { color: #c8334b; font-size: 14px; margin-top: 8px; }
+
+    .stat-row { display: flex; gap: 18px; flex-wrap: wrap; }
+    .stat-row .num { display: flex; flex-direction: column; gap: 2px; }
+    .stat-row .num strong { font-size: 26px; color: var(--text); font-weight: 700; letter-spacing: -0.015em; }
+    .stat-row .num span { font-size: 14px; color: var(--text-mute); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .qcard { padding-bottom: 14px; }
+    .qcard .qprompt { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+    .qcard .qmeta { font-size: 14px; color: var(--text-mute); margin-bottom: 10px; }
+    .histogram { display: flex; align-items: flex-end; gap: 6px; height: 90px; padding: 4px 0; }
+    .histogram .bar { flex: 1; background: var(--primary); opacity: 0.55; border-radius: 3px 3px 0 0; min-height: 4px; position: relative; }
+    .histogram .bar.suppressed { background: repeating-linear-gradient(45deg, #e2e4ea, #e2e4ea 4px, #f5f7fb 4px, #f5f7fb 8px); opacity: 1; }
+    .histogram .bar .label { position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--text-mute); white-space: nowrap; }
+    .histogram .bar .count { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 14px; color: var(--text-soft); font-weight: 600; }
+    .histo-wrap { padding-bottom: 26px; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 22px; font-size: 14px; color: var(--text-soft); }
+    .legend span { display: inline-flex; align-items: center; gap: 4px; }
+
+    .time-chart { width: 100%; height: 140px; }
+    .time-chart path { fill: rgba(232,93,58,0.10); stroke: var(--primary); stroke-width: 2; }
+    .time-chart circle { fill: var(--primary); }
+
+    .footer-note { font-size: 14px; color: var(--text-mute); margin-top: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <a class="brand" href="/">ReliCheck<span class="dot">.</span></a>
+      <span class="badge">Read-only shared dashboard</span>
+    </div>
+    <div id="content">
+      <div class="card empty">Loading…</div>
+    </div>
+    <div class="footer-note">Hosted by ReliCheck. Responses are aggregated; individual respondents are not shown.</div>
+  </div>
+
+<script>
+(function () {
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function getSlug() {
+    return new URLSearchParams(location.search).get('s') || '';
+  }
+
+  function renderEmpty(msg) {
+    $('#content').innerHTML = '<div class="card empty">' + escapeHtml(msg) + '</div>';
+  }
+
+  function renderPasswordPrompt(slug, errMsg) {
+    $('#content').innerHTML =
+      '<div class="card pwd-form">' +
+        '<h2>This dashboard is password-protected</h2>' +
+        '<p style="color:var(--text-soft);font-size:14px;margin:0 0 12px;">Enter the password to view.</p>' +
+        '<input id="pwd" type="password" placeholder="Password" autofocus />' +
+        '<div><button class="btn" id="pwdGo">View dashboard</button></div>' +
+        (errMsg ? '<div class="err">' + escapeHtml(errMsg) + '</div>' : '') +
+      '</div>';
+    const go = () => loadData(slug, $('#pwd').value);
+    $('#pwdGo').addEventListener('click', go);
+    $('#pwd').addEventListener('keydown', e => { if (e.key === 'Enter') go(); });
+  }
+
+  async function loadData(slug, password) {
+    try {
+      const res = await fetch('/api/public/dashboard_data.php', {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, password: password || '' }),
+      });
+      const data = await res.json();
+      if (data.ok === false && data.needs_password) {
+        renderPasswordPrompt(slug, password ? 'Incorrect password. Try again.' : null);
+        return;
+      }
+      if (data.ok === false) {
+        const reasons = {
+          expired:    'This dashboard link has expired.',
+          not_found:  'This dashboard link is no longer available.',
+          bad_slug:   'This dashboard link is invalid.',
+          unavailable:'This dashboard is temporarily unavailable.',
+        };
+        renderEmpty(reasons[data.reason] || 'This dashboard is unavailable.');
+        return;
+      }
+      renderDashboard(data);
+    } catch (e) {
+      renderEmpty('Network error. Please try again.');
+    }
+  }
+
+  function renderDashboard(data) {
+    const parts = [];
+
+    // Title + description
+    parts.push('<div class="card">');
+    parts.push('<h1>' + escapeHtml(data.survey.title || '(untitled survey)') + '</h1>');
+    if (data.survey.description) {
+      parts.push('<div class="desc">' + escapeHtml(data.survey.description) + '</div>');
+    }
+    parts.push('<div class="stat-row">');
+    parts.push('<div class="num"><strong>' + data.total_responses + '</strong><span>Total responses</span></div>');
+    parts.push('<div class="num"><strong>' + (data.per_question || []).length + '</strong><span>Questions</span></div>');
+    if (data.anonymity && data.anonymity.k_min > 0) {
+      parts.push('<div class="num"><strong>k≥' + data.anonymity.k_min + '</strong><span>Anonymity floor</span></div>');
+    }
+    parts.push('</div>');
+    parts.push('</div>');
+
+    // Response-over-time
+    if (data.daily_responses && data.daily_responses.length > 0) {
+      parts.push('<div class="card">');
+      parts.push('<h2>Responses over time</h2>');
+      parts.push(renderTimeChart(data.daily_responses));
+      parts.push('</div>');
+    }
+
+    // Per-question
+    (data.per_question || []).forEach((q, i) => {
+      parts.push('<div class="card qcard">');
+      parts.push('<div class="qprompt">' + (i + 1) + '. ' + escapeHtml(q.prompt || '(question)') + '</div>');
+      parts.push('<div class="qmeta">' + q.count + ' response' + (q.count === 1 ? '' : 's') +
+                 (q.mean !== undefined && q.mean !== null ? '   ·   mean ' + q.mean.toFixed(2) : '') +
+                 (q.sd   !== undefined && q.sd   !== null ? '   ·   SD '   + q.sd.toFixed(2)   : '') +
+                 '</div>');
+      if (Array.isArray(q.buckets) && q.buckets.length) {
+        parts.push(renderHistogram(q));
+      } else if (q.type === 'open') {
+        parts.push('<div class="qmeta" style="font-style:italic;color:var(--text-mute);">Free-text responses are not displayed on the public dashboard.</div>');
+      }
+      parts.push('</div>');
+    });
+
+    $('#content').innerHTML = parts.join('');
+  }
+
+  function renderHistogram(q) {
+    const buckets = q.buckets || [];
+    const labels  = q.labels  || (q.type === 'likert' ? buckets.map((_, i) => String(i + 1)) : buckets.map((_, i) => 'Opt ' + (i + 1)));
+    const max     = Math.max.apply(null, buckets.map(v => v > 0 ? v : 0)) || 1;
+    let html = '<div class="histo-wrap"><div class="histogram">';
+    buckets.forEach((v, i) => {
+      if (v === -1) {
+        html += '<div class="bar suppressed" style="height:8%"><span class="label">' + escapeHtml(labels[i] || '') + '</span><span class="count" title="Suppressed for anonymity">·</span></div>';
+        return;
+      }
+      const pct = max > 0 ? Math.max(4, (v / max) * 100) : 0;
+      html += '<div class="bar" style="height:' + pct + '%">' +
+                '<span class="count">' + v + '</span>' +
+                '<span class="label">' + escapeHtml(labels[i] || '') + '</span>' +
+              '</div>';
+    });
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderTimeChart(daily) {
+    const w = 720, h = 140, pad = 20;
+    const max = Math.max.apply(null, daily.map(d => d.count)) || 1;
+    const step = (w - pad * 2) / Math.max(1, daily.length - 1);
+    const points = daily.map((d, i) => {
+      const x = pad + i * step;
+      const y = h - pad - ((d.count / max) * (h - pad * 2));
+      return [x, y, d.date, d.count];
+    });
+    const path = 'M ' + pad + ' ' + (h - pad) + ' ' +
+                 points.map(p => 'L ' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') +
+                 ' L ' + (pad + (daily.length - 1) * step).toFixed(1) + ' ' + (h - pad) + ' Z';
+    const stroke = points.length > 1
+      ? '<path d="' + 'M ' + points.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' L ') + '" fill="none" stroke="#e85d3a" stroke-width="2"/>'
+      : '';
+    const dots = points.map(p =>
+      '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2.5"><title>' + escapeHtml(p[2]) + ': ' + p[3] + '</title></circle>'
+    ).join('');
+    return '<svg class="time-chart" viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none">' +
+              '<path d="' + path + '" />' + stroke + dots + '</svg>';
+  }
+
+  // Boot
+  const slug = getSlug();
+  if (!slug) { renderEmpty('No dashboard link was provided.'); }
+  else { loadData(slug, ''); }
+})();
+</script>
+</body>
+</html>

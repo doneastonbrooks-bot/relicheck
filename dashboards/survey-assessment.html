@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Survey assessment dashboards · ReliCheck</title>
+  <meta name="description" content="The survey-quality dashboards in ReliCheck: Strength Index, Survey Readiness, Reliability, Validity, Response Quality, Completion. Faithful previews of every dashboard with the live app's chrome." />
+  <link rel="canonical" href="https://relichecksurvey.com/dashboards/survey-assessment.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Survey assessment dashboards · ReliCheck" />
+  <meta property="og:description" content="The six survey-quality dashboards in ReliCheck with faithful previews of each." />
+  <meta property="og:url" content="https://relichecksurvey.com/dashboards/survey-assessment.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Survey assessment dashboards · ReliCheck" />
+  <meta name="twitter:description" content="The six survey-quality dashboards in ReliCheck." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles-2026.css?v=20260516-style" />
+  <style>
+    .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; }
+    @media (min-width: 1100px) { .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .dash-card { background: #fff; border: 1px solid #e3e6ee; border-radius: 14px; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(11, 23, 51, 0.04); }
+    .dash-card-head { display: flex; align-items: center; gap: 12px; }
+    .dash-card-head .pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #fde9e2; color: #c75617; }
+    .dash-card h3 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 19px; letter-spacing: -0.01em; color: #0b1733; margin: 0; line-height: 1.25; }
+    .dash-card .question { font-size: 14px; color: #6b7088; margin: 0 0 4px; line-height: 1.4; }
+    .dash-card .body { font-size: 14px; color: #454a63; margin: 4px 0 0; line-height: 1.55; }
+    .dash-frame { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+    .dash-frame .ctx { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #6b7088; padding: 4px 6px; border-bottom: 1px solid #e3e6ee; margin: -2px -2px 6px; }
+    .dash-frame .ctx .left { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .dash-frame .ctx .dot { width: 7px; height: 7px; border-radius: 999px; background: #1f9d55; flex: 0 0 auto; }
+    .dash-frame .tabs { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; padding-bottom: 6px; border-bottom: 1px solid #e3e6ee; margin-bottom: 4px; }
+    .dash-frame .tab { font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: #fff; border: 1px solid #e3e6ee; color: #6b7088; white-space: nowrap; }
+    .dash-frame .tab.is-active { background: #fff3eb; color: #e85d3a; border-color: #f3c2cd; }
+    .dash-frame .panel { background: #fff; border: 1px solid #e3e6ee; border-radius: 8px; padding: 12px 14px; }
+    .dash-frame .panel-row { display: flex; align-items: center; gap: 14px; }
+    .dash-frame .ring { position: relative; width: 78px; height: 78px; flex: 0 0 auto; }
+    .dash-frame .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .dash-frame .ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .dash-frame .ring .num .n { font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 700; letter-spacing: -0.015em; color: #0b1733; }
+    .dash-frame .ring .num .of { font-size: 9px; color: #6b7088; margin-top: 2px; }
+    .dash-frame .panel-body h5 { font-family: Fraunces, Georgia, serif; font-size: 14px; font-weight: 600; color: #0b1733; margin: 0 0 4px; }
+    .dash-frame .panel-body .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .dash-frame .panel-body .pill.good { background: #ecfdf3; color: #1f9d55; }
+    .dash-frame .panel-body .pill.warn { background: #fff8e6; color: #8a5b00; }
+    .dash-frame .panel-body .pill.bad  { background: #fdeff2; color: #c8334b; }
+    .dash-frame .panel-body .pill.brand { background: #eef1ff; color: #2940c9; }
+    .dash-frame .panel-body .read { font-size: 11px; color: #454a63; margin-top: 6px; line-height: 1.4; }
+    .dash-frame .kpi-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .dash-frame .kpi { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 6px; padding: 8px 10px; text-align: left; }
+    .dash-frame .kpi .l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7088; }
+    .dash-frame .kpi .v { font-family: Fraunces, Georgia, serif; font-size: 16px; font-weight: 700; color: #0b1733; }
+    .dash-frame .kpi .v.warn { color: #c75617; }
+    .dash-frame .kpi .v.bad  { color: #c8334b; }
+    .dash-frame .kpi .v.good { color: #1f9d55; }
+    .dash-frame .kpi .s { font-size: 9px; color: #6b7088; margin-top: 1px; }
+    .dash-frame .bar-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 8px; align-items: center; font-size: 10px; color: #454a63; margin-top: 4px; }
+    .dash-frame .bar-row .lab { color: #0b1733; }
+    .dash-frame .bar-row .track { height: 8px; background: #eef1f5; border-radius: 999px; overflow: hidden; }
+    .dash-frame .bar-row .track > span { display: block; height: 100%; border-radius: 999px; }
+    .dash-frame .mini-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .dash-frame .mini-table th, .dash-frame .mini-table td { padding: 4px 6px; text-align: left; border-bottom: 1px solid #e3e6ee; }
+    .dash-frame .mini-table th { color: #6b7088; font-weight: 700; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .dash-frame .mini-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+    .level-cross-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 28px; }
+    .level-cross-links a { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 12px; text-decoration: none; color: #0b1733; transition: border-color 0.15s, background 0.15s; }
+    .level-cross-links a:hover { border-color: #e85d3a; background: #fff; }
+    .level-cross-links .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; }
+    .level-cross-links .title { font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; color: #0b1733; }
+    .level-cross-links .desc { font-size: 13px; color: #454a63; line-height: 1.5; }
+    .level-cross-links .arrow { font-size: 13px; color: #e85d3a; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+
+<header class="article-header is-centered">
+  <div class="container-content">
+    <div class="crumb"><a href="/index.html">Home</a> / <a href="/dashboards/survey-assessment.html">Dashboards</a> / Survey assessment</div>
+    <span class="kicker">Dashboards · Level 1 of 3</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:30ch;">Survey assessment dashboards</h1>
+    <p class="lede" style="margin:0 auto;">Six dashboards on the survey-quality side: <strong>is the survey ready, do the questions hold together, can you trust what came back?</strong> Five sit on the surfaced top tab row in the app; the Strength Index is the executive scorecard that pulls them together.</p>
+  </div>
+</header>
+
+
+<section class="section">
+  <div class="container-content">
+
+    <div class="dash-grid">
+
+      <!-- Survey Strength Index -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 47/104</span></div>
+        <h3>Survey Strength Index</h3>
+        <p class="question">How strong is this survey overall?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Editing Workplace Engagement Pulse</span><span>Strong · 86 / 100</span></div>
+          <div class="tabs"><span class="tab is-active">Strength Index</span><span class="tab">Readiness</span><span class="tab">Reliability</span><span class="tab">Description</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="panel-row">
+              <div class="ring">
+                <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#1f8a4d" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="35"/></svg>
+                <div class="num"><span class="n">86</span><span class="of">/ 100</span></div>
+              </div>
+              <div class="panel-body">
+                <h5>Strength Index</h5>
+                <span class="pill good">Strong</span>
+                <div class="read">Reliability anchors on McDonald's omega 0.91; alpha-omega gap 0.02 holds the 1-factor assumption.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="bar-row"><span class="lab">Reliability</span><span class="track"><span style="width:92%;background:#1f8a4d;"></span></span><span>23/25</span></div>
+            <div class="bar-row"><span class="lab">Factor</span><span class="track"><span style="width:85%;background:#65a30d;"></span></span><span>17/20</span></div>
+            <div class="bar-row"><span class="lab">Item quality</span><span class="track"><span style="width:90%;background:#1f8a4d;"></span></span><span>18/20</span></div>
+            <div class="bar-row"><span class="lab">Response</span><span class="track"><span style="width:87%;background:#65a30d;"></span></span><span>13/15</span></div>
+            <div class="bar-row"><span class="lab">Open-ended</span><span class="track"><span style="width:70%;background:#b07d18;"></span></span><span>7/10</span></div>
+            <div class="bar-row"><span class="lab">Actionability</span><span class="track"><span style="width:80%;background:#65a30d;"></span></span><span>8/10</span></div>
+          </div>
+        </div>
+        <p class="body">Composite 0-100 score across six weighted domains. Reliability anchors on McDonald's omega; alpha-omega gap acts as a tau-equivalence proxy. The "Can I use these results?" verdict sits below the ring.</p>
+      </article>
+
+      <!-- Survey Readiness -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 144</span></div>
+        <h3>Survey Readiness</h3>
+        <p class="question">Is this survey ready to send before we publish?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot" style="background:#d97706;"></span>Draft · DEI Climate</span><span>Almost ready · 78 / 100</span></div>
+          <div class="tabs"><span class="tab">Strength Index</span><span class="tab is-active">Readiness</span><span class="tab">Reliability</span><span class="tab">Description</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="panel-row">
+              <div class="ring">
+                <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#65a30d" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="55"/></svg>
+                <div class="num"><span class="n">78</span><span class="of">/ 100</span></div>
+              </div>
+              <div class="panel-body">
+                <h5>Readiness Score</h5>
+                <span class="pill warn">Almost ready</span>
+                <div class="read">Two warnings, four nudges. Tag four untagged Likert items and add a reverse-scored item to unlock omega.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Top issues</div>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:11px;color:#454a63;line-height:1.4;">
+              <div><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:#b07d18;vertical-align:middle;margin-right:6px;"></span>Untagged Likert items <span class="pill warn" style="font-size:9px;padding:1px 6px;margin-left:4px;">Warning</span></div>
+              <div><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:#b07d18;vertical-align:middle;margin-right:6px;"></span>No reverse-scored items <span class="pill warn" style="font-size:9px;padding:1px 6px;margin-left:4px;">Warning</span></div>
+              <div><span style="display:inline-block;width:6px;height:6px;border-radius:999px;background:#6b7088;vertical-align:middle;margin-right:6px;"></span>Some constructs have fewer than 3 items</div>
+            </div>
+          </div>
+        </div>
+        <p class="body">Runs even with zero responses. Six weighted design checks: items per construct, construct coverage, grouping variables, purpose, length, reverse-scoring. Issue list with blocker / warning / nudge severity.</p>
+      </article>
+
+      <!-- Reliability -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 60/104/107</span></div>
+        <h3>Reliability</h3>
+        <p class="question">Do your questions work together as a consistent scale?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>22 items · n=312</span></div>
+          <div class="tabs"><span class="tab">Strength Index</span><span class="tab">Readiness</span><span class="tab is-active">Reliability</span><span class="tab">Validity</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">Cronbach α</div><div class="v good">0.89</div><div class="s">CI [0.86, 0.91]</div></div>
+              <div class="kpi"><div class="l">McDonald ω</div><div class="v good">0.91</div><div class="s">CI [0.88, 0.93]</div></div>
+              <div class="kpi"><div class="l">Split-half</div><div class="v good">0.85</div><div class="s">Spearman-Brown</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <table class="mini-table">
+              <thead><tr><th>Construct</th><th class="r">Items</th><th class="r">α</th><th class="r">ω</th></tr></thead>
+              <tbody>
+                <tr><td>Engagement</td><td class="r">8</td><td class="r" style="color:#1f9d55;">0.91</td><td class="r" style="color:#1f9d55;">0.93</td></tr>
+                <tr><td>Manager support</td><td class="r">7</td><td class="r" style="color:#1f9d55;">0.88</td><td class="r" style="color:#1f9d55;">0.90</td></tr>
+                <tr><td>Workload</td><td class="r">5</td><td class="r" style="color:#1f9d55;">0.83</td><td class="r" style="color:#1f9d55;">0.85</td></tr>
+                <tr><td>Recognition</td><td class="r">2</td><td class="r" style="color:#b07d18;">0.71</td><td class="r" style="color:#6b7088;">--</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="body">Cronbach's alpha + McDonald's omega with bootstrap CIs, split-half, SEM, item-total correlations, alpha-if-deleted. Per-construct table when constructs are tagged.</p>
+      </article>
+
+      <!-- Validity -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 46/64/66</span></div>
+        <h3>Validity</h3>
+        <p class="question">What is your survey really measuring?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>3 factors · KMO 0.84</span></div>
+          <div class="tabs"><span class="tab">Reliability</span><span class="tab is-active">Validity</span><span class="tab">Description</span><span class="tab">Open-ended</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div class="kpi-strip">
+              <div class="kpi"><div class="l">KMO</div><div class="v good">0.84</div></div>
+              <div class="kpi"><div class="l">Bartlett</div><div class="v">p&lt;.001</div></div>
+              <div class="kpi"><div class="l">CFI</div><div class="v good">0.96</div></div>
+              <div class="kpi"><div class="l">RMSEA</div><div class="v good">0.05</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Factor structure (3 factors retained)</div>
+            <svg viewBox="0 0 220 90" style="width:100%;height:90px;">
+              <line x1="40" y1="84" x2="220" y2="84" stroke="#cfd2dc"/>
+              <rect x="50"  y="22" width="22" height="62" fill="#1F3A8A"/><text x="61" y="78" text-anchor="middle" font-size="9" fill="#fff">F1</text>
+              <rect x="78"  y="44" width="22" height="40" fill="#1F3A8A"/><text x="89" y="78" text-anchor="middle" font-size="9" fill="#fff">F2</text>
+              <rect x="106" y="58" width="22" height="26" fill="#1F3A8A"/><text x="117" y="78" text-anchor="middle" font-size="9" fill="#fff">F3</text>
+              <text x="50" y="14" font-size="9" fill="#0b1733">Eigenvalue scree</text>
+              <line x1="50" y1="38" x2="170" y2="38" stroke="#e85d3a" stroke-dasharray="3 3" stroke-width="1"/>
+              <text x="172" y="40" font-size="9" fill="#e85d3a">Kaiser=1</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">EFA dashboard (KMO, Bartlett, scree, factor loadings) plus CFA card (CFI, TLI, RMSEA with 90% CI, SRMR, standardized loadings) and measurement invariance across groups.</p>
+      </article>
+
+      <!-- Response Quality -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 140</span></div>
+        <h3>Response Quality</h3>
+        <p class="question">Can I trust these responses?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>n=312 · 12 flags</span></div>
+          <div class="tabs"><span class="tab">Validity</span><span class="tab">Open-ended</span><span class="tab is-active">Response Quality</span><span class="tab">Completion</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div class="kpi-strip">
+              <div class="kpi"><div class="l">Clean rate</div><div class="v good">94%</div><div class="s">293 of 312</div></div>
+              <div class="kpi"><div class="l">Straight-line</div><div class="v warn">3</div><div class="s">flagged rows</div></div>
+              <div class="kpi"><div class="l">Duplicates</div><div class="v warn">2</div><div class="s">vector pairs</div></div>
+              <div class="kpi"><div class="l">Short open</div><div class="v bad">7</div><div class="s">low-effort</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Channel skew · short-open rate</div>
+            <div class="bar-row"><span class="lab">Web link</span><span class="track"><span style="width:14%;background:#1f9d55;"></span></span><span>2%</span></div>
+            <div class="bar-row"><span class="lab">Email</span><span class="track"><span style="width:22%;background:#65a30d;"></span></span><span>3%</span></div>
+            <div class="bar-row"><span class="lab">Slack</span><span class="track"><span style="width:60%;background:#b07d18;"></span></span><span>8%</span></div>
+            <div class="bar-row"><span class="lab">QR code</span><span class="track"><span style="width:88%;background:#c8334b;"></span></span><span>12%</span></div>
+          </div>
+        </div>
+        <p class="body">Straight-lining detection, duplicate-vector flags, low-effort open-ended answers, missingness by question, channel-level skew, and a Clean Dataset CSV export.</p>
+      </article>
+
+      <!-- Completion -->
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Surfaced tab · Phase 141</span></div>
+        <h3>Completion &amp; Missing Data</h3>
+        <p class="question">Where are people dropping off?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>92% completion</span></div>
+          <div class="tabs"><span class="tab">Response Quality</span><span class="tab is-active">Completion</span><span class="tab">More analyses</span></div>
+          <div class="panel">
+            <div class="panel-row">
+              <div class="ring">
+                <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#65a30d" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="20"/></svg>
+                <div class="num"><span class="n">92</span><span class="of">/ 100</span></div>
+              </div>
+              <div class="panel-body">
+                <h5>Completion Score</h5>
+                <span class="pill good">Strong</span>
+                <div class="read">Modal drop-off at Q14 (open-ended). 8% partial responses, mostly in the last quarter of the survey.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Completion funnel</div>
+            <svg viewBox="0 0 220 60" style="width:100%;height:60px;">
+              <polyline fill="none" stroke="#1F3A8A" stroke-width="2" points="10,12 32,14 54,18 76,20 98,24 120,30 142,38 164,44 186,46 208,50"/>
+              <circle cx="120" cy="30" r="3" fill="#c8334b"/>
+              <text x="115" y="14" text-anchor="end" font-size="9" fill="#c8334b">Q14 drop-off</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Completion Score 0-100, per-question and per-respondent missingness, completion funnel, modal drop-off question, by-group missingness, and a respondent-by-question heatmap.</p>
+      </article>
+
+    </div>
+
+    <div class="level-cross-links">
+      <a href="/dashboards/data-analysis.html">
+        <span class="kicker">Next level</span>
+        <span class="title">Data analysis</span>
+        <span class="desc">Description, Compare, Subgroups, Equity Gaps, Predictors, Key Drivers, IRT, MLM, Trends, Open-Ended.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+      <a href="/dashboards/test-analytics.html">
+        <span class="kicker">Or jump to</span>
+        <span class="title">Test analytics</span>
+        <span class="desc">The eight-tab classroom-test dashboard: difficulty, distractor analysis, skill rollups, item health.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+
+</main>
+
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+
+</body>
+</html>

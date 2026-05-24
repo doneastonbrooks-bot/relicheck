@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Take Survey . Employee Engagement 2026 Pulse</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #fafbfd;
+      color: #1a1f33;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top progress bar */
+    .progress-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 4px;
+      background: #f0f2f6;
+      z-index: 50;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      width: 36%;
+      background: #e85d3a;
+      transition: width 0.3s;
+    }
+
+    /* Top header */
+    .head {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      padding: 18px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      position: sticky; top: 4px; z-index: 10;
+    }
+    .head .brand { display: flex; align-items: center; gap: 10px; }
+    .head .brand .mark {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif; font-weight: 700;
+      color: #ffffff; font-size: 16px;
+    }
+    .head .brand .name {
+      font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;
+      color: #1a1f33;
+    }
+    .head .meta {
+      font-size: 12px;
+      color: #6b7088;
+    }
+    .head .actions { display: flex; gap: 8px; align-items: center; }
+    .save-btn {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      color: #1a1f33;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .save-btn:hover { background: #f6f7fb; }
+
+    /* Survey title strip */
+    .title-strip {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      padding: 18px 24px;
+    }
+    .title-wrap { max-width: 720px; margin: 0 auto; }
+    .title-strip h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
+    }
+    .title-strip p {
+      margin: 0;
+      font-size: 13px;
+      color: #6b7088;
+    }
+    .title-strip .progress-text {
+      font-size: 12px;
+      color: #6b7088;
+      margin-top: 8px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .title-strip .progress-text strong { color: #1a1f33; font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; }
+
+    /* Body */
+    .form {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 36px 24px 80px;
+    }
+
+    /* Section header */
+    .section-head {
+      margin: 0 0 24px 0;
+    }
+    .section-head .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #fde2d7;
+      color: #c2410c;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+    .section-head h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+      line-height: 1.25;
+    }
+    .section-head p { margin: 0; font-size: 14px; color: #6b7088; }
+
+    /* Question card */
+    .q {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      padding: 24px 24px 8px;
+      margin-bottom: 16px;
+    }
+    .q .num {
+      font-family: 'Fraunces', serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .q .num .req { color: #c2410c; margin-left: 6px; }
+    .q h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      margin: 0 0 18px 0;
+      line-height: 1.4;
+      color: #1a1f33;
+    }
+
+    /* Likert scale */
+    .likert {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      padding-bottom: 20px;
+    }
+    @media (max-width: 600px) { .likert { grid-template-columns: 1fr 1fr; } }
+    .lk-option {
+      background: #fafbfd;
+      border: 1px solid #e5e8ed;
+      border-radius: 10px;
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.12s;
+    }
+    .lk-option:hover {
+      border-color: #e85d3a;
+      background: #fffaf7;
+      transform: translateY(-1px);
+    }
+    .lk-option.on {
+      border-color: #e85d3a;
+      background: #fde2d7;
+    }
+    .lk-option .v {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: #1a1f33;
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .lk-option.on .v { color: #c2410c; }
+    .lk-option .lab {
+      font-size: 11px;
+      color: #6b7088;
+      line-height: 1.3;
+      font-weight: 500;
+    }
+    .lk-option.on .lab { color: #c2410c; }
+
+    /* Multiple choice */
+    .mc {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-bottom: 18px;
+    }
+    .mc-option {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: #fafbfd;
+      border: 1px solid #e5e8ed;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+    }
+    .mc-option:hover { border-color: #e85d3a; background: #fffaf7; }
+    .mc-option.on { border-color: #e85d3a; background: #fde2d7; }
+    .mc-option .rad {
+      width: 18px; height: 18px;
+      border: 2px solid #c5cbd4;
+      border-radius: 50%;
+      flex: 0 0 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mc-option.on .rad {
+      border-color: #e85d3a;
+    }
+    .mc-option.on .rad::after {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #e85d3a;
+    }
+    .mc-option .lab { font-size: 14px; color: #1a1f33; }
+
+    /* Open-ended */
+    .open-q textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 14px 16px;
+      border: 1px solid #e5e8ed;
+      border-radius: 10px;
+      background: #fafbfd;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.55;
+      color: #1a1f33;
+      resize: vertical;
+    }
+    .open-q textarea:focus { outline: none; border-color: #e85d3a; background: #ffffff; }
+    .open-q .help {
+      font-size: 12px;
+      color: #6b7088;
+      margin-top: 6px;
+      display: flex; justify-content: space-between;
+    }
+
+    /* Navigation */
+    .nav-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: 28px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .nav-row .left { display: flex; gap: 8px; }
+    .btn {
+      background: #1a1f33;
+      color: #ffffff;
+      padding: 12px 22px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost {
+      background: #ffffff;
+      color: #1a1f33;
+      border: 1px solid #e5e8ed;
+    }
+    .btn.ghost:hover { background: #f6f7fb; }
+    .btn.primary { background: #e85d3a; }
+    .btn.primary:hover { background: #d44e2c; }
+
+    /* Footer trust line */
+    .trust {
+      max-width: 720px;
+      margin: 22px auto 40px;
+      padding: 18px 24px;
+      background: #ffffff;
+      border: 1px dashed #c5cbd4;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #6b7088;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .trust .ic {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: #ecfdf3;
+      color: #166534;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .trust strong { color: #1a1f33; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="fill"></div></div>
+
+<header class="head">
+  <div class="brand">
+    <span class="mark">R</span>
+    <span class="name">ReliCheck</span>
+  </div>
+  <div class="meta">Hosted by <strong style="color:#1a1f33;">Acme Inc. People Team</strong></div>
+  <div class="actions">
+    <a class="save-btn" href="#">Save &amp; finish later</a>
+  </div>
+</header>
+
+<div class="title-strip">
+  <div class="title-wrap">
+    <h1>Employee Engagement 2026 Pulse</h1>
+    <p>Anonymous . takes about 3 minutes . your responses go to the People team in aggregate only.</p>
+    <div class="progress-text">
+      <strong>5</strong> of <strong>14</strong> questions
+      <span style="margin-left:auto;">about 2 minutes left</span>
+    </div>
+  </div>
+</div>
+
+<main class="form">
+
+  <!-- Section header -->
+  <div class="section-head">
+    <span class="tag">SECTION 2 of 4 . RECOGNITION</span>
+    <h2>Recognition</h2>
+    <p>How recognized do you feel for the work you do?</p>
+  </div>
+
+  <!-- Question 5 . Likert -->
+  <article class="q">
+    <div class="num">Question 5 of 14 <span class="req">required</span></div>
+    <h3>My manager recognizes my work.</h3>
+    <div class="likert">
+      <div class="lk-option"><div class="v">1</div><div class="lab">Strongly disagree</div></div>
+      <div class="lk-option"><div class="v">2</div><div class="lab">Disagree</div></div>
+      <div class="lk-option"><div class="v">3</div><div class="lab">Neutral</div></div>
+      <div class="lk-option on"><div class="v">4</div><div class="lab">Agree</div></div>
+      <div class="lk-option"><div class="v">5</div><div class="lab">Strongly agree</div></div>
+    </div>
+  </article>
+
+  <!-- Question 6 . Likert -->
+  <article class="q">
+    <div class="num">Question 6 of 14 <span class="req">required</span></div>
+    <h3>I receive timely feedback on my performance.</h3>
+    <div class="likert">
+      <div class="lk-option"><div class="v">1</div><div class="lab">Strongly disagree</div></div>
+      <div class="lk-option"><div class="v">2</div><div class="lab">Disagree</div></div>
+      <div class="lk-option on"><div class="v">3</div><div class="lab">Neutral</div></div>
+      <div class="lk-option"><div class="v">4</div><div class="lab">Agree</div></div>
+      <div class="lk-option"><div class="v">5</div><div class="lab">Strongly agree</div></div>
+    </div>
+  </article>
+
+  <!-- Question 7 . Multiple choice -->
+  <article class="q">
+    <div class="num">Question 7 of 14</div>
+    <h3>Which kind of recognition matters most to you?</h3>
+    <div class="mc">
+      <div class="mc-option"><span class="rad"></span><span class="lab">Public recognition from leadership</span></div>
+      <div class="mc-option on"><span class="rad"></span><span class="lab">A private thank-you from my manager</span></div>
+      <div class="mc-option"><span class="rad"></span><span class="lab">Peer recognition</span></div>
+      <div class="mc-option"><span class="rad"></span><span class="lab">Promotions and pay</span></div>
+      <div class="mc-option"><span class="rad"></span><span class="lab">Stretch projects and trust</span></div>
+    </div>
+  </article>
+
+  <!-- Question 8 . Open-ended -->
+  <article class="q open-q">
+    <div class="num">Question 8 of 14</div>
+    <h3>If we could change one thing about how recognition works on your team, what would it be?</h3>
+    <textarea placeholder="Type your answer here. Skip if you'd rather not say.">More casual call-outs during weekly stand-ups would go a long way. Right now recognition only happens at quarterly reviews.</textarea>
+    <div class="help">
+      <span>Optional</span>
+      <span><strong style="color:#1a1f33;">22</strong> words . about 0.5 minutes</span>
+    </div>
+  </article>
+
+  <!-- Nav -->
+  <div class="nav-row">
+    <div class="left">
+      <a class="btn ghost" href="#">&larr; Back</a>
+    </div>
+    <div>
+      <a class="btn primary" href="#">Continue &rarr;</a>
+    </div>
+  </div>
+
+</main>
+
+<!-- Trust footer -->
+<div class="trust">
+  <div class="ic">&#9919;</div>
+  <div>
+    <strong>Anonymous and aggregate-only.</strong> The People team sees group totals, not individual answers. Open-ended text is reviewed in aggregate using AI theming. ReliCheck never shows your name or email with your responses.
+  </div>
+</div>
+
+</body>
+</html>

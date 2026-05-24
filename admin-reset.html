@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Reset admin password · ReliCheck</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #0b1733, #1c2f5e);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #fff;
+    }
+    .card {
+      background: #fff; color: #0b1733;
+      border-radius: 14px;
+      box-shadow: 0 24px 56px rgba(11,23,51,0.30), 0 8px 20px rgba(11,23,51,0.18);
+      padding: 36px 40px;
+      max-width: 440px; width: 100%;
+    }
+    .logo { height: 30px; margin-bottom: 18px; }
+    .tag {
+      display: inline-block;
+      background: #fff1ec; color: #cc4a2a;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+    .lede { color: #4a5578; font-size: 14px; margin: 0 0 22px; }
+    label.field { display: block; margin-bottom: 14px; }
+    label.field .lab {
+      display: block; font-size: 12px; font-weight: 600; color: #6b7691;
+      letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px;
+    }
+    label.field input {
+      width: 100%; padding: 10px 12px; border: 1px solid #d3d9e6;
+      border-radius: 7px; font-size: 14px; color: #0b1733; background: #fff;
+    }
+    label.field input:focus { outline: 0; border-color: #e85d3a; box-shadow: 0 0 0 3px rgba(232,93,58,0.12); }
+    .btn {
+      width: 100%; padding: 11px; font-size: 14px; font-weight: 600;
+      border-radius: 8px; border: 0;
+      background: #e85d3a; color: #fff; cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .btn:hover { background: #cc4a2a; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .status {
+      padding: 12px 14px; border-radius: 8px;
+      font-size: 13.5px; margin-bottom: 16px; line-height: 1.5;
+      display: none;
+    }
+    .status.error   { background: #fbe9e9; color: #c83333; border: 1px solid #f4cccc; }
+    .status.success { background: #e7f5ec; color: #1f8a4d; border: 1px solid #c8eed4; }
+    .meta { font-size: 12px; color: #6b7691; margin-top: 18px; }
+    .meta a { color: #e85d3a; text-decoration: none; }
+    .meta a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Admin password reset</div>
+    <h1>Set a new admin password</h1>
+    <p class="lede">This is for your <strong>admin</strong> account, separate from any customer ReliCheck account you may also have.</p>
+    <div class="status error"   id="errBox"></div>
+    <div class="status success" id="okBox"></div>
+    <form id="resetForm">
+      <label class="field"><span class="lab">New password</span><input type="password" id="pw1" autocomplete="new-password" required placeholder="At least 8 characters, including a number"></label>
+      <label class="field"><span class="lab">Confirm new password</span><input type="password" id="pw2" autocomplete="new-password" required></label>
+      <button class="btn" id="submitBtn" type="submit">Set new password</button>
+    </form>
+    <p class="meta">If you have two-factor authentication enabled, you'll still need your authenticator code on the next sign-in. Resetting the password does NOT disable 2FA.</p>
+  </div>
+  <script>
+    const errBox    = document.getElementById('errBox');
+    const okBox     = document.getElementById('okBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const showErr = (m) => { okBox.style.display = 'none'; errBox.textContent = m; errBox.style.display = 'block'; };
+    const showOk  = (m) => { errBox.style.display = 'none'; okBox.textContent  = m; okBox.style.display  = 'block'; };
+
+    const params = new URLSearchParams(window.location.search);
+    const token  = (params.get('token') || '').trim();
+    if (!/^[a-f0-9]{64}$/.test(token)) {
+      showErr('This reset link is missing or malformed. Open the link directly from your reset email.');
+      submitBtn.disabled = true;
+    }
+
+    document.getElementById('resetForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const p1 = document.getElementById('pw1').value;
+      const p2 = document.getElementById('pw2').value;
+      if (p1.length < 8 || !/\d/.test(p1)) { showErr('Password must be at least 8 characters and include a number.'); return; }
+      if (p1 !== p2) { showErr('Passwords do not match.'); return; }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving…';
+      try {
+        const res = await fetch('/api/admin/auth/reset.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: token, password: p1 }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          showOk(data.message || 'Admin password updated. Sign in to continue.');
+          submitBtn.style.display = 'none';
+          // Replace the form area with a sign-in CTA.
+          setTimeout(() => { window.location.href = '/admin-login.html'; }, 2500);
+          return;
+        }
+        showErr(data.message || ('Reset failed (HTTP ' + res.status + ').'));
+      } catch (e) {
+        showErr('Could not reach the server. Try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Set new password';
+      }
+    });
+  </script>
+</body>
+</html>

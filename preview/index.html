@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck · Surveys you can trust. Insights you can explain.</title>
+  <meta name="description" content="ReliCheck helps teams build credible surveys, surface honest insights, and share results worth defending. No more jumping between spreadsheets, statistics tools, and slide decks." />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="preview-banner">Preview build, not yet live. <a href="methodology.html">Methodology</a> · <a href="pricing.html">Pricing</a> · <a href="education.html">Education</a> · <a href="reliability-guide.html">Reliability guide</a> · <a href="compare.html">Compare</a> · <a href="app.html">App</a></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="index.html" class="brand brand-image" aria-label="ReliCheck home">
+      <img src="../logo-brand.svg" alt="ReliCheck" />
+    </a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Product <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide" role="menu">
+          <div class="nav-dd-grid">
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Build</strong><span>Question types, logic, branding, and templates.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Collect</strong><span>Public links, email lists, QR codes, and embeds.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Analyze</strong><span>Reliability checks, item flags, and AI summaries.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Why reliability matters</strong><span>Our case for evidence-driven surveys.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Report</strong><span>PDF, Excel, SPSS, Google Sheets, Drive.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>AI features</strong><span>Question review, theme extraction, plain-language reports.</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide" role="menu">
+          <div class="nav-dd-grid">
+            <a class="nav-dd-item" role="menuitem" href="education.html"><strong>Education &amp; Evaluation</strong><span>Course feedback, accreditation, climate, program evaluation.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, and team climate.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Customer Feedback</strong><span>CSAT, NPS, product feedback, service improvement.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Research</strong><span>Peer-reviewed studies, validated scales, manuscript exports.</span></a>
+            <a class="nav-dd-item" role="menuitem" href="#"><strong>Mixed-Methods</strong><span>Quantitative scales and qualitative themes together.</span></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Templates <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel" role="menu">
+          <div class="nav-dd-list">
+            <a class="nav-dd-item compact" href="#">Course Evaluation</a>
+            <a class="nav-dd-item compact" href="#">Student Belonging</a>
+            <a class="nav-dd-item compact" href="#">Employee Engagement</a>
+            <a class="nav-dd-item compact" href="#">Program Evaluation</a>
+            <a class="nav-dd-item compact" href="#">Customer Satisfaction</a>
+            <a class="nav-dd-item compact" href="#">Training Feedback</a>
+            <a class="nav-dd-item compact" href="#">Community Needs Assessment</a>
+            <a class="nav-dd-item compact" href="#">Climate Survey</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Resources <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel" role="menu">
+          <div class="nav-dd-list">
+            <a class="nav-dd-item compact" href="#">How ReliCheck works</a>
+            <a class="nav-dd-item compact" href="#">Why reliability matters</a>
+            <a class="nav-dd-item compact" href="#">Sample reports</a>
+            <a class="nav-dd-item compact" href="#">Customer stories</a>
+            <a class="nav-dd-item compact" href="compare.html">Compare</a>
+            <a class="nav-dd-item compact" href="methodology.html">Methodology</a>
+            <a class="nav-dd-item compact" href="reliability-guide.html">Reliability guide</a>
+            <a class="nav-dd-item compact" href="#">Help center</a>
+            <a class="nav-dd-item compact" href="#">Blog</a>
+          </div>
+        </div>
+      </div>
+
+      <a href="pricing.html" class="nav-dd-trigger">Pricing</a>
+    </nav>
+
+    <div class="nav-cta">
+      <a href="#login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="#signup" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group">
+      <h5>Product</h5>
+      <a href="#">Build</a><a href="#">Collect</a><a href="#">Analyze</a><a href="#">Report</a><a href="#">AI features</a>
+    </div>
+    <div class="drawer-group">
+      <h5>Solutions</h5>
+      <a href="education.html">Education &amp; Evaluation</a><a href="#">HR &amp; Teams</a><a href="#">Customer Feedback</a><a href="#">Research</a><a href="#">Mixed-Methods</a>
+    </div>
+    <div class="drawer-group">
+      <h5>Templates</h5>
+      <a href="#">Course Evaluation</a><a href="#">Student Belonging</a><a href="#">Employee Engagement</a><a href="#">Program Evaluation</a>
+    </div>
+    <div class="drawer-group">
+      <h5>Resources</h5>
+      <a href="compare.html">Compare</a><a href="methodology.html">Methodology</a><a href="reliability-guide.html">Reliability guide</a><a href="#">Help center</a><a href="#">Blog</a>
+    </div>
+    <div class="drawer-group">
+      <h5>Plans</h5>
+      <a href="pricing.html">Pricing</a>
+    </div>
+    <div class="drawer-cta">
+      <a href="#login" class="btn btn-outline">Sign in</a>
+      <a href="#signup" class="btn btn-primary">Get started</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container-content hero-grid">
+      <div>
+        <span class="eyebrow hero-eyebrow">Evidence-driven survey platform</span>
+        <h1>Surveys you can trust. Insights you can explain.</h1>
+        <p class="lede">ReliCheck helps teams build credible surveys, surface honest insights, and share results worth defending. No more jumping between spreadsheets, statistics tools, and slide decks.</p>
+        <div class="hero-actions">
+          <a href="#signup" class="btn btn-primary btn-lg">Create a survey</a>
+          <a href="#demo" class="btn btn-outline btn-lg">Try the interactive demo</a>
+        </div>
+        <div class="hero-meta">Used by <strong>12 research teams</strong> · <strong>125 surveys</strong> analyzed</div>
+      </div>
+      <div class="hero-image-frame">
+        <img src="../hero-product.jpg" alt="A researcher reviewing a ReliCheck survey workflow on a desktop monitor and laptop" width="1376" height="768" />
+      </div>
+    </div>
+  </section>
+
+  <!-- AI + Reliability strip -->
+  <section class="strip">
+    <div class="container-content strip-row">
+      <span class="strip-tag">AI + Reliability</span>
+      <span>AI helps you write, analyze, and explain. <strong>Reliability checks help you know what to trust.</strong></span>
+    </div>
+  </section>
+
+  <!-- 4-step strip -->
+  <section class="section">
+    <div class="container-content">
+      <div class="steps">
+        <div class="step"><span class="step-num">1</span><div class="step-label">Build</div><div class="step-sub">Choose questions, logic, templates</div></div>
+        <div class="step"><span class="step-num">2</span><div class="step-label">Collect</div><div class="step-sub">Share by link, email, QR, or embed</div></div>
+        <div class="step"><span class="step-num">3</span><div class="step-label">Analyze</div><div class="step-sub">Quality flags and plain-English findings</div></div>
+        <div class="step"><span class="step-num">4</span><div class="step-label">Report</div><div class="step-sub">Share PDFs, Sheets, or live dashboards</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">How it works</span>
+        <h2>From question to clear report in four steps</h2>
+        <p>Everything happens in one place. No switching tools, no exporting between systems, no separate stats package to learn.</p>
+      </div>
+      <div class="cards">
+        <article class="card">
+          <span class="card-num">01</span>
+          <h3>Build your survey</h3>
+          <p>Choose question types, add logic and branding, or start from a validated template. AI question review flags wording problems before respondents see them.</p>
+          <div class="card-meta">Likert · choice · open-ended · matrix · ranking</div>
+        </article>
+        <article class="card">
+          <span class="card-num">02</span>
+          <h3>Collect responses</h3>
+          <p>Share by public link, email list, QR code, or embed. Responses land in your dashboard the moment they're submitted, with completion tracked in real time.</p>
+          <div class="card-meta">Live counts · partial-save · close on date or sample size</div>
+        </article>
+        <article class="card">
+          <span class="card-num">03</span>
+          <h3>Check your data</h3>
+          <p>ReliCheck flags weak scales, low response counts, and missing-data patterns automatically. You see what's solid and what's not before you read the headline.</p>
+          <div class="card-meta">Reliability check · item flags · sample-size warnings</div>
+        </article>
+        <article class="card">
+          <span class="card-num">04</span>
+          <h3>Export your report</h3>
+          <p>Download PDF, Excel, or SPSS. Push results to Google Sheets or Drive in one click. Each report opens with an AI-assisted plain-English summary.</p>
+          <div class="card-meta">PDF · Excel · SPSS · Google Sheets · Drive</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Intents -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Start where you are</span>
+        <h2>What are you trying to do?</h2>
+        <p>Pick the path that fits your goal. Each one drops you into the right templates and the right kind of report.</p>
+      </div>
+      <div class="cards-3">
+        <a class="intent" href="education.html"><h3>I need course feedback</h3><p>End-of-term, mid-course, and instructor evaluations with reliability built in.</p><span class="arrow">Course evaluation →</span></a>
+        <a class="intent" href="#"><h3>I need an employee survey</h3><p>Engagement, manager feedback, pulse, and exit surveys with k-anonymity.</p><span class="arrow">Engagement &amp; HR →</span></a>
+        <a class="intent" href="#"><h3>I need customer feedback</h3><p>NPS, CSAT, post-purchase, and onboarding surveys with theme extraction.</p><span class="arrow">Customer experience →</span></a>
+        <a class="intent" href="#"><h3>I need a program evaluation</h3><p>Pre/post designs, control groups, and matched cohorts for grant reporting.</p><span class="arrow">Evaluation →</span></a>
+        <a class="intent" href="#"><h3>I have data already</h3><p>Upload a CSV from another tool and run reliability and quality checks here.</p><span class="arrow">Import data →</span></a>
+        <a class="intent" href="#"><h3>I need a report for leadership</h3><p>Board-ready PDFs and live dashboards your audience will actually read.</p><span class="arrow">Reports →</span></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Three things -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">What makes ReliCheck different</span>
+        <h2>Three things you don't get from a generic form tool</h2>
+      </div>
+      <div class="cards-3">
+        <article class="feature-card">
+          <div class="icon-tile">QC</div>
+          <h3>Question quality checks <span class="ai-tag">AI</span></h3>
+          <p>Spot double-barreled questions, leading wording, and missing scale anchors before you launch. AI review surfaces the issue and suggests a fix you can accept or edit.</p>
+        </article>
+        <article class="feature-card">
+          <div class="icon-tile">α</div>
+          <h3>Reliability and data-quality flags</h3>
+          <p>Cronbach's alpha, split-half, item-total correlations, and missing-data patterns are computed for every survey. You learn what's solid before you read the headline.</p>
+        </article>
+        <article class="feature-card">
+          <div class="icon-tile">¶</div>
+          <h3>Plain-language reports <span class="ai-tag">AI</span></h3>
+          <p>Each report opens with an AI-assisted summary that names the finding, the sample, and the caveats. Drop it into a deck, share it with a board, defend it in a review.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI features -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">AI in ReliCheck</span>
+        <h2>AI that makes survey work clearer, not sloppier</h2>
+        <p>Every AI feature is grounded in your data and audited against reliability standards. You stay in control of the wording, the analysis, and what gets shared.</p>
+      </div>
+      <div class="cards">
+        <article class="card"><h3>Improve questions</h3><p>Suggested rewrites for clarity and bias, with the original always one click away.</p></article>
+        <article class="card"><h3>Summarize themes</h3><p>Open-ended responses grouped by theme with example quotes and counts.</p></article>
+        <article class="card"><h3>Explain results</h3><p>Plain-English readouts of α, KMO, item-total, and missing-data findings.</p></article>
+        <article class="card"><h3>Draft reports</h3><p>Board-ready summary with caveats, sample size, and method-aware framing.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Closing CTA -->
+  <section class="section">
+    <div class="container-content">
+      <div class="cta-band">
+        <h2>The survey platform for teams that need results they can <em>explain, defend, and act on</em>.</h2>
+        <p>Start free. Bring your own questions, or pick a validated template. Reliability and report-writing are included from day one.</p>
+        <div class="hero-actions">
+          <a href="#signup" class="btn btn-primary btn-lg">Create a survey</a>
+          <a href="pricing.html" class="btn btn-outline btn-lg">See pricing</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Overview</a></li><li><a href="#">AI features</a></li><li><a href="#">Templates</a></li><li><a href="pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="education.html">Education</a></li><li><a href="#">HR &amp; Teams</a></li><li><a href="#">Customer feedback</a></li><li><a href="#">Research</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="reliability-guide.html">Reliability guide</a></li><li><a href="compare.html">Compare</a></li><li><a href="#">Help center</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Contact</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ReliCheck Survey. All rights reserved.</span>
+      <span>Made for teams that need to explain their numbers.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Sticky header shadow
+  const header = document.getElementById('siteHeader');
+  const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 6);
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Dropdown menus (hover and keyboard)
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (state) => {
+      clearTimeout(timer);
+      if (state) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        trigger.setAttribute('aria-expanded', 'true');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          trigger.setAttribute('aria-expanded', 'false');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('focus', () => open(true));
+    trigger.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isOpen = dd.getAttribute('data-open') === 'true';
+      open(!isOpen);
+    });
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.nav-dd')) {
+      document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => o.removeAttribute('data-open'));
+    }
+  });
+
+  // Mobile drawer
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', () => {
+    const open = drawer.classList.toggle('is-open');
+    toggle.setAttribute('aria-expanded', String(open));
+    drawer.setAttribute('aria-hidden', String(!open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+</script>
+</body>
+</html>

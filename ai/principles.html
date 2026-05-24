@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Principles · ReliCheck Intelligence</title>
+  <meta name="description" content="What ReliCheck Intelligence will not do. Reliability, privacy, and transparency commitments, written for accreditation and HR review." />
+  <link rel="canonical" href="https://relichecksurvey.com/ai/principles.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Principles · ReliCheck Intelligence" />
+  <meta property="og:description" content="What ReliCheck Intelligence will not do. Reliability, privacy, and transparency commitments." />
+  <meta property="og:url" content="https://relichecksurvey.com/ai/principles.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Principles · ReliCheck Intelligence" />
+  <meta name="twitter:description" content="What ReliCheck Intelligence will not do. Reliability, privacy, and transparency commitments." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles-2026.css?v=20260516-style" />
+  <style>
+    .stage-strip{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0 0;}
+    .stage-strip a{display:inline-block;padding:8px 14px;border:1px solid var(--ink-2,#e5e7eb);border-radius:999px;font-size:14px;font-weight:500;color:var(--ink-7,#374151);text-decoration:none;background:#fff;}
+    .stage-strip a:hover{border-color:var(--ink-5,#9ca3af);}
+    .see-all{padding:24px 0 8px;text-align:center;font-size:14px;color:var(--ink-6,#6b7280);}
+    .see-all a{color:var(--ink-8,#1f2937);font-weight:600;text-decoration:underline;}
+    .principle{padding:28px 0;border-top:1px solid var(--ink-2,#e5e7eb);}
+    .principle:first-of-type{border-top:none;}
+    .principle .tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-7,#374151);background:#f3f4f6;padding:4px 10px;border-radius:999px;}
+    .principle h2{font-family:'Fraunces',serif;font-size:30px;font-weight:600;margin:10px 0 12px;}
+    .principle p{font-size:17px;line-height:1.6;color:var(--ink-8,#1f2937);}
+    .principle p + p{margin-top:14px;}
+  </style>
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+<section class="solution-hero">
+  <div class="container-content">
+    <nav class="stage-strip" aria-label="ReliCheck Intelligence lifecycle">
+      <a href="before-you-collect.html">Before you collect</a>
+      <a href="while-you-collect.html">While you collect</a>
+      <a href="while-you-analyze.html">While you analyze</a>
+      <a href="when-you-report.html">When you report</a>
+    </nav>
+    <span class="kicker" style="margin-top:18px;display:inline-block;">ReliCheck Intelligence · Principles</span>
+    <h1 style="margin-top:var(--s-3);">What ReliCheck Intelligence will not do.</h1>
+    <p class="lede">These are written as restrictions on purpose. The harder the constraint, the more useful the read is to the person who has to defend it: the accreditation reviewer, the HR partner, the principal investigator. Three commitments cover the surface area that matters most: reliability, privacy, and transparency.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content" style="max-width:780px;">
+
+    <div class="principle">
+      <span class="tag">Reliability</span>
+      <h2>Pretend a weak result is strong.</h2>
+      <p>If the sample is small, internal consistency is low, or missingness is structural, the Brief says so before the headline. The four-tier Results Verdict and the per-tab Verdict Cards exist to keep weak data from being reported as strong. A small-sample reading names the sample size and recommends recollection rather than confident interpretation. A low-internal-consistency scale names the weakest items before any group comparison runs.</p>
+      <p>The same constraint applies in the advanced methodology. A confirmatory factor analysis with poor fit is described as poor fit, not nudged toward a threshold. A measurement invariance that fails reports the level of invariance that did hold and warns against the comparison the user was about to make. The point is to keep you from publishing a number the data does not earn.</p>
+    </div>
+
+    <div class="principle">
+      <span class="tag">Privacy</span>
+      <h2>Train on your data.</h2>
+      <p>Your survey content and responses are not used to train any model, ReliCheck's or its providers'. The plain-language layer calls the model with the structured analytics snapshot (numbers, item labels, group labels) plus a constrained prompt; respondent-level data, identifiers, and raw open-ended text do not cross the wire. The model returns text that gets rendered into the dashboard. Nothing about your survey is retained for training; nothing about your respondents is sent that did not need to be sent.</p>
+      <p>For accreditation and HR review specifically: the open-ended text on a survey is never sent to the plain-language layer. The Open-Ended Brief reports engagement signals (length distribution, low-effort share, missingness by question) rather than the words respondents wrote. The Response Quality Audit runs deterministic checks on the response patterns, not on the text. When the Trends Brief or the Equity Gaps Brief reports a group difference, the call uses the survey's actual question label and the option labels you set, not anything that could re-identify a respondent. k-anonymity thresholds suppress small subgroups before they reach the Brief, and the suppressed count is noted once so the reader knows a smaller-group story may be missing.</p>
+      <p>If your organization needs a more conservative configuration, the plain-language layer can be turned off per workspace. The offline templates that ship with the platform produce a deterministic read of the same dashboards. The numbers and the verdict tiers are identical; only the paragraph generation is skipped. Nothing in the product is gated behind sending data to a model.</p>
+    </div>
+
+    <div class="principle">
+      <span class="tag">Transparency</span>
+      <h2>Hide the work behind a number.</h2>
+      <p>Every claim in a Brief links to a number, a method, and the items behind it. You can disagree with the framing, edit the draft, or fall back to the offline template for a deterministic read. The Verdict Cards report the tier and then list the inputs that drove the tier, so a reviewer can audit the call without leaving the page. When a Brief makes a judgment ("the drop is statistically significant"), the underlying test and effect size are one click away.</p>
+    </div>
+
+    <p class="see-all"><a href="/ai-features.html">Back to ReliCheck Intelligence</a></p>
+  </div>
+</section>
+
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+</body>
+</html>

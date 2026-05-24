@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Compare: ReliCheck vs SurveyMonkey vs Qualtrics</title>
+  <meta name="description" content="Honest comparison of ReliCheck, SurveyMonkey, and Qualtrics. Pick the tool that matches what your survey actually has to do." />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="preview-banner">Preview build, not yet live. <a href="index.html">Home</a> · <a href="pricing.html">Pricing</a> · <a href="education.html">Education</a> · <a href="reliability-guide.html">Reliability guide</a> · <a href="methodology.html">Methodology</a> · <a href="app.html">App</a></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Product <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="#"><strong>Build</strong><span>Question types, logic, branding.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Collect</strong><span>Public links, email, QR, embeds.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Analyze</strong><span>Reliability and item flags.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Report</strong><span>PDF, Excel, SPSS, Sheets, Drive.</span></a>
+          <a class="nav-dd-item" href="#"><strong>AI features</strong><span>Question review, themes, summaries.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Why reliability matters</strong><span>The case for evidence-driven surveys.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="education.html"><strong>Education &amp; Evaluation</strong><span>Course feedback, accreditation, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Mixed-Methods</strong><span>Quant scales and qual themes.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Templates <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="#">Course Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Student Belonging</a>
+          <a class="nav-dd-item compact" href="#">Employee Engagement</a>
+          <a class="nav-dd-item compact" href="#">Program Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Customer Satisfaction</a>
+          <a class="nav-dd-item compact" href="#">Climate Survey</a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" style="color:var(--ink-9);background:var(--bg-soft);">Resources <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="compare.html">Compare</a>
+          <a class="nav-dd-item compact" href="methodology.html">Methodology</a>
+          <a class="nav-dd-item compact" href="reliability-guide.html">Reliability guide</a>
+          <a class="nav-dd-item compact" href="#">Help center</a>
+          <a class="nav-dd-item compact" href="#">Blog</a>
+        </div></div>
+      </div>
+      <a href="pricing.html" class="nav-dd-trigger">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="#signup" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Resources</h5><a href="compare.html">Compare</a><a href="methodology.html">Methodology</a><a href="reliability-guide.html">Reliability guide</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="education.html">Education</a><a href="#">HR &amp; Teams</a><a href="#">Customer Feedback</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="#login" class="btn btn-outline">Sign in</a><a href="#signup" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+
+<header class="article-header">
+  <div class="container-content" style="text-align:center;">
+    <span class="kicker">Honest comparison</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:20ch;">ReliCheck vs SurveyMonkey vs Qualtrics</h1>
+    <p class="lede" style="margin:0 auto;">Three different tools for three different jobs. SurveyMonkey is the consumer workhorse for surveys at speed. Qualtrics is the enterprise XM platform. ReliCheck is built for teams who have to defend the numbers afterward.</p>
+    <div style="margin-top:var(--s-8);display:inline-flex;align-items:center;gap:var(--s-4);font-family:var(--font-display);font-size:var(--text-xl);color:var(--ink-7);flex-wrap:wrap;justify-content:center;">
+      <strong style="color:var(--accent);">ReliCheck</strong>
+      <span class="text-mute" style="font-size:var(--text-sm);">vs</span>
+      <strong>SurveyMonkey</strong>
+      <span class="text-mute" style="font-size:var(--text-sm);">vs</span>
+      <strong>Qualtrics</strong>
+    </div>
+  </div>
+</header>
+
+<!-- Pick when -->
+<section class="section-tight">
+  <div class="container-content">
+    <div class="pick-grid">
+      <div class="pick-card is-us">
+        <h3>Pick ReliCheck when</h3>
+        <ul>
+          <li>The buyer or stakeholder will ask "is the scale reliable?" and you need a credible answer in the report itself.</li>
+          <li>You publish, present to a board, or submit for accreditation, and the methods section gets read.</li>
+          <li>You want AI question review and theme extraction tied directly to alpha, ICC, and validity numbers.</li>
+          <li>You can buy the tool today on a credit card without a procurement cycle or a certified consultant.</li>
+          <li>You work in research, evaluation, education, or HR contexts where defensibility beats breadth.</li>
+        </ul>
+      </div>
+      <div class="pick-card">
+        <h3>Pick SurveyMonkey when</h3>
+        <ul>
+          <li>You need the broadest template library and the fastest path from idea to live link.</li>
+          <li>Survey panel access (SurveyMonkey Audience) matters for your project.</li>
+          <li>You need 200-plus integrations across CRMs, marketing tools, and BI dashboards.</li>
+          <li>You distribute to a non-research audience where polish and ease matter more than psychometric scrutiny.</li>
+          <li>The team is already trained on SurveyMonkey and switching cost outweighs methodological gain.</li>
+        </ul>
+      </div>
+      <div class="pick-card">
+        <h3>Pick Qualtrics when</h3>
+        <ul>
+          <li>You operate at enterprise scale with tens of thousands of respondents across regions and languages.</li>
+          <li>You need the full XM stack: Customer Experience, Employee Experience, Brand, Product.</li>
+          <li>HIPAA, FedRAMP, or other compliance requirements mandate an enterprise vendor.</li>
+          <li>You need survey panel access (XM Panel) integrated into your workflow.</li>
+          <li>Your organization already runs Qualtrics and switching cost outweighs methodological gain.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Big comparison table -->
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Feature by feature</span>
+      <h2>What each platform actually ships</h2>
+      <p>Curated comparison across the categories that matter for research, evaluation, and HR survey work.</p>
+    </div>
+    <table class="compare-table">
+      <thead>
+        <tr><th>Feature</th><th class="tier-cell">ReliCheck</th><th class="tier-cell">SurveyMonkey</th><th class="tier-cell">Qualtrics</th></tr>
+      </thead>
+      <tbody>
+        <tr class="group-row"><td colspan="4">Reliability and validity</td></tr>
+        <tr><td>Cronbach's alpha (internal consistency)</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Default</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>Not surfaced</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>In Stats iQ</span></td></tr>
+        <tr><td>Intraclass correlation (ICC)</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Default</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>Via Stats iQ</span></td></tr>
+        <tr><td>Test-retest stability</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Built-in</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>Manual setup</span></td></tr>
+        <tr><td>Construct, content, criterion validity</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>In Stats iQ</span></td></tr>
+        <tr><td>Inter-rater agreement</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td></tr>
+        <tr><td>Public methodology page</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes<span class="cmp-note">methodology.html lists every formula.</span></span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>Behind login</span></td></tr>
+
+        <tr class="group-row"><td colspan="4">AI features</td></tr>
+        <tr><td>AI question-quality review</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Genius</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td></tr>
+        <tr><td>AI theme extraction (open-ended)</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Text iQ</span></td></tr>
+        <tr><td>AI tied to reliability statistics</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes<span class="cmp-note">Summaries reference α, ICC, validity.</span></span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td></tr>
+        <tr><td>Plain-language report narratives</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>Limited</span></td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>Limited</span></td></tr>
+
+        <tr class="group-row"><td colspan="4">Survey building &amp; distribution</td></tr>
+        <tr><td>Question type breadth</td><td class="tier-cell"><span class="cmp-mark partial"><span class="icon">~</span>Core types</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Wide library</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Extensive</span></td></tr>
+        <tr><td>Skip logic and branching</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Advanced</span></td></tr>
+        <tr><td>Validated template library</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Research-tested</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Broad library</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Extensive</span></td></tr>
+        <tr><td>Survey panel access</td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>Bring your own</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Audience</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>XM Panel</span></td></tr>
+
+        <tr class="group-row"><td colspan="4">Pricing &amp; access</td></tr>
+        <tr><td>Self-serve sign-up</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Free, paid plans</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Yes</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>Sales contact</span></td></tr>
+        <tr><td>Free tier</td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>1 active survey</span></td><td class="tier-cell"><span class="cmp-mark yes"><span class="icon">✓</span>Limited</span></td><td class="tier-cell"><span class="cmp-mark no"><span class="icon">−</span>No</span></td></tr>
+        <tr><td>Starting price (paid)</td><td class="tier-cell">$19/mo</td><td class="tier-cell">$25/mo</td><td class="tier-cell">$1.5K+/yr</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Where ReliCheck wins outright -->
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Strengths</span>
+      <h2>Where ReliCheck wins outright</h2>
+    </div>
+    <div class="cards-3">
+      <article class="feature-card">
+        <div class="icon-tile">α</div>
+        <h3>Reviewer-ready statistics by default</h3>
+        <p>Cronbach's α, KMO, item-total correlations, and validity evidence come standard. No add-on, no consultant, no separate stats tool.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-tile">EDU</div>
+        <h3>Course evaluation that survives an audit</h3>
+        <p>Validated items, anonymity protections, per-instructor reports without revealing identifiers, and an accreditation-ready methodology appendix.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-tile">HR</div>
+        <h3>Engagement results leadership trusts</h3>
+        <p>Reliability per dimension and AI summaries that tell you what to act on, not just what trended.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>Try ReliCheck on your next survey</h2>
+      <p>Free to start. Bring your own questions or pull a validated template. Reliability, validity, and AI summaries are included from the first response.</p>
+      <div class="hero-actions">
+        <a href="#signup" class="btn btn-primary btn-lg">Start free</a>
+        <a href="pricing.html" class="btn btn-outline btn-lg">See pricing</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Overview</a></li><li><a href="#">AI features</a></li><li><a href="pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="education.html">Education</a></li><li><a href="#">HR &amp; Teams</a></li><li><a href="#">Customer feedback</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="reliability-guide.html">Reliability guide</a></li><li><a href="compare.html">Compare</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => { clearTimeout(timer); if (s) { document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); }); dd.setAttribute('data-open', 'true'); } else { timer = setTimeout(() => dd.removeAttribute('data-open'), 120); } };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+</body>
+</html>

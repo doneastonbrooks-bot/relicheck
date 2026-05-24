@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Five survey design mistakes that quietly distort your results · ReliCheck Blog</title>
+  <meta name="description" content="The patterns that look harmless on the page but reliably skew the numbers: double-barreled items, midpoint parking, leading premises, and two more worth catching before launch." />
+  <link rel="canonical" href="https://relichecksurvey.com/posts/five-survey-design-mistakes.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="Five survey design mistakes that quietly distort your results · ReliCheck Blog" />
+  <meta property="og:description" content="The patterns that look harmless on the page but reliably skew the numbers: double-barreled items, midpoint parking, leading premises, and two more worth catching before launch." />
+  <meta property="og:url" content="https://relichecksurvey.com/posts/five-survey-design-mistakes.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Five survey design mistakes that quietly distort your results · ReliCheck Blog" />
+  <meta name="twitter:description" content="The patterns that look harmless on the page but reliably skew the numbers: double-barreled items, midpoint parking, leading premises, and two more worth catching before launch." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+
+    .post-hero {
+      padding: 56px 0 28px;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+    }
+    .post-hero .container {
+      max-width: 780px;
+      text-align: left;
+    }
+    .post-hero .post-tag {
+      display: inline-block;
+      font-size:14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: #fbe7df;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .post-hero h1 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(30px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      margin: 0 0 18px;
+    }
+    .post-meta {
+      font-size: 13.5px;
+      color: var(--ink-3);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+    .post-meta strong { color: var(--ink); font-weight: 600; }
+
+    .post-body {
+      max-width: 720px;
+      margin: 36px auto 56px;
+      padding: 0 24px;
+    }
+    .post-body p {
+      font-size: 16.5px;
+      line-height: 1.75;
+      color: var(--ink-2);
+      margin: 0 0 18px;
+    }
+    .post-body h2 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.012em;
+      color: var(--navy);
+      margin: 36px 0 10px;
+    }
+    .post-body h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 26px 0 6px;
+    }
+    .post-body ul, .post-body ol {
+      font-size: 16.5px;
+      line-height: 1.7;
+      color: var(--ink-2);
+      padding-left: 24px;
+      margin: 6px 0 18px;
+    }
+    .post-body ul li, .post-body ol li { margin-bottom: 6px; }
+    .post-body a { color: var(--accent); }
+
+    .item-pair {
+      background: #fafbfd;
+      border: 1px solid #e3e6ee;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 16px 0;
+    }
+    .item-pair .row {
+      padding: 6px 0;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+    .item-pair .row + .row { border-top: 1px dashed #d3d7e3; }
+    .item-pair .tag {
+      display: inline-block;
+      font-size: 10.5px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-right: 10px;
+      vertical-align: middle;
+    }
+    .item-pair .tag.bad  { background: #fbe6e1; color: #8b2515; }
+    .item-pair .tag.good { background: #e1f1e6; color: #1c5a30; }
+    .item-pair .item-text {
+      font-style: italic;
+      color: var(--ink);
+    }
+
+    .related {
+      max-width: 1100px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .related h3 {
+      font-size:14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 0 0 16px;
+    }
+    .related-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card {
+      display: block;
+      background: #ffffff;
+      border: 1px solid #e3e6ee;
+      border-radius: 10px;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: border-color 0.2s ease;
+    }
+    .related-card:hover { border-color: var(--accent); text-decoration: none; }
+    .related-card h4 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 17px;
+      color: var(--navy);
+      margin: 0 0 6px;
+    }
+    .related-card p {
+      font-size: 13.5px;
+      color: var(--ink-2);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .back-link {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px 24px 0;
+      font-size: 13.5px;
+    }
+    .back-link a { color: var(--ink-3); text-decoration: none; }
+    .back-link a:hover { color: var(--accent); }
+  
+</style>
+</head>
+<body>
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="../index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Check a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>The results</h5>
+            <a href="../overview.html#analyze"><strong>Survey Results overview</strong><span>How the Strength Score works.</span></a>
+            <a href="../overview.html#analyze"><strong>Survey Strength Score</strong><span>One score, five checks, clear next steps.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>What ReliCheck checks</h5>
+            <a href="../reliability-guide.html"><strong>Do your questions work together?</strong><span>Reliability and item-total checks.</span></a>
+            <a href="../validity-guide.html"><strong>What is your survey really measuring?</strong><span>Factor analysis, KMO, rotation.</span></a>
+            <a href="../reliability-guide.html"><strong>Are your results strong enough?</strong><span>Response quality and missing data.</span></a>
+            <a href="../ai-features.html"><strong>What are people saying?</strong><span>Open-ended themes and quotes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>See it</h5>
+            <a class="mega-link" href="../samples.html">Sample reports</a>
+            <a class="mega-link" href="../methodology.html">Methodology</a>
+            <a class="mega-link" href="../reliability-guide.html">Reliability guide</a>
+            <a class="mega-link" href="../validity-guide.html">Validity guide</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../import-data.html" class="nav-dd-trigger ">Import Data</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Build a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>Build</h5>
+            <a href="../overview.html#build"><strong>Question types</strong><span>Likert, choice, open-ended, matrix, ranking.</span></a>
+            <a href="../ai-features.html"><strong>AI question review</strong><span>Catch double-barreled, leading, vague items.</span></a>
+            <a href="../overview.html#collect"><strong>Collect responses</strong><span>Links, email, QR, embed.</span></a>
+            <a href="../import-survey.html"><strong>Upload your survey</strong><span>Bring a survey from SurveyMonkey or Qualtrics.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Templates</h5>
+            <a href="../app.html?template=course_evaluation"><strong>Course Evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../app.html?template=student_belonging"><strong>Student Belonging</strong><span>Validated belonging and connectedness scales.</span></a>
+            <a href="../app.html?template=workplace_engagement"><strong>Employee Engagement</strong><span>Quarterly pulse and annual engagement.</span></a>
+            <a href="../app.html?template=program_evaluation"><strong>Program Evaluation</strong><span>Pre/post outcome scales for grant reporting.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Popular templates</h5>
+            <a class="mega-link" href="../app.html?template=customer_satisfaction">Customer Satisfaction</a>
+            <a class="mega-link" href="../app.html?template=climate_survey">Climate Survey</a>
+            <a class="mega-link" href="../app.html?template=training_feedback">Training Feedback</a>
+            <a class="mega-link" href="../app.html?template=community_needs">Community Needs</a>
+            <a class="mega-see-all" href="../samples.html">View all templates →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../samples.html" class="nav-dd-trigger ">Sample Reports</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>By team</h5>
+            <a href="../education.html"><strong>Education</strong><span>Course evaluation, belonging, school climate.</span></a>
+            <a href="../hr-teams.html"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a href="../customer-feedback.html"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service feedback.</span></a>
+            <a href="../research.html"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>By use case</h5>
+            <a href="../education.html"><strong>Course evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../hr-teams.html"><strong>Engagement &amp; pulse</strong><span>Recurring employee surveys with k-anonymity.</span></a>
+            <a href="../program-evaluation.html"><strong>Program evaluation &amp; accreditation</strong><span>Same category, different scopes.</span></a>
+            <a href="../mixed-methods.html"><strong>Mixed-methods research</strong><span>Quantitative scales and qualitative themes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Other resources</h5>
+            <a class="mega-link" href="../case-studies.html">Customer stories</a>
+            <a class="mega-link" href="../compare.html">Compare</a>
+            <a class="mega-link" href="../help.html">Help center</a>
+            <a class="mega-link" href="../blog.html">Blog</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../pricing.html" class="nav-dd-trigger ">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="../login.html" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="../signup.html" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Check a Survey</h5><a href="../overview.html#analyze">Survey Results overview</a><a href="../reliability-guide.html">Reliability guide</a><a href="../validity-guide.html">Validity guide</a><a href="../methodology.html">Methodology</a><a href="../samples.html">Sample reports</a></div>
+    <div class="drawer-group"><h5>Import Data</h5><a href="../import-data.html">Import results</a><a href="../import-survey.html">Upload your survey</a></div>
+    <div class="drawer-group"><h5>Build a Survey</h5><a href="../overview.html#build">Build</a><a href="../ai-features.html">AI features</a><a href="../app.html?template=course_evaluation">Course Evaluation</a><a href="../app.html?template=workplace_engagement">Employee Engagement</a><a href="../app.html?template=program_evaluation">Program Evaluation</a></div>
+    <div class="drawer-group"><h5>Sample Reports</h5><a href="../samples.html">Sample reports</a><a href="../samples/interactive-course-evaluation.html">Interactive demo</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="../education.html">Education &amp; Evaluation</a><a href="../hr-teams.html">HR &amp; Teams</a><a href="../customer-feedback.html">Customer Feedback</a><a href="../research.html">Research</a><a href="../mixed-methods.html">Mixed-Methods</a><a href="../compare.html">Compare</a><a href="../case-studies.html">Customer stories</a><a href="../help.html">Help center</a><a href="../blog.html">Blog</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="../pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="../login.html" class="btn btn-outline">Sign in</a><a href="../signup.html" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+<main>
+    <div class="back-link"><a href="../blog.html">&larr; Back to blog</a></div>
+
+    <section class="post-hero">
+      <div class="container">
+        <span class="post-tag">Survey design</span>
+        <h1>Five survey design mistakes that quietly distort your results</h1>
+        <div class="post-meta">
+          <span><strong>ReliCheck C.E.O.</strong></span>
+          <span>April 29, 2026</span>
+          <span>6 min read</span>
+        </div>
+      </div>
+    </section>
+
+    <article class="post-body">
+      <p>The most expensive bugs in survey work are not typos. The expensive ones are the design choices that look fine on the page, get sent to a thousand respondents, and quietly tilt the numbers a few degrees in the wrong direction. The data comes back clean enough to analyze, the report goes to the dean or the executive team, and the decision gets made on a foundation that nobody thought to inspect.</p>
+      <p>Five patterns account for most of the damage. None requires advanced training to spot. All of them get past first-draft review more often than they should.</p>
+
+      <h2>1. The double-barreled item</h2>
+      <p>An item that asks about two things at once. Respondents who agree with one half and disagree with the other have no honest response, so they pick the midpoint or the option that feels closest to a compromise. The composite score then averages two unrelated signals.</p>
+      <div class="item-pair">
+        <div class="row"><span class="tag bad">Avoid</span><span class="item-text">My instructor is knowledgeable and easy to reach.</span></div>
+        <div class="row"><span class="tag good">Better</span><span class="item-text">My instructor is knowledgeable about the subject.</span></div>
+        <div class="row"><span class="tag good">Better</span><span class="item-text">My instructor is easy to reach when I have questions.</span></div>
+      </div>
+      <p>The fix is the rule "one idea per item." Read each item out loud and listen for the word <em>and</em> in the middle. Most double-barrels are caught at that step.</p>
+
+      <h2>2. Leading premises baked into the prompt</h2>
+      <p>A premise that prejudges the answer steers respondents toward agreement before they have a chance to evaluate the question. Even small modifiers (award-winning, popular, recent improvements to) shift the response distribution.</p>
+      <div class="item-pair">
+        <div class="row"><span class="tag bad">Loaded</span><span class="item-text">How satisfied are you with our award-winning customer service?</span></div>
+        <div class="row"><span class="tag good">Neutral</span><span class="item-text">How satisfied are you with our customer service?</span></div>
+      </div>
+      <p>The fix is to strip every adjective from the prompt that does not name the object being rated. If the customer service is genuinely award-winning, the satisfaction scores will reflect it. The prompt should not.</p>
+
+      <h2>3. Midpoint parking from too-wide reference periods</h2>
+      <p>"Over the last year, how often have you..." invites a guess. Respondents who do not remember pick the middle option to be safe. The middle gets crowded with non-answers, and the distribution looks tighter than it is.</p>
+      <p>Reference periods that match how often the behavior actually happens produce sharper data. Daily behavior fits a one-week window. Quarterly events fit a six-month window. Asking about a year of behavior is rarely useful unless the topic is rare and memorable.</p>
+
+      <h2>4. Inconsistent stems within one scale</h2>
+      <p>A scale with mixed grammatical frames forces respondents to mentally restart on every item. The cognitive cost looks like measurement error in the data: alpha drops, item-total correlations weaken, and the report flags items that are not actually bad, just inconsistent with their neighbors.</p>
+      <div class="item-pair">
+        <div class="row"><span class="tag bad">Mixed stems</span><span class="item-text">"I feel supported by my team." / "My manager listens." / "It is normal to ask for help here."</span></div>
+        <div class="row"><span class="tag good">Consistent stems</span><span class="item-text">"I feel supported by my team." / "I feel my manager listens to me." / "I feel comfortable asking for help on this team."</span></div>
+      </div>
+      <p>Consistency does not mean monotony. The fix is to choose one frame per scale (an "I feel" stem, a "my [X] is" stem, a "how often do you" stem) and apply it to every item in the block. Different scales can use different frames.</p>
+
+      <h2>5. Demographics at the top</h2>
+      <p>Asking for race, gender, age, and tenure on the first screen accomplishes two things, both bad. Some respondents bounce because the survey now feels like a marketing form. Others stay but answer the substantive items in a more guarded way, having just been reminded which group they belong to.</p>
+      <p>The fix is the simplest one on this list: move demographics to the end. The respondents who drop out late have already given you the items that matter. The respondents who finish answer demographic items more honestly because the substantive part is over.</p>
+
+      <h2>None of these are obscure</h2>
+      <p>None of these mistakes requires obscure expertise to fix. All of them require somebody to read the survey from the respondent's seat once before launch, ideally out loud. A read-aloud test by the survey designer catches most of these in twenty minutes. A round of cognitive interviews with five people from the actual audience catches the rest.</p>
+      <p>For the longer treatment of these patterns and the design decisions that prevent them, see the <a href="../survey-design-guide.html">Survey design guide</a>.</p>
+    </article>
+
+    <section class="related">
+      <h3>Related posts</h3>
+      <div class="related-grid">
+        <a class="related-card" href="what-a-reliability-number-tells-you.html">
+          <h4>What a reliability number actually tells you</h4>
+          <p>An alpha of 0.85 is a useful signal, not a verdict. What reliability statistics measure, and what they miss.</p>
+        </a>
+        <a class="related-card" href="reading-your-first-relicheck-report.html">
+          <h4>Reading your first ReliCheck report</h4>
+          <p>A guided tour through the alpha tile, the heatmap, and the item-total table.</p>
+        </a>
+      </div>
+    </section>
+  </main>
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="../index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="../overview.html">Overview</a></li><li><a href="../ai-features.html">AI features</a></li><li><a href="../pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="../education.html">Education</a></li><li><a href="../hr-teams.html">HR &amp; Teams</a></li><li><a href="../customer-feedback.html">Customer feedback</a></li><li><a href="../research.html">Research</a></li></ul></div>
+      <div><h4>Learn</h4><ul><li><a href="../methodology.html">Methodology</a></li><li><a href="../reliability-guide.html">Reliability guide</a></li><li><a href="../validity-guide.html">Validity guide</a></li><li><a href="../compare.html">Compare</a></li><li><a href="../help.html">Help center</a></li><li><a href="../blog.html">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="../about.html">About</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        header.classList.add('is-mega-open');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          if (!document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  if (toggle) toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+
+</body>
+</html>

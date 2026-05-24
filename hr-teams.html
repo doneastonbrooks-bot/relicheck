@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR / Management Suite . ReliCheck</title>
+  <meta name="description" content="Employee feedback is easy to collect, harder to defend. ReliCheck helps HR check whether engagement, climate, onboarding, exit, and 360 survey results are reliable enough to guide decisions, explain to leadership, and share responsibly." />
+  <link rel="canonical" href="https://relichecksurvey.com/hr-teams.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="HR / Management Suite . ReliCheck" />
+  <meta property="og:description" content="Employee feedback is easy to collect. Harder to defend. ReliCheck for HR and people leaders." />
+  <meta property="og:url" content="https://relichecksurvey.com/hr-teams.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/img-hrteams-hero.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HR / Management Suite . ReliCheck" />
+  <meta name="twitter:description" content="Employee feedback is easy to collect. Harder to defend." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/img-hrteams-hero.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+
+  <style>
+    /* ============================================================
+       Suite-page styles (HR debut; promote to styles-2026.css once
+       validated and reused on Marketing / Research / Program Eval /
+       Tests).
+       ============================================================ */
+
+    /* Hero image cell spans only the title-block row */
+    .hero-grid.hero-grid-rows {
+      grid-template-rows: auto auto auto;
+      align-items: start;
+      row-gap: 0;
+    }
+    .hero-grid.hero-grid-rows > .hero-cell-eyebrow { grid-column: 1; grid-row: 1; }
+    .hero-grid.hero-grid-rows > .hero-cell-title   { grid-column: 1; grid-row: 2; }
+    .hero-grid.hero-grid-rows > .hero-cell-actions { grid-column: 1; grid-row: 3; }
+    .hero-grid.hero-grid-rows > .hero-image-col    {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: stretch;
+      min-height: 0;
+    }
+    .hero-grid.hero-grid-rows .hero-title-block .lede { margin-bottom: 0; }
+    .hero-grid.hero-grid-rows .hero-cell-actions { margin-top: var(--s-8); }
+    .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame { height: 100%; }
+    .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    @media (max-width: 1023px) {
+      .hero-grid.hero-grid-rows > .hero-cell-eyebrow,
+      .hero-grid.hero-grid-rows > .hero-cell-title,
+      .hero-grid.hero-grid-rows > .hero-cell-actions,
+      .hero-grid.hero-grid-rows > .hero-image-col {
+        grid-column: 1;
+      }
+      .hero-grid.hero-grid-rows > .hero-image-col { grid-row: auto; }
+      .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame { height: auto; }
+      .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame img { height: auto; }
+      .hero-grid.hero-grid-rows .hero-title-block .lede { margin-bottom: var(--s-8); }
+    }
+
+    /* Section-head pacing parity with homepage */
+    .section-head h2 { margin-bottom: var(--s-5); }
+    .section-head p { margin-top: var(--s-2); line-height: 1.6; }
+
+    /* Inline product screenshot inside a section (Section 5 deliverable preview) */
+    .dashboard-screenshot {
+      margin: 40px auto 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      max-width: 1120px;
+    }
+    .dashboard-screenshot img {
+      width: 100%;
+      height: auto;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: 0 18px 60px rgba(15, 23, 42, 0.10);
+      background: #ffffff;
+      display: block;
+    }
+    .dashboard-screenshot figcaption {
+      max-width: 720px;
+      font-size: 14px;
+      color: var(--ink-6);
+      line-height: 1.6;
+      margin: 0;
+      text-align: center;
+    }
+
+    /* Section 2: risk cards (what goes wrong) */
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 4px solid #c2410c;
+      border-radius: 14px;
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .risk-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 21px;
+      margin: 0;
+      line-height: 1.25;
+      color: var(--ink-9);
+    }
+    .risk-card p {
+      margin: 0;
+      color: var(--ink-7);
+      line-height: 1.6;
+    }
+
+    /* Section 3: workflow cards (Before X / ReliCheck does Y) */
+    .workflow-card {
+      background: #f7faf6;
+      border: 1px solid #d8e6d5;
+      border-radius: 14px;
+      padding: 26px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .workflow-card .wf-when {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #166534;
+    }
+    .workflow-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 20px;
+      margin: 0;
+      line-height: 1.25;
+      color: var(--ink-9);
+    }
+    .workflow-card p {
+      margin: 0;
+      color: var(--ink-7);
+      line-height: 1.6;
+    }
+
+    /* Section 5: output cards */
+    .output-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .output-card .out-kind {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+    }
+    .output-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      margin: 0;
+      line-height: 1.25;
+      color: var(--ink-9);
+    }
+    .output-card p {
+      margin: 0;
+      color: var(--ink-7);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    /* Reusable 4-up grid for risk, workflow, and output rows */
+    .grid4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 40px;
+    }
+    @media (max-width: 1100px) { .grid4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px)  { .grid4 { grid-template-columns: 1fr; } }
+    .grid2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 40px;
+    }
+    @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+
+    /* Section 4 feature grid: 3-across on wide, 2 on tablet, 1 on phone */
+    .feat-cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 40px;
+    }
+    @media (max-width: 1100px) { .feat-cards { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 720px)  { .feat-cards { grid-template-columns: 1fr; } }
+    .feat-card-2 {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .feat-card-2 .feat-tag {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent, #4f46e5);
+    }
+    .feat-card-2 h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      margin: 0;
+      line-height: 1.25;
+      color: var(--ink-9);
+    }
+    .feat-card-2 p {
+      margin: 0;
+      color: var(--ink-7);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    /* Subgroup headers inside the Section 4 feature grid */
+    .feat-cards .subgroup-header {
+      grid-column: 1 / -1;
+      margin-top: 28px;
+      margin-bottom: 4px;
+    }
+    .feat-cards .subgroup-header:first-child {
+      margin-top: 0;
+    }
+
+    /* Survey lifecycle strip between Section 2 and Section 3 */
+    .lifecycle-strip {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: center;
+      margin-top: 40px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 10px;
+    }
+    .lifecycle-node {
+      padding: 14px 10px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lifecycle-node .lc-step {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+    }
+    .lifecycle-node h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 17px;
+      color: var(--ink-9);
+      margin: 0;
+      line-height: 1.25;
+    }
+    .lifecycle-arrow {
+      color: var(--ink-5);
+      font-size: 18px;
+      padding: 0 2px;
+      user-select: none;
+    }
+    @media (max-width: 900px) {
+      .lifecycle-strip {
+        grid-template-columns: 1fr;
+        padding: 8px;
+      }
+      .lifecycle-arrow { display: none; }
+      .lifecycle-node { border-bottom: 1px solid var(--border); }
+      .lifecycle-node:last-child { border-bottom: none; }
+    }
+
+    /* Emotional pivot between Section 3 and Section 4 */
+    .emotional-pivot {
+      padding: 56px 24px;
+    }
+    .emotional-line {
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 500;
+      font-style: italic;
+      font-size: 26px;
+      line-height: 1.45;
+      color: var(--ink-9);
+      max-width: 720px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    @media (max-width: 720px) {
+      .emotional-line { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<main>
+
+  <!-- ============================================================
+       SECTION 1 . THE PROFESSIONAL PROBLEM
+       ============================================================ -->
+  <section class="hero">
+    <div class="container-content hero-grid hero-grid-rows">
+      <span class="eyebrow hero-eyebrow hero-cell-eyebrow">HR / Management Suite</span>
+      <div class="hero-title-block hero-cell-title">
+        <h1>Employee feedback is easy to collect. Harder to defend.</h1>
+        <p class="lede">HR teams are increasingly expected to make decisions from engagement, climate, onboarding, exit, and 360 surveys. But weak questions, unstable scales, low subgroup counts, and overinterpreted results can turn employee feedback into organizational risk.</p>
+      </div>
+      <div class="hero-actions hero-cell-actions">
+        <a href="import-data.html" class="btn btn-primary btn-lg">Check an employee survey</a>
+        <a href="signup.html" class="btn btn-outline btn-lg">Build an HR survey</a>
+      </div>
+      <div class="hero-image-col">
+        <div class="hero-image-frame">
+          <img src="img-hrteams-hero.jpg" alt="A people and culture team reviewing engagement survey results" width="1376" height="768" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2 . WHAT GOES WRONG WITHOUT STRONG EVIDENCE
+       Four failure modes HR teams carry between cycles. Red left
+       accent visually marks these as risk content.
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Where the evidence breaks down</span>
+        <h2>Four ways employee survey results lose credibility quietly.</h2>
+        <p>Most HR teams discover these problems only after a chart is in a leadership deck. By then, the conversation has already moved on from whether the number is real to what to do about it.</p>
+      </div>
+
+      <div class="grid4">
+        <article class="risk-card">
+          <h3>Weak questions become strong conclusions</h3>
+          <p>Leaders overinterpret averages from poorly constructed items. An engagement score of 4.2 means fundamentally different things depending on whether the items behind it are measuring what they claim to measure.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Small groups get exposed</h3>
+          <p>Departments with only a few employees can accidentally become identifiable when subgroup breakdowns hit a leadership report. Once one employee can be located in the data, trust in the process erodes.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Trends get reported too confidently</h3>
+          <p>Changes from quarter to quarter may reflect unstable measurement instead of real organizational change. Without reliability checks, a five-point lift can be measurement drift dressed up as progress.</p>
+        </article>
+        <article class="risk-card">
+          <h3>Employees stop trusting the process</h3>
+          <p>When surveys feel unclear, poorly worded, or misused, participation quality declines. Response rates fall, open-ended answers shrink, and the dataset stops being usable for the decisions it was meant to support.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       LIFECYCLE STRIP
+       Horizontal visualization breaking the grid rhythm. Maps the
+       five stages of an HR survey lifecycle so Section 3's "Before
+       X" cards have a workflow context to anchor against.
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head" style="margin-bottom: 0;">
+        <span class="kicker">The HR survey lifecycle</span>
+        <h2 style="font-size: 26px;">Five stages. ReliCheck plugs into the four that have to hold up.</h2>
+      </div>
+
+      <div class="lifecycle-strip">
+        <div class="lifecycle-node">
+          <span class="lc-step">Stage 1</span>
+          <h3>Draft</h3>
+        </div>
+        <span class="lifecycle-arrow" aria-hidden="true">&rarr;</span>
+        <div class="lifecycle-node">
+          <span class="lc-step">Stage 2</span>
+          <h3>Distribute</h3>
+        </div>
+        <span class="lifecycle-arrow" aria-hidden="true">&rarr;</span>
+        <div class="lifecycle-node">
+          <span class="lc-step">Stage 3</span>
+          <h3>Collect</h3>
+        </div>
+        <span class="lifecycle-arrow" aria-hidden="true">&rarr;</span>
+        <div class="lifecycle-node">
+          <span class="lc-step">Stage 4</span>
+          <h3>Analyze</h3>
+        </div>
+        <span class="lifecycle-arrow" aria-hidden="true">&rarr;</span>
+        <div class="lifecycle-node">
+          <span class="lc-step">Stage 5</span>
+          <h3>Report</h3>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 3 . HOW RELICHECK CHANGES THE WORKFLOW
+       Four "Before X . ReliCheck does Y" cards. Green workflow
+       treatment visually contrasts with the red risk treatment.
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Built into the workflow</span>
+        <h2>ReliCheck adds four checks before the evidence becomes a decision.</h2>
+        <p>None of these are extra steps for HR to remember. They run automatically inside the platform, and surface in the dashboard at the point where the team is about to act on the results.</p>
+      </div>
+
+      <div class="grid4">
+        <article class="workflow-card">
+          <span class="wf-when">Before leaders see the dashboard</span>
+          <h3>ReliCheck checks whether the survey is stable enough to interpret.</h3>
+          <p>The Survey Strength Index runs across six weighted domains and returns a 0 to 100 score with a plain-language readout. HR can see the result before anyone else does.</p>
+        </article>
+        <article class="workflow-card">
+          <span class="wf-when">Before subgroup results are shown</span>
+          <h3>K-anonymity protects small employee groups automatically.</h3>
+          <p>Subgroups below the privacy floor are hidden entirely, not just masked. A department of three never lands in a leadership report by accident.</p>
+        </article>
+        <article class="workflow-card">
+          <span class="wf-when">Before reporting goes out</span>
+          <h3>ReliCheck flags weak items and unstable constructs.</h3>
+          <p>The flags surface in the dashboard so HR sees the cautions before the deck goes to the board, with concrete suggestions for what to revise next cycle.</p>
+        </article>
+        <article class="workflow-card">
+          <span class="wf-when">Before action is recommended</span>
+          <h3>Plain-language verdicts explain what the evidence supports.</h3>
+          <p>A four-tier readout ("Can I use these results?") tells you whether the data is strong enough for the decision you want to make, and what to caveat if it is not.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       EMOTIONAL PIVOT
+       One line between problem/response and platform capabilities,
+       to remind visitors this work is about people, not metrics.
+       ============================================================ -->
+  <section class="emotional-pivot">
+    <div class="container-content">
+      <p class="emotional-line">Employee surveys only work when employees believe the process is fair.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 4 . WHAT RELICHECK ACTUALLY DOES FOR HR
+       Six feature areas grouped into three professional clusters:
+       survey workflows, people analytics, and advanced modeling.
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">In the platform</span>
+        <h2>What ReliCheck does for HR, in one workspace.</h2>
+        <p>Engagement scales, 360 panels, subgroup-protected analytics, and the analyses CHRO and CFO audiences actually request, on the same dashboard as the reliability checks.</p>
+      </div>
+
+      <div class="feat-cards">
+        <div class="subgroup-header"><span class="kicker">Survey workflows</span></div>
+        <article class="feat-card-2">
+          <span class="feat-tag">Engagement and climate</span>
+          <h3>Validated engagement, climate, and belonging scales</h3>
+          <p>Reverse-scoring built in, optional pulse cadence, validated item banks. Run quarterly without re-validating the instrument each time. K-anonymity protections sit underneath every rollup.</p>
+        </article>
+        <article class="feat-card-2">
+          <span class="feat-tag">Lifecycle surveys</span>
+          <h3>Onboarding, exit, and stay interviews</h3>
+          <p>Structured 30, 60, and 90 day onboarding check-ins. Validated exit items with theme extraction across open responses. Stay interview prompts that get honest answers before the recruiter call.</p>
+        </article>
+        <article class="feat-card-2">
+          <span class="feat-tag">360 panels</span>
+          <h3>Multi-rater 360 reviews per subject</h3>
+          <p>Self, peer, direct-report, and manager raters per subject. Per-subject AI summary card. One-click PDF for each subject's manager. Completion tracking by rater group, blind-spot flags when self overrates others.</p>
+        </article>
+
+        <div class="subgroup-header"><span class="kicker">People analytics</span></div>
+        <article class="feat-card-2">
+          <span class="feat-tag">Equity gaps</span>
+          <h3>Subgroup analysis with privacy protection</h3>
+          <p>Per-group composites, statistically tested differences, and a single composite Equity Gap Score. The narrator frames findings as patterns to understand, never accusations. Small groups are hidden entirely, so a department of three never appears in a chart.</p>
+        </article>
+        <article class="feat-card-2">
+          <span class="feat-tag">Drivers and predictors</span>
+          <h3>What predicts engagement, belonging, or intent to stay</h3>
+          <p>Rank the survey factors most connected to engagement, belonging, or intent to stay. See which conditions change the relationship (tenure, role, location), so the recommendation matches the people it applies to.</p>
+        </article>
+
+        <div class="subgroup-header"><span class="kicker">Advanced modeling</span></div>
+        <article class="feat-card-2">
+          <span class="feat-tag">Pattern context</span>
+          <h3>See whether team culture or office context is shaping the results</h3>
+          <p>When the same engagement question lands differently across teams, regions, or managers, ReliCheck untangles whether the variation is real organizational signal or just how the data was grouped. Advanced modeling is available when the analysis calls for that depth.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 5 . THE OUTPUTS HR TEAMS RECEIVE
+       Lead with the SSI card as the headline deliverable, then
+       four supporting output cards.
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">What you hand to leadership</span>
+        <h2>The deliverables HR teams export from ReliCheck.</h2>
+        <p>Every analysis ReliCheck runs produces an artifact HR can defend, share, or send. The math sits underneath; the narrative sits on top.</p>
+      </div>
+
+      <div class="ssi2-card">
+        <header class="ssi2-header">
+          <div class="ssi2-ring">
+            <svg viewBox="0 0 160 160" width="160" height="160" aria-hidden="true">
+              <circle cx="80" cy="80" r="64" fill="none" stroke="#eef1f5" stroke-width="14"/>
+              <circle cx="80" cy="80" r="64" fill="none" stroke="#1f9d55" stroke-width="14" stroke-linecap="round"
+                      stroke-dasharray="402" stroke-dashoffset="72" transform="rotate(-90 80 80)"/>
+            </svg>
+            <div class="ssi2-ring-num"><span class="n">82</span><span class="of">/ 100</span></div>
+          </div>
+          <div class="ssi2-header-text">
+            <h3 class="ssi2-title">ReliCheck Survey Strength Index&trade;</h3>
+            <span class="ssi2-status">Strong</span>
+            <p class="ssi2-readout">A quarterly engagement pulse, scored end to end. This survey is statistically strong and ready for leadership review, with two items recommended for revision before the next cycle.</p>
+          </div>
+        </header>
+
+        <ul class="ssi2-tiles">
+          <li class="ssi2-tile" data-tone="warn">
+            <div class="ssi2-tile-name"><span class="ic">R</span>Reliability Strength</div>
+            <div class="ssi2-tile-num"><strong>16</strong> <span>/ 25</span></div>
+            <div class="ssi2-tile-bar"><span style="width:64%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">F</span>Factor Structure</div>
+            <div class="ssi2-tile-num"><strong>16</strong> <span>/ 20</span></div>
+            <div class="ssi2-tile-bar"><span style="width:80%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">I</span>Item Quality</div>
+            <div class="ssi2-tile-num"><strong>20</strong> <span>/ 20</span></div>
+            <div class="ssi2-tile-bar"><span style="width:100%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">P</span>Response Quality</div>
+            <div class="ssi2-tile-num"><strong>13</strong> <span>/ 15</span></div>
+            <div class="ssi2-tile-bar"><span style="width:87%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">O</span>Open-Ended Alignment</div>
+            <div class="ssi2-tile-num"><strong>9</strong> <span>/ 10</span></div>
+            <div class="ssi2-tile-bar"><span style="width:90%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">A</span>Actionability</div>
+            <div class="ssi2-tile-num"><strong>8</strong> <span>/ 10</span></div>
+            <div class="ssi2-tile-bar"><span style="width:80%;"></span></div>
+          </li>
+        </ul>
+      </div>
+
+      <figure class="dashboard-screenshot">
+        <img src="screenshots/screen-compare-360.png" alt="The Compare tab from a five-leader 360 panel. AI summary paragraph at the top, a plain-language verdict in the middle, and a per-leader means table at the bottom showing Alex Rivera, Jordan Kim, Sam Patel, Morgan Lee, and Casey Chen each rated across the engagement scale." />
+        <figcaption>The Compare dashboard for a five-leader 360 panel. AI summary at the top, plain-language verdict in the middle, per-leader means underneath.</figcaption>
+      </figure>
+
+      <div class="grid4">
+        <article class="output-card">
+          <span class="out-kind">Dashboard</span>
+          <h3>Department and role dashboard</h3>
+          <p>Per-department engagement, climate, and belonging composites with k-anonymity-protected rollups. Share via read-only link, password, or expiring URL.</p>
+        </article>
+        <article class="output-card">
+          <span class="out-kind">PDF</span>
+          <h3>360 subject report</h3>
+          <p>One per subject. Self vs. others comparison, completion by rater group, top and bottom items, open-ended comments tagged by relationship, AI summary card. One-click PDF.</p>
+        </article>
+        <article class="output-card">
+          <span class="out-kind">Narrative</span>
+          <h3>Leadership-ready executive summary</h3>
+          <p>Two-to-three paragraph summary written from the live analytics snapshot in HR voice. Frames findings as patterns to understand, never accusations, with cautions where the data does not support the read.</p>
+        </article>
+        <article class="output-card">
+          <span class="out-kind">Export</span>
+          <h3>SPSS, Excel, and CSV</h3>
+          <p>Raw data, scored composites, item-level analyses, and methods-language exports for HR analytics teams, external researchers, or attorneys reviewing the dataset.</p>
+        </article>
+      </div>
+
+      <p style="text-align:center;margin-top:32px;font-size:15px;color:var(--ink-6);">
+        <a href="samples/hr-engagement.html" style="color:var(--ink-9);text-decoration:underline;">See the full HR sample report, end to end &rarr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 6 . START YOUR HR WORKFLOW
+       Four paths matching the homepage's "ways to start" pattern.
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Start your workflow</span>
+        <h2>Start with the path that fits your team.</h2>
+        <p>Whether you have engagement data already, want to build something new, want to run a 360, or want to see the deliverable first, there is a door for that.</p>
+      </div>
+
+      <div class="cards4">
+        <a class="path-card" href="import-data.html">
+          <span class="path-num">Path 01</span>
+          <h3>Check an existing employee survey</h3>
+          <p>Upload results from Qualtrics, SurveyMonkey, Google Forms, or any CSV. See whether the evidence is strong enough to present.</p>
+        </a>
+        <a class="path-card" href="signup.html">
+          <span class="path-num">Path 02</span>
+          <h3>Build a new HR survey</h3>
+          <p>Start from a validated engagement, climate, onboarding, exit, or stay template. AI support drafts items; ReliCheck checks readiness before you send.</p>
+        </a>
+        <a class="path-card" href="signup.html#360">
+          <span class="path-num">Path 03</span>
+          <h3>Run a 360 panel</h3>
+          <p>Self, peer, direct-report, and manager raters per subject. Plain-language per-subject reports, completion tracking by rater group, one-click PDF for each subject's manager.</p>
+        </a>
+        <a class="path-card" href="samples/hr-engagement.html">
+          <span class="path-num">Path 04</span>
+          <h3>See an HR sample report</h3>
+          <p>Preview the kind of analysis and recommendations ReliCheck produces on a real quarterly engagement pulse, end to end.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FINAL CTA
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="final-strip">
+        <h2>Make your next employee survey easier to trust, explain, and defend.</h2>
+        <p>Start free, upload an engagement result you already have, or open the HR sample report and see the deliverable first.</p>
+        <div class="hero-actions">
+          <a href="signup.html" class="btn btn-primary btn-lg">Get started</a>
+          <a href="samples/hr-engagement.html" class="btn btn-outline btn-lg">View HR sample report</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+</body>
+</html>

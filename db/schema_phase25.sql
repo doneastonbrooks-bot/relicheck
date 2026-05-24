@@ -1,0 +1,14 @@
+-- Phase 25 was reserved for soft-delete on admin_notes, but the existing
+-- /api/admin/customers/notes/delete.php uses a hard delete (the audit row
+-- preserves the deleted note's body). No schema change is needed for the
+-- current notes-edit/delete slice. Leaving this file in place so the
+-- phase number is not silently reused later.
+--
+-- If you ever decide to switch admin_notes deletion to soft-delete:
+--   USE dbs15641829;
+--   ALTER TABLE admin_notes
+--     ADD COLUMN updated_at DATETIME NULL DEFAULT NULL,
+--     ADD COLUMN deleted_at DATETIME NULL DEFAULT NULL,
+--     ADD KEY idx_admin_notes_deleted (customer_user_id, deleted_at);
+--   Then update notes/delete.php to set deleted_at instead of DELETE,
+--   and update get.php's notes query to add `AND deleted_at IS NULL`.

@@ -1,0 +1,68 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Admin endpoint check</title>
+<style>
+  body { font: 14px/1.5 -apple-system, system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 20px; color: #1a1f2e; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  .sub { color: #6b7280; margin: 0 0 20px; font-size: 13px; }
+  .row { background: #f4f6fb; border: 1px solid #e3e6ee; border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .label { font-size:14px; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 4px; }
+  .value { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; word-break: break-all; }
+  .status-ok { color: #1f8a4d; font-weight: 600; }
+  .status-bad { color: #c83333; font-weight: 600; }
+  pre { white-space: pre-wrap; word-break: break-all; margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+</style>
+<h1>Admin endpoint check</h1>
+<p class="sub">Calls <code>/api/promo/list.php</code> with your current session cookie and shows the raw response. Delete this file after you're done.</p>
+
+<div class="row">
+  <div class="label">HTTP status</div>
+  <div class="value" id="status">loading…</div>
+</div>
+
+<div class="row">
+  <div class="label">Content-Type header</div>
+  <div class="value" id="ctype">loading…</div>
+</div>
+
+<div class="row">
+  <div class="label">Response body</div>
+  <pre id="body">loading…</pre>
+</div>
+
+<div class="row">
+  <div class="label">Verdict</div>
+  <div class="value" id="verdict">…</div>
+</div>
+
+<script>
+(async () => {
+  const statusEl = document.getElementById('status');
+  const ctypeEl  = document.getElementById('ctype');
+  const bodyEl   = document.getElementById('body');
+  const verdictEl = document.getElementById('verdict');
+  try {
+    const res = await fetch('/api/promo/list.php', { credentials: 'same-origin' });
+    const text = await res.text();
+    statusEl.textContent = res.status + ' ' + res.statusText;
+    statusEl.className = 'value ' + (res.status === 200 ? 'status-ok' : 'status-bad');
+    ctypeEl.textContent = res.headers.get('content-type') || '(none)';
+    bodyEl.textContent = text;
+
+    if (res.status === 200 && text.includes('"ok":true')) {
+      verdictEl.innerHTML = '<span class="status-ok">Back end is working.</span> The deployed app.html does not have the admin panel wiring; re-upload app.html from the build.';
+    } else if (res.status === 403) {
+      verdictEl.innerHTML = '<span class="status-bad">Server returned 403.</span> The new api/_admin.php was not uploaded, or the upload did not replace the live file.';
+    } else if (res.status === 500) {
+      verdictEl.innerHTML = '<span class="status-bad">Server error.</span> The SQL is failing. Most likely the promo_codes table is missing on the live database.';
+    } else if (res.status === 401) {
+      verdictEl.innerHTML = '<span class="status-bad">Not signed in.</span> Open /app.html, sign in, then reload this page.';
+    } else {
+      verdictEl.innerHTML = '<span class="status-bad">Unexpected response.</span> Send the status, content-type, and body above.';
+    }
+  } catch (e) {
+    statusEl.textContent = 'fetch error';
+    bodyEl.textContent = e && e.message ? e.message : String(e);
+  }
+})();
+</script>

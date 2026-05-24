@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>ReliCheck Admin · Email System</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f7fb; --panel:#fff; --line:#e3e8f1; --line2:#d3dae6;
+    --ink:#0b1733; --ink2:#2d3a5c; --ink3:#5a6582; --ink4:#8d97b1;
+    --soft:#f4f6fa; --brand:#3d57f5; --brand2:#2a44d6;
+    --ok:#1f8a4d; --warn:#b87509; --err:#c83333;
+    --rad:10px; --rad-sm:6px;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;font-size:14px;line-height:1.5;}
+  a{color:var(--brand);text-decoration:none;}
+  a:hover{color:var(--brand2);}
+  button{font:inherit;cursor:pointer;}
+  .topbar{background:#fff;border-bottom:1px solid var(--line);padding:14px 24px;display:flex;align-items:center;gap:16px;}
+  .topbar h1{margin:0;font-size:16px;font-weight:700;}
+  .topbar .sub{color:var(--ink3);font-size:13px;}
+  .layout{display:grid;grid-template-columns:200px 1fr;min-height:calc(100vh - 51px);}
+  .nav{background:#fff;border-right:1px solid var(--line);padding:16px 0;}
+  .nav button{display:block;width:100%;text-align:left;background:none;border:0;padding:10px 20px;color:var(--ink2);font-weight:500;border-left:3px solid transparent;}
+  .nav button.on{background:var(--soft);color:var(--brand);border-left-color:var(--brand);font-weight:600;}
+  .pane{padding:24px;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--rad);padding:20px;margin-bottom:16px;}
+  .card h2{margin:0 0 12px 0;font-size:15px;font-weight:700;}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;}
+  .filters select,.filters input{border:1px solid var(--line2);padding:6px 10px;border-radius:var(--rad-sm);background:#fff;}
+  .btn{display:inline-block;padding:8px 14px;background:var(--brand);color:#fff;border:0;border-radius:var(--rad-sm);font-weight:600;}
+  .btn.secondary{background:#fff;color:var(--ink2);border:1px solid var(--line2);}
+  .btn.warn{background:var(--warn);}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
+  th{background:var(--soft);font-weight:600;color:var(--ink2);font-size:12px;text-transform:uppercase;letter-spacing:0.04em;}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;}
+  .pill.ok{background:#e7f5ec;color:var(--ok);}
+  .pill.warn{background:#fbf3df;color:var(--warn);}
+  .pill.err{background:#fbe8e8;color:var(--err);}
+  .pill.muted{background:var(--soft);color:var(--ink3);}
+  .modal-bg{position:fixed;inset:0;background:rgba(11,23,51,0.4);display:none;align-items:center;justify-content:center;z-index:50;}
+  .modal-bg.on{display:flex;}
+  .modal{background:#fff;border-radius:var(--rad);max-width:900px;width:90vw;max-height:88vh;overflow:auto;padding:24px;}
+  .modal h3{margin:0 0 12px 0;}
+  .modal label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-top:12px;margin-bottom:4px;}
+  .modal input,.modal textarea{width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);font:inherit;}
+  .modal textarea{min-height:120px;font-family:ui-monospace,Menlo,monospace;font-size:12px;}
+  .modal .row{display:flex;gap:12px;}
+  .modal .row > *{flex:1;}
+  .modal .actions{margin-top:16px;display:flex;gap:8px;justify-content:flex-end;}
+  .privacy-banner{background:#fff7e0;border:1px solid #f1d99a;color:#6b4d00;padding:10px 14px;border-radius:var(--rad-sm);margin-bottom:16px;font-size:13px;}
+  .empty{padding:24px;text-align:center;color:var(--ink3);}
+  iframe.preview{width:100%;height:480px;border:1px solid var(--line);border-radius:var(--rad-sm);background:#fff;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>ReliCheck Admin · Email System</h1>
+  <span class="sub">Templates, logs, deliverability, preferences, audit</span>
+  <span style="margin-left:auto;font-size:12px;color:var(--ink3);" id="who"></span>
+</div>
+<div class="layout">
+  <nav class="nav">
+    <button class="tabbtn on" data-tab="compose">Compose</button>
+    <button class="tabbtn"    data-tab="templates">Templates</button>
+    <button class="tabbtn"    data-tab="logs">Logs</button>
+    <button class="tabbtn"    data-tab="failures">Failures</button>
+    <button class="tabbtn"    data-tab="suppression">Suppression</button>
+    <button class="tabbtn"    data-tab="audit">Audit log</button>
+  </nav>
+  <main class="pane">
+    <div class="privacy-banner">
+      Reminder: this panel never displays private survey responses, respondent
+      data, uploaded files, or AI analysis. Email logs store sanitized bodies
+      only.
+    </div>
+    <section id="tab-compose" class="tabpane">
+      <div class="card" style="background:#eaf0ff;border:1px solid #bdcefc;">
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:240px;">
+            <h2 style="margin:0 0 4px 0;">Send Welcome to All Customers</h2>
+            <p style="margin:0;color:var(--ink3);font-size:13px;">
+              One-click queueing of the Account Confirmed template to every
+              active customer (logged-in, not locked). Use Dry run first to
+              see the count.
+            </p>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn secondary" onclick="welcomeBlast(true)">Dry run</button>
+            <button class="btn" onclick="welcomeBlast(false)">Send welcome to all</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Compose email</h2>
+        <p style="color:var(--ink3);margin:0 0 16px 0;font-size:13px;">
+          Send to one customer or to your full customer list. Bulk sends queue
+          through the cron worker at the same throttle as the rest of the email
+          system. Every send writes an audit row.
+        </p>
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;">Recipient</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="display:flex;align-items:center;gap:6px;font-weight:500;">
+            <input type="radio" name="c-mode" value="single" checked onchange="cToggleMode()">
+            One customer
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-weight:500;">
+            <input type="radio" name="c-mode" value="bulk" onchange="cToggleMode()">
+            All customers (bulk)
+          </label>
+        </div>
+
+        <div id="c-single-block" style="margin-bottom:12px;">
+          <input id="c-search" placeholder="Search by name or email (or type an email + Enter)" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);"
+                 oninput="cSearchCustomers()" onkeydown="cSearchKey(event)" autocomplete="off">
+          <div id="c-search-results" style="margin-top:6px;border:1px solid var(--line);border-radius:var(--rad-sm);max-height:160px;overflow:auto;display:none;background:#fff;"></div>
+          <div id="c-selected" style="margin-top:8px;font-size:13px;color:var(--ink2);"></div>
+        </div>
+
+        <div id="c-bulk-block" style="margin-bottom:12px;display:none;background:#fff7e0;border:1px solid #f1d99a;color:#6b4d00;padding:10px 14px;border-radius:var(--rad-sm);font-size:13px;">
+          <strong>Bulk mode.</strong> This will queue the same message to every
+          customer in the database. Use Dry run first to see the count.
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:200px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Send from</label>
+            <select id="c-dept" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);">
+              <option value="welcome">ReliCheck Welcome (welcome@)</option>
+              <option value="support" selected>ReliCheck Support (support@)</option>
+              <option value="services">ReliCheck Services (services@)</option>
+              <option value="membership">ReliCheck Membership (membership@)</option>
+              <option value="billing">ReliCheck Billing (billing@)</option>
+              <option value="privacy">ReliCheck Privacy (privacy@)</option>
+              <option value="terms">ReliCheck Terms (terms@)</option>
+              <option value="legal">ReliCheck Legal (legal@)</option>
+              <option value="marketing">ReliCheck Marketing (marketing@)</option>
+              <option value="sales">ReliCheck Sales (sales@)</option>
+              <option value="hr">ReliCheck HR (hr@)</option>
+            </select>
+          </div>
+          <div style="flex:1;min-width:240px;">
+            <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Start from</label>
+            <select id="c-source" onchange="cLoadFromSource()" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);">
+              <option value="blank">Blank email</option>
+              <option value="template">Existing template (pre-fill, then edit)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="c-template-picker" style="display:none;margin-bottom:12px;">
+          <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Template</label>
+          <select id="c-template" onchange="cApplyTemplate()" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Subject</label>
+        <input id="c-subject" placeholder="Subject line" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);margin-bottom:12px;">
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Preview text (optional, ~50-90 chars)</label>
+        <input id="c-preview" placeholder="One-line preheader shown by mail clients" style="width:100%;border:1px solid var(--line2);padding:8px 10px;border-radius:var(--rad-sm);margin-bottom:12px;">
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Body (HTML)</label>
+        <textarea id="c-html" style="width:100%;min-height:160px;border:1px solid var(--line2);padding:10px;border-radius:var(--rad-sm);font-family:ui-monospace,Menlo,monospace;font-size:12px;margin-bottom:12px;" placeholder="<p>Hi there,</p><p>...</p>"></textarea>
+
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;">Body (plain text, optional, auto-derived from HTML if blank)</label>
+        <textarea id="c-text" style="width:100%;min-height:80px;border:1px solid var(--line2);padding:10px;border-radius:var(--rad-sm);font-family:ui-monospace,Menlo,monospace;font-size:12px;margin-bottom:12px;" placeholder="Hi there,&#10;..."></textarea>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+          <button class="btn secondary" onclick="cPreview()">Preview</button>
+          <button class="btn secondary" onclick="cSend(true)">Dry run (count only)</button>
+          <button class="btn" onclick="cSend(false)">Send</button>
+        </div>
+
+        <div id="c-preview-pane" style="display:none;margin-top:16px;">
+          <h3 id="c-preview-subject" style="margin:8px 0;font-size:14px;"></h3>
+          <iframe class="preview" id="c-preview-iframe"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-templates" class="tabpane" style="display:none;">
+      <div class="filters">
+        <select id="f-dept"><option value="">All departments</option></select>
+        <select id="f-aud">
+          <option value="">All audiences</option>
+          <option value="customer">Customer</option>
+          <option value="employee">Employee</option>
+        </select>
+        <select id="f-req">
+          <option value="">All</option>
+          <option value="1">Required only</option>
+          <option value="0">Optional only</option>
+        </select>
+        <button class="btn secondary" onclick="loadTemplates()">Refresh</button>
+      </div>
+      <div class="card"><table id="t-templates"><thead><tr>
+        <th>Department</th><th>Email</th><th>Audience</th><th>Required</th>
+        <th>Active</th><th>Version</th><th>Updated</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="tab-logs" class="tabpane" style="display:none;">
+      <div class="filters">
+        <input id="l-account" placeholder="Account ID" style="width:120px;">
+        <input id="l-email" placeholder="Recipient email" style="width:220px;">
+        <select id="l-dept"><option value="">All departments</option></select>
+        <select id="l-status">
+          <option value="">All statuses</option>
+          <option>queued</option><option>sending</option>
+          <option>sent</option><option>delivered</option>
+          <option>opened</option><option>clicked</option>
+          <option>bounced</option><option>failed</option>
+          <option>failed_permanent</option><option>complained</option>
+        </select>
+        <input id="l-event" placeholder="event_key" style="width:200px;">
+        <button class="btn secondary" onclick="loadLogs()">Search</button>
+      </div>
+      <div class="card"><table id="t-logs"><thead><tr>
+        <th>When</th><th>Event</th><th>To</th><th>Subject</th>
+        <th>Department</th><th>Status</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="tab-failures" class="tabpane" style="display:none;">
+      <div class="card"><table id="t-failures"><thead><tr>
+        <th>When</th><th>Attempt</th><th>To</th><th>Event</th><th>Subject</th><th>Error</th><th></th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="tab-suppression" class="tabpane" style="display:none;">
+      <div class="card">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <input id="s-email" placeholder="email" style="flex:1;border:1px solid var(--line2);padding:6px 10px;border-radius:var(--rad-sm);">
+          <select id="s-reason"><option>manual</option><option>invalid</option><option>complaint</option><option>hard_bounce</option></select>
+          <input id="s-notes" placeholder="notes" style="flex:1;border:1px solid var(--line2);padding:6px 10px;border-radius:var(--rad-sm);">
+          <button class="btn" onclick="addSuppression()">Add</button>
+        </div>
+        <table id="t-suppress"><thead><tr><th>Added</th><th>Email</th><th>Reason</th><th>Notes</th><th></th></tr></thead><tbody></tbody></table>
+      </div>
+    </section>
+    <section id="tab-audit" class="tabpane" style="display:none;">
+      <div class="card"><table id="t-audit"><thead><tr>
+        <th>When</th><th>Actor</th><th>Action</th><th>Target</th><th>Detail</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+  </main>
+</div>
+
+<!-- Template editor modal -->
+<div class="modal-bg" id="tpl-modal">
+  <div class="modal">
+    <h3 id="tpl-title">Template editor</h3>
+    <div id="tpl-meta" style="font-size:12px;color:var(--ink3);"></div>
+    <label>Subject line</label><input id="tpl-subject">
+    <label>Preview text</label><input id="tpl-preview">
+    <label>Primary button label</label><input id="tpl-btn-label">
+    <label>Primary button URL template</label><input id="tpl-btn-url">
+    <label>Body HTML (inner)</label><textarea id="tpl-html"></textarea>
+    <label>Body text</label><textarea id="tpl-text"></textarea>
+    <label>Dynamic fields (JSON array)</label><input id="tpl-fields">
+    <label>Change note</label><input id="tpl-note" placeholder="What changed and why">
+    <div class="actions">
+      <button class="btn secondary" onclick="closeTplModal()">Close</button>
+      <button class="btn secondary" onclick="previewTemplate()">Preview</button>
+      <button class="btn secondary" onclick="testSendTemplate()">Test send</button>
+      <button class="btn" onclick="saveTemplate()">Save new version</button>
+    </div>
+    <div id="tpl-preview-pane" style="margin-top:16px;display:none;">
+      <h3 id="tpl-preview-subject" style="margin:8px 0;font-size:14px;"></h3>
+      <iframe class="preview" id="tpl-preview-iframe"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let CURRENT_TPL_ID = 0;
+const DEPARTMENTS = [
+  {code:'hr', name:'HR'}, {code:'support', name:'Support'},
+  {code:'legal', name:'Legal'}, {code:'welcome', name:'Welcome'},
+  {code:'marketing', name:'Marketing'}, {code:'membership', name:'Membership'},
+  {code:'services', name:'Services'}, {code:'privacy', name:'Privacy'},
+  {code:'terms', name:'Terms'}, {code:'sales', name:'Sales'},
+  {code:'billing', name:'Billing'},
+];
+
+function fillDeptSelects(){
+  for (const id of ['f-dept','l-dept']){
+    const sel = document.getElementById(id);
+    DEPARTMENTS.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d.code; o.textContent = d.name;
+      sel.appendChild(o);
+    });
+  }
+}
+
+document.querySelectorAll('.tabbtn').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('.tabbtn').forEach(x => x.classList.remove('on'));
+  b.classList.add('on');
+  document.querySelectorAll('.tabpane').forEach(x => x.style.display = 'none');
+  document.getElementById('tab-' + b.dataset.tab).style.display = 'block';
+  switch (b.dataset.tab){
+    case 'compose':     cInit(); break;
+    case 'templates':   loadTemplates(); break;
+    case 'logs':        loadLogs(); break;
+    case 'failures':    loadFailures(); break;
+    case 'suppression': loadSuppression(); break;
+    case 'audit':       loadAudit(); break;
+  }
+}));
+
+// ===== Compose tab =====
+let C_SELECTED_USER = null;
+let C_TEMPLATES_CACHE = null;
+let C_SEARCH_TIMER = null;
+let C_LAST_SEARCH_RESULTS = [];
+
+function cIsEmail(s){
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s).trim());
+}
+
+function cInit(){
+  cToggleMode();
+  if (!C_TEMPLATES_CACHE) cLoadTemplateList();
+}
+
+function cToggleMode(){
+  const mode = document.querySelector('input[name="c-mode"]:checked').value;
+  document.getElementById('c-single-block').style.display = (mode === 'single') ? 'block' : 'none';
+  document.getElementById('c-bulk-block').style.display   = (mode === 'bulk')   ? 'block' : 'none';
+}
+
+function cSearchCustomers(){
+  clearTimeout(C_SEARCH_TIMER);
+  const q = document.getElementById('c-search').value.trim();
+  const out = document.getElementById('c-search-results');
+  C_LAST_SEARCH_RESULTS = [];
+  if (q.length < 2){ out.style.display = 'none'; out.innerHTML = ''; return; }
+  C_SEARCH_TIMER = setTimeout(async () => {
+    const r = await fetch(API + '/admin/email/customer_search.php?q=' + encodeURIComponent(q),
+      {credentials:'include'}).then(x => x.json());
+    out.innerHTML = '';
+    C_LAST_SEARCH_RESULTS = r.rows || [];
+    if (!C_LAST_SEARCH_RESULTS.length){
+      const note = cIsEmail(q)
+        ? '<div style="padding:8px 12px;color:var(--ink3);font-size:13px;">No customer found. Press Enter to send to <strong>' + q + '</strong> anyway.</div>'
+        : '<div style="padding:8px 12px;color:var(--ink3);font-size:13px;">No matches.</div>';
+      out.innerHTML = note;
+      out.style.display = 'block';
+      return;
+    }
+    C_LAST_SEARCH_RESULTS.forEach(u => {
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;';
+      row.onmouseenter = () => row.style.background = 'var(--soft)';
+      row.onmouseleave = () => row.style.background = '';
+      row.innerHTML = `<strong>${u.name||'(no name)'}</strong> &middot; ${u.email}` +
+                      (u.locked ? ' <span class="pill err">locked</span>' : '');
+      row.onclick = () => cSelectCustomer(u);
+      out.appendChild(row);
+    });
+    out.style.display = 'block';
+  }, 200);
+}
+
+// Enter in the search box auto-picks the top match, or accepts the typed
+// email as a free-form recipient if it parses as an email and nothing matched.
+function cSearchKey(ev){
+  if (ev.key !== 'Enter') return;
+  ev.preventDefault();
+  const q = document.getElementById('c-search').value.trim();
+  if (C_LAST_SEARCH_RESULTS.length) {
+    cSelectCustomer(C_LAST_SEARCH_RESULTS[0]);
+  } else if (cIsEmail(q)) {
+    cSelectCustomer({id: 0, email: q, name: '', locked: false, _adhoc: true});
+  }
+}
+
+function cSelectCustomer(u){
+  C_SELECTED_USER = u;
+  document.getElementById('c-search').value = '';
+  document.getElementById('c-search-results').style.display = 'none';
+  document.getElementById('c-selected').innerHTML =
+    `Selected: <strong>${u.name||'(no name)'}</strong> &lt;${u.email}&gt;
+     <button class="btn secondary" style="padding:2px 8px;font-size:11px;margin-left:8px;" onclick="cClearSelected()">Clear</button>`;
+}
+
+function cClearSelected(){
+  C_SELECTED_USER = null;
+  document.getElementById('c-selected').innerHTML = '';
+}
+
+async function cLoadTemplateList(){
+  const r = await fetch(API + '/admin/email/templates.php?action=list&audience=customer',
+    {credentials:'include'}).then(x => x.json());
+  C_TEMPLATES_CACHE = r.rows || [];
+  const sel = document.getElementById('c-template');
+  sel.innerHTML = '<option value="">Pick a template...</option>';
+  C_TEMPLATES_CACHE.forEach(t => {
+    const o = document.createElement('option');
+    o.value = t.id;
+    o.textContent = `${t.department_name} · ${t.email_name}`;
+    sel.appendChild(o);
+  });
+}
+
+function cLoadFromSource(){
+  const v = document.getElementById('c-source').value;
+  document.getElementById('c-template-picker').style.display = (v === 'template') ? 'block' : 'none';
+}
+
+async function cApplyTemplate(){
+  const id = parseInt(document.getElementById('c-template').value, 10);
+  if (!id) return;
+  const r = await fetch(API + '/admin/email/templates.php?action=get&id=' + id,
+    {credentials:'include'}).then(x => x.json());
+  if (!r.ok) return alert('Could not load template.');
+  const t = r.template;
+  document.getElementById('c-dept').value    = t.department_code || 'support';
+  document.getElementById('c-subject').value = t.subject_line    || '';
+  document.getElementById('c-preview').value = t.preview_text    || '';
+  document.getElementById('c-html').value    = t.body_html       || '';
+  document.getElementById('c-text').value    = t.body_text       || '';
+}
+
+async function cPreview(){
+  const dept = document.getElementById('c-dept').value;
+  const html = document.getElementById('c-html').value;
+  const subj = document.getElementById('c-subject').value;
+  const prev = document.getElementById('c-preview').value;
+  // Lightweight client-side wrap so the admin can eyeball before sending.
+  const wrapped =
+    '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f5fb;font-family:Inter,Arial,sans-serif;color:#1a1d2e;">' +
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px;">' +
+    '<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#fff;border-radius:10px;padding:32px;">' +
+    '<tr><td><p style="margin:0 0 24px 0;font-size:20px;font-weight:700;color:#3d57f5;">ReliCheck</p>' +
+    '<div style="font-size:15px;line-height:1.55;">' + html + '</div>' +
+    '<p style="color:#5a607a;font-size:12px;margin-top:32px;">From ReliCheck ' + dept + ' (' + dept + '@relichecksurvey.com)</p>' +
+    '</td></tr></table></td></tr></table></body></html>';
+  document.getElementById('c-preview-pane').style.display = 'block';
+  document.getElementById('c-preview-subject').textContent = '[' + (prev||'') + '] ' + subj;
+  document.getElementById('c-preview-iframe').srcdoc = wrapped;
+}
+
+async function cSend(dryRun){
+  const mode = document.querySelector('input[name="c-mode"]:checked').value;
+  const dept = document.getElementById('c-dept').value;
+  const subj = document.getElementById('c-subject').value.trim();
+  const prev = document.getElementById('c-preview').value.trim();
+  const html = document.getElementById('c-html').value;
+  const text = document.getElementById('c-text').value;
+
+  if (!subj) return alert('Subject is required.');
+  if (!html && !text) return alert('Body is required.');
+
+  const body = { mode, department: dept, subject: subj, preview: prev, body_html: html, body_text: text };
+
+  if (mode === 'single'){
+    // Fall back to whatever's typed in the search box if the user never
+    // clicked a result. Lets them paste an email and hit Send directly.
+    if (!C_SELECTED_USER) {
+      const typed = document.getElementById('c-search').value.trim();
+      if (cIsEmail(typed)) {
+        C_SELECTED_USER = {id: 0, email: typed, name: '', _adhoc: true};
+        document.getElementById('c-selected').innerHTML =
+          'Sending to <strong>' + typed + '</strong> (free-form, not in customer list)';
+      } else {
+        return alert('Pick a customer from the dropdown, or type a full email address and press Enter.');
+      }
+    }
+    if (C_SELECTED_USER.id) body.recipient_user_id = C_SELECTED_USER.id;
+    body.recipient_email = C_SELECTED_USER.email;
+  } else {
+    body.audience = 'all';
+    body.dry_run  = dryRun ? 1 : 0;
+    if (!dryRun){
+      const ok = confirm('Send this email to EVERY customer in your database. Continue?');
+      if (!ok) return;
+    }
+  }
+
+  const r = await fetch(API + '/admin/email/compose.php', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  }).then(x => x.json());
+
+  if (!r.ok){ alert('Send failed: ' + (r.message||JSON.stringify(r))); return; }
+
+  if (mode === 'single'){
+    alert('Queued. Email log #' + (r.email_log_id||'?') + ' will be picked up by the cron worker within a minute.');
+  } else if (dryRun){
+    alert('Dry run: would queue ' + r.total + ' emails.');
+  } else {
+    alert('Queued ' + r.queued + ' of ' + r.total + '. The cron worker drains at ~25/min.');
+  }
+}
+async function welcomeBlast(dryRun){
+  if (!dryRun) {
+    const ok = confirm('Send the Account Confirmed welcome email to EVERY active customer (logged in, not locked). Continue?');
+    if (!ok) return;
+  }
+  const r = await fetch(API + '/admin/email/blast_welcome.php', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({dry_run: dryRun ? 1 : 0})
+  }).then(x => x.json());
+  if (!r.ok) { alert('Welcome blast failed: ' + (r.message || JSON.stringify(r))); return; }
+  if (dryRun) {
+    alert('Dry run: would queue ' + r.total + ' welcome emails. Tag: ' + r.batch_tag);
+  } else {
+    alert('Queued ' + r.queued + ' of ' + r.total_candidates + ' welcome emails. ' +
+          'The cron worker drains at ~25/min. Tag: ' + r.batch_tag);
+  }
+}
+// ===== /Compose tab =====
+
+function pill(status){
+  const ok = ['sent','delivered','opened','clicked','done'];
+  const warn = ['queued','sending','pending'];
+  const err = ['failed','failed_permanent','bounced','complained'];
+  let cls = 'muted';
+  if (ok.includes(status)) cls = 'ok';
+  else if (warn.includes(status)) cls = 'warn';
+  else if (err.includes(status)) cls = 'err';
+  return `<span class="pill ${cls}">${status||''}</span>`;
+}
+
+async function loadTemplates(){
+  const dept = document.getElementById('f-dept').value;
+  const aud  = document.getElementById('f-aud').value;
+  const req  = document.getElementById('f-req').value;
+  const u = new URL(API + '/admin/email/templates.php', location.origin);
+  u.searchParams.set('action','list');
+  if (dept) u.searchParams.set('department', dept);
+  if (aud)  u.searchParams.set('audience', aud);
+  if (req !== '') u.searchParams.set('required', req);
+  const r = await fetch(u, {credentials:'include'}).then(x => x.json());
+  const tb = document.querySelector('#t-templates tbody'); tb.innerHTML = '';
+  if (!r.rows || !r.rows.length){ tb.innerHTML = '<tr><td colspan="8" class="empty">No templates.</td></tr>'; return; }
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.department_name}</td>
+      <td><strong>${row.email_name}</strong><br><span style="font-size:11px;color:var(--ink3);">${row.template_key}</span></td>
+      <td>${row.audience}</td>
+      <td>${row.is_required ? '<span class="pill ok">required</span>' : '<span class="pill muted">optional</span>'}</td>
+      <td>${row.is_active ? '<span class="pill ok">active</span>' : '<span class="pill warn">off</span>'}</td>
+      <td>v${row.current_version}</td>
+      <td>${row.updated_at||''}</td>
+      <td><button class="btn secondary" onclick="openTpl(${row.id})">Edit</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function openTpl(id){
+  CURRENT_TPL_ID = id;
+  const r = await fetch(API + '/admin/email/templates.php?action=get&id=' + id, {credentials:'include'}).then(x => x.json());
+  const t = r.template;
+  document.getElementById('tpl-title').textContent = t.email_name + '  ·  v' + t.current_version;
+  document.getElementById('tpl-meta').innerHTML =
+    `<strong>${t.sender_display_name}</strong> &lt;${t.sender_email}&gt;
+     · key <code>${t.template_key}</code>
+     · audience ${t.audience}
+     · ${t.is_required==1 ? 'required' : 'optional'}`;
+  document.getElementById('tpl-subject').value = t.subject_line || '';
+  document.getElementById('tpl-preview').value = t.preview_text || '';
+  document.getElementById('tpl-btn-label').value = t.primary_button_label || '';
+  document.getElementById('tpl-btn-url').value = t.primary_button_url_template || '';
+  document.getElementById('tpl-html').value = t.body_html || '';
+  document.getElementById('tpl-text').value = t.body_text || '';
+  document.getElementById('tpl-fields').value = t.dynamic_fields || '[]';
+  document.getElementById('tpl-note').value = '';
+  document.getElementById('tpl-preview-pane').style.display = 'none';
+  document.getElementById('tpl-modal').classList.add('on');
+}
+
+function closeTplModal(){ document.getElementById('tpl-modal').classList.remove('on'); }
+
+function readTplBody(){
+  let fields = [];
+  try { fields = JSON.parse(document.getElementById('tpl-fields').value || '[]'); } catch(_){ fields = []; }
+  return {
+    id: CURRENT_TPL_ID,
+    subject_line: document.getElementById('tpl-subject').value,
+    preview_text: document.getElementById('tpl-preview').value,
+    primary_button_label: document.getElementById('tpl-btn-label').value,
+    primary_button_url_template: document.getElementById('tpl-btn-url').value,
+    body_html: document.getElementById('tpl-html').value,
+    body_text: document.getElementById('tpl-text').value,
+    dynamic_fields: fields,
+    change_note: document.getElementById('tpl-note').value,
+  };
+}
+
+async function saveTemplate(){
+  const r = await fetch(API + '/admin/email/templates.php?action=save', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(readTplBody())
+  }).then(x => x.json());
+  if (r.ok) { alert('Saved as v' + r.new_version); closeTplModal(); loadTemplates(); }
+  else { alert('Save failed: ' + (r.message || JSON.stringify(r))); }
+}
+
+async function previewTemplate(){
+  const samplePayload = prompt('Sample payload (JSON):', '{"first_name":"Donald","survey_name":"Spring 2026","survey_id":1234}');
+  if (!samplePayload) return;
+  let payload = {};
+  try { payload = JSON.parse(samplePayload); } catch(_){ alert('Invalid JSON'); return; }
+  const r = await fetch(API + '/admin/email/templates.php?action=preview', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: CURRENT_TPL_ID, payload})
+  }).then(x => x.json());
+  if (!r.ok){ alert('Preview failed: ' + (r.message||'')); return; }
+  document.getElementById('tpl-preview-pane').style.display = 'block';
+  document.getElementById('tpl-preview-subject').textContent = '[' + r.preview + '] ' + r.subject;
+  const ifr = document.getElementById('tpl-preview-iframe');
+  ifr.srcdoc = r.html;
+}
+
+async function testSendTemplate(){
+  const to = prompt('Test send to (must be on internal allowlisted domain):', '');
+  if (!to) return;
+  const samplePayload = prompt('Sample payload (JSON):', '{"first_name":"Donald"}');
+  let payload = {};
+  try { payload = JSON.parse(samplePayload || '{}'); } catch(_){ alert('Invalid JSON'); return; }
+  const r = await fetch(API + '/admin/email/templates.php?action=test_send', {
+    method: 'POST', credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({id: CURRENT_TPL_ID, to, payload})
+  }).then(x => x.json());
+  alert(r.ok ? 'Sent to ' + r.sent_to : 'Failed: ' + (r.message || ''));
+}
+
+async function loadLogs(){
+  const u = new URL(API + '/admin/email/logs.php', location.origin);
+  const acc = document.getElementById('l-account').value;
+  const em  = document.getElementById('l-email').value;
+  const dep = document.getElementById('l-dept').value;
+  const st  = document.getElementById('l-status').value;
+  const ev  = document.getElementById('l-event').value;
+  if (acc) u.searchParams.set('account_id', acc);
+  if (em)  u.searchParams.set('recipient_email', em);
+  if (dep) u.searchParams.set('department', dep);
+  if (st)  u.searchParams.set('status', st);
+  if (ev)  u.searchParams.set('event_key', ev);
+  const r = await fetch(u, {credentials:'include'}).then(x => x.json());
+  const tb = document.querySelector('#t-logs tbody'); tb.innerHTML = '';
+  if (!r.rows || !r.rows.length){ tb.innerHTML = '<tr><td colspan="7" class="empty">No logs.</td></tr>'; return; }
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.created_at||''}</td>
+      <td><code>${row.event_key||''}</code></td>
+      <td>${row.recipient_email}</td>
+      <td>${row.subject||''}</td>
+      <td>${row.department_name||''}</td>
+      <td>${pill(row.status)}</td>
+      <td><button class="btn secondary" onclick="resendLog(${row.id})">Resend</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function resendLog(id){
+  if (!confirm('Re-queue this email for delivery?')) return;
+  const r = await fetch(API + '/email/resend.php', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email_log_id:id})
+  }).then(x=>x.json());
+  alert(r.ok ? 'Re-queued.' : 'Failed: ' + (r.message||''));
+  loadLogs();
+}
+
+async function loadFailures(){
+  const r = await fetch(API + '/admin/email/failures.php', {credentials:'include'}).then(x=>x.json());
+  const tb = document.querySelector('#t-failures tbody'); tb.innerHTML = '';
+  if (!r.rows || !r.rows.length){ tb.innerHTML = '<tr><td colspan="7" class="empty">No failures.</td></tr>'; return; }
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.failed_at}</td><td>#${row.attempt_number}</td>
+      <td>${row.recipient_email}</td><td>${row.event_key}</td>
+      <td>${row.subject||''}</td><td><code>${row.error_message||''}</code></td>
+      <td><button class="btn secondary" onclick="resendLog(${row.email_log_id})">Retry</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function loadSuppression(){
+  const r = await fetch(API + '/email/suppression.php', {credentials:'include'}).then(x=>x.json());
+  const tb = document.querySelector('#t-suppress tbody'); tb.innerHTML = '';
+  if (!r.rows || !r.rows.length){ tb.innerHTML = '<tr><td colspan="5" class="empty">Empty.</td></tr>'; return; }
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.added_at}</td><td>${row.email}</td>
+      <td>${row.reason}</td><td>${row.notes||''}</td>
+      <td><button class="btn secondary" onclick="removeSuppression('${row.email}')">Remove</button></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function addSuppression(){
+  const body = {
+    email:  document.getElementById('s-email').value,
+    reason: document.getElementById('s-reason').value,
+    notes:  document.getElementById('s-notes').value,
+  };
+  const r = await fetch(API + '/email/suppression.php', {
+    method:'POST', credentials:'include',
+    headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+  }).then(x=>x.json());
+  if (r.ok){ document.getElementById('s-email').value=''; document.getElementById('s-notes').value=''; loadSuppression(); }
+  else alert('Failed: ' + (r.message||''));
+}
+
+async function removeSuppression(email){
+  if (!confirm('Remove ' + email + ' from suppression list?')) return;
+  await fetch(API + '/email/suppression.php?email=' + encodeURIComponent(email), {
+    method:'DELETE', credentials:'include'
+  });
+  loadSuppression();
+}
+
+async function loadAudit(){
+  const r = await fetch(API + '/admin/email/audit.php', {credentials:'include'}).then(x=>x.json());
+  const tb = document.querySelector('#t-audit tbody'); tb.innerHTML = '';
+  if (!r.rows || !r.rows.length){ tb.innerHTML = '<tr><td colspan="5" class="empty">No audit entries.</td></tr>'; return; }
+  r.rows.forEach(row => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${row.created_at}</td><td>${row.actor_user_id||''}</td>
+      <td><code>${row.action}</code></td><td>${row.target_type} ${row.target_id||''}</td>
+      <td><code style="font-size:11px;">${(row.after_json||'').replace(/[<>]/g,'')}</code></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+async function whoAmI(){
+  try {
+    const r = await fetch(API + '/admin/check.php', {credentials:'include'}).then(x=>x.json());
+    if (r.is_admin) document.getElementById('who').textContent = r.user.email;
+    else { window.location = '/admin-login.html'; }
+  } catch(_){ window.location = '/admin-login.html'; }
+}
+
+fillDeptSelects();
+whoAmI();
+cInit();
+</script>
+</body>
+</html>

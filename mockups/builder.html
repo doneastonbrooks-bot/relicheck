@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . Builder (Survey Editor)</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       SHARED APP SHELL (matches the other mockups)
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #f6f7fb;
+      color: #1a1f33;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      background: #0f172a;
+      color: #d1d5e0;
+      padding: 20px 0;
+      display: flex; flex-direction: column; gap: 4px;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 22px 24px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 16px;
+    }
+    .sidebar-brand .logo {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif; font-weight: 700;
+      color: #ffffff; font-size: 16px;
+    }
+    .sidebar-brand .name {
+      font-family: 'Fraunces', serif; font-weight: 600;
+      font-size: 18px; color: #ffffff; letter-spacing: -0.01em;
+    }
+    .sidebar-section {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #6b7088;
+      padding: 14px 22px 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 22px;
+      color: #d1d5e0; text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active {
+      background: #1e293b; color: #ffffff;
+      border-left-color: #e85d3a;
+    }
+    .nav-item .icon { width: 18px; height: 18px; flex: 0 0 18px; opacity: 0.85; }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot {
+      margin-top: auto; padding: 16px 22px;
+      border-top: 1px solid #1e293b;
+      font-size: 12px; color: #6b7088;
+    }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+
+    /* Top bar */
+    .topbar {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .crumbs { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #6b7088; }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs a:hover { color: #1a1f33; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 1px solid #e5e8ed; background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #6b7088;
+    }
+    .topbar-btn:hover { background: #f6f7fb; color: #1a1f33; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #e85d3a, #d44e2c);
+      display: flex; align-items: center; justify-content: center;
+      color: #ffffff; font-weight: 700; font-size: 13px;
+    }
+
+    /* Main */
+    .main { padding: 0 0 80px; }
+
+    /* Survey header bar */
+    .survey-head {
+      padding: 24px 40px 0;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+    }
+    .sh-title-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      padding-bottom: 16px;
+    }
+    .sh-title { display: flex; gap: 14px; align-items: center; }
+    .sh-title input.name {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #1a1f33;
+      border: 1px solid transparent;
+      background: transparent;
+      padding: 4px 10px;
+      border-radius: 6px;
+      min-width: 380px;
+    }
+    .sh-title input.name:hover { border-color: #e5e8ed; background: #fafbfd; }
+    .sh-title input.name:focus { outline: none; border-color: #e85d3a; background: #ffffff; }
+    .save-state {
+      font-size: 12px; color: #6b7088;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .save-state .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #166534;
+    }
+    .sh-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      background: #1a1f33;
+      color: #ffffff;
+      padding: 9px 14px;
+      border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost {
+      background: #ffffff; color: #1a1f33;
+      border: 1px solid #e5e8ed;
+    }
+    .btn.ghost:hover { background: #f6f7fb; border-color: #c5cbd4; }
+    .btn.primary { background: #e85d3a; }
+    .btn.primary:hover { background: #d44e2c; }
+    .btn.small { padding: 6px 10px; font-size: 12px; }
+    .btn.ai {
+      background: #f3eaff;
+      color: #6b3fb5;
+      border: 1px solid #d8c5f5;
+    }
+    .btn.ai:hover { background: #e9dcfb; }
+
+    /* Sub-tabs */
+    .sub-tabs {
+      display: flex; gap: 0;
+      border-top: 1px solid #f0f2f6;
+      overflow-x: auto;
+    }
+    .sub-tab {
+      padding: 14px 18px;
+      font-size: 13px; font-weight: 600;
+      color: #6b7088;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .sub-tab:hover { color: #1a1f33; }
+    .sub-tab.on { color: #1a1f33; border-bottom-color: #e85d3a; }
+    .sub-tab .count {
+      display: inline-block; margin-left: 6px;
+      background: #f0f2f6; color: #6b7088;
+      border-radius: 999px; padding: 1px 8px;
+      font-size: 11px;
+    }
+    .sub-tab.on .count { background: #fde2d7; color: #e85d3a; }
+
+    /* Body */
+    .body {
+      padding: 28px 40px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      max-width: 1320px;
+    }
+    @media (max-width: 1100px) { .body { grid-template-columns: 1fr; } }
+
+    /* Card base */
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .card-pad { padding: 22px; }
+    .card-head {
+      padding: 16px 22px;
+      border-bottom: 1px solid #f0f2f6;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    /* Purpose card */
+    .purpose {
+      border: 1px solid #d8c5f5;
+      background: #faf5ff;
+    }
+    .purpose .card-pad {
+      padding: 20px 22px;
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 14px;
+      align-items: flex-start;
+    }
+    .purpose .pic {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: #ffffff;
+      color: #6b3fb5;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      border: 1px solid #d8c5f5;
+    }
+    .purpose .lab {
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #6b3fb5; font-weight: 700;
+    }
+    .purpose h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 16px; margin: 4px 0 6px 0;
+    }
+    .purpose textarea {
+      width: 100%;
+      border: 1px solid #d8c5f5;
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      line-height: 1.5;
+      color: #1a1f33;
+      resize: vertical;
+      min-height: 64px;
+    }
+    .purpose textarea:focus { outline: none; border-color: #6b3fb5; }
+
+    /* Question list */
+    .q-list { display: flex; flex-direction: column; gap: 14px; }
+    .q-card {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .q-card.expanded {
+      border-color: #e85d3a;
+      box-shadow: 0 8px 22px rgba(232, 93, 58, 0.10);
+    }
+    .q-head {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px 18px;
+      cursor: pointer;
+    }
+    .q-num {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #f0f2f6;
+      color: #1a1f33;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700;
+      font-family: 'Fraunces', serif;
+    }
+    .q-card.expanded .q-num { background: #fde2d7; color: #e85d3a; }
+    .q-pre { font-size: 14px; color: #1a1f33; font-weight: 500; }
+    .q-tags {
+      display: inline-flex; gap: 6px; align-items: center;
+      font-size: 11px; color: #6b7088; margin-top: 4px;
+    }
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .tag.type { background: #eef1ff; color: #3a4dc8; }
+    .tag.construct { background: #ecfdf3; color: #166534; }
+    .tag.req { background: #fde2d7; color: #c2410c; }
+    .q-handle {
+      color: #c5cbd4;
+      font-size: 16px;
+      letter-spacing: 1px;
+      cursor: grab;
+    }
+    .q-handle::before { content: ":::"; }
+    .q-body {
+      padding: 18px 18px 18px 60px;
+      border-top: 1px solid #f0f2f6;
+      background: #fafbfd;
+    }
+    .field { margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label {
+      display: block;
+      font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: #6b7088; font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .field input[type="text"],
+    .field textarea,
+    .field select {
+      width: 100%;
+      border: 1px solid #e5e8ed;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-family: inherit;
+      background: #ffffff;
+      color: #1a1f33;
+    }
+    .field input:focus, .field textarea:focus, .field select:focus {
+      outline: none; border-color: #e85d3a;
+    }
+    .field-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 720px) { .field-row { grid-template-columns: 1fr; } }
+    .toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #1a1f33;
+      cursor: pointer;
+    }
+    .toggle .sw {
+      width: 32px; height: 18px;
+      background: #c5cbd4;
+      border-radius: 999px;
+      position: relative;
+      transition: background 0.12s;
+    }
+    .toggle .sw::after {
+      content: "";
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 14px; height: 14px;
+      background: #ffffff;
+      border-radius: 50%;
+      transition: left 0.12s;
+    }
+    .toggle.on .sw { background: #e85d3a; }
+    .toggle.on .sw::after { left: 16px; }
+
+    /* Options list (Likert) */
+    .opt-row {
+      display: grid;
+      grid-template-columns: 28px 1fr 80px 24px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .opt-num {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #6b7088;
+    }
+    .opt-row input[type="text"] {
+      width: 100%;
+      border: 1px solid #e5e8ed;
+      background: #ffffff;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    .opt-row .opt-val {
+      font-size: 12px;
+      color: #6b7088;
+      text-align: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+    }
+    .opt-row .opt-x {
+      color: #c5cbd4;
+      font-size: 14px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .opt-row .opt-x:hover { color: #c2410c; }
+
+    .q-foot {
+      display: flex; gap: 8px; align-items: center;
+      padding: 12px 18px;
+      background: #ffffff;
+      border-top: 1px solid #f0f2f6;
+      justify-content: space-between;
+    }
+    .q-foot .left { display: flex; gap: 6px; }
+
+    /* Add question toolbar */
+    .add-bar {
+      display: flex; gap: 8px; align-items: center;
+      padding: 14px;
+      border: 1px dashed #c5cbd4;
+      border-radius: 12px;
+      background: #ffffff;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .add-bar .add-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1f33;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .add-bar .add-btn:hover { border-color: #e85d3a; background: #fffaf7; }
+
+    /* Right rail */
+    .rail { display: flex; flex-direction: column; gap: 16px; }
+    .rail .card-pad { padding: 18px 20px; }
+    .rail h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+      margin: 0 0 10px 0;
+    }
+    .ai-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #6b3fb5;
+      margin-bottom: 8px;
+    }
+    .ai-tag .d {
+      width: 6px; height: 6px; border-radius: 50%; background: #6b3fb5;
+    }
+    .ai-action {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #e5e8ed;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #1a1f33;
+      text-decoration: none;
+      margin-bottom: 6px;
+      background: #ffffff;
+    }
+    .ai-action:hover { border-color: #6b3fb5; background: #faf5ff; }
+    .ai-action .ic {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #f3eaff;
+      color: #6b3fb5;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-family: 'Fraunces', serif; font-size: 14px;
+      flex: 0 0 28px;
+    }
+    .ai-action .lab {
+      font-weight: 600; line-height: 1.2;
+    }
+    .ai-action .desc {
+      font-size: 11px; color: #6b7088; margin-top: 2px;
+    }
+
+    /* Outline */
+    .outline-list { list-style: none; padding: 0; margin: 0; }
+    .outline-item {
+      display: grid;
+      grid-template-columns: 22px 1fr auto;
+      gap: 8px;
+      align-items: center;
+      padding: 7px 6px;
+      font-size: 13px;
+      color: #1a1f33;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .outline-item:hover { background: #fafbfd; }
+    .outline-item.on { background: #fafbfd; }
+    .outline-item .on-num {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      background: #f0f2f6;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #4a5168;
+      font-family: 'Fraunces', serif;
+    }
+    .outline-item.on .on-num { background: #fde2d7; color: #e85d3a; }
+    .outline-item .pre {
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden; text-overflow: ellipsis;
+    }
+    .outline-construct {
+      font-size: 10px; letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      margin: 12px 0 6px 6px;
+    }
+    .outline-construct:first-of-type { margin-top: 0; }
+
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">R</span>
+      <span class="name">ReliCheck</span>
+    </div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item active" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+
+    <div class="sidebar-foot">
+      <strong>Professional plan</strong>
+      Renewed May 15
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+       ============================================================ -->
+  <main>
+    <div class="topbar">
+      <div class="crumbs">
+        <a href="home.html">Home</a>
+        <span class="sep">&rsaquo;</span>
+        <a href="create-upload.html">Create / Upload</a>
+        <span class="sep">&rsaquo;</span>
+        <strong>New Survey . Builder</strong>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" aria-label="Search">&#8981;</button>
+        <button class="topbar-btn" aria-label="Notifications">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- Survey header -->
+      <div class="survey-head">
+        <div class="sh-title-row">
+          <div class="sh-title">
+            <input class="name" type="text" value="Employee Engagement 2026 Pulse" />
+            <span class="save-state"><span class="dot"></span>Saved 2 min ago</span>
+          </div>
+          <div class="sh-actions">
+            <a class="btn ghost" href="#">Preview</a>
+            <a class="btn ghost" href="#">Settings</a>
+            <a class="btn primary" href="#">Publish</a>
+          </div>
+        </div>
+
+        <!-- Sub-tabs -->
+        <nav class="sub-tabs">
+          <a class="sub-tab on" href="#">Questions <span class="count">12</span></a>
+          <a class="sub-tab" href="#">Logic</a>
+          <a class="sub-tab" href="#">Design</a>
+          <a class="sub-tab" href="#">Distribute</a>
+          <a class="sub-tab" href="#">Settings</a>
+        </nav>
+      </div>
+
+      <!-- Body -->
+      <div class="body">
+
+        <!-- ============================================================
+             MAIN COLUMN
+             ============================================================ -->
+        <div>
+
+          <!-- Purpose card -->
+          <section class="card purpose" style="margin-bottom:18px;">
+            <div class="card-pad">
+              <div class="pic">&#10022;</div>
+              <div>
+                <div class="lab">Survey purpose</div>
+                <h3>What is this survey trying to measure?</h3>
+                <textarea>Measure employee engagement, recognition, growth, and intent to stay across departments, so HR can target the next quarter's focus areas.</textarea>
+              </div>
+              <a class="btn ai small" href="#">Check alignment</a>
+            </div>
+          </section>
+
+          <!-- Question list -->
+          <div class="q-list">
+
+            <!-- Construct: Engagement -->
+            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b7088;font-weight:700;padding:4px 4px 0;">Engagement (3 items)</div>
+
+            <!-- Q1 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">1</div>
+                <div>
+                  <div class="q-pre">I feel motivated to do my best work each day.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Engagement</span>
+                    <span class="tag req">Required</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Q2 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">2</div>
+                <div>
+                  <div class="q-pre">I look forward to coming to work.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Engagement</span>
+                    <span class="tag req">Required</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Q3 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">3</div>
+                <div>
+                  <div class="q-pre">I have a clear sense of how my role contributes to team goals.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Engagement</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Construct: Recognition -->
+            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b7088;font-weight:700;padding:16px 4px 0;">Recognition (4 items)</div>
+
+            <!-- Q4 — EXPANDED, EDITING -->
+            <article class="q-card expanded">
+              <div class="q-head">
+                <div class="q-num">4</div>
+                <div>
+                  <div class="q-pre">My manager recognizes my work.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Recognition</span>
+                    <span class="tag req">Required</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+
+              <div class="q-body">
+                <div class="field">
+                  <label>Question prompt</label>
+                  <textarea rows="2">My manager recognizes my work.</textarea>
+                </div>
+
+                <div class="field-row">
+                  <div class="field">
+                    <label>Question type</label>
+                    <select>
+                      <option>5-point Likert (Strongly disagree - Strongly agree)</option>
+                      <option>7-point Likert</option>
+                      <option>Multiple choice</option>
+                      <option>Open-ended</option>
+                      <option>Numeric</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Construct</label>
+                    <select>
+                      <option>Recognition</option>
+                      <option>Engagement</option>
+                      <option>Growth</option>
+                      <option>Intent to stay</option>
+                      <option>(none)</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Required</label>
+                    <div class="toggle on" role="switch" aria-checked="true">
+                      <div class="sw"></div>
+                      <span>Required</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label>Response options</label>
+                  <div class="opt-row">
+                    <div class="opt-num">1</div>
+                    <input type="text" value="Strongly disagree" />
+                    <div class="opt-val">value 1</div>
+                    <div class="opt-x">&times;</div>
+                  </div>
+                  <div class="opt-row">
+                    <div class="opt-num">2</div>
+                    <input type="text" value="Disagree" />
+                    <div class="opt-val">value 2</div>
+                    <div class="opt-x">&times;</div>
+                  </div>
+                  <div class="opt-row">
+                    <div class="opt-num">3</div>
+                    <input type="text" value="Neutral" />
+                    <div class="opt-val">value 3</div>
+                    <div class="opt-x">&times;</div>
+                  </div>
+                  <div class="opt-row">
+                    <div class="opt-num">4</div>
+                    <input type="text" value="Agree" />
+                    <div class="opt-val">value 4</div>
+                    <div class="opt-x">&times;</div>
+                  </div>
+                  <div class="opt-row">
+                    <div class="opt-num">5</div>
+                    <input type="text" value="Strongly agree" />
+                    <div class="opt-val">value 5</div>
+                    <div class="opt-x">&times;</div>
+                  </div>
+                  <a class="btn ghost small" href="#" style="margin-top:6px;">+ Add option</a>
+                </div>
+              </div>
+
+              <div class="q-foot">
+                <div class="left">
+                  <a class="btn ghost small" href="#">Duplicate</a>
+                  <a class="btn ghost small" href="#">Add skip logic</a>
+                  <a class="btn ai small" href="#">&#10022; Improve wording</a>
+                </div>
+                <a class="btn ghost small" href="#" style="color:#c2410c;">Delete</a>
+              </div>
+            </article>
+
+            <!-- Q5 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">5</div>
+                <div>
+                  <div class="q-pre">I receive timely feedback on my performance.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Recognition</span>
+                    <span class="tag req">Required</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Q6 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">6</div>
+                <div>
+                  <div class="q-pre">When I do good work, it gets noticed by people who matter.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Recognition</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Q7 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">7</div>
+                <div>
+                  <div class="q-pre">Recognition is part of how my team operates.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Recognition</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Construct: Growth -->
+            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#6b7088;font-weight:700;padding:16px 4px 0;">Growth (3 items)</div>
+
+            <!-- Q8 — collapsed -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">8</div>
+                <div>
+                  <div class="q-pre">I have opportunities to learn and grow in my role.</div>
+                  <div class="q-tags">
+                    <span class="tag type">5-point Likert</span>
+                    <span class="tag construct">Growth</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Q9 — collapsed, OPEN-ENDED -->
+            <article class="q-card">
+              <div class="q-head">
+                <div class="q-num">9</div>
+                <div>
+                  <div class="q-pre">What is one thing your team could do to support your growth this year?</div>
+                  <div class="q-tags">
+                    <span class="tag type" style="background:#fff8e6;color:#92400e;">Open-ended</span>
+                    <span class="tag construct">Growth</span>
+                  </div>
+                </div>
+                <div class="q-handle"></div>
+              </div>
+            </article>
+
+            <!-- Add question toolbar -->
+            <div class="add-bar">
+              <a class="add-btn" href="#">+ Add question</a>
+              <a class="add-btn" href="#">&#9638; From template</a>
+              <a class="add-btn" href="#" style="border-color:#d8c5f5;background:#faf5ff;color:#6b3fb5;">&#10022; Generate with AI</a>
+              <a class="add-btn" href="#" style="border-color:#d8c5f5;background:#faf5ff;color:#6b3fb5;">&#10022; Suggest constructs</a>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============================================================
+             RIGHT RAIL
+             ============================================================ -->
+        <aside class="rail">
+
+          <!-- AI assist card -->
+          <section class="card">
+            <div class="card-pad">
+              <span class="ai-tag"><span class="d"></span> AI assist</span>
+              <h3>Build faster with AI helpers</h3>
+              <a class="ai-action" href="#">
+                <div class="ic">&#10022;</div>
+                <div>
+                  <div class="lab">Generate items</div>
+                  <div class="desc">Describe a construct, get item drafts.</div>
+                </div>
+              </a>
+              <a class="ai-action" href="#">
+                <div class="ic">&#9638;</div>
+                <div>
+                  <div class="lab">Recommend a scale</div>
+                  <div class="desc">Find a validated scale that fits your purpose.</div>
+                </div>
+              </a>
+              <a class="ai-action" href="#">
+                <div class="ic">&#9776;</div>
+                <div>
+                  <div class="lab">Suggest constructs</div>
+                  <div class="desc">Group existing items into constructs.</div>
+                </div>
+              </a>
+              <a class="ai-action" href="#">
+                <div class="ic">&#10003;</div>
+                <div>
+                  <div class="lab">Check purpose alignment</div>
+                  <div class="desc">Tag each item against your stated purpose.</div>
+                </div>
+              </a>
+            </div>
+          </section>
+
+          <!-- Outline -->
+          <section class="card">
+            <div class="card-pad">
+              <h3>Outline</h3>
+              <ul class="outline-list">
+                <div class="outline-construct">Engagement</div>
+                <li class="outline-item"><div class="on-num">1</div><div class="pre">I feel motivated to do my...</div></li>
+                <li class="outline-item"><div class="on-num">2</div><div class="pre">I look forward to coming...</div></li>
+                <li class="outline-item"><div class="on-num">3</div><div class="pre">I have a clear sense of...</div></li>
+
+                <div class="outline-construct">Recognition</div>
+                <li class="outline-item on"><div class="on-num">4</div><div class="pre">My manager recognizes m...</div></li>
+                <li class="outline-item"><div class="on-num">5</div><div class="pre">I receive timely feedba...</div></li>
+                <li class="outline-item"><div class="on-num">6</div><div class="pre">When I do good work, it...</div></li>
+                <li class="outline-item"><div class="on-num">7</div><div class="pre">Recognition is part of ...</div></li>
+
+                <div class="outline-construct">Growth</div>
+                <li class="outline-item"><div class="on-num">8</div><div class="pre">I have opportunities to...</div></li>
+                <li class="outline-item"><div class="on-num">9</div><div class="pre">What is one thing your...</div></li>
+              </ul>
+              <div style="margin-top:14px;padding-top:14px;border-top:1px solid #f0f2f6;font-size:12px;color:#6b7088;">
+                <strong style="color:#1a1f33;font-weight:600;">9 of 12</strong> items shown. Scroll for Intent to stay.
+              </div>
+            </div>
+          </section>
+
+        </aside>
+
+      </div>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

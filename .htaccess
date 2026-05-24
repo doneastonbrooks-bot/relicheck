@@ -1,0 +1,29 @@
+# ReliCheck root .htaccess
+# Pretty URL for public survey links: /s/<slug>  to  take.html?slug=<slug>
+# Plus 301 redirects for legacy URLs that have external inbound links.
+
+Options +FollowSymLinks -MultiViews
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # 301 redirects for legacy URLs (must come before the real-file pass-through
+    # below, so they fire even if a stale .html file is on disk).
+    RewriteRule ^research-evaluation\.html?$ /research.html [R=301,L]
+
+    # Phase 149: legacy /dashboards.html (single page) was split into three
+    # subpages. Redirect old inbound links to the survey-assessment page.
+    RewriteRule ^dashboards\.html?$ /dashboards/survey-assessment.html [R=301,L]
+
+    # Don't rewrite real files or folders
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # /s/abc123  to  take.html?slug=abc123
+    RewriteRule ^s/([A-Za-z0-9_-]{4,32})/?$ /take.html?slug=$1 [L,QSA]
+</IfModule>
+
+# Branded 404 page
+ErrorDocument 404 /404.html

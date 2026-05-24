@@ -1,0 +1,251 @@
+respondent_ref,role,tenure,lean
+R001,Team Lead,2 to 5 years,mostly_critical
+R002,Individual Contributor,More than 10 years,mostly_critical
+R003,Manager,2 to 5 years,mixed
+R004,Manager,5 to 10 years,mostly_critical
+R005,Team Lead,5 to 10 years,mostly_critical
+R006,HR / People Ops,More than 10 years,mostly_critical
+R007,Team Lead,2 to 5 years,mostly_critical
+R008,Individual Contributor,2 to 5 years,mostly_positive
+R009,HR / People Ops,5 to 10 years,mixed
+R010,Individual Contributor,2 to 5 years,mostly_critical
+R011,Director,2 to 5 years,mixed
+R012,VP or above,Less than 2 years,mixed
+R013,Individual Contributor,2 to 5 years,mixed
+R014,Individual Contributor,2 to 5 years,mixed
+R015,Individual Contributor,Less than 2 years,mostly_positive
+R016,Director,5 to 10 years,mostly_critical
+R017,Individual Contributor,2 to 5 years,mostly_critical
+R018,Team Lead,Less than 2 years,mixed
+R019,Individual Contributor,Less than 2 years,mostly_critical
+R020,Director,Less than 2 years,mostly_critical
+R021,Team Lead,Less than 2 years,mixed
+R022,Individual Contributor,5 to 10 years,mostly_critical
+R023,Individual Contributor,2 to 5 years,mostly_positive
+R024,Individual Contributor,5 to 10 years,mostly_critical
+R025,Manager,2 to 5 years,mostly_critical
+R026,Individual Contributor,2 to 5 years,mixed
+R027,Director,5 to 10 years,mostly_critical
+R028,Individual Contributor,More than 10 years,mixed
+R029,VP or above,Less than 2 years,mostly_positive
+R030,Manager,More than 10 years,mixed
+R031,Individual Contributor,2 to 5 years,mostly_critical
+R032,Individual Contributor,2 to 5 years,mostly_critical
+R033,HR / People Ops,2 to 5 years,mixed
+R034,Individual Contributor,More than 10 years,mostly_positive
+R035,Manager,2 to 5 years,mostly_positive
+R036,Individual Contributor,2 to 5 years,mixed
+R037,Team Lead,5 to 10 years,mostly_critical
+R038,HR / People Ops,More than 10 years,mostly_positive
+R039,Individual Contributor,Less than 2 years,mixed
+R040,Individual Contributor,2 to 5 years,mostly_critical
+R041,Team Lead,2 to 5 years,mixed
+R042,Director,2 to 5 years,mixed
+R043,Individual Contributor,Less than 2 years,mostly_positive
+R044,Manager,5 to 10 years,mostly_critical
+R045,HR / People Ops,5 to 10 years,mixed
+R046,Manager,2 to 5 years,mixed
+R047,VP or above,Less than 2 years,mixed
+R048,Individual Contributor,5 to 10 years,mixed
+R049,Individual Contributor,Less than 2 years,mixed
+R050,Individual Contributor,5 to 10 years,mostly_positive
+R051,Manager,Less than 2 years,mostly_critical
+R052,Team Lead,5 to 10 years,mixed
+R053,Individual Contributor,5 to 10 years,mixed
+R054,Manager,More than 10 years,mixed
+R055,Individual Contributor,2 to 5 years,mixed
+R056,Manager,More than 10 years,mostly_critical
+R057,HR / People Ops,5 to 10 years,mixed
+R058,Manager,2 to 5 years,mostly_critical
+R059,Individual Contributor,Less than 2 years,mixed
+R060,Team Lead,5 to 10 years,mostly_positive
+R061,VP or above,Less than 2 years,mostly_critical
+R062,Manager,2 to 5 years,mixed
+R063,HR / People Ops,More than 10 years,mixed
+R064,Individual Contributor,5 to 10 years,mixed
+R065,Individual Contributor,More than 10 years,mixed
+R066,Team Lead,Less than 2 years,mixed
+R067,VP or above,2 to 5 years,mixed
+R068,Director,5 to 10 years,mixed
+R069,Director,Less than 2 years,mixed
+R070,VP or above,More than 10 years,mixed
+R071,Individual Contributor,5 to 10 years,mixed
+R072,Individual Contributor,Less than 2 years,mixed
+R073,Individual Contributor,5 to 10 years,mixed
+R074,Manager,Less than 2 years,mixed
+R075,Manager,5 to 10 years,mixed
+R076,VP or above,Less than 2 years,mixed
+R077,Individual Contributor,2 to 5 years,mostly_critical
+R078,Manager,5 to 10 years,mostly_positive
+R079,Manager,2 to 5 years,mixed
+R080,Manager,2 to 5 years,mostly_positive
+R081,Team Lead,5 to 10 years,mixed
+R082,Manager,2 to 5 years,mixed
+R083,Manager,2 to 5 years,mostly_critical
+R084,Individual Contributor,Less than 2 years,mostly_positive
+R085,Individual Contributor,2 to 5 years,mostly_critical
+R086,Individual Contributor,2 to 5 years,mostly_positive
+R087,Director,2 to 5 years,mostly_critical
+R088,Team Lead,Less than 2 years,mostly_critical
+R089,Individual Contributor,5 to 10 years,mixed
+R090,Individual Contributor,2 to 5 years,mixed
+R091,Team Lead,2 to 5 years,mixed
+R092,VP or above,More than 10 years,mixed
+R093,Individual Contributor,2 to 5 years,mostly_critical
+R094,VP or above,5 to 10 years,mixed
+R095,Director,More than 10 years,mostly_critical
+R096,Individual Contributor,2 to 5 years,mostly_critical
+R097,VP or above,More than 10 years,mostly_critical
+R098,Individual Contributor,2 to 5 years,mostly_critical
+R099,Individual Contributor,5 to 10 years,mostly_critical
+R100,Team Lead,Less than 2 years,mostly_critical
+R101,Individual Contributor,More than 10 years,mixed
+R102,Team Lead,2 to 5 years,mostly_critical
+R103,Director,5 to 10 years,mostly_positive
+R104,Individual Contributor,Less than 2 years,mixed
+R105,Manager,More than 10 years,mostly_critical
+R106,HR / People Ops,2 to 5 years,mixed
+R107,Individual Contributor,5 to 10 years,mixed
+R108,Team Lead,Less than 2 years,mostly_positive
+R109,Team Lead,More than 10 years,mixed
+R110,Individual Contributor,More than 10 years,mixed
+R111,Individual Contributor,5 to 10 years,mostly_critical
+R112,Team Lead,More than 10 years,mixed
+R113,Manager,More than 10 years,mixed
+R114,Individual Contributor,Less than 2 years,mostly_positive
+R115,VP or above,5 to 10 years,mixed
+R116,Individual Contributor,More than 10 years,mostly_critical
+R117,Individual Contributor,2 to 5 years,mostly_critical
+R118,Individual Contributor,2 to 5 years,mostly_positive
+R119,Manager,More than 10 years,mostly_positive
+R120,Individual Contributor,Less than 2 years,mostly_critical
+R121,Individual Contributor,Less than 2 years,mostly_positive
+R122,Individual Contributor,Less than 2 years,mostly_critical
+R123,Manager,2 to 5 years,mixed
+R124,HR / People Ops,2 to 5 years,mostly_critical
+R125,Individual Contributor,2 to 5 years,mostly_positive
+R126,Manager,5 to 10 years,mostly_critical
+R127,Team Lead,5 to 10 years,mixed
+R128,Individual Contributor,5 to 10 years,mostly_positive
+R129,Individual Contributor,5 to 10 years,mostly_critical
+R130,Individual Contributor,Less than 2 years,mostly_critical
+R131,Director,2 to 5 years,mixed
+R132,Individual Contributor,2 to 5 years,mixed
+R133,Individual Contributor,2 to 5 years,mixed
+R134,Manager,2 to 5 years,mixed
+R135,HR / People Ops,5 to 10 years,mostly_critical
+R136,Individual Contributor,5 to 10 years,mostly_critical
+R137,Team Lead,5 to 10 years,mixed
+R138,Individual Contributor,2 to 5 years,mostly_positive
+R139,VP or above,5 to 10 years,mostly_critical
+R140,Manager,Less than 2 years,mixed
+R141,Team Lead,Less than 2 years,mostly_critical
+R142,Individual Contributor,5 to 10 years,mixed
+R143,Team Lead,Less than 2 years,mixed
+R144,Individual Contributor,5 to 10 years,mostly_positive
+R145,Individual Contributor,More than 10 years,mostly_critical
+R146,Manager,2 to 5 years,mostly_critical
+R147,Manager,5 to 10 years,mixed
+R148,Individual Contributor,5 to 10 years,mixed
+R149,Director,5 to 10 years,mixed
+R150,Manager,2 to 5 years,mostly_critical
+R151,Individual Contributor,More than 10 years,mixed
+R152,Individual Contributor,2 to 5 years,mostly_positive
+R153,Team Lead,Less than 2 years,mixed
+R154,HR / People Ops,5 to 10 years,mostly_critical
+R155,Director,2 to 5 years,mixed
+R156,Director,5 to 10 years,mostly_positive
+R157,Manager,Less than 2 years,mixed
+R158,Manager,More than 10 years,mostly_critical
+R159,Director,Less than 2 years,mostly_critical
+R160,Team Lead,5 to 10 years,mixed
+R161,HR / People Ops,Less than 2 years,mixed
+R162,Individual Contributor,5 to 10 years,mixed
+R163,Manager,Less than 2 years,mostly_critical
+R164,Team Lead,5 to 10 years,mostly_positive
+R165,Individual Contributor,Less than 2 years,mixed
+R166,Team Lead,2 to 5 years,mostly_positive
+R167,Individual Contributor,5 to 10 years,mostly_critical
+R168,Director,5 to 10 years,mostly_critical
+R169,Individual Contributor,More than 10 years,mostly_critical
+R170,Individual Contributor,Less than 2 years,mixed
+R171,Director,Less than 2 years,mixed
+R172,Individual Contributor,2 to 5 years,mostly_critical
+R173,Manager,Less than 2 years,mostly_critical
+R174,Team Lead,2 to 5 years,mixed
+R175,Manager,5 to 10 years,mixed
+R176,Individual Contributor,Less than 2 years,mixed
+R177,Team Lead,More than 10 years,mostly_critical
+R178,Individual Contributor,More than 10 years,mostly_critical
+R179,Manager,2 to 5 years,mostly_positive
+R180,Director,2 to 5 years,mostly_positive
+R181,Individual Contributor,5 to 10 years,mostly_critical
+R182,Individual Contributor,5 to 10 years,mostly_critical
+R183,Individual Contributor,More than 10 years,mostly_positive
+R184,Individual Contributor,2 to 5 years,mixed
+R185,HR / People Ops,Less than 2 years,mixed
+R186,Manager,2 to 5 years,mostly_critical
+R187,Individual Contributor,2 to 5 years,mostly_positive
+R188,Manager,5 to 10 years,mostly_critical
+R189,Individual Contributor,2 to 5 years,mostly_critical
+R190,Team Lead,2 to 5 years,mixed
+R191,Individual Contributor,2 to 5 years,mostly_critical
+R192,Individual Contributor,2 to 5 years,mixed
+R193,Manager,2 to 5 years,mostly_critical
+R194,Individual Contributor,More than 10 years,mostly_critical
+R195,Manager,2 to 5 years,mostly_positive
+R196,Individual Contributor,Less than 2 years,mixed
+R197,Manager,Less than 2 years,mixed
+R198,Director,Less than 2 years,mixed
+R199,Individual Contributor,2 to 5 years,mixed
+R200,Individual Contributor,Less than 2 years,mixed
+R201,Individual Contributor,5 to 10 years,mostly_positive
+R202,Team Lead,5 to 10 years,mixed
+R203,Individual Contributor,5 to 10 years,mostly_positive
+R204,Individual Contributor,More than 10 years,mostly_critical
+R205,Director,More than 10 years,mostly_positive
+R206,Individual Contributor,More than 10 years,mixed
+R207,Director,5 to 10 years,mostly_critical
+R208,Individual Contributor,2 to 5 years,mostly_positive
+R209,HR / People Ops,5 to 10 years,mostly_critical
+R210,Individual Contributor,Less than 2 years,mostly_positive
+R211,Manager,2 to 5 years,mixed
+R212,Manager,5 to 10 years,mixed
+R213,Team Lead,Less than 2 years,mostly_positive
+R214,Individual Contributor,5 to 10 years,mostly_critical
+R215,Director,More than 10 years,mixed
+R216,Individual Contributor,Less than 2 years,mostly_critical
+R217,Individual Contributor,More than 10 years,mostly_critical
+R218,VP or above,More than 10 years,mixed
+R219,Individual Contributor,2 to 5 years,mostly_positive
+R220,Individual Contributor,2 to 5 years,mixed
+R221,HR / People Ops,5 to 10 years,mostly_positive
+R222,Manager,2 to 5 years,mostly_critical
+R223,Individual Contributor,2 to 5 years,mostly_positive
+R224,Manager,5 to 10 years,mostly_critical
+R225,Manager,Less than 2 years,mostly_critical
+R226,Team Lead,Less than 2 years,mostly_positive
+R227,Individual Contributor,More than 10 years,mixed
+R228,Individual Contributor,2 to 5 years,mixed
+R229,Individual Contributor,Less than 2 years,mixed
+R230,Team Lead,2 to 5 years,mixed
+R231,HR / People Ops,More than 10 years,mixed
+R232,Director,Less than 2 years,mixed
+R233,Individual Contributor,2 to 5 years,mostly_positive
+R234,VP or above,More than 10 years,mostly_critical
+R235,Individual Contributor,More than 10 years,mostly_positive
+R236,Director,Less than 2 years,mostly_critical
+R237,Team Lead,Less than 2 years,mostly_critical
+R238,HR / People Ops,2 to 5 years,mixed
+R239,VP or above,2 to 5 years,mixed
+R240,Team Lead,Less than 2 years,mixed
+R241,Individual Contributor,2 to 5 years,mixed
+R242,HR / People Ops,5 to 10 years,mostly_positive
+R243,Director,2 to 5 years,mostly_critical
+R244,Individual Contributor,2 to 5 years,mixed
+R245,Individual Contributor,Less than 2 years,mostly_critical
+R246,HR / People Ops,2 to 5 years,mostly_positive
+R247,Individual Contributor,Less than 2 years,mostly_critical
+R248,HR / People Ops,5 to 10 years,mostly_positive
+R249,Individual Contributor,Less than 2 years,mostly_positive
+R250,Individual Contributor,2 to 5 years,mostly_positive

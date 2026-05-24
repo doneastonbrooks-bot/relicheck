@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Accept invitation · ReliCheck</title>
+  <meta name="description" content="Accept your ReliCheck workspace invitation." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  
+</head>
+<body class="auth-page">
+<header class="auth-topbar">
+  <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="logo-brand.svg" alt="ReliCheck" /></a>
+  <a href="help.html">Need help?</a>
+</header>
+<div class="auth-split">
+<aside class="auth-aside">
+  <span class="kicker">You've been invited</span>
+  <h2>Join your team's ReliCheck workspace.</h2>
+  <p class="lede">Accept the invitation to share surveys, responses, and reports with your teammates.</p>
+  <div class="auth-aside-figure">
+    <div class="uv-card">
+      <h6>Live right now</h6>
+      <div class="v">3 surveys</div>
+      <div class="meta">247 new responses since you last logged in</div>
+      <div class="uv-bar"><span style="width:74%"></span></div>
+    </div>
+    <div class="uv-card">
+      <h6>Latest reliability check</h6>
+      <div class="v">α = 0.89</div>
+      <div class="meta">Q2 NPS pulse · 12 items · holding strong</div>
+    </div>
+    <div class="uv-card">
+      <h6>Waiting on you</h6>
+      <div class="v">2 reports</div>
+      <div class="meta">Climate 2026 ready for sign-off</div>
+    </div>
+  </div>
+</aside>
+<main class="auth-main">
+<section class="auth-card">
+  <div class="top-link"><a href="login.html">← Back to sign in</a></div>
+  
+</section>
+</main>
+</div>
+<script>
+  (function () {
+    const $ = sel => document.querySelector(sel);
+    const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const token = new URLSearchParams(location.search).get('token') || '';
+
+    async function meAndInvitations() {
+      const me = await fetch('/api/auth/me.php', { credentials: 'same-origin' }).then(r => r.json());
+      if (!me.authenticated) {
+        $('#content').innerHTML = '<h1>Sign in to accept</h1>'
+          + '<p class="meta">This invitation belongs to your email address. Sign in (or create an account with the email it was sent to) to continue.</p>'
+          + '<div class="row"><a class="btn" href="/login.html?next=' + encodeURIComponent(location.pathname + location.search) + '">Log in</a>'
+          + '<a class="btn ghost" href="/signup.html?next=' + encodeURIComponent(location.pathname + location.search) + '">Sign up</a></div>';
+        return;
+      }
+      // Find the invitation matching this token
+      const inv = await fetch('/api/account/invitations.php', { credentials: 'same-origin' }).then(r => r.json());
+      const match = (inv.invitations || []).find(i => i.token === token);
+      if (!match) {
+        $('#content').innerHTML = '<div class="err">No matching invitation was found for this account. The token may be expired, already used, or sent to a different email address (you are signed in as <strong>' + escapeHtml(me.user.email) + '</strong>).</div>'
+          + '<div class="row"><a class="btn ghost" href="/app.html">Back to app</a></div>';
+        return;
+      }
+      const inviterName = match.owner_name || match.owner_email || 'Someone';
+      $('#content').innerHTML =
+        '<h1>You have been invited</h1>'
+        + '<p class="meta"><strong>' + escapeHtml(inviterName) + '</strong> invited you to their ReliCheck workspace as <strong>' + escapeHtml(match.role) + '</strong>.</p>'
+        + '<p class="muted">You will be able to see and ' + (match.role === 'editor' ? 'edit' : 'view') + ' surveys and reports in their workspace from your dashboard. Your own surveys remain unaffected.</p>'
+        + '<div class="row"><button class="btn" id="acceptBtn">Accept invitation</button>'
+        + '<button class="btn ghost" id="declineBtn">Decline</button></div>'
+        + '<div id="msg" style="margin-top:14px;font-size:13px;color:#5a607a;"></div>';
+      $('#acceptBtn').addEventListener('click', () => act('accept'));
+      $('#declineBtn').addEventListener('click', () => act('decline'));
+    }
+
+    async function act(action) {
+      $('#msg').textContent = action === 'accept' ? 'Accepting…' : 'Declining…';
+      try {
+        const res = await fetch('/api/account/invitations.php', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, token }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Could not process invitation.');
+        if (action === 'accept') {
+          $('#content').innerHTML = '<div class="center"><div class="glyph">✓</div><h1>Welcome to the workspace</h1>'
+            + '<p class="meta">You can now see the shared workspace alongside your own. Open the dashboard to get started.</p>'
+            + '<div class="row" style="justify-content:center;"><a class="btn" href="/app.html">Open dashboard</a></div></div>';
+        } else {
+          $('#content').innerHTML = '<div class="center"><div class="glyph">✕</div><h1>Invitation declined</h1>'
+            + '<p class="meta">No worries. The workspace owner has been notified that the invite was declined.</p></div>';
+        }
+      } catch (e) {
+        $('#msg').innerHTML = '<span style="color:#c8334b;">' + escapeHtml(e.message) + '</span>';
+      }
+    }
+
+    if (!token) {
+      $('#content').innerHTML = '<div class="err">No invitation token in the link. Ask the workspace owner to resend the invite.</div>';
+    } else {
+      meAndInvitations();
+    }
+  })();
+  </script>
+</body>
+</html>

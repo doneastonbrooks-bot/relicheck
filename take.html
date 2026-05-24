@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Survey · ReliCheck</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --panel-2: #fafbff;
+    --bg-soft: #f5f7fb;
+    --bg-elev: #ffffff;
+    --border: #e6eaf2;
+    --border-strong: #d3d9e6;
+    --line: #e6eaf2;
+    --text: #0b1733;
+    --text-soft: #4a5578;
+    --text-mute: #6b7691;
+    --ink-9: #0b1733;
+    --ink-7: #2d3a5c;
+    --ink-6: #4a5578;
+    --ink-5: #6b7691;
+    --primary:      #e85d3a;
+    --primary-dark: #cc4a2a;
+    --primary-soft: #fdeee9;
+    --accent:       #e85d3a;
+    --accent-soft:  #fdeee9;
+    --accent-tint:  #fff7f3;
+    --navy:    #0b1733;
+    --good:    #1f8a4d;
+    --warn:    #b97e00;
+    --bad:     #c83333;
+    --shadow:    0 1px 2px rgba(11, 23, 51, 0.03), 0 8px 24px rgba(11, 23, 51, 0.05);
+    --shadow-sm: 0 1px 2px rgba(11, 23, 51, 0.03), 0 2px 6px rgba(11, 23, 51, 0.04);
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --focus-ring: 0 0 0 3px rgba(232, 93, 58, 0.18);
+    --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  .wrap {
+    max-width: 820px; margin: 0 auto; padding: 32px 20px 80px;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; font-size: 16px; letter-spacing: -0.01em;
+    color: var(--text-soft);
+    margin-bottom: 18px;
+  }
+  .brand-mark {
+    width: 26px; height: 26px; border-radius: 7px;
+    background: linear-gradient(135deg, var(--navy) 0%, #1c2f5e 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 12px; font-weight: 700;
+  }
+  .brand img { height: 26px; width: auto; display: block; }
+  .brand.brand-image .brand-mark { display: none; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--r-md); box-shadow: var(--shadow);
+    padding: 32px 32px 20px; margin-bottom: 18px;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 26px;
+    letter-spacing: -0.018em;
+    color: var(--ink-9);
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+  .desc { color: var(--text-soft); margin: 0; line-height: 1.55; }
+
+  .question {
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .question:last-child { border-bottom: 0; }
+  .qprompt { font-size: 16px; font-weight: 500; margin-bottom: 14px; color: var(--ink-9); line-height: 1.45; }
+  .qprompt .req { color: var(--bad); margin-left: 4px; }
+
+  .likert-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .likert-row label {
+    flex: 1 1 100px; min-width: 0;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 5px; padding: 12px 6px;
+    border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+    cursor: pointer; background: white;
+    text-align: center; font-size: 12px; color: var(--text-soft);
+    transition: border-color .15s, background .15s, color .15s, box-shadow .15s;
+    position: relative;
+  }
+  .likert-row label:hover { border-color: var(--primary); color: var(--primary); }
+  .likert-row label input { position: absolute; opacity: 0; }
+  .likert-row label.checked {
+    border-color: var(--primary); background: var(--primary-soft); color: var(--primary);
+    font-weight: 600;
+  }
+  .likert-row label .lk-num { font-size: 16px; font-weight: 700; color: var(--text); }
+  .likert-row label.checked .lk-num { color: var(--primary); }
+
+  .choice-list { display: flex; flex-direction: column; gap: 8px; }
+  .choice-list label {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm); cursor: pointer; background: white;
+    transition: border-color .15s, background .15s, box-shadow .15s;
+  }
+  .choice-list label:hover { border-color: var(--primary); }
+  .choice-list label.checked { border-color: var(--primary); background: var(--primary-soft); }
+
+  textarea {
+    width: 100%; padding: 12px 14px; min-height: 90px;
+    border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+    font: inherit; color: var(--text); background: white;
+    resize: vertical;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  textarea:focus { outline: 0; border-color: var(--primary); box-shadow: var(--focus-ring); }
+
+  .footer {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 4px;
+  }
+  .btn {
+    appearance: none; border: 1px solid var(--primary);
+    background: var(--primary); color: white;
+    padding: 12px 24px; font: inherit; font-weight: 600; font-size: 15px;
+    border-radius: var(--r-sm); cursor: pointer;
+    transition: background .15s, border-color .15s, box-shadow .15s;
+  }
+  .btn:hover { background: var(--primary-dark); border-color: var(--primary-dark); }
+  .btn:focus-visible { outline: 0; box-shadow: var(--focus-ring); }
+  .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+  .err {
+    background: #fef0f3; border: 1px solid #f7c2cd; color: var(--bad);
+    padding: 12px 16px; border-radius: var(--r-sm); margin-bottom: 14px; font-size: 14px;
+  }
+  .ok {
+    background: #ecfdf3; border: 1px solid #b7e2cb; color: var(--good);
+    padding: 14px 18px; border-radius: var(--r-sm); font-size: 14px;
+  }
+  .center {
+    text-align: center; padding: 60px 20px;
+  }
+  .center .glyph { font-size: 42px; margin-bottom: 10px; }
+  .muted { color: var(--text-mute); font-size: 13px; }
+  .footer-note { text-align: center; color: var(--text-mute); font-size: 12px; margin-top: 24px; }
+  /* Phase 147: Powered-by footer shown to every respondent on every survey. */
+  .powered-by {
+    margin: 36px auto 40px;
+    text-align: center;
+    color: var(--text-mute);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .powered-by .pb-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .powered-by .pb-row img {
+    height: 18px; width: auto; vertical-align: middle;
+  }
+  .powered-by .pb-cta {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-mute);
+  }
+  .powered-by .pb-cta a {
+    color: var(--text-mute);
+    text-decoration: underline;
+  }
+  .powered-by .pb-cta a:hover { color: var(--primary); }
+
+  /* Phase 120: conversational take mode chrome. */
+  .chat-card { display: flex; flex-direction: column; gap: 14px; }
+  .chat-progress {
+    height: 4px; background: var(--bg-soft); border-radius: 999px; overflow: hidden;
+  }
+  .chat-progress-bar {
+    height: 100%; width: 0%;
+    background: var(--primary);
+    transition: width .3s ease;
+  }
+  .chat-thread {
+    display: flex; flex-direction: column; gap: 8px;
+    min-height: 200px; max-height: 460px; overflow-y: auto;
+    padding: 4px 2px;
+  }
+  .chat-bubble {
+    max-width: 78%;
+    padding: 10px 14px;
+    border-radius: 14px;
+    font-size: 15px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .chat-ai {
+    background: var(--bg-soft);
+    color: var(--text);
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-user {
+    background: var(--primary);
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .chat-pending {
+    align-self: flex-start; display: inline-flex; gap: 4px;
+    padding: 8px 12px;
+    background: var(--bg-soft);
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+  }
+  .chat-dot {
+    width: 6px; height: 6px; border-radius: 999px;
+    background: var(--text-mute);
+    animation: chatBlink 1.2s infinite ease-in-out;
+  }
+  .chat-dot:nth-child(2) { animation-delay: .15s; }
+  .chat-dot:nth-child(3) { animation-delay: .3s; }
+  @keyframes chatBlink {
+    0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+    40% { opacity: 1; transform: translateY(-2px); }
+  }
+  .chat-input-row {
+    display: flex; gap: 8px; align-items: flex-end;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .chat-input-row textarea {
+    flex: 1;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.5;
+    resize: none;
+    min-height: 44px;
+    background: var(--panel);
+    color: var(--text);
+  }
+  .chat-input-row textarea:focus { outline: 0; border-color: var(--primary); box-shadow: var(--focus-ring); }
+  .chat-input-row .btn { flex: 0 0 auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="brand brand-image" aria-label="ReliCheck home" style="text-decoration:none;color:inherit;">
+    <img src="logo-brand.svg" alt="ReliCheck" />
+  </a>
+
+  <div id="status"></div>
+  <div id="content"></div>
+  <div class="footer-note" id="footerNote"></div>
+
+  <!-- Phase 147: Powered-by footer (SurveyMonkey-style attribution shown on every survey). -->
+  <div class="powered-by" aria-label="Powered by ReliCheck">
+    <div class="pb-row">
+      <span>Powered by</span>
+      <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;color:inherit;text-decoration:none;">
+        <img src="logo-brand.svg" alt="ReliCheck" />
+      </a>
+    </div>
+    <div class="pb-cta">
+      See how easy it is to <a href="index.html">create a survey</a>.
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+  const escapeHtml = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function getSlug() {
+    // Accept either /s/<slug> (after .htaccess rewrite) or ?slug=<slug>
+    const q = new URLSearchParams(location.search).get('slug');
+    if (q) return q.trim();
+    const m = location.pathname.match(/\/s\/([A-Za-z0-9_-]{4,32})\/?$/);
+    return m ? m[1] : '';
+  }
+
+  function renderError(msg) {
+    $('#content').innerHTML = `
+      <div class="card center">
+        <div class="glyph">📭</div>
+        <h1>Survey unavailable</h1>
+        <p class="muted">${escapeHtml(msg)}</p>
+      </div>`;
+  }
+
+  function renderThanks(title) {
+    const custom = (survey && survey.settings && typeof survey.settings.thankYou === 'string')
+      ? survey.settings.thankYou.trim()
+      : '';
+    const heading = custom ? 'Thank you' : 'Thanks for your response';
+    const body = custom
+      ? escapeHtml(custom)
+      : 'Your answers to “' + escapeHtml(title) + '” have been recorded.';
+    $('#content').innerHTML = `
+      <div class="card center">
+        <div class="glyph">✓</div>
+        <h1>${escapeHtml(heading)}</h1>
+        <p class="muted" style="white-space:pre-wrap;">${body}</p>
+      </div>`;
+  }
+
+  let survey = null;
+  let assignedArm = null; // { id, name } when arming is enabled, otherwise null
+  const draft = {};
+
+  // Phase 41: invitation token and channel tag pulled once at boot.
+  const _urlParams = new URLSearchParams(location.search);
+  const INV_TOKEN  = (_urlParams.get('inv') || '').match(/^[a-f0-9]{32}$/) ? _urlParams.get('inv') : null;
+  const CHANNEL    = ((_urlParams.get('ch') || '').match(/^[a-z0-9_-]{1,32}$/)) ? _urlParams.get('ch') : null;
+  // Phase 120: conversational take mode (chat with AI). Opt in via ?chat=1.
+  const CHAT_MODE  = (_urlParams.get('chat') === '1');
+
+  async function boot() {
+    const slug = getSlug();
+    if (!slug) { renderError('No survey link was provided.'); return; }
+    try {
+      const res = await fetch('/api/public/survey.php?slug=' + encodeURIComponent(slug), {
+        credentials: 'omit',
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) { renderError(data.message || 'This survey could not be loaded.'); return; }
+      survey = data.survey;
+      assignedArm = (survey && survey.assigned_arm) ? survey.assigned_arm : null;
+
+      // Phase 41: if this is a tokenized respondent, fetch any in-progress
+      // draft and merge it into `draft` BEFORE the form renders so the
+      // wire-up step can pre-check radios / pre-fill text.
+      if (INV_TOKEN) {
+        try {
+          const r = await fetch('/api/public/load_partial.php?slug=' + encodeURIComponent(slug) +
+                                '&inv=' + encodeURIComponent(INV_TOKEN), { credentials: 'omit' });
+          const j = await r.json();
+          if (j && j.ok && j.answers && typeof j.answers === 'object') {
+            Object.assign(draft, j.answers);
+          }
+        } catch (_) { /* fail-soft */ }
+      }
+
+      // Phase 139: optional cover page (informed consent / introduction).
+      // Renders first when survey.settings.coverPage.enabled is true. The
+      // Continue button hands off to renderChat or renderForm.
+      const cp = (survey && survey.settings && survey.settings.coverPage) || null;
+      const start = () => {
+        if (CHAT_MODE) renderChat();
+        else { renderForm(); applyDraftToUI(); }
+      };
+      if (cp && cp.enabled) {
+        renderCoverPage(cp, start);
+      } else {
+        start();
+      }
+    } catch (e) {
+      renderError('Network error. Please try again.');
+    }
+  }
+
+  // Phase 139. Renders the cover page card with optional consent checkbox
+  // and a Continue button. Calls onContinue() when the respondent is
+  // ready to start. Consent state is enforced client-side only; reaching
+  // the submit step implies the gate was met.
+  function renderCoverPage(cp, onContinue) {
+    document.title = (survey.title || 'Survey') + ' · ReliCheck';
+    const root = document.getElementById('content') || document.body;
+    const safeBody = escapeHtml(cp.body || '').replace(/\n/g, '<br>');
+    const mode  = (cp.consentMode === 'optional' || cp.consentMode === 'none') ? cp.consentMode : 'required';
+    const label = (typeof cp.consentLabel === 'string' && cp.consentLabel) ? cp.consentLabel : 'I consent to participate';
+
+    let consentHtml = '';
+    if (mode !== 'none') {
+      consentHtml =
+        '<label style="display:flex;gap:10px;align-items:flex-start;padding:14px 0 0;font-size:15px;color:#1a1f33;cursor:pointer;">' +
+          '<input type="checkbox" id="coverConsentChk" style="margin-top:3px;" />' +
+          '<span>' + escapeHtml(label) + (mode === 'required' ? ' <span style="color:#c83333;">*</span>' : '') + '</span>' +
+        '</label>';
+    }
+
+    const html =
+      '<div class="card">' +
+        '<h1>' + escapeHtml(survey.title || '(untitled survey)') + '</h1>' +
+        (survey.description ? '<p class="desc">' + escapeHtml(survey.description) + '</p>' : '') +
+      '</div>' +
+      '<div class="card" id="coverCard">' +
+        '<div style="font-size:15px;line-height:1.65;color:#1a1f33;white-space:pre-wrap;">' + safeBody + '</div>' +
+        consentHtml +
+        '<div style="margin-top:18px;display:flex;align-items:center;gap:10px;">' +
+          '<button type="button" id="coverContinueBtn" class="btn" style="opacity:' + (mode === 'required' ? '0.5' : '1') + ';">' +
+            'Continue to the survey' +
+          '</button>' +
+          (mode === 'required' ? '<span id="coverContinueHint" style="font-size:14px;color:#6b7088;">Check the box above to continue.</span>' : '') +
+        '</div>' +
+      '</div>';
+
+    root.innerHTML = html;
+
+    const btn = document.getElementById('coverContinueBtn');
+    const chk = document.getElementById('coverConsentChk');
+    const hint = document.getElementById('coverContinueHint');
+    if (mode === 'required') {
+      btn.disabled = true;
+      if (chk) chk.addEventListener('change', () => {
+        btn.disabled = !chk.checked;
+        btn.style.opacity = chk.checked ? '1' : '0.5';
+        if (hint) hint.style.display = chk.checked ? 'none' : '';
+      });
+    }
+    btn.addEventListener('click', () => {
+      if (mode === 'required' && chk && !chk.checked) return;
+      // Hand off to the regular form / chat flow. boot() already set up
+      // draft + assignedArm before us, so the take page picks up exactly
+      // where it would have without the cover gate.
+      onContinue();
+    });
+  }
+
+  // Phase 41: after the form is rendered, mirror any pre-loaded draft values
+  // into the radios / checkboxes / textareas so the respondent resumes where
+  // they left off.
+  function applyDraftToUI() {
+    if (!Object.keys(draft).length) return;
+    $$('.question').forEach(el => {
+      const qid = el.dataset.qid;
+      const v   = draft[qid];
+      if (v === undefined || v === null) return;
+      const likert = el.querySelector('.likert-row');
+      const single = el.querySelector('.choice-list[data-type="single"]');
+      const multi  = el.querySelector('.choice-list[data-type="multi"]');
+      const open   = el.querySelector('textarea[data-type="open"]');
+      if (likert) {
+        const lbl = likert.querySelector('label[data-v="' + v + '"]');
+        if (lbl) {
+          const input = lbl.querySelector('input'); if (input) input.checked = true;
+          likert.querySelectorAll('label').forEach(x => x.classList.remove('checked'));
+          lbl.classList.add('checked');
+        }
+      } else if (single) {
+        const lbl = single.querySelector('label[data-i="' + v + '"]');
+        if (lbl) {
+          const input = lbl.querySelector('input'); if (input) input.checked = true;
+          single.querySelectorAll('label').forEach(x => x.classList.remove('checked'));
+          lbl.classList.add('checked');
+        }
+      } else if (multi && Array.isArray(v)) {
+        v.forEach(idx => {
+          const lbl = multi.querySelector('label[data-i="' + idx + '"]');
+          if (lbl) {
+            const input = lbl.querySelector('input'); if (input) input.checked = true;
+            lbl.classList.add('checked');
+          }
+        });
+      } else if (open && typeof v === 'string') {
+        open.value = v;
+      }
+    });
+    applySkipLogic();
+  }
+
+  // Phase 41: debounced autosave. Only fires when a token is present.
+  let _saveTimer = null;
+  function scheduleAutosave() {
+    if (!INV_TOKEN || !survey) return;
+    clearTimeout(_saveTimer);
+    _saveTimer = setTimeout(async () => {
+      try {
+        await fetch('/api/public/save_partial.php', {
+          method: 'POST',
+          credentials: 'omit',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: survey.slug, inv: INV_TOKEN, ch: CHANNEL, answers: draft }),
+        });
+      } catch (_) { /* fail-soft */ }
+    }, 900);
+  }
+
+  function renderForm() {
+    document.title = (survey.title || 'Survey') + ' · ReliCheck';
+    const defaultPoints = survey.settings.likertPoints;
+    const defaultLow    = survey.settings.likertLow;
+    const defaultHigh   = survey.settings.likertHigh;
+    const qPts = q => (q && Number.isFinite(q.likertPoints) && q.likertPoints >= 2) ? q.likertPoints : defaultPoints;
+    const qLo  = q => (q && q.likertLow)  ? q.likertLow  : defaultLow;
+    const qHi  = q => (q && q.likertHigh) ? q.likertHigh : defaultHigh;
+
+    const parts = [];
+    parts.push('<div class="card">');
+    parts.push('<h1>' + escapeHtml(survey.title || '(untitled survey)') + '</h1>');
+    if (survey.description) parts.push('<p class="desc">' + escapeHtml(survey.description) + '</p>');
+    parts.push('</div>');
+
+    parts.push('<div class="card" id="qcard">');
+    parts.push('<div id="banner"></div>');
+
+    if (!survey.questions.length) {
+      parts.push('<p class="muted">This survey has no questions yet.</p>');
+    } else {
+      survey.questions.forEach((q, i) => {
+        parts.push('<div class="question" data-qid="' + escapeHtml(q.id) + '">');
+        parts.push('<div class="qprompt">' + (i+1) + '. ' + escapeHtml(q.prompt || '(question)') + (q.required ? '<span class="req">*</span>' : '') + '</div>');
+        if (q.type === 'likert') {
+          const k = qPts(q), low = qLo(q), high = qHi(q);
+          let row = '<div class="likert-row" data-type="likert">';
+          for (let v = 1; v <= k; v++) {
+            const anchor = (v === 1) ? low : (v === k) ? high : '';
+            row += '<label data-v="' + v + '"><input type="radio" name="' + escapeHtml(q.id) + '" value="' + v + '"/><span class="lk-num">' + v + '</span><span>' + escapeHtml(anchor) + '</span></label>';
+          }
+          row += '</div>';
+          parts.push(row);
+        } else if (q.type === 'single') {
+          let row = '<div class="choice-list" data-type="single">';
+          (q.options || []).forEach((opt, idx) => {
+            row += '<label data-i="' + idx + '"><input type="radio" name="' + escapeHtml(q.id) + '" value="' + idx + '"/><span>' + escapeHtml(opt) + '</span></label>';
+          });
+          row += '</div>';
+          parts.push(row);
+        } else if (q.type === 'multi') {
+          let row = '<div class="choice-list" data-type="multi">';
+          (q.options || []).forEach((opt, idx) => {
+            row += '<label data-i="' + idx + '"><input type="checkbox" value="' + idx + '"/><span>' + escapeHtml(opt) + '</span></label>';
+          });
+          row += '</div>';
+          parts.push(row);
+        } else if (q.type === 'open') {
+          parts.push('<textarea data-type="open" placeholder="Your answer…"></textarea>');
+        }
+        parts.push('</div>');
+      });
+      parts.push('<div class="footer"><button class="btn" id="btnSubmit">Submit response</button></div>');
+    }
+
+    parts.push('</div>');
+    $('#content').innerHTML = parts.join('');
+
+    // Wire up
+    $$('.question').forEach(el => {
+      const qid = el.dataset.qid;
+      const likert = el.querySelector('.likert-row');
+      if (likert) {
+        likert.querySelectorAll('label').forEach(lbl => {
+          lbl.querySelector('input').addEventListener('change', () => {
+            draft[qid] = parseInt(lbl.dataset.v, 10);
+            likert.querySelectorAll('label').forEach(x => x.classList.remove('checked'));
+            lbl.classList.add('checked');
+            applySkipLogic();
+            scheduleAutosave();
+          });
+        });
+      }
+      const single = el.querySelector('.choice-list[data-type="single"]');
+      if (single) {
+        single.querySelectorAll('label').forEach(lbl => {
+          lbl.querySelector('input').addEventListener('change', () => {
+            draft[qid] = parseInt(lbl.dataset.i, 10);
+            single.querySelectorAll('label').forEach(x => x.classList.remove('checked'));
+            lbl.classList.add('checked');
+            applySkipLogic();
+            scheduleAutosave();
+          });
+        });
+      }
+      const multi = el.querySelector('.choice-list[data-type="multi"]');
+      if (multi) {
+        if (!Array.isArray(draft[qid])) draft[qid] = [];
+        multi.querySelectorAll('label').forEach(lbl => {
+          lbl.querySelector('input').addEventListener('change', e => {
+            const idx = parseInt(lbl.dataset.i, 10);
+            const arr = draft[qid] || [];
+            if (e.target.checked) {
+              if (!arr.includes(idx)) arr.push(idx);
+              lbl.classList.add('checked');
+            } else {
+              draft[qid] = arr.filter(v => v !== idx);
+              lbl.classList.remove('checked');
+            }
+            scheduleAutosave();
+          });
+        });
+      }
+      const open = el.querySelector('textarea[data-type="open"]');
+      if (open) {
+        open.addEventListener('input', e => { draft[qid] = e.target.value; scheduleAutosave(); });
+      }
+    });
+
+    const btn = $('#btnSubmit');
+    if (btn) btn.addEventListener('click', submit);
+
+    applySkipLogic();
+  }
+
+  function evalShowIf(q) {
+    if (!q || !q.showIf) return true;
+    const trigVal = draft[q.showIf.questionId];
+    if (trigVal === undefined || trigVal === null || trigVal === '') return false;
+    const target = q.showIf.value;
+    if (q.showIf.op === 'equals')      return Number(trigVal) === Number(target);
+    if (q.showIf.op === 'not_equals')  return Number(trigVal) !== Number(target);
+    return true;
+  }
+  function applySkipLogic() {
+    if (!survey || !survey.questions) return;
+    document.querySelectorAll('.question').forEach(el => {
+      const q = survey.questions.find(x => x.id === el.dataset.qid);
+      el.style.display = evalShowIf(q) ? '' : 'none';
+    });
+  }
+
+  async function submit() {
+    const banner = $('#banner');
+    banner.innerHTML = '';
+
+    // Required-field check on the client (server re-validates).
+    // Skip questions that are currently hidden by skip logic.
+    for (const q of survey.questions) {
+      if (!q.required) continue;
+      if (!evalShowIf(q)) continue;
+      const v = draft[q.id];
+      const empty = v === undefined || v === null || v === ''
+        || (Array.isArray(v) && v.length === 0)
+        || (typeof v === 'string' && v.trim() === '');
+      if (empty) {
+        banner.innerHTML = '<div class="err">Please answer all required questions before submitting.</div>';
+        const target = document.querySelector('.question[data-qid="' + q.id + '"]');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+    // Strip hidden answers before sending so we don't pollute the response.
+    survey.questions.forEach(q => { if (!evalShowIf(q)) delete draft[q.id]; });
+
+    const btn = $('#btnSubmit');
+    btn.disabled = true;
+    const orig = btn.textContent;
+    btn.textContent = 'Submitting…';
+
+    try {
+      const res = await fetch('/api/public/submit.php', {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: survey.slug, answers: draft, arm_id: assignedArm ? assignedArm.id : null, inv: INV_TOKEN, ch: CHANNEL }),
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        banner.innerHTML = '<div class="err">' + (data.message || 'Could not submit. Please try again.') + '</div>';
+        btn.disabled = false;
+        btn.textContent = orig;
+        return;
+      }
+      renderThanks(survey.title || '');
+    } catch (e) {
+      banner.innerHTML = '<div class="err">Network error. Please try again.</div>';
+      btn.disabled = false;
+      btn.textContent = orig;
+    }
+  }
+
+  /* ============================================================
+     Phase 120: AI conversational take mode.
+     Activated by ?chat=1. The AI asks each visible question one at
+     a time. The respondent types a freeform reply. /api/public/parse-answer.php
+     maps the reply to the structured answer (Likert / single / multi /
+     open), confirms it back, and the chat advances. On the last question,
+     a Submit step posts the same payload to /api/public/submit.php that
+     the form mode uses.
+  ============================================================ */
+  let _chatIndex = 0;
+  let _chatQueue = [];
+
+  function renderChat() {
+    document.title = (survey.title || 'Survey') + ' · ReliCheck';
+    _chatQueue = (survey.questions || []).filter(q => evalShowIf(q));
+    _chatIndex = 0;
+    document.getElementById('content').innerHTML =
+      '<div class="card">' +
+        '<h1>' + escapeHtml(survey.title || '(untitled survey)') + '</h1>' +
+        (survey.description ? '<p class="desc">' + escapeHtml(survey.description) + '</p>' : '') +
+      '</div>' +
+      '<div class="card chat-card">' +
+        '<div class="chat-progress"><div class="chat-progress-bar" id="chatProgressBar"></div></div>' +
+        '<div id="chatThread" class="chat-thread" role="log" aria-live="polite"></div>' +
+        '<div id="chatPending" class="chat-pending" style="display:none;">' +
+          '<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>' +
+        '</div>' +
+        '<div class="chat-input-row" id="chatInputRow">' +
+          '<textarea id="chatInput" rows="2" placeholder="Type your answer..." autofocus></textarea>' +
+          '<button class="btn primary" id="chatSendBtn" type="button">Send</button>' +
+        '</div>' +
+      '</div>';
+
+    const greet =
+      'Hi. I will walk you through ' + _chatQueue.length + ' question' + (_chatQueue.length === 1 ? '' : 's') +
+      '. Answer in your own words. You can say things like "agree", "5", "I love this", or pick an option by name.';
+    chatPostAi(greet);
+    askNextQuestion();
+
+    const sendBtn = document.getElementById('chatSendBtn');
+    const inputEl = document.getElementById('chatInput');
+    sendBtn.addEventListener('click', chatSubmitInput);
+    inputEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); chatSubmitInput(); }
+    });
+  }
+
+  function chatUpdateProgress() {
+    const bar = document.getElementById('chatProgressBar');
+    if (!bar) return;
+    const done = Math.min(_chatIndex, _chatQueue.length);
+    const pct = _chatQueue.length ? Math.round((done / _chatQueue.length) * 100) : 0;
+    bar.style.width = pct + '%';
+  }
+
+  function chatPostAi(text) {
+    const thread = document.getElementById('chatThread');
+    if (!thread) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-ai';
+    bubble.textContent = text;
+    thread.appendChild(bubble);
+    thread.scrollTop = thread.scrollHeight;
+  }
+  function chatPostUser(text) {
+    const thread = document.getElementById('chatThread');
+    if (!thread) return;
+    const bubble = document.createElement('div');
+    bubble.className = 'chat-bubble chat-user';
+    bubble.textContent = text;
+    thread.appendChild(bubble);
+    thread.scrollTop = thread.scrollHeight;
+  }
+  function chatSetPending(on) {
+    const p = document.getElementById('chatPending');
+    if (p) p.style.display = on ? '' : 'none';
+    const input = document.getElementById('chatInput');
+    const btn   = document.getElementById('chatSendBtn');
+    if (input) input.disabled = !!on;
+    if (btn)   btn.disabled   = !!on;
+  }
+
+  function askNextQuestion() {
+    // Skip any questions whose visibility just changed.
+    while (_chatIndex < _chatQueue.length && !evalShowIf(_chatQueue[_chatIndex])) {
+      _chatIndex++;
+    }
+    chatUpdateProgress();
+    if (_chatIndex >= _chatQueue.length) {
+      finalizeChatSubmit();
+      return;
+    }
+    const q = _chatQueue[_chatIndex];
+    let prompt = q.prompt || '(question)';
+    if (q.type === 'single' && Array.isArray(q.options) && q.options.length) {
+      prompt += '\nOptions: ' + q.options.join(', ');
+    } else if (q.type === 'multi' && Array.isArray(q.options) && q.options.length) {
+      prompt += '\nPick any that apply: ' + q.options.join(', ');
+    }
+    chatPostAi(prompt);
+    const input = document.getElementById('chatInput');
+    if (input) input.focus();
+  }
+
+  async function chatSubmitInput() {
+    const inputEl = document.getElementById('chatInput');
+    const text = (inputEl.value || '').trim();
+    if (!text) return;
+    inputEl.value = '';
+    chatPostUser(text);
+    chatSetPending(true);
+
+    if (_chatIndex >= _chatQueue.length) {
+      // The respondent typed after the final confirmation; treat as no-op.
+      chatSetPending(false);
+      return;
+    }
+    const q = _chatQueue[_chatIndex];
+    try {
+      const res = await fetch('/api/public/parse-answer.php', {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: survey.slug, question_id: q.id, user_text: text }),
+      });
+      const data = await res.json();
+      chatSetPending(false);
+      if (!data || data.ok === false || !data.kind) {
+        chatPostAi(data && data.message ? data.message : 'I did not catch that. Try answering in different words.');
+        return;
+      }
+      // Record the structured answer.
+      if (q.type === 'multi') {
+        draft[q.id] = Array.isArray(data.value) ? data.value : [];
+      } else if (q.type === 'open') {
+        draft[q.id] = typeof data.value === 'string' ? data.value : text;
+      } else {
+        draft[q.id] = Number(data.value);
+      }
+      scheduleAutosave();
+      const confirmMsg = data.message || 'Got it.';
+      chatPostAi(confirmMsg);
+      _chatIndex++;
+      // Slight pause so the confirmation registers before the next question.
+      setTimeout(askNextQuestion, 320);
+    } catch (err) {
+      chatSetPending(false);
+      chatPostAi('Network issue reaching the assistant. Try sending again.');
+    }
+  }
+
+  async function finalizeChatSubmit() {
+    chatPostAi('All done. Submitting your responses...');
+    chatSetPending(true);
+    // Strip hidden answers (skip logic could have flipped some off after they were answered).
+    survey.questions.forEach(q => { if (!evalShowIf(q)) delete draft[q.id]; });
+    try {
+      const res = await fetch('/api/public/submit.php', {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: survey.slug, answers: draft, arm_id: assignedArm ? assignedArm.id : null, inv: INV_TOKEN, ch: CHANNEL }),
+      });
+      const data = await res.json();
+      chatSetPending(false);
+      const inputRow = document.getElementById('chatInputRow');
+      if (inputRow) inputRow.style.display = 'none';
+      if (!res.ok) {
+        chatPostAi(data && data.message ? data.message : 'I could not submit those answers. Refresh and try again.');
+        return;
+      }
+      renderThanks(survey.title || '');
+    } catch (err) {
+      chatSetPending(false);
+      chatPostAi('Network error while submitting. Refresh the page to try again.');
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

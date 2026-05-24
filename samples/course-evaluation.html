@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Undergraduate Course Evaluation · Sample ReliCheck Report</title>
+  <meta name="description" content="A sample ReliCheck analytics report on an end-of-semester undergraduate course evaluation (n=124, 8 Likert items)." />
+  <link rel="canonical" href="https://relichecksurvey.com/samples/course-evaluation.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Undergraduate Course Evaluation · Sample ReliCheck Report" />
+  <meta property="og:description" content="A sample ReliCheck analytics report on an end-of-semester undergraduate course evaluation (n=124, 8 Likert items)." />
+  <meta property="og:url" content="https://relichecksurvey.com/samples/course-evaluation.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Undergraduate Course Evaluation · Sample ReliCheck Report" />
+  <meta name="twitter:description" content="A sample ReliCheck analytics report on an end-of-semester undergraduate course evaluation (n=124, 8 Likert items)." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+
+    :root {
+      --ink: #1a1f33;
+      --ink-2: #454a63;
+      --ink-3: #6b7088;
+      --line: #cfd2dc;
+      --line-soft: #e3e6ee;
+      --panel: #f6f7fb;
+      --panel-2: #f1f3f9;
+      --accent: #e85d3a;
+      --primary: #3d57f5;
+      --good: #1f8a4d;
+      --warn: #b07d18;
+      --bad:  #c83333;
+      --navy: #0b1733;
+      --font-display: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: var(--ink); background: #eef0f5; }
+    .topbar { background: #fff; border-bottom: 1px solid var(--line-soft); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .topbar a { color: var(--ink-2); text-decoration: none; font-size: 13px; font-weight: 500; }
+    .topbar a:hover { color: var(--accent); }
+    .topbar .right a { margin-left: 14px; }
+    .topbar .right .cta { background: var(--accent); color: #fff; padding: 7px 14px; border-radius: 6px; }
+    .topbar .right .cta:hover { color: #fff; opacity: 0.92; }
+    .doc { max-width: 880px; margin: 30px auto 50px; background: #fff; border: 1px solid var(--line); border-radius: 4px; padding: 48px 60px; font-family: var(--font-display); font-size: 13px; line-height: 1.5; color: var(--ink); box-shadow: 0 4px 24px rgba(11, 23, 51, 0.06); }
+    @media (max-width: 720px) { .doc { padding: 28px 24px; } }
+    .doc h1 { font-size: 26px; margin: 0 0 6px; letter-spacing: -0.012em; font-weight: 500; }
+    .doc .meta { color: var(--ink-3); font-size:14px; margin-bottom: 20px; }
+    .doc h2 { font-size: 16px; margin: 30px 0 8px; border-bottom: 1px solid var(--line); padding-bottom: 4px; font-weight: 500; }
+    .doc h3 { font-size: 14px; margin: 20px 0 6px; color: var(--ink-2); font-weight: 600; }
+    .doc p { margin: 6px 0; }
+    .summary-block { background: #fffaf6; border-left: 3px solid var(--accent); padding: 14px 18px; margin: 14px 0 10px; font-size: 14px; line-height: 1.6; }
+    .summary-block strong { color: var(--ink); }
+    .takeaways { margin: 8px 0; padding-left: 22px; }
+    .takeaways li { margin-bottom: 4px; }
+    .tile-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 10px 0 6px; }
+    @media (max-width: 660px) { .tile-row { grid-template-columns: 1fr 1fr; } }
+    .tile { border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; background: var(--panel); }
+    .tile.good { border-color: #b7e2cb; background: #ecfdf3; }
+    .tile.warn { border-color: #ffe7a8; background: #fff8e6; }
+    .tile.bad  { border-color: #f4c5c5; background: #fdecec; }
+    .tile .lbl { font-size:14px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .tile .val { font-size: 22px; font-weight: 700; margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .tile.good .val { color: var(--good); }
+    .tile.warn .val { color: var(--warn); }
+    .tile.bad  .val { color: var(--bad); }
+    .tile .sub { font-size:14px; color: var(--ink-3); margin-top: 2px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .note { margin-top: 10px; padding: 10px 14px; background: #fff8e6; border: 1px solid #ffe7a8; color: #6b4d00; font-size:14px; border-radius: 4px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    table.data { width: 100%; border-collapse: collapse; font-size:14px; margin-top: 8px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    table.data th, table.data td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+    table.data th { background: var(--panel-2); font-size:14px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .heat { width: 100%; border-collapse: collapse; font-size:14px; font-variant-numeric: tabular-nums; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .heat th { background: var(--panel-2); padding: 4px 6px; border: 1px solid var(--line); font-weight: 600; font-size:14px; }
+    .heat td { padding: 6px 4px; border: 1px solid var(--line); text-align: center; }
+    .desc-item { padding: 14px 0; border-bottom: 1px solid var(--line-soft); }
+    .desc-item:last-child { border-bottom: 0; }
+    .desc-item .qprompt { font-weight: 600; margin-bottom: 4px; }
+    .desc-item .qmeta { font-size:14px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .desc-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 8px 0 8px; }
+    .desc-stats .ds { background: var(--panel); border: 1px solid var(--line-soft); border-radius: 5px; padding: 7px 9px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .desc-stats .ds-l { font-size:14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); }
+    .desc-stats .ds-v { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .hist { display: flex; align-items: flex-end; gap: 4px; height: 56px; margin-top: 4px; }
+    .hist .bar { flex: 1; background: var(--primary); opacity: 0.9; border-radius: 3px 3px 0 0; position: relative; min-height: 2px; }
+    .hist .bar-label { position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); font-size:14px; color: var(--ink-3); font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .open-themes { margin-top: 6px; padding: 12px 16px; background: var(--panel); border-radius: 6px; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; }
+    .open-themes .theme { padding: 6px 0; border-bottom: 1px solid var(--line-soft); }
+    .open-themes .theme:last-child { border-bottom: 0; }
+    .open-themes .theme-name { font-weight: 600; }
+    .open-themes .theme-count { color: var(--ink-3); font-size:14px; }
+    .open-themes .theme-quote { color: var(--ink-2); font-style: italic; margin-top: 3px; font-family: var(--font-display); }
+    .footer-note { margin-top: 30px; padding-top: 14px; border-top: 1px solid var(--line-soft); font-size:14px; color: var(--ink-3); font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+    .pos { color: var(--good); font-weight: 600; }
+    .neg { color: var(--bad); font-weight: 600; }
+  
+</style>
+</head>
+<body>
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="../index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Check a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>The results</h5>
+            <a href="../overview.html#analyze"><strong>Survey Results overview</strong><span>How the Strength Score works.</span></a>
+            <a href="../overview.html#analyze"><strong>Survey Strength Score</strong><span>One score, five checks, clear next steps.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>What ReliCheck checks</h5>
+            <a href="../reliability-guide.html"><strong>Do your questions work together?</strong><span>Reliability and item-total checks.</span></a>
+            <a href="../validity-guide.html"><strong>What is your survey really measuring?</strong><span>Factor analysis, KMO, rotation.</span></a>
+            <a href="../reliability-guide.html"><strong>Are your results strong enough?</strong><span>Response quality and missing data.</span></a>
+            <a href="../ai-features.html"><strong>What are people saying?</strong><span>Open-ended themes and quotes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>See it</h5>
+            <a class="mega-link" href="../samples.html">Sample reports</a>
+            <a class="mega-link" href="../methodology.html">Methodology</a>
+            <a class="mega-link" href="../reliability-guide.html">Reliability guide</a>
+            <a class="mega-link" href="../validity-guide.html">Validity guide</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../import-data.html" class="nav-dd-trigger ">Import Data</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Build a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>Build</h5>
+            <a href="../overview.html#build"><strong>Question types</strong><span>Likert, choice, open-ended, matrix, ranking.</span></a>
+            <a href="../ai-features.html"><strong>AI question review</strong><span>Catch double-barreled, leading, vague items.</span></a>
+            <a href="../overview.html#collect"><strong>Collect responses</strong><span>Links, email, QR, embed.</span></a>
+            <a href="../import-survey.html"><strong>Upload your survey</strong><span>Bring a survey from SurveyMonkey or Qualtrics.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Templates</h5>
+            <a href="../app.html?template=course_evaluation"><strong>Course Evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../app.html?template=student_belonging"><strong>Student Belonging</strong><span>Validated belonging and connectedness scales.</span></a>
+            <a href="../app.html?template=workplace_engagement"><strong>Employee Engagement</strong><span>Quarterly pulse and annual engagement.</span></a>
+            <a href="../app.html?template=program_evaluation"><strong>Program Evaluation</strong><span>Pre/post outcome scales for grant reporting.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Popular templates</h5>
+            <a class="mega-link" href="../app.html?template=customer_satisfaction">Customer Satisfaction</a>
+            <a class="mega-link" href="../app.html?template=climate_survey">Climate Survey</a>
+            <a class="mega-link" href="../app.html?template=training_feedback">Training Feedback</a>
+            <a class="mega-link" href="../app.html?template=community_needs">Community Needs</a>
+            <a class="mega-see-all" href="../samples.html">View all templates →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../samples.html" class="nav-dd-trigger ">Sample Reports</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>By team</h5>
+            <a href="../education.html"><strong>Education</strong><span>Course evaluation, belonging, school climate.</span></a>
+            <a href="../hr-teams.html"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a href="../customer-feedback.html"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service feedback.</span></a>
+            <a href="../research.html"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>By use case</h5>
+            <a href="../education.html"><strong>Course evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../hr-teams.html"><strong>Engagement &amp; pulse</strong><span>Recurring employee surveys with k-anonymity.</span></a>
+            <a href="../program-evaluation.html"><strong>Program evaluation &amp; accreditation</strong><span>Same category, different scopes.</span></a>
+            <a href="../mixed-methods.html"><strong>Mixed-methods research</strong><span>Quantitative scales and qualitative themes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Other resources</h5>
+            <a class="mega-link" href="../case-studies.html">Customer stories</a>
+            <a class="mega-link" href="../compare.html">Compare</a>
+            <a class="mega-link" href="../help.html">Help center</a>
+            <a class="mega-link" href="../blog.html">Blog</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../pricing.html" class="nav-dd-trigger ">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="../login.html" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="../signup.html" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Check a Survey</h5><a href="../overview.html#analyze">Survey Results overview</a><a href="../reliability-guide.html">Reliability guide</a><a href="../validity-guide.html">Validity guide</a><a href="../methodology.html">Methodology</a><a href="../samples.html">Sample reports</a></div>
+    <div class="drawer-group"><h5>Import Data</h5><a href="../import-data.html">Import results</a><a href="../import-survey.html">Upload your survey</a></div>
+    <div class="drawer-group"><h5>Build a Survey</h5><a href="../overview.html#build">Build</a><a href="../ai-features.html">AI features</a><a href="../app.html?template=course_evaluation">Course Evaluation</a><a href="../app.html?template=workplace_engagement">Employee Engagement</a><a href="../app.html?template=program_evaluation">Program Evaluation</a></div>
+    <div class="drawer-group"><h5>Sample Reports</h5><a href="../samples.html">Sample reports</a><a href="../samples/interactive-course-evaluation.html">Interactive demo</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="../education.html">Education &amp; Evaluation</a><a href="../hr-teams.html">HR &amp; Teams</a><a href="../customer-feedback.html">Customer Feedback</a><a href="../research.html">Research</a><a href="../mixed-methods.html">Mixed-Methods</a><a href="../compare.html">Compare</a><a href="../case-studies.html">Customer stories</a><a href="../help.html">Help center</a><a href="../blog.html">Blog</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="../pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="../login.html" class="btn btn-outline">Sign in</a><a href="../signup.html" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+<div class="topbar">
+    <a href="../samples.html">&larr; All sample reports</a>
+    <div class="right">
+      <a href="../overview.html">How ReliCheck works</a>
+      <a class="cta" href="../signup.html">Run one on your data</a>
+    </div>
+  </div>
+
+  <article class="doc">
+    <h1>Undergraduate Course Evaluation: PSYC 210, Fall 2025</h1>
+    <div class="meta">
+      Generated December 18, 2025 · 124 responses across two sections (out of 138 enrolled · 90% response rate) · 8 Likert items · Evidence Report mode<br>
+      Source: introductory psychology course, instructor self-evaluation prior to annual review
+    </div>
+
+    <h2>Plain-English summary</h2>
+    <div class="summary-block">
+      <p><strong>Bottom line:</strong> the evaluation scale shows excellent internal consistency (α = 0.91, KMO = 0.92), so the composite score and item rankings can be reported with confidence. Average ratings are positive across the board, with the strongest scores on lecture clarity and learning, and the weakest on assessment fairness.</p>
+      <p><strong>What stands out:</strong></p>
+      <ul class="takeaways">
+        <li>Mean composite score is 4.21 of 5.0, with 78% of respondents rating the course 4 or 5 overall.</li>
+        <li>Assessment fairness (Q5) is the lowest-rated item at 3.78. Open-text comments cluster around exam difficulty and grading curve transparency.</li>
+        <li>Section B (afternoon lab) outperformed Section A (morning lecture) on every item except availability of office hours. Mean composite difference: 0.31 (small to moderate).</li>
+        <li>All eight items contribute positively to the scale. Removing any one would lower α, indicating no items are weakening the instrument.</li>
+        <li>The lowest item-total correlation belongs to "office hours availability" (r = 0.51), still well within acceptable range.</li>
+      </ul>
+    </div>
+
+    <h2>Reliability summary</h2>
+    <div class="tile-row">
+      <div class="tile good">
+        <div class="lbl">Cronbach's α</div>
+        <div class="val">0.910</div>
+        <div class="sub">excellent internal consistency</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">Split-half (Spearman-Brown)</div>
+        <div class="val">0.892</div>
+        <div class="sub">raw r = 0.805 · halves: 4/4</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">KMO sampling adequacy</div>
+        <div class="val">0.918</div>
+        <div class="sub">marvelous</div>
+      </div>
+      <div class="tile">
+        <div class="lbl">Sample / items</div>
+        <div class="val">124 · 8</div>
+        <div class="sub">3 responses dropped (incomplete Likert)</div>
+      </div>
+    </div>
+
+    <h2>Item-total statistics</h2>
+    <table class="data">
+      <thead>
+        <tr><th>#</th><th>Item</th><th class="num">Mean</th><th class="num">SD</th><th class="num">Corrected r<sub>it</sub></th><th class="num">α if deleted</th><th class="num">KMO (item)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Q1</td><td>The instructor explained concepts clearly.</td><td class="num">4.42</td><td class="num">0.71</td><td class="num pos">0.788</td><td class="num">0.895</td><td class="num">0.927</td></tr>
+        <tr><td>Q2</td><td>Course materials supported my learning.</td><td class="num">4.21</td><td class="num">0.79</td><td class="num pos">0.762</td><td class="num">0.897</td><td class="num">0.911</td></tr>
+        <tr><td>Q3</td><td>Assignments helped me understand the material.</td><td class="num">4.05</td><td class="num">0.84</td><td class="num pos">0.745</td><td class="num">0.899</td><td class="num">0.918</td></tr>
+        <tr><td>Q4</td><td>Feedback on my work was timely and useful.</td><td class="num">4.15</td><td class="num">0.86</td><td class="num pos">0.703</td><td class="num">0.902</td><td class="num">0.905</td></tr>
+        <tr><td>Q5</td><td>Assessments fairly reflected what was taught.</td><td class="num">3.78</td><td class="num">0.95</td><td class="num pos">0.674</td><td class="num">0.906</td><td class="num">0.882</td></tr>
+        <tr><td>Q6</td><td>Office hours and instructor availability were sufficient.</td><td class="num">4.32</td><td class="num">0.78</td><td class="num pos">0.514</td><td class="num">0.918</td><td class="num">0.879</td></tr>
+        <tr><td>Q7</td><td>I learned a lot in this course.</td><td class="num">4.38</td><td class="num">0.74</td><td class="num pos">0.793</td><td class="num">0.895</td><td class="num">0.929</td></tr>
+        <tr><td>Q8</td><td>I would recommend this course to other students.</td><td class="num">4.30</td><td class="num">0.81</td><td class="num pos">0.812</td><td class="num">0.893</td><td class="num">0.935</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:14px;color:var(--ink-3);margin-top:8px;font-family:-apple-system,sans-serif;">Every item shows a strong corrected item-total correlation (≥ 0.51), and α-if-deleted values stay below the overall α of 0.91 for all items. The instrument is well-constructed for this course context.</p>
+
+    <h2>Section comparison</h2>
+    <table class="data">
+      <thead>
+        <tr><th>Item</th><th class="num">Section A (n=62)</th><th class="num">Section B (n=62)</th><th class="num">Difference</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Q1 · Clear explanations</td><td class="num">4.27</td><td class="num">4.56</td><td class="num pos">+0.29</td></tr>
+        <tr><td>Q2 · Course materials</td><td class="num">4.05</td><td class="num">4.37</td><td class="num pos">+0.32</td></tr>
+        <tr><td>Q3 · Assignments</td><td class="num">3.89</td><td class="num">4.21</td><td class="num pos">+0.32</td></tr>
+        <tr><td>Q4 · Feedback</td><td class="num">3.95</td><td class="num">4.34</td><td class="num pos">+0.39</td></tr>
+        <tr><td>Q5 · Fair assessment</td><td class="num">3.61</td><td class="num">3.95</td><td class="num pos">+0.34</td></tr>
+        <tr><td>Q6 · Office hours</td><td class="num">4.40</td><td class="num">4.24</td><td class="num neg">-0.16</td></tr>
+        <tr><td>Q7 · Learned a lot</td><td class="num">4.21</td><td class="num">4.55</td><td class="num pos">+0.34</td></tr>
+        <tr><td>Q8 · Would recommend</td><td class="num">4.13</td><td class="num">4.47</td><td class="num pos">+0.34</td></tr>
+        <tr style="background:#f6f7fb;font-weight:600;"><td>Composite mean</td><td class="num">4.06</td><td class="num">4.34</td><td class="num pos">+0.28</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Inter-item correlation matrix</h2>
+    <table class="heat">
+      <tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th><th>Q7</th><th>Q8</th></tr>
+      <tr><th>Q1</th><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,68%);color:#fff;">0.62</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,65%);color:#fff;">0.66</td><td style="background:hsl(220,75%,67%);color:#fff;">0.63</td></tr>
+      <tr><th>Q2</th><td style="background:hsl(220,75%,68%);color:#fff;">0.62</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,68%);color:#fff;">0.62</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,70%);color:#fff;">0.61</td><td style="background:hsl(220,75%,72%);">0.58</td></tr>
+      <tr><th>Q3</th><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,68%);color:#fff;">0.62</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,70%);color:#fff;">0.61</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,72%);">0.58</td></tr>
+      <tr><th>Q4</th><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,70%);color:#fff;">0.61</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,75%);">0.54</td><td style="background:hsl(220,75%,75%);">0.55</td></tr>
+      <tr><th>Q5</th><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,86%);">0.36</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,80%);">0.48</td></tr>
+      <tr><th>Q6</th><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,86%);">0.36</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,80%);">0.46</td></tr>
+      <tr><th>Q7</th><td style="background:hsl(220,75%,65%);color:#fff;">0.66</td><td style="background:hsl(220,75%,70%);color:#fff;">0.61</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,75%);">0.54</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,62%);color:#fff;">0.71</td></tr>
+      <tr><th>Q8</th><td style="background:hsl(220,75%,67%);color:#fff;">0.63</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,80%);">0.46</td><td style="background:hsl(220,75%,62%);color:#fff;">0.71</td><td style="background:#1c2f5e;color:#fff;">1.00</td></tr>
+    </table>
+
+    <h2>Per-item descriptives</h2>
+
+    <div class="desc-item">
+      <div class="qmeta">Q1 · Likert (5-point)</div>
+      <div class="qprompt">The instructor explained concepts clearly.</div>
+      <div class="desc-stats">
+        <div class="ds"><div class="ds-l">N</div><div class="ds-v">124</div></div>
+        <div class="ds"><div class="ds-l">Mean</div><div class="ds-v">4.42</div></div>
+        <div class="ds"><div class="ds-l">SD</div><div class="ds-v">0.71</div></div>
+        <div class="ds"><div class="ds-l">% top-2</div><div class="ds-v">87%</div></div>
+      </div>
+      <div class="hist">
+        <div class="bar" style="height:4%"><span class="bar-label">1</span></div>
+        <div class="bar" style="height:6%"><span class="bar-label">2</span></div>
+        <div class="bar" style="height:14%"><span class="bar-label">3</span></div>
+        <div class="bar" style="height:74%"><span class="bar-label">4</span></div>
+        <div class="bar" style="height:90%"><span class="bar-label">5</span></div>
+      </div>
+    </div>
+
+    <div class="desc-item" style="margin-top:18px;">
+      <div class="qmeta">Q5 · Likert (5-point)</div>
+      <div class="qprompt">Assessments fairly reflected what was taught.</div>
+      <div class="desc-stats">
+        <div class="ds"><div class="ds-l">N</div><div class="ds-v">124</div></div>
+        <div class="ds"><div class="ds-l">Mean</div><div class="ds-v">3.78</div></div>
+        <div class="ds"><div class="ds-l">SD</div><div class="ds-v">0.95</div></div>
+        <div class="ds"><div class="ds-l">% top-2</div><div class="ds-v">62%</div></div>
+      </div>
+      <div class="hist">
+        <div class="bar" style="height:8%"><span class="bar-label">1</span></div>
+        <div class="bar" style="height:18%"><span class="bar-label">2</span></div>
+        <div class="bar" style="height:48%"><span class="bar-label">3</span></div>
+        <div class="bar" style="height:82%"><span class="bar-label">4</span></div>
+        <div class="bar" style="height:55%"><span class="bar-label">5</span></div>
+      </div>
+    </div>
+
+    <div class="desc-item" style="margin-top:18px;">
+      <div class="qmeta">Q9 · Open-ended · AI theme extraction</div>
+      <div class="qprompt">What is one thing about this course you would change?</div>
+      <div class="open-themes">
+        <div class="theme">
+          <div><span class="theme-name">Exam difficulty and curve</span> <span class="theme-count">· 31 mentions</span></div>
+          <div class="theme-quote">"The exams felt much harder than the homework. I would have liked more practice problems at the exam difficulty level."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">More worked examples in lecture</span> <span class="theme-count">· 22 mentions</span></div>
+          <div class="theme-quote">"More step-by-step examples instead of jumping to the abstract case."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Pace of material</span> <span class="theme-count">· 14 mentions</span></div>
+          <div class="theme-quote">"The middle of the semester moves really fast, especially the section on multiple regression."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Reading workload</span> <span class="theme-count">· 9 mentions</span></div>
+          <div class="theme-quote">"The reading load is heavier than other 200-level courses I have taken."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Positive (no change suggested)</span> <span class="theme-count">· 28 mentions</span></div>
+          <div class="theme-quote">"Honestly, nothing. This was one of the best classes I have taken."</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Methodology notes</h2>
+    <p>Cronbach's α reported is the standardized form. Split-half reliability uses the Spearman-Brown corrected first-half / second-half split. KMO (Kaiser-Meyer-Olkin) is computed from the anti-image correlation matrix. All 8 items are positively worded; no reverse-scoring was applied. Three responses were dropped from reliability calculations because they were missing one or more Likert items; descriptives are reported on n that responded to each item.</p>
+    <p>Section comparison uses the unweighted item-level mean. The composite mean is the average across all 8 items per respondent, then averaged within section. No formal significance test is reported; differences this size on n=62 per cell warrant cautious interpretation.</p>
+
+    <div class="footer-note">
+      Generated by ReliCheck on 2025-12-18. Reproduce on your own data: build a survey or upload a dataset, then click Download report (PDF) on the analytics page.
+    </div>
+  </article>
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="../index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="../overview.html">Overview</a></li><li><a href="../ai-features.html">AI features</a></li><li><a href="../pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="../education.html">Education</a></li><li><a href="../hr-teams.html">HR &amp; Teams</a></li><li><a href="../customer-feedback.html">Customer feedback</a></li><li><a href="../research.html">Research</a></li></ul></div>
+      <div><h4>Learn</h4><ul><li><a href="../methodology.html">Methodology</a></li><li><a href="../reliability-guide.html">Reliability guide</a></li><li><a href="../validity-guide.html">Validity guide</a></li><li><a href="../compare.html">Compare</a></li><li><a href="../help.html">Help center</a></li><li><a href="../blog.html">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="../about.html">About</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        header.classList.add('is-mega-open');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          if (!document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  if (toggle) toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+
+</body>
+</html>

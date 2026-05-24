@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connect a device - ReliCheck</title>
+  <link rel="stylesheet" href="/styles-2026.css">
+  <style>
+    .connect-wrap {
+      max-width: 520px;
+      margin: 64px auto;
+      padding: 32px 36px;
+      background: #fff;
+      border: 1px solid #e2e6ea;
+      border-radius: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+      color: #23303d;
+    }
+    .connect-wrap h1 {
+      font-family: "Fraunces", Georgia, serif;
+      font-size: 26px;
+      margin: 0 0 8px;
+      letter-spacing: -0.01em;
+    }
+    .connect-wrap p.lead {
+      font-size: 15px;
+      color: #5a6470;
+      margin: 0 0 24px;
+      line-height: 1.55;
+    }
+    .connect-wrap label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #23303d;
+      margin-bottom: 8px;
+    }
+    .connect-wrap input[type="text"] {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 22px;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      letter-spacing: 0.12em;
+      text-align: center;
+      text-transform: uppercase;
+      border: 1px solid #b8c1cc;
+      border-radius: 10px;
+      outline: none;
+      box-sizing: border-box;
+    }
+    .connect-wrap input[type="text"]:focus {
+      border-color: #1f6feb;
+      box-shadow: 0 0 0 3px rgba(31,111,235,.15);
+    }
+    .connect-wrap button {
+      margin-top: 18px;
+      width: 100%;
+      padding: 13px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: 1px solid #1f6feb;
+      background: #1f6feb;
+      color: #fff;
+      cursor: pointer;
+    }
+    .connect-wrap button:disabled { opacity: .55; cursor: not-allowed; }
+    .connect-wrap .status {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.55;
+      min-height: 22px;
+    }
+    .connect-wrap .status.ok  { color: #1f8a4d; }
+    .connect-wrap .status.err { color: #a33; }
+    .connect-wrap .help {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid #eef0f3;
+      font-size: 13px;
+      color: #5a6470;
+      line-height: 1.55;
+    }
+    @media (prefers-color-scheme: dark) {
+      .connect-wrap { background: #262a31; border-color: #353a42; color: #e8eaed; }
+      .connect-wrap p.lead, .connect-wrap .help { color: #98a2b3; }
+      .connect-wrap label { color: #e8eaed; }
+      .connect-wrap input[type="text"] { background: #1c1f24; color: #e8eaed; border-color: #353a42; }
+    }
+  </style>
+</head>
+<body>
+  <div id="site-nav"></div>
+
+  <main class="connect-wrap">
+    <h1>Connect a device</h1>
+    <p class="lead">
+      The ReliCheck MM Studio desktop app is asking to connect to your
+      ReliCheck account. Type the 8-character code shown in the app
+      below to approve the pairing.
+    </p>
+
+    <form id="connect-form" autocomplete="off">
+      <label for="user_code">Pairing code</label>
+      <input id="user_code" name="user_code" type="text"
+             maxlength="9" placeholder="ABCD-EFGH"
+             autocapitalize="characters" spellcheck="false" required>
+      <button id="connect-submit" type="submit">Approve device</button>
+    </form>
+
+    <div id="connect-status" class="status" role="status" aria-live="polite"></div>
+
+    <div class="help">
+      <strong>Where do I see this code?</strong><br>
+      Open ReliCheck MM Studio on your computer, click <em>Import from
+      ReliCheck</em>, and a code will appear in a small window. The
+      code expires after 5 minutes. If yours has expired, start a new
+      pairing in the desktop app.
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="/nav.js" defer></script>
+  <script src="/footer.js" defer></script>
+  <script>
+    (function() {
+      var form   = document.getElementById('connect-form');
+      var input  = document.getElementById('user_code');
+      var status = document.getElementById('connect-status');
+      var btn    = document.getElementById('connect-submit');
+
+      // Live formatting: insert a dash after 4 chars.
+      input.addEventListener('input', function() {
+        var v = (input.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (v.length > 4) v = v.slice(0, 4) + '-' + v.slice(4, 8);
+        input.value = v;
+      });
+
+      function setStatus(msg, kind) {
+        status.textContent = msg || '';
+        status.className = 'status' + (kind ? ' ' + kind : '');
+      }
+
+      form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        var code = (input.value || '').trim();
+        if (code.replace(/[^A-Z0-9]/g, '').length !== 8) {
+          setStatus('Codes are 8 characters. Check what is shown in the desktop app.', 'err');
+          return;
+        }
+        btn.disabled = true;
+        setStatus('Approving...', '');
+        try {
+          var resp = await fetch('/api/v1/device/approve.php', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_code: code }),
+          });
+          var data = {};
+          try { data = await resp.json(); } catch (e2) { /* ignore */ }
+          if (resp.status === 401 || resp.status === 403) {
+            window.location.href = '/login.html?next=' + encodeURIComponent('/connect.html');
+            return;
+          }
+          if (resp.ok && data && data.ok) {
+            setStatus('Done. Switch back to the ReliCheck MM Studio app on your computer; it will continue from here.', 'ok');
+            form.style.display = 'none';
+          } else {
+            setStatus(data.message || 'That code is not valid. Check the desktop app for a fresh code.', 'err');
+          }
+        } catch (err) {
+          setStatus('Network error. Try again in a moment.', 'err');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

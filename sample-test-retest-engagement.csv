@@ -1,0 +1,201 @@
+employee_id,wave,Department,Tenure,I find my work meaningful.,I am energized by my work most days.,I am proud to tell others where I work.,My work gives me a sense of personal accomplishment.,My manager helps me grow professionally.,My manager listens to my ideas.,My manager gives me useful feedback when I need it.,I have the autonomy to do my best work.,I can decide how to approach my tasks.,I have flexibility in how I organize my workday.
+E001,Time 1,Sales,1-3 years,3,3,4,4,3,3,4,5,4,4
+E001,Time 2,Sales,1-3 years,4,4,3,4,3,3,4,4,3,4
+E002,Time 1,Customer Support,4-7 years,3,3,2,3,3,3,3,4,5,4
+E002,Time 2,Customer Support,4-7 years,3,3,3,3,2,3,3,4,4,4
+E003,Time 1,HR,< 1 year,4,3,3,3,4,3,4,4,3,3
+E003,Time 2,HR,< 1 year,3,4,4,4,4,4,4,4,4,4
+E004,Time 1,HR,8+ years,3,3,3,3,3,2,3,3,3,3
+E004,Time 2,HR,8+ years,3,2,3,3,3,3,3,3,3,3
+E005,Time 1,Marketing,1-3 years,3,2,2,2,4,3,3,4,4,4
+E005,Time 2,Marketing,1-3 years,2,2,3,3,3,3,3,3,4,4
+E006,Time 1,Finance,1-3 years,3,4,4,4,3,3,3,3,3,3
+E006,Time 2,Finance,1-3 years,3,4,3,4,2,3,3,3,3,4
+E007,Time 1,Operations,1-3 years,4,4,5,5,4,4,4,4,3,3
+E007,Time 2,Operations,1-3 years,4,5,5,5,4,4,4,3,3,3
+E008,Time 1,HR,1-3 years,4,4,4,4,4,4,5,4,4,4
+E008,Time 2,HR,1-3 years,4,5,4,4,4,4,4,4,4,4
+E009,Time 1,Customer Support,< 1 year,3,4,4,4,3,3,3,5,5,5
+E009,Time 2,Customer Support,< 1 year,4,4,4,4,3,2,3,5,5,5
+E010,Time 1,Customer Support,1-3 years,3,3,3,4,4,3,3,3,4,4
+E010,Time 2,Customer Support,1-3 years,4,3,4,3,4,3,4,4,3,3
+E011,Time 1,Customer Support,8+ years,3,4,4,4,5,5,5,5,5,5
+E011,Time 2,Customer Support,8+ years,4,4,4,4,5,5,5,5,5,5
+E012,Time 1,Marketing,1-3 years,3,2,3,3,2,2,2,3,4,3
+E012,Time 2,Marketing,1-3 years,3,4,3,3,3,3,3,3,3,3
+E013,Time 1,Operations,4-7 years,4,3,3,4,4,5,4,4,4,4
+E013,Time 2,Operations,4-7 years,4,4,3,4,4,5,5,4,4,4
+E014,Time 1,Customer Support,1-3 years,4,3,3,4,5,4,5,5,5,5
+E014,Time 2,Customer Support,1-3 years,4,4,3,4,5,4,5,5,5,5
+E015,Time 1,Marketing,8+ years,3,4,4,4,4,3,4,4,3,4
+E015,Time 2,Marketing,8+ years,4,4,4,4,3,3,3,3,3,4
+E016,Time 1,Engineering,8+ years,3,3,3,2,4,4,4,5,4,4
+E016,Time 2,Engineering,8+ years,3,4,3,3,3,3,3,4,4,4
+E017,Time 1,Finance,8+ years,4,4,4,4,2,2,3,5,5,5
+E017,Time 2,Finance,8+ years,4,4,4,5,2,2,2,5,4,5
+E018,Time 1,Operations,8+ years,5,4,4,4,3,3,3,3,3,3
+E018,Time 2,Operations,8+ years,4,4,4,4,3,2,3,3,3,3
+E019,Time 1,Engineering,8+ years,3,3,2,3,3,3,3,4,4,4
+E019,Time 2,Engineering,8+ years,3,3,3,3,4,3,3,4,4,5
+E020,Time 1,Customer Support,1-3 years,3,4,4,4,4,4,4,5,5,5
+E020,Time 2,Customer Support,1-3 years,4,4,4,4,4,4,4,5,5,5
+E021,Time 1,HR,< 1 year,4,4,4,4,2,2,3,4,5,5
+E021,Time 2,HR,< 1 year,4,4,4,4,2,2,3,4,4,5
+E022,Time 1,Engineering,4-7 years,4,4,4,5,3,3,3,3,3,3
+E022,Time 2,Engineering,4-7 years,5,4,4,4,3,2,3,3,3,3
+E023,Time 1,Finance,1-3 years,3,4,3,4,5,4,5,3,3,3
+E023,Time 2,Finance,1-3 years,3,4,3,3,4,4,4,3,3,3
+E024,Time 1,Engineering,1-3 years,3,3,3,3,5,5,5,3,2,3
+E024,Time 2,Engineering,1-3 years,3,3,3,3,5,5,5,4,3,3
+E025,Time 1,Customer Support,1-3 years,4,4,4,4,3,2,3,4,4,5
+E025,Time 2,Customer Support,1-3 years,4,4,4,3,3,2,2,5,4,4
+E026,Time 1,Marketing,1-3 years,3,3,3,2,4,4,4,2,3,3
+E026,Time 2,Marketing,1-3 years,2,2,3,3,4,4,5,3,3,2
+E027,Time 1,Engineering,4-7 years,3,2,3,2,3,3,3,4,4,4
+E027,Time 2,Engineering,4-7 years,2,3,2,3,3,3,3,4,4,4
+E028,Time 1,HR,< 1 year,3,3,3,4,3,2,3,3,4,3
+E028,Time 2,HR,< 1 year,3,3,3,3,3,3,3,3,4,4
+E029,Time 1,Operations,4-7 years,2,3,2,3,4,3,4,4,5,5
+E029,Time 2,Operations,4-7 years,3,2,2,3,4,3,4,5,5,5
+E030,Time 1,Customer Support,8+ years,3,3,3,3,4,3,3,4,4,4
+E030,Time 2,Customer Support,8+ years,4,3,3,3,4,3,3,4,4,4
+E031,Time 1,Finance,1-3 years,5,5,4,5,4,4,4,4,3,3
+E031,Time 2,Finance,1-3 years,5,5,5,5,4,4,4,3,4,4
+E032,Time 1,Engineering,< 1 year,3,3,4,4,3,4,3,3,3,4
+E032,Time 2,Engineering,< 1 year,3,4,4,4,4,4,4,4,4,3
+E033,Time 1,Operations,4-7 years,3,3,3,3,4,3,4,5,5,4
+E033,Time 2,Operations,4-7 years,3,3,3,3,4,3,4,5,5,5
+E034,Time 1,HR,1-3 years,2,2,2,3,2,2,2,3,3,3
+E034,Time 2,HR,1-3 years,3,2,3,2,2,1,2,4,4,3
+E035,Time 1,Sales,8+ years,4,5,5,5,4,2,3,3,3,3
+E035,Time 2,Sales,8+ years,5,5,5,5,4,3,3,3,3,3
+E036,Time 1,Marketing,8+ years,4,4,4,4,4,3,4,3,3,3
+E036,Time 2,Marketing,8+ years,4,4,4,4,3,4,3,4,3,3
+E037,Time 1,Marketing,1-3 years,5,5,5,5,3,3,3,3,3,4
+E037,Time 2,Marketing,1-3 years,5,5,5,5,3,4,4,4,4,4
+E038,Time 1,HR,< 1 year,4,4,4,4,4,4,4,4,4,4
+E038,Time 2,HR,< 1 year,4,3,4,4,4,4,5,4,4,4
+E039,Time 1,Finance,8+ years,4,4,4,4,3,4,4,4,4,3
+E039,Time 2,Finance,8+ years,4,3,4,4,4,4,3,4,4,4
+E040,Time 1,Finance,4-7 years,4,4,3,3,3,3,4,4,4,4
+E040,Time 2,Finance,4-7 years,3,3,3,3,4,3,4,4,4,4
+E041,Time 1,Engineering,4-7 years,5,4,4,4,4,3,3,4,4,4
+E041,Time 2,Engineering,4-7 years,4,4,4,4,3,3,3,4,4,4
+E042,Time 1,Sales,8+ years,3,3,3,3,4,3,4,3,3,3
+E042,Time 2,Sales,8+ years,3,3,3,4,4,3,4,3,2,3
+E043,Time 1,Engineering,1-3 years,3,3,3,4,3,4,4,4,4,4
+E043,Time 2,Engineering,1-3 years,4,4,4,3,4,4,4,4,4,4
+E044,Time 1,HR,8+ years,4,4,4,5,2,2,2,5,4,5
+E044,Time 2,HR,8+ years,4,5,5,4,2,2,2,5,5,5
+E045,Time 1,Sales,8+ years,3,3,3,3,3,4,3,2,3,3
+E045,Time 2,Sales,8+ years,3,3,3,3,4,4,4,3,2,2
+E046,Time 1,Customer Support,< 1 year,2,2,3,2,4,3,4,4,3,3
+E046,Time 2,Customer Support,< 1 year,2,2,2,3,4,4,3,3,3,3
+E047,Time 1,Engineering,8+ years,3,3,3,4,5,4,4,2,3,3
+E047,Time 2,Engineering,8+ years,3,3,3,3,5,4,4,3,2,3
+E048,Time 1,Marketing,4-7 years,4,4,4,4,4,3,4,4,4,4
+E048,Time 2,Marketing,4-7 years,4,4,4,3,4,4,4,5,4,4
+E049,Time 1,Operations,4-7 years,4,3,3,3,2,2,2,3,4,4
+E049,Time 2,Operations,4-7 years,4,4,4,4,2,2,3,3,4,4
+E050,Time 1,Engineering,1-3 years,3,3,3,3,5,5,5,4,5,4
+E050,Time 2,Engineering,1-3 years,4,3,4,4,5,5,5,4,4,4
+E051,Time 1,Engineering,< 1 year,4,4,4,4,3,3,4,5,4,5
+E051,Time 2,Engineering,< 1 year,4,4,5,4,4,3,3,4,4,4
+E052,Time 1,Marketing,< 1 year,5,5,4,5,3,3,3,4,4,4
+E052,Time 2,Marketing,< 1 year,4,4,4,5,3,3,3,3,4,4
+E053,Time 1,Sales,< 1 year,3,3,3,4,2,1,2,4,4,4
+E053,Time 2,Sales,< 1 year,3,3,3,3,1,2,2,4,4,4
+E054,Time 1,Marketing,4-7 years,4,4,4,4,2,2,2,4,5,5
+E054,Time 2,Marketing,4-7 years,4,5,4,5,2,2,2,4,4,4
+E055,Time 1,Engineering,1-3 years,4,5,4,4,2,2,2,3,4,4
+E055,Time 2,Engineering,1-3 years,4,5,4,4,3,3,3,4,4,3
+E056,Time 1,Sales,4-7 years,2,2,3,2,1,1,1,3,4,4
+E056,Time 2,Sales,4-7 years,3,3,3,3,1,1,1,4,4,4
+E057,Time 1,Marketing,4-7 years,1,1,1,2,4,4,4,5,4,5
+E057,Time 2,Marketing,4-7 years,2,2,2,2,4,4,4,5,5,4
+E058,Time 1,Marketing,1-3 years,5,5,5,5,5,5,5,4,4,4
+E058,Time 2,Marketing,1-3 years,5,5,5,5,5,5,5,4,4,4
+E059,Time 1,Marketing,1-3 years,4,4,4,3,3,3,3,3,3,3
+E059,Time 2,Marketing,1-3 years,3,3,3,3,3,2,3,3,3,3
+E060,Time 1,Operations,< 1 year,4,4,4,4,4,4,4,4,4,4
+E060,Time 2,Operations,< 1 year,4,4,4,4,4,4,4,4,4,4
+E061,Time 1,Finance,8+ years,3,4,4,4,3,4,3,4,3,4
+E061,Time 2,Finance,8+ years,3,3,4,4,3,4,3,4,4,4
+E062,Time 1,Operations,< 1 year,4,4,4,4,4,3,4,4,3,3
+E062,Time 2,Operations,< 1 year,4,4,4,4,3,2,3,3,3,3
+E063,Time 1,Engineering,8+ years,3,4,3,3,4,5,5,5,5,4
+E063,Time 2,Engineering,8+ years,3,4,3,4,4,4,4,5,5,4
+E064,Time 1,Customer Support,1-3 years,1,1,1,1,2,2,2,3,3,3
+E064,Time 2,Customer Support,1-3 years,1,2,2,1,2,2,2,3,2,3
+E065,Time 1,Finance,4-7 years,3,3,4,4,5,5,4,2,2,3
+E065,Time 2,Finance,4-7 years,3,4,3,4,4,4,5,3,2,3
+E066,Time 1,Engineering,8+ years,3,4,3,3,4,4,4,4,4,4
+E066,Time 2,Engineering,8+ years,3,3,3,3,5,5,4,4,3,3
+E067,Time 1,HR,8+ years,4,4,4,4,3,3,2,4,4,4
+E067,Time 2,HR,8+ years,3,4,3,4,3,2,3,4,4,4
+E068,Time 1,Sales,1-3 years,3,3,2,3,3,3,3,3,3,3
+E068,Time 2,Sales,1-3 years,3,3,3,3,2,2,3,4,4,3
+E069,Time 1,HR,4-7 years,3,3,3,3,2,2,3,4,5,4
+E069,Time 2,HR,4-7 years,3,3,3,3,2,2,3,5,5,4
+E070,Time 1,Sales,1-3 years,5,4,4,4,5,5,4,3,3,3
+E070,Time 2,Sales,1-3 years,5,5,5,5,4,5,5,2,3,2
+E071,Time 1,Operations,< 1 year,3,4,3,4,4,4,5,4,5,5
+E071,Time 2,Operations,< 1 year,4,4,4,4,4,4,4,3,3,4
+E072,Time 1,Operations,8+ years,4,4,3,4,3,3,3,3,4,3
+E072,Time 2,Operations,8+ years,4,4,4,4,3,3,3,3,3,3
+E073,Time 1,HR,4-7 years,2,2,2,3,2,2,3,4,4,4
+E073,Time 2,HR,4-7 years,2,3,2,3,3,3,3,4,3,4
+E074,Time 1,Sales,4-7 years,4,4,4,4,3,3,3,4,3,3
+E074,Time 2,Sales,4-7 years,4,4,4,4,3,2,3,3,4,4
+E075,Time 1,Marketing,< 1 year,4,3,4,4,4,4,4,4,4,4
+E075,Time 2,Marketing,< 1 year,4,3,4,3,4,4,4,3,4,3
+E076,Time 1,Finance,1-3 years,5,5,5,5,4,3,4,2,3,2
+E076,Time 2,Finance,1-3 years,4,5,4,5,3,3,4,2,3,3
+E077,Time 1,HR,< 1 year,5,5,4,5,3,3,3,4,4,4
+E077,Time 2,HR,< 1 year,4,5,4,5,3,3,3,3,4,3
+E078,Time 1,Engineering,< 1 year,4,3,3,3,3,3,4,3,4,3
+E078,Time 2,Engineering,< 1 year,3,3,3,3,3,3,4,4,3,3
+E079,Time 1,HR,< 1 year,5,5,5,5,2,2,3,4,4,4
+E079,Time 2,HR,< 1 year,5,5,5,5,2,2,2,3,3,3
+E080,Time 1,Operations,1-3 years,4,4,4,4,2,2,2,5,5,4
+E080,Time 2,Operations,1-3 years,4,5,4,4,2,2,2,5,5,5
+E081,Time 1,Marketing,1-3 years,3,3,3,3,5,4,4,4,4,4
+E081,Time 2,Marketing,1-3 years,3,3,3,2,5,4,4,4,3,4
+E082,Time 1,Sales,1-3 years,3,4,3,3,3,3,3,4,3,4
+E082,Time 2,Sales,1-3 years,4,4,4,4,3,3,3,4,3,3
+E083,Time 1,Marketing,4-7 years,3,2,3,3,3,3,3,3,3,3
+E083,Time 2,Marketing,4-7 years,3,3,3,3,2,2,3,4,3,3
+E084,Time 1,HR,8+ years,3,4,3,3,2,3,3,3,4,4
+E084,Time 2,HR,8+ years,3,3,3,3,3,3,3,3,3,3
+E085,Time 1,Finance,8+ years,4,4,4,4,3,3,3,3,4,5
+E085,Time 2,Finance,8+ years,4,4,4,4,4,3,3,4,4,4
+E086,Time 1,Marketing,8+ years,5,5,5,5,5,4,4,3,3,4
+E086,Time 2,Marketing,8+ years,4,5,5,5,4,4,5,3,3,4
+E087,Time 1,Engineering,1-3 years,4,4,4,4,5,4,5,3,3,4
+E087,Time 2,Engineering,1-3 years,4,4,4,4,5,5,5,4,4,4
+E088,Time 1,Marketing,< 1 year,4,4,4,4,5,4,4,3,3,3
+E088,Time 2,Marketing,< 1 year,4,4,4,4,5,4,4,3,3,3
+E089,Time 1,HR,8+ years,3,3,3,4,4,3,4,5,5,4
+E089,Time 2,HR,8+ years,3,4,4,4,3,3,4,5,5,5
+E090,Time 1,Engineering,8+ years,4,4,3,3,5,5,5,5,5,4
+E090,Time 2,Engineering,8+ years,3,4,4,4,5,5,5,5,4,5
+E091,Time 1,HR,< 1 year,4,4,5,5,4,5,4,4,3,3
+E091,Time 2,HR,< 1 year,4,5,5,4,4,5,4,3,3,4
+E092,Time 1,Customer Support,< 1 year,5,4,4,5,3,2,2,5,5,5
+E092,Time 2,Customer Support,< 1 year,5,5,5,5,2,2,2,5,5,5
+E093,Time 1,Operations,< 1 year,5,4,5,5,4,3,3,5,5,5
+E093,Time 2,Operations,< 1 year,4,4,5,5,4,3,3,5,5,5
+E094,Time 1,Marketing,< 1 year,5,5,4,4,3,3,4,5,4,4
+E094,Time 2,Marketing,< 1 year,5,5,4,5,3,3,3,4,4,4
+E095,Time 1,Engineering,1-3 years,4,4,3,4,2,2,2,2,2,2
+E095,Time 2,Engineering,1-3 years,4,4,4,4,3,2,3,2,3,3
+E096,Time 1,Customer Support,< 1 year,1,1,1,1,4,3,3,5,5,5
+E096,Time 2,Customer Support,< 1 year,2,2,1,2,3,3,3,5,5,5
+E097,Time 1,Marketing,< 1 year,3,3,3,3,4,4,4,4,4,4
+E097,Time 2,Marketing,< 1 year,3,4,4,4,4,4,4,4,4,5
+E098,Time 1,Customer Support,4-7 years,4,4,4,4,4,3,4,4,4,4
+E098,Time 2,Customer Support,4-7 years,3,4,4,4,4,4,4,4,4,4
+E099,Time 1,Sales,< 1 year,3,3,3,3,3,4,4,5,4,5
+E099,Time 2,Sales,< 1 year,3,3,4,3,4,4,4,4,5,4
+E100,Time 1,Customer Support,8+ years,4,4,4,4,4,3,4,3,3,3
+E100,Time 2,Customer Support,8+ years,4,5,5,4,4,3,4,3,3,3

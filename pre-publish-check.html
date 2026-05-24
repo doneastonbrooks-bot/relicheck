@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pre-Publish Check &middot; ReliCheck</title>
+  <meta name="description" content="Review every survey item for purpose alignment, scale balance, item quality, accessibility, and respondent experience before your survey goes live. The ReliCheck Pre-Publish Check catches the issues that hurt response quality and reliability after launch." />
+  <link rel="canonical" href="https://relichecksurvey.com/pre-publish-check.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pre-Publish Check &middot; ReliCheck" />
+  <meta property="og:description" content="Catch the issues that hurt response quality and reliability before your survey goes live. Eight checks, one go/no-go verdict, item-level fixes." />
+  <meta property="og:url" content="https://relichecksurvey.com/pre-publish-check.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pre-Publish Check &middot; ReliCheck" />
+  <meta name="twitter:description" content="Catch the issues that hurt response quality and reliability before your survey goes live." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    .ppc-hero-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: var(--s-7); align-items: center; }
+    @media (max-width: 860px) { .ppc-hero-grid { grid-template-columns: 1fr; gap: var(--s-5); } }
+    .ppc-checklist-card { background: #fff; border: 1px solid #e5e8ed; border-radius: 14px; padding: 22px; box-shadow: 0 8px 24px rgba(11, 23, 51, 0.06); }
+    .ppc-checklist-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 14px; border-bottom: 1px solid #eef1f5; margin-bottom: 14px; }
+    .ppc-checklist-head h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--ink); }
+    .ppc-verdict-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: #e8f5ec; color: #1f7a3a; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+    .ppc-verdict-pill::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: #1f9d55; display: inline-block; }
+    .ppc-check-row { display: grid; grid-template-columns: 24px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid #f4f6fa; font-size: 14px; }
+    .ppc-check-row:last-child { border-bottom: none; }
+    .ppc-check-row .icon { width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+    .ppc-check-row.ok .icon { background: #1f9d55; }
+    .ppc-check-row.warn .icon { background: #d4a017; }
+    .ppc-check-row.err .icon { background: #c0392b; }
+    .ppc-check-row .label { color: var(--ink); font-weight: 500; }
+    .ppc-check-row .label .sub { display: block; color: var(--ink-7); font-size: 12px; font-weight: 400; margin-top: 2px; }
+    .ppc-check-row .status { font-size: 12px; color: var(--ink-7); }
+    .ppc-checks-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: var(--s-4) 0; }
+    @media (max-width: 760px) { .ppc-checks-grid { grid-template-columns: 1fr; } }
+    .ppc-check-card { padding: 22px; border-radius: 12px; border: 1px solid #e5e8ed; background: #fff; }
+    .ppc-check-card .num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: #1a1f33; color: #fff; font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px; margin-bottom: 12px; }
+    .ppc-check-card h3 { margin: 0 0 8px; font-size: 17px; }
+    .ppc-check-card p { margin: 0 0 10px; font-size: 14px; color: var(--ink-7); line-height: 1.55; }
+    .ppc-check-card .catches { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-7); }
+    .ppc-check-card .catches li { margin-bottom: 4px; }
+    .ppc-tier-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: var(--s-5) 0; }
+    @media (max-width: 760px) { .ppc-tier-row { grid-template-columns: repeat(2, 1fr); } }
+    .ppc-tier { padding: 14px 12px; border-radius: 12px; border: 1px solid #e5e8ed; background: #fff; }
+    .ppc-tier .band { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-7); margin-bottom: 4px; }
+    .ppc-tier .label { font-weight: 600; font-size: 16px; color: var(--ink); margin-bottom: 4px; }
+    .ppc-tier .blurb { font-size: 13px; color: var(--ink-7); line-height: 1.4; }
+    .ppc-tier.t-go { border-left: 4px solid #1f9d55; }
+    .ppc-tier.t-go-c { border-left: 4px solid #5db075; }
+    .ppc-tier.t-rev { border-left: 4px solid #d4a017; }
+    .ppc-tier.t-block { border-left: 4px solid #c0392b; }
+    .ppc-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: var(--s-4) 0; }
+    @media (max-width: 760px) { .ppc-flow { grid-template-columns: 1fr; } }
+    .ppc-step { padding: 22px; border-radius: 12px; background: #f7f9fc; border: 1px solid #eef1f5; }
+    .ppc-step .step-num { font-family: 'Fraunces', serif; font-size: 32px; font-weight: 600; color: #e85d3a; line-height: 1; margin-bottom: 8px; }
+    .ppc-step h3 { margin: 0 0 8px; font-size: 17px; }
+    .ppc-step p { margin: 0; font-size: 14px; color: var(--ink-7); line-height: 1.55; }
+    .ppc-faq summary { cursor: pointer; padding: 14px 0; font-weight: 600; color: var(--ink); border-bottom: 1px solid #eef1f5; }
+    .ppc-faq[open] summary { color: #e85d3a; }
+    .ppc-faq p { padding: 12px 0 18px; margin: 0; color: var(--ink-7); line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="overview.html">Platform</a> / Pre-Publish Check</div>
+    <span class="kicker">Pre-Publish Check</span>
+    <h1 style="margin-top:var(--s-3); max-width: 22ch;">Catch the issues that hurt your survey before it goes live.</h1>
+    <p class="lede">Reliability, factor structure, and response quality come from one place: the survey itself. The ReliCheck Pre-Publish Check reviews every item for purpose alignment, scale balance, wording, accessibility, and respondent experience, then returns a go / no-go verdict with item-level fixes you can apply in one click.</p>
+    <div class="article-meta">
+      <span>Updated May 2026</span>
+      <span>&middot;</span>
+      <span>Reading time: 8 min</span>
+      <span>&middot;</span>
+      <span>Audience: research, evaluation, HR, instructors</span>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container-content">
+    <div class="ppc-hero-grid">
+      <div>
+        <h2 style="margin: 0 0 14px;">A pre-flight check, run by the same engine that scores your results.</h2>
+        <p style="font-size: 17px; color: var(--ink-7); line-height: 1.65; margin: 0 0 14px;">Most survey problems are baked in before the first response arrives. A scale that mixes positive and negative wording without a reverse-scoring plan, a construct with only two items, an open-ended prompt placed before the rating items it depends on: any one of these caps the quality of the data you collect.</p>
+        <p style="font-size: 17px; color: var(--ink-7); line-height: 1.65; margin: 0 0 18px;">The Pre-Publish Check runs eight automated reviews on the survey draft, returns a single verdict (Go, Go with cautions, Revise, Block), and lists the specific items that triggered each warning. Most issues come with a one-click rewrite suggestion from the AI item assistant.</p>
+        <div class="hero-actions" style="display:flex; gap: 12px; flex-wrap: wrap;">
+          <a href="signup.html" class="btn btn-primary btn-lg">Try it on your draft</a>
+          <a href="#what-it-checks" class="btn btn-outline btn-lg">See the eight checks</a>
+        </div>
+      </div>
+      <div class="ppc-checklist-card" aria-hidden="true">
+        <div class="ppc-checklist-head">
+          <h4>Pre-Publish Check &middot; Course Evaluation Draft</h4>
+          <span class="ppc-verdict-pill">Go with cautions</span>
+        </div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Purpose alignment<span class="sub">All items match the stated purpose</span></span><span class="status">24 / 24</span></div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Construct coverage<span class="sub">Each construct has 3+ items</span></span><span class="status">5 / 5</span></div>
+        <div class="ppc-check-row warn"><span class="icon">&#33;</span><span class="label">Scale balance<span class="sub">Two items lack a reverse-scored counterpart</span></span><span class="status">2 flagged</span></div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Item wording<span class="sub">No double-barreled or leading items</span></span><span class="status">Clean</span></div>
+        <div class="ppc-check-row warn"><span class="icon">&#33;</span><span class="label">Reading level<span class="sub">Item 14 reads at grade 13 (target 8)</span></span><span class="status">1 flagged</span></div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Order &amp; flow<span class="sub">Sensitive items follow rapport-builders</span></span><span class="status">Good</span></div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Accessibility<span class="sub">Labels, contrast, screen-reader text</span></span><span class="status">WCAG AA</span></div>
+        <div class="ppc-check-row ok"><span class="icon">&#10003;</span><span class="label">Length &amp; respondent burden<span class="sub">Estimated 4 min, 24 items</span></span><span class="status">Within target</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Verdict tiers</span>
+      <h2>Four bands. Each one tells you what to do next.</h2>
+    </div>
+    <div class="ppc-tier-row">
+      <div class="ppc-tier t-go">
+        <div class="band">Go</div>
+        <div class="label">Ready to publish</div>
+        <div class="blurb">All eight checks pass. Hit publish whenever you are ready.</div>
+      </div>
+      <div class="ppc-tier t-go-c">
+        <div class="band">Go with cautions</div>
+        <div class="label">Minor fixes optional</div>
+        <div class="blurb">Cosmetic warnings only. Publish, or apply suggested rewrites in a minute.</div>
+      </div>
+      <div class="ppc-tier t-rev">
+        <div class="band">Revise</div>
+        <div class="label">Fix before launch</div>
+        <div class="blurb">One or more checks failed. Open the item assistant and apply suggestions.</div>
+      </div>
+      <div class="ppc-tier t-block">
+        <div class="band">Block</div>
+        <div class="label">Critical issues</div>
+        <div class="blurb">A construct has zero items, accessibility is failing, or a required field is missing.</div>
+      </div>
+    </div>
+    <p style="text-align: center; color: var(--ink-7); font-size: 14px; margin: 0;">A Block verdict prevents accidental publication of a survey that cannot be analyzed. Go with cautions is the most common verdict on first run.</p>
+  </div>
+</section>
+
+<section class="section" id="what-it-checks">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">The eight checks</span>
+      <h2>What runs on every draft.</h2>
+      <p class="lede" style="max-width: 60ch; margin: var(--s-3) auto 0;">Each check has a specific psychometric or respondent-experience justification. The intent is to flag the issues that show up later as low alpha, weak factor structure, or response-quality warnings on the analytics dashboard.</p>
+    </div>
+
+    <div class="ppc-checks-grid">
+      <div class="ppc-check-card">
+        <span class="num">1</span>
+        <h3>Purpose alignment</h3>
+        <p>Reads the stated survey purpose and tags each item as core, supporting, tangential, or off-topic. Suggests items to remove and gaps to fill.</p>
+        <ul class="catches"><li>Items that drift from the stated goal</li><li>Constructs the purpose names but the items miss</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">2</span>
+        <h3>Construct coverage</h3>
+        <p>Counts items per construct. Two-item constructs limit reliability estimation; one-item constructs cannot be analyzed at all.</p>
+        <ul class="catches"><li>Constructs with fewer than 3 items</li><li>Untagged items that look like they belong to a construct</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">3</span>
+        <h3>Scale balance</h3>
+        <p>Checks Likert items for a mix of positively and negatively keyed wording, and confirms reverse-scoring is set where intended.</p>
+        <ul class="catches"><li>All-positive scales (acquiescence risk)</li><li>Reverse-worded items without a reverse-score flag</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">4</span>
+        <h3>Item wording</h3>
+        <p>Flags double-barreled, leading, vague, or jargon-heavy items. Each flag comes with a one-click AI rewrite suggestion.</p>
+        <ul class="catches"><li>Two ideas in one item ("clear and engaging")</li><li>Loaded language ("how disappointed are you")</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">5</span>
+        <h3>Reading level</h3>
+        <p>Computes Flesch-Kincaid grade level per item. Default target is grade 8; you can set a different target for specialist audiences.</p>
+        <ul class="catches"><li>Items above the target reading level</li><li>Acronyms and unexplained terms</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">6</span>
+        <h3>Order &amp; flow</h3>
+        <p>Reviews the question sequence for rapport, sensitive-topic placement, and dependencies between items.</p>
+        <ul class="catches"><li>Sensitive demographics placed first</li><li>Open-ended items placed before the rating items they depend on</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">7</span>
+        <h3>Accessibility</h3>
+        <p>Checks the rendered survey against WCAG 2.1 AA. Confirms labels, color contrast, keyboard navigation, and screen-reader announcements.</p>
+        <ul class="catches"><li>Color-only state indicators</li><li>Inputs without programmatic labels</li></ul>
+      </div>
+      <div class="ppc-check-card">
+        <span class="num">8</span>
+        <h3>Length &amp; respondent burden</h3>
+        <p>Estimates completion time from item count and item type. Flags surveys likely to drop respondents partway through.</p>
+        <ul class="catches"><li>Estimated time over the target threshold</li><li>Long matrix grids that fatigue respondents</li></ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">How it runs</span>
+      <h2>Three steps. Roughly thirty seconds.</h2>
+    </div>
+    <div class="ppc-flow">
+      <div class="ppc-step">
+        <div class="step-num">1</div>
+        <h3>Open your draft</h3>
+        <p>Click Pre-Publish Check from the survey builder toolbar, or run it from the Distribute view before sending invitations. Drafts of any size are accepted.</p>
+      </div>
+      <div class="ppc-step">
+        <div class="step-num">2</div>
+        <h3>Review the verdict</h3>
+        <p>The verdict pill appears within seconds. Each failing check links to the specific items that triggered the warning, with a plain-language explanation.</p>
+      </div>
+      <div class="ppc-step">
+        <div class="step-num">3</div>
+        <h3>Apply fixes inline</h3>
+        <p>Most warnings come with a one-click AI rewrite. Accept, edit, or dismiss each suggestion. Re-run the check until you reach Go.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Why this matters</span>
+      <h2>Pre-launch fixes are cheap. Post-launch fixes break your data.</h2>
+    </div>
+    <div class="article-layout">
+      <article class="prose" style="grid-column: 1 / -1; max-width: 70ch; margin: 0 auto;">
+        <p>A survey item that is double-barreled, leading, or off-topic does not become defensible after responses are collected. Edits made mid-administration split the dataset into incompatible versions; edits made after close of fielding mean the original respondents answered a different question than the one being reported on.</p>
+        <p>The Pre-Publish Check exists because the cheapest moment to fix a survey is the moment before it ships. A two-minute rewrite of an ambiguous item is the difference between an alpha of 0.62 and an alpha of 0.81 on the same construct three weeks later.</p>
+        <p>The check is not a substitute for human review. An expert reviewer brings construct knowledge, audience knowledge, and political judgment that automated checks cannot. The Pre-Publish Check handles the mechanical pass so reviewers can spend their attention on the questions that actually require it.</p>
+        <h3>Where it sits in the workflow</h3>
+        <p>Pre-Publish Check runs at draft time. The <a href="/survey-strength-index.html">ReliCheck Survey Strength Index&trade;</a> runs after responses arrive. The two are paired: Pre-Publish Check optimizes the instrument before launch; the Strength Index scores the data after launch. A Go verdict on Pre-Publish Check is the strongest single predictor of a Strong-or-better SSI&trade; once responses are in.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Where you find it</span>
+      <h2>Three places in the app.</h2>
+    </div>
+    <div class="cards-3">
+      <article class="card" style="cursor:default;">
+        <h3>Survey builder toolbar</h3>
+        <p>A persistent Pre-Publish Check button sits in the builder toolbar. Run it as often as you want during drafting; the verdict updates after every change.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>Distribute view gate</h3>
+        <p>Before invitations send, the Distribute view shows the current verdict and warns if you are launching a Block-tier draft. You can override with confirmation, but the warning is logged.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>Suite onboarding</h3>
+        <p>When you spin up a new survey from a ReliCheck Suite, Pre-Publish Check runs automatically on the customized draft so you never inherit issues from your edits to a template.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Common questions</span>
+      <h2>What the check does, and what it does not do.</h2>
+    </div>
+    <div style="max-width: 70ch; margin: 0 auto;">
+      <details class="ppc-faq">
+        <summary>Does Pre-Publish Check work on imported surveys?</summary>
+        <p>Yes. Surveys imported from Qualtrics .qsf files, pasted text, or any of the ReliCheck templates are eligible. The check runs on the parsed item structure, so the import path does not matter.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>Will the AI rewrite suggestions change my items without my approval?</summary>
+        <p>No. Every suggestion is a proposal. You see the original wording and the suggested rewrite side by side, and choose Accept, Edit, or Dismiss. Nothing changes until you click Accept.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>Can I publish with a Block verdict?</summary>
+        <p>Block is the only verdict that prevents publication, and it triggers only on issues that make the data unanalyzable: zero items in a tagged construct, missing required fields, or accessibility failures that violate WCAG 2.1 AA. Fix the underlying issue and re-run; the verdict updates automatically.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>How does Pre-Publish Check relate to the Survey Strength Index?</summary>
+        <p>Pre-Publish Check is pre-launch. The <a href="/survey-strength-index.html">ReliCheck Survey Strength Index&trade;</a> is post-launch. The check optimizes the instrument before responses arrive; the Strength Index scores the data after responses arrive. Surveys that ship with a Go verdict reliably produce stronger Strength Index scores.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>Can I customize the reading-level target or the time-burden threshold?</summary>
+        <p>Yes. Both are settings on each survey. Default reading-level target is grade 8; default time-burden threshold is 8 minutes. For specialist audiences (graduate research, technical staff) you can raise the reading-level target without affecting other surveys.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>Does the check store my draft items?</summary>
+        <p>The check runs on the same draft already saved to your account. It does not transmit your items to any third party. AI rewrite suggestions are generated under the same data-handling terms as the rest of ReliCheck's AI features.</p>
+      </details>
+      <details class="ppc-faq">
+        <summary>How long does it take?</summary>
+        <p>Roughly thirty seconds for a typical 20-item survey. Longer surveys (100+ items) finish in under two minutes. The check runs asynchronously, so you can keep editing while it works.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>Ship surveys that hold up under analysis.</h2>
+      <p>The Pre-Publish Check is included on every plan, including the free tier. Run it on every draft, every time.</p>
+      <div class="hero-actions">
+        <a href="signup.html" class="btn btn-primary btn-lg">Start free</a>
+        <a href="/survey-strength-index.html" class="btn btn-outline btn-lg">See the Strength Index</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+</body>
+</html>

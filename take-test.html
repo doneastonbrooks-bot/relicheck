@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Test · ReliCheck</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --border: #e6eaf2;
+    --text: #0b1733;
+    --text-soft: #4a5578;
+    --text-mute: #6b7691;
+    --primary: #2a3f8f;
+    --primary-dark: #1f2f6e;
+    --primary-soft: #eef1ff;
+    --accent: #1f9d55;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  body { padding: 24px 14px 60px; }
+  .container { max-width: 720px; margin: 0 auto; }
+  .brand { font-family: Fraunces, Georgia, serif; font-size: 20px; color: var(--primary); margin-bottom: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; box-shadow: 0 1px 2px rgba(11,23,51,0.04), 0 6px 18px rgba(11,23,51,0.04); }
+  h1 { font-family: Fraunces, Georgia, serif; font-size: 26px; letter-spacing: -0.01em; margin: 0 0 6px; }
+  .lede { font-size: 15px; color: var(--text-soft); margin: 0 0 18px; line-height: 1.55; }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+  .field label { font-size: 14px; color: var(--text-soft); font-weight: 600; }
+  .field input[type="text"] { padding: 10px 12px; font-size: 15px; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+  .field input[type="text"]:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(42,63,143,0.12); }
+  .item { border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin-bottom: 12px; background: var(--panel); }
+  .item-prompt { font-size: 15px; color: var(--text); line-height: 1.55; margin: 0 0 12px; font-weight: 500; }
+  .options { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; }
+  .option:hover { background: #f8fafd; }
+  .option input { margin: 0; }
+  .option-letter { font-weight: 600; color: var(--primary); min-width: 18px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 22px; font-size: 15px; font-weight: 600; border-radius: 10px; border: 1px solid transparent; cursor: pointer; transition: background 0.15s, transform 0.05s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
+  .footer { margin-top: 18px; font-size: 13px; color: var(--text-mute); text-align: center; }
+  .alert { padding: 12px 14px; border-radius: 10px; background: #fdeff2; border: 1px solid #f5d1d8; color: #8b2515; font-size: 14px; }
+  .success { padding: 20px 22px; border-radius: 12px; background: #ecfdf3; border: 1px solid #c3e6cc; color: #1c5a30; font-size: 16px; line-height: 1.55; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="brand">ReliCheck</div>
+  <div id="root"></div>
+  <div class="footer">Powered by <a href="/" style="color:var(--text-mute);">ReliCheck</a></div>
+</div>
+
+<script>
+'use strict';
+
+function getSlug() {
+  // Accept ?s=<slug> or ?slug=<slug>.
+  const q = new URLSearchParams(location.search);
+  return q.get('s') || q.get('slug') || '';
+}
+
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+function renderError(msg) {
+  document.getElementById('root').innerHTML =
+    '<div class="card"><h1>Could not load this test</h1>' +
+    '<div class="alert" style="margin-top:12px;">' + escapeHtml(msg) + '</div></div>';
+}
+
+function renderSuccess() {
+  document.getElementById('root').innerHTML =
+    '<div class="card">' +
+      '<h1>Thanks! Your test was submitted.</h1>' +
+      '<p class="lede">Your teacher will see your responses in their ReliCheck dashboard. You can close this window now.</p>' +
+      '<div class="success">Submission received.</div>' +
+    '</div>';
+}
+
+const LETTERS = ['A','B','C','D','E','F','G','H'];
+
+function defaultOptionsFor(test) {
+  // The public endpoint does NOT return the answer key, but it does return
+  // num_items. For multiple-choice tests we render 4 options (A-D) by default;
+  // teachers who want a different option count can include richer metadata
+  // in a future phase. For now A-D is a reasonable default for classroom
+  // multiple choice.
+  return LETTERS.slice(0, 4);
+}
+
+async function load() {
+  const slug = getSlug();
+  if (!slug) { renderError('No test link was provided.'); return; }
+  try {
+    const res = await fetch('/api/public/test.php?slug=' + encodeURIComponent(slug), {
+      method: 'GET', credentials: 'omit',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      renderError(data.message || 'This test is not currently available.');
+      return;
+    }
+    renderTake(data.test);
+  } catch (e) {
+    renderError('Could not load this test. ' + (e.message || ''));
+  }
+}
+
+function renderTake(test) {
+  const opts = defaultOptionsFor(test);
+  const itemsHtml = [];
+  for (let i = 0; i < test.num_items; i++) {
+    const label = (test.item_labels && test.item_labels[i]) || ('Question ' + (i + 1));
+    let optionsHtml = '';
+    for (let o = 0; o < opts.length; o++) {
+      const letter = opts[o];
+      optionsHtml +=
+        '<label class="option">' +
+          '<input type="radio" name="q' + i + '" value="' + letter + '" />' +
+          '<span class="option-letter">' + letter + '</span>' +
+          '<span>Option ' + letter + '</span>' +
+        '</label>';
+    }
+    itemsHtml.push(
+      '<div class="item">' +
+        '<div class="item-prompt"><strong>Q' + (i + 1) + '.</strong> ' + escapeHtml(label) + '</div>' +
+        '<div class="options">' + optionsHtml + '</div>' +
+      '</div>'
+    );
+  }
+  document.getElementById('root').innerHTML =
+    '<div class="card">' +
+      '<h1>' + escapeHtml(test.title || 'Test') + '</h1>' +
+      (test.description ? '<p class="lede">' + escapeHtml(test.description) + '</p>' : '<p class="lede">Pick the answer you believe is correct for each question. Click Submit when you finish.</p>') +
+      '<div class="field"><label for="sid">Your name or student ID</label>' +
+        '<input id="sid" type="text" placeholder="e.g., Alice Johnson or s00123" maxlength="120" />' +
+      '</div>' +
+      '<div id="itemsHost">' + itemsHtml.join('') + '</div>' +
+      '<div style="margin-top:18px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">' +
+        '<button class="btn btn-primary" id="submitBtn" type="button">Submit test</button>' +
+        '<span id="submitStatus" style="font-size:13px;color:var(--text-mute);"></span>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('submitBtn').addEventListener('click', function () { submitTake(test); });
+}
+
+async function submitTake(test) {
+  const sid = (document.getElementById('sid').value || '').trim();
+  const answers = [];
+  let unanswered = 0;
+  for (let i = 0; i < test.num_items; i++) {
+    const sel = document.querySelector('input[name="q' + i + '"]:checked');
+    if (!sel) { unanswered++; answers.push(''); }
+    else answers.push(sel.value);
+  }
+  const status = document.getElementById('submitStatus');
+  if (unanswered > 0) {
+    if (!confirm(unanswered + ' question' + (unanswered === 1 ? '' : 's') + ' unanswered. Submit anyway?')) return;
+  }
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  status.textContent = '';
+  try {
+    const res = await fetch('/api/public/test_submit.php', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'omit',
+      body: JSON.stringify({ slug: test.slug, student_id: sid, answers: answers }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      btn.disabled = false; btn.textContent = 'Submit test';
+      status.textContent = 'Submission failed. Try again.';
+      alert((data && data.message) || 'Could not submit. Please try again.');
+      return;
+    }
+    renderSuccess();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = 'Submit test';
+    status.textContent = 'Network error. Try again.';
+    alert('Network error. ' + (e.message || ''));
+  }
+}
+
+load();
+</script>
+</body>
+</html>

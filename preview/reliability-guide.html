@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Reliability guide · ReliCheck</title>
+  <meta name="description" content="Reliability and validity in plain language. What each statistic means, when to use it, and how to read the numbers ReliCheck reports." />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="preview-banner">Preview build, not yet live. <a href="index.html">Home</a> · <a href="pricing.html">Pricing</a> · <a href="education.html">Education</a> · <a href="compare.html">Compare</a> · <a href="methodology.html">Methodology</a> · <a href="app.html">App</a></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Product <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="#"><strong>Build</strong><span>Question types, logic, branding.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Collect</strong><span>Public links, email, QR, embeds.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Analyze</strong><span>Reliability and item flags.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Report</strong><span>PDF, Excel, SPSS, Sheets, Drive.</span></a>
+          <a class="nav-dd-item" href="#"><strong>AI features</strong><span>Question review, themes, summaries.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Why reliability matters</strong><span>The case for evidence-driven surveys.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="education.html"><strong>Education &amp; Evaluation</strong><span>Course feedback, accreditation, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Mixed-Methods</strong><span>Quant scales and qual themes.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Templates <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="#">Course Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Student Belonging</a>
+          <a class="nav-dd-item compact" href="#">Employee Engagement</a>
+          <a class="nav-dd-item compact" href="#">Program Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Customer Satisfaction</a>
+          <a class="nav-dd-item compact" href="#">Climate Survey</a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" style="color:var(--ink-9);background:var(--bg-soft);">Resources <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="compare.html">Compare</a>
+          <a class="nav-dd-item compact" href="methodology.html">Methodology</a>
+          <a class="nav-dd-item compact" href="reliability-guide.html">Reliability guide</a>
+          <a class="nav-dd-item compact" href="#">Help center</a>
+          <a class="nav-dd-item compact" href="#">Blog</a>
+        </div></div>
+      </div>
+      <a href="pricing.html" class="nav-dd-trigger">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="#signup" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Resources</h5><a href="compare.html">Compare</a><a href="methodology.html">Methodology</a><a href="reliability-guide.html">Reliability guide</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="education.html">Education</a><a href="#">HR &amp; Teams</a><a href="#">Customer Feedback</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="#login" class="btn btn-outline">Sign in</a><a href="#signup" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="#">Resources</a> / Reliability guide</div>
+    <span class="kicker">Reliability guide</span>
+    <h1 style="margin-top:var(--s-3);">Reliability and validity, in plain language</h1>
+    <p class="lede">A working researcher's guide to the statistics that decide whether your survey results mean anything. What each one is, when to use it, and how to read the numbers ReliCheck shows you.</p>
+    <div class="article-meta">
+      <span>Updated May 2026</span>
+      <span>·</span>
+      <span>Reading time: 18 min</span>
+      <span>·</span>
+      <span>Audience: research, evaluation, HR, instructors</span>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="article-layout">
+      <aside class="article-toc">
+        <h4>On this page</h4>
+        <ul>
+          <li><a href="#covers" class="is-active">What this guide covers</a></li>
+          <li><a href="#reliability">Reliability: short version</a></li>
+          <li><a href="#validity">Validity: short version</a></li>
+          <li><a href="#types-rel">Types of reliability</a></li>
+          <li><a href="#types-val">Types of validity</a></li>
+          <li><a href="#which">Which statistic applies?</a></li>
+          <li><a href="#reading">Reading a reliability number</a></li>
+          <li><a href="#pitfalls">Common pitfalls</a></li>
+          <li><a href="#what-we-show">What ReliCheck shows you</a></li>
+        </ul>
+      </aside>
+
+      <article class="prose">
+        <section id="covers">
+          <h2>What this guide covers</h2>
+          <p>This is a practical guide for anyone whose work depends on a survey number being defensible: instructors writing a course evaluation report, an HR team explaining engagement scores, an evaluator submitting outcomes to a funder. We'll move from short definitions to specific tests to the gotchas that catch even careful researchers off guard.</p>
+        </section>
+
+        <section id="reliability">
+          <h2>Reliability: the short version</h2>
+          <p>Reliability is whether your measurement is consistent. If you measured the same thing again, would you get a similar answer? Reliability does not tell you whether you measured the right thing, only whether you measured it cleanly.</p>
+          <div class="callout">
+            <div class="callout-title">Plain language</div>
+            <p style="margin:0;"><strong>A reliable scale is a steady ruler.</strong> A ruler can be steady and still be the wrong ruler for the job. Reliability is necessary, but it is not sufficient.</p>
+          </div>
+        </section>
+
+        <section id="validity">
+          <h2>Validity: the short version</h2>
+          <p>Validity is whether your measurement reflects what you intended to measure. A scale labeled "engagement" needs to actually capture engagement, not job satisfaction or general optimism. Validity is harder to demonstrate than reliability and usually requires more than one piece of evidence.</p>
+        </section>
+
+        <section id="types-rel">
+          <h2>Types of reliability</h2>
+          <h3>Internal consistency</h3>
+          <p>How well the items in a single scale agree with each other. Reported as Cronbach's alpha or split-half. Best when your items are supposed to measure the same underlying idea.</p>
+          <h3>Test-retest reliability</h3>
+          <p>How stable the score is when the same respondents take the survey again, days or weeks later. Reported as a correlation between time-1 and time-2 scores.</p>
+          <h3>Parallel-forms reliability</h3>
+          <p>How closely two equivalent versions of a scale produce the same scores when given to the same respondents. Used when you need to give different forms to different people.</p>
+          <h3>Inter-rater reliability</h3>
+          <p>How much different raters agree when scoring open responses, observations, or behaviors. Reported as ICC, Cohen's kappa, or weighted kappa.</p>
+        </section>
+
+        <section id="types-val">
+          <h2>Types of validity</h2>
+          <h3>Content validity</h3>
+          <p>Whether the items in your scale fully cover the construct. Usually demonstrated through expert review and item mapping.</p>
+          <h3>Construct validity</h3>
+          <p>Whether the scale relates to other measures the way theory predicts. The bedrock of psychometric defensibility.</p>
+          <h3>Criterion validity</h3>
+          <p>Whether the scale predicts an outcome you actually care about: retention, performance, change over time.</p>
+          <h3>Face validity</h3>
+          <p>Whether the items <em>look</em> like they measure the construct. The weakest form, but politically important when stakeholders read your items.</p>
+        </section>
+
+        <section id="which">
+          <h2>Which statistic applies?</h2>
+          <p>Pick the statistic that matches what you actually need to defend. A course evaluation needs internal consistency on each subscale and content validity for the topics covered. A pre/post outcome study needs test-retest reliability and a defensible scale. An employee engagement instrument needs both internal consistency and construct validity against productivity or retention outcomes.</p>
+        </section>
+
+        <section id="reading">
+          <h2>Reading a reliability number</h2>
+          <h3>Cronbach's alpha and split-half</h3>
+          <p>Conventional thresholds, with the usual caveat that thresholds are conventions, not laws:</p>
+          <ul>
+            <li><strong>α ≥ 0.80</strong>: strong; safe to report.</li>
+            <li><strong>0.70 ≤ α &lt; 0.80</strong>: acceptable; report with confidence intervals.</li>
+            <li><strong>0.60 ≤ α &lt; 0.70</strong>: weak; investigate items, sample size, dimensionality.</li>
+            <li><strong>α &lt; 0.60</strong>: unreliable; do not report a single composite score.</li>
+          </ul>
+          <h3>KMO sampling adequacy</h3>
+          <p>Tells you whether your sample is large and varied enough for the items to be analyzed together. KMO at least 0.70 is what you want for a defensible scale.</p>
+          <h3>Item-total correlations</h3>
+          <p>Each item's correlation with the rest of the scale (corrected for the item's own contribution). An item with a corrected item-total correlation below 0.20 is a weak contributor and should be reviewed.</p>
+        </section>
+
+        <section id="pitfalls">
+          <h2>Common pitfalls</h2>
+          <h3>Treating alpha as proof of validity</h3>
+          <p>A high alpha tells you the items hang together. It does not tell you they measure what you claim. Validity needs separate evidence.</p>
+          <h3>Reverse-scored items left unflagged</h3>
+          <p>If a "negatively worded" item is included without flipping its scoring, alpha tanks and the scale looks broken when it is not. Always show which items were reverse-scored.</p>
+          <h3>Chasing alpha by deleting items</h3>
+          <p>Removing items to push alpha higher narrows your construct and breaks content validity. The remaining items might be highly consistent and also highly redundant.</p>
+          <h3>Reporting reliability from a tiny sample</h3>
+          <p>Alpha estimates from fewer than 30 respondents are unstable. Report the count alongside the value, and treat anything below the threshold as provisional.</p>
+          <h3>Assuming reliability transfers</h3>
+          <p>A scale validated with college students may not be reliable in a workplace cohort. Re-check internal consistency in your population every time you use a scale.</p>
+        </section>
+
+        <section id="what-we-show">
+          <h2>What ReliCheck shows you, and what it does not</h2>
+          <p>ReliCheck reports internal consistency (alpha, split-half), KMO sampling adequacy, item-total correlations, alpha-if-deleted, inter-item correlations, and per-item descriptives. It surfaces sample-size warnings and missing-data patterns automatically.</p>
+          <p>What ReliCheck does not do: tell you whether your construct is the right one, whether your sampling frame is appropriate, or whether your interpretation is sound. Reliability is a check on the measurement; validity is a judgment on the meaning. The numbers help; they do not replace the analyst.</p>
+        </section>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>Put the guide into practice</h2>
+      <p>Open a sample report to see how reliability, item flags, and AI summaries appear together in a real ReliCheck output.</p>
+      <div class="hero-actions">
+        <a href="methodology.html" class="btn btn-primary btn-lg">Read the methodology</a>
+        <a href="#" class="btn btn-outline btn-lg">View sample report</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Overview</a></li><li><a href="#">AI features</a></li><li><a href="pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="education.html">Education</a></li><li><a href="#">HR &amp; Teams</a></li><li><a href="#">Customer feedback</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="reliability-guide.html">Reliability guide</a></li><li><a href="compare.html">Compare</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => { clearTimeout(timer); if (s) { document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); }); dd.setAttribute('data-open', 'true'); } else { timer = setTimeout(() => dd.removeAttribute('data-open'), 120); } };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+
+  // TOC active state
+  const tocLinks = Array.from(document.querySelectorAll('.article-toc a'));
+  const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const setActive = () => { const y = window.scrollY + 140; let active = sections[0]; sections.forEach(s => { if (s.offsetTop <= y) active = s; }); tocLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + (active && active.id))); };
+  document.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+</script>
+</body>
+</html>

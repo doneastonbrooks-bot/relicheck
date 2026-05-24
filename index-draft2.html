@@ -1,0 +1,589 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck . Know whether your survey results are strong enough to trust.</title>
+  <meta name="description" content="ReliCheck is a survey credibility platform. Upload results or build a new survey, then get a Survey Strength Index, reliability checks, item flags, and a plain-language report you can defend." />
+  <link rel="canonical" href="https://relichecksurvey.com/index.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ReliCheck . Survey credibility platform." />
+  <meta property="og:description" content="When your numbers get questioned, ReliCheck helps you answer. One Strength Index, six weighted domains, a plain-language report." />
+  <meta property="og:url" content="https://relichecksurvey.com/index.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ReliCheck . Survey credibility platform." />
+  <meta name="twitter:description" content="When your numbers get questioned, ReliCheck helps you answer." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+
+  <style>
+    /* Hero strapline + founder line */
+    .hero-trustline {
+      margin-top: 14px;
+      font-size: 14px;
+      color: var(--ink-6);
+      line-height: 1.45;
+    }
+    .hero-founder-line {
+      margin-top: 8px;
+      font-size: 13px;
+      color: var(--ink-6);
+      line-height: 1.45;
+    }
+    .hero-strapline {
+      margin-top: 18px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 17px;
+      line-height: 1.4;
+      color: var(--ink-7);
+    }
+    .hero-strapline strong { color: var(--ink-9); }
+
+    /* Four entry tiles */
+    .entry4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 980px) { .entry4 { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .entry4 { grid-template-columns: 1fr; } }
+    .entry-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      display: flex; flex-direction: column; gap: 8px;
+      text-decoration: none; color: inherit;
+      transition: border-color .12s, box-shadow .12s, transform .12s;
+    }
+    .entry-card:hover {
+      border-color: var(--accent, #4f46e5);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      transform: translateY(-2px);
+    }
+    .entry-card .entry-icon {
+      width: 36px; height: 36px; border-radius: 999px;
+      background: var(--panel-2, #eef1f5);
+      color: var(--ink-9);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', Georgia, serif; font-weight: 600;
+    }
+    .entry-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 18px;
+      margin: 6px 0 0 0;
+      line-height: 1.25;
+    }
+    .entry-card p { margin: 0; font-size: 14px; color: var(--ink-7); }
+    .entry-card .entry-arrow {
+      margin-top: auto;
+      font-size: 13px;
+      color: var(--ink-8);
+    }
+
+    /* Sample-report band */
+    .report-bleed {
+      background: linear-gradient(180deg, #f4f6fb 0%, #eef2f9 100%);
+      padding: 64px 0;
+    }
+    .report-bleed .report-frame {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.10);
+    }
+    .report-bleed .report-frame img { display: block; width: 100%; height: auto; }
+    .report-bleed .report-cta { text-align: center; margin-top: 28px; }
+
+    /* Three audience lanes */
+    .lanes3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+    @media (max-width: 900px) { .lanes3 { grid-template-columns: 1fr; } }
+    .lane {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .lane .lane-kicker {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 13px; color: var(--ink-6); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .lane h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22px; margin: 0; line-height: 1.25;
+    }
+    .lane ul { padding-left: 18px; margin: 4px 0 0 0; color: var(--ink-7); font-size: 15px; line-height: 1.6; }
+    .lane .lane-link { margin-top: 6px; font-size: 14px; color: var(--ink-9); text-decoration: underline; }
+
+    /* What ReliCheck checks: compact list */
+    .checks-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 900px) { .checks-grid { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .checks-grid { grid-template-columns: 1fr; } }
+    .check-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .check-row strong {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 16px; display: block; margin-bottom: 4px;
+    }
+    .check-row span { color: var(--ink-7); font-size: 14px; }
+
+    /* AI section */
+    .ai-band {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 36px;
+      align-items: center;
+    }
+    @media (max-width: 900px) { .ai-band { grid-template-columns: 1fr; } }
+    .ai-band h2 { margin-top: 0; }
+    .ai-band p { color: var(--ink-7); font-size: 17px; line-height: 1.6; }
+    .ai-band ul { padding-left: 18px; color: var(--ink-7); font-size: 15px; line-height: 1.7; }
+    .ai-quote {
+      background: #f7f4ee;
+      border-left: 4px solid #c89e4a;
+      border-radius: 6px;
+      padding: 22px 24px;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 18px;
+      line-height: 1.45;
+      color: var(--ink-9);
+    }
+
+    /* Blog / learning */
+    .blog3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+    }
+    @media (max-width: 900px) { .blog3 { grid-template-columns: 1fr; } }
+    .blog-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex; flex-direction: column; gap: 8px;
+      text-decoration: none; color: inherit;
+    }
+    .blog-card:hover { border-color: var(--ink-8); }
+    .blog-card .blog-kicker { font-size: 12px; color: var(--ink-6); text-transform: uppercase; letter-spacing: 0.04em; }
+    .blog-card h3 { font-family: 'Fraunces', Georgia, serif; font-size: 18px; margin: 0; line-height: 1.3; }
+    .blog-card p { margin: 0; color: var(--ink-7); font-size: 14px; }
+
+    /* Final CTA */
+    .final-strip {
+      background: #0f172a;
+      color: #f6f8fc;
+      padding: 56px 24px;
+      border-radius: 22px;
+      text-align: center;
+    }
+    .final-strip h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 30px;
+      margin: 0 0 10px 0;
+      color: #ffffff;
+    }
+    .final-strip p { color: #cbd5e1; max-width: 640px; margin: 0 auto 22px auto; }
+    .final-strip .hero-actions { justify-content: center; }
+    .final-strip .btn-outline { color: #ffffff; border-color: rgba(255,255,255,0.4); }
+    .final-strip .btn-outline:hover { background: rgba(255,255,255,0.08); }
+
+    /* Draft banner */
+    .draft-banner {
+      background: #ddeaff;
+      border-bottom: 1px solid #4f6fbb;
+      color: #1c2f63;
+      text-align: center;
+      padding: 8px 14px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+<div class="draft-banner">
+  DRAFT 2 preview (credibility-platform positioning). Live homepage is still index.html. Draft 1 is at index-draft.html.
+</div>
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<main>
+
+  <!-- ============================================================
+       SECTION 1: HERO
+       ============================================================ -->
+  <section class="hero">
+    <div class="container-content hero-grid">
+      <div>
+        <span class="eyebrow hero-eyebrow">Survey credibility platform</span>
+        <h1>Know whether your survey results are strong enough to trust.</h1>
+        <p class="lede">ReliCheck checks your survey for reliability, item quality, factor structure, response quality, and open-ended alignment, then gives you a clear Strength Index and a report you can explain to decision-makers.</p>
+        <div class="hero-actions">
+          <a href="import-data.html" class="btn btn-primary btn-lg">Check my survey</a>
+          <a href="samples/course-evaluation.html" class="btn btn-outline btn-lg">View sample report</a>
+        </div>
+        <p class="hero-trustline">
+          Built for researchers, evaluators, educators, and HR teams whose numbers get questioned.
+        </p>
+        <p class="hero-founder-line">
+          Built by Dr. Donald Easton-Brooks, Dean of the College of Education and Human Development, University of Nevada, Reno.
+        </p>
+      </div>
+      <div>
+        <div class="hero-image-frame">
+          <img src="hero-product.jpg" alt="A researcher reviewing a ReliCheck survey strength report on a desktop monitor and laptop" width="1376" height="768" />
+        </div>
+        <p class="hero-strapline">
+          Other tools collect responses. <strong>ReliCheck tells you what they're worth.</strong>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2: FOUR ENTRY TILES
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Where to start</span>
+        <h2>Four ways in. One credibility report at the end.</h2>
+      </div>
+
+      <div class="entry4">
+        <a class="entry-card" href="import-data.html">
+          <span class="entry-icon">1</span>
+          <h3>Upload results</h3>
+          <p>Bring a CSV from Qualtrics, SurveyMonkey, Google Forms, Microsoft Forms, or any survey tool. Score reliability, validity, and equity in minutes.</p>
+          <span class="entry-arrow">Upload a CSV &rarr;</span>
+        </a>
+        <a class="entry-card" href="import-survey.html">
+          <span class="entry-icon">2</span>
+          <h3>Check survey questions</h3>
+          <p>Paste an existing item set or upload a Qualtrics .qsf. ReliCheck reviews wording, construct coverage, length, and reverse-scoring balance.</p>
+          <span class="entry-arrow">Review my items &rarr;</span>
+        </a>
+        <a class="entry-card" href="signup.html">
+          <span class="entry-icon">3</span>
+          <h3>Build a new survey</h3>
+          <p>Start from a validated scale, an AI-suggested item set, or a blank canvas. Every draft gets a pre-publish Readiness check.</p>
+          <span class="entry-arrow">Start a draft &rarr;</span>
+        </a>
+        <a class="entry-card" href="samples/course-evaluation.html">
+          <span class="entry-icon">4</span>
+          <h3>View a sample report</h3>
+          <p>See a finished report end to end before you upload anything. Strength Index, item flags, equity gaps, plain-language recommendations.</p>
+          <span class="entry-arrow">Open the sample &rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 3: SURVEY STRENGTH INDEX PREVIEW
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">The Survey Strength Index</span>
+        <h2>One score. Six weighted domains. A plain-language readout.</h2>
+        <p>The Survey Strength Index is the headline number every report opens with. One score for the room you have to walk into; six weighted domains for the conversation that follows.</p>
+      </div>
+
+      <div class="ssi2-card">
+        <header class="ssi2-header">
+          <div class="ssi2-ring">
+            <svg viewBox="0 0 160 160" width="160" height="160" aria-hidden="true">
+              <circle cx="80" cy="80" r="64" fill="none" stroke="#eef1f5" stroke-width="14"/>
+              <circle cx="80" cy="80" r="64" fill="none" stroke="#1f9d55" stroke-width="14" stroke-linecap="round"
+                      stroke-dasharray="402" stroke-dashoffset="72" transform="rotate(-90 80 80)"/>
+            </svg>
+            <div class="ssi2-ring-num"><span class="n">82</span><span class="of">/ 100</span></div>
+          </div>
+          <div class="ssi2-header-text">
+            <h3 class="ssi2-title">ReliCheck Survey Strength Index</h3>
+            <span class="ssi2-status">Strong</span>
+            <p class="ssi2-readout">This survey is statistically strong and ready for interpretation, with a few items recommended for review.</p>
+          </div>
+        </header>
+
+        <ul class="ssi2-tiles">
+          <li class="ssi2-tile" data-tone="warn">
+            <div class="ssi2-tile-name"><span class="ic">R</span>Reliability Strength</div>
+            <div class="ssi2-tile-num"><strong>16</strong> <span>/ 25</span></div>
+            <div class="ssi2-tile-bar"><span style="width:64%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">F</span>Factor Structure</div>
+            <div class="ssi2-tile-num"><strong>16</strong> <span>/ 20</span></div>
+            <div class="ssi2-tile-bar"><span style="width:80%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">I</span>Item Quality</div>
+            <div class="ssi2-tile-num"><strong>20</strong> <span>/ 20</span></div>
+            <div class="ssi2-tile-bar"><span style="width:100%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">P</span>Response Quality</div>
+            <div class="ssi2-tile-num"><strong>13</strong> <span>/ 15</span></div>
+            <div class="ssi2-tile-bar"><span style="width:87%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">O</span>Open-Ended Alignment</div>
+            <div class="ssi2-tile-num"><strong>9</strong> <span>/ 10</span></div>
+            <div class="ssi2-tile-bar"><span style="width:90%;"></span></div>
+          </li>
+          <li class="ssi2-tile" data-tone="good">
+            <div class="ssi2-tile-name"><span class="ic">A</span>Actionability</div>
+            <div class="ssi2-tile-num"><strong>8</strong> <span>/ 10</span></div>
+            <div class="ssi2-tile-bar"><span style="width:80%;"></span></div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 4: SAMPLE REPORT PREVIEW (FULL BLEED)
+       ============================================================ -->
+  <section class="report-bleed">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">See the deliverable</span>
+        <h2>See what ReliCheck gives you.</h2>
+        <p>A finished report. Strength Index, reliability summary, weak-item flags, open-ended themes, equity gaps, and the "what you can say" language a Dean, accreditor, or funder will accept.</p>
+      </div>
+
+      <div class="report-frame">
+        <!-- PLACEHOLDER. Swap for a real screenshot of the interactive
+             course evaluation when one exists. -->
+        <img src="hero-product.jpg" alt="A ReliCheck sample report showing the Strength Index, item flags, and recommendations on a real course evaluation" width="1376" height="768" />
+      </div>
+
+      <div class="report-cta">
+        <a href="samples/interactive-course-evaluation.html" class="btn btn-primary btn-lg">Open the interactive demo</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 5: THREE AUDIENCE LANES
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Built for</span>
+        <h2>Teams whose numbers get questioned.</h2>
+        <p>Three primary lanes. One credibility report.</p>
+      </div>
+
+      <div class="lanes3">
+        <div class="lane">
+          <span class="lane-kicker">Lane 01</span>
+          <h3>Education and Evaluation</h3>
+          <ul>
+            <li>Course evaluations</li>
+            <li>Student belonging</li>
+            <li>School climate</li>
+            <li>Accreditation evidence</li>
+            <li>Program review</li>
+          </ul>
+          <a class="lane-link" href="education.html">Education and evaluation &rarr;</a>
+        </div>
+
+        <div class="lane">
+          <span class="lane-kicker">Lane 02</span>
+          <h3>HR and Teams</h3>
+          <ul>
+            <li>Engagement surveys</li>
+            <li>Climate surveys</li>
+            <li>Exit surveys</li>
+            <li>360 feedback</li>
+            <li>Manager feedback</li>
+          </ul>
+          <a class="lane-link" href="hr-teams.html">HR and teams &rarr;</a>
+        </div>
+
+        <div class="lane">
+          <span class="lane-kicker">Lane 03</span>
+          <h3>Research and Program Assessment</h3>
+          <ul>
+            <li>Validated scales</li>
+            <li>Program evaluation</li>
+            <li>Grant reporting</li>
+            <li>Pre/post analysis</li>
+            <li>Mixed methods</li>
+          </ul>
+          <a class="lane-link" href="research.html">Research and program assessment &rarr;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 6: WHAT RELICHECK CHECKS
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">What ReliCheck checks</span>
+        <h2>The analyses that decide whether the number holds up.</h2>
+        <p>Every report runs the same battery. Skip the ones that do not apply, defend the ones that do.</p>
+      </div>
+
+      <div class="checks-grid">
+        <div class="check-row">
+          <strong>Reliability</strong>
+          <span>Cronbach's alpha and McDonald's omega per construct, with item-total and alpha-if-deleted flags.</span>
+        </div>
+        <div class="check-row">
+          <strong>Factor structure</strong>
+          <span>EFA and confirmatory CFA on every multi-item construct. Measurement invariance across groups.</span>
+        </div>
+        <div class="check-row">
+          <strong>Item quality</strong>
+          <span>Per-item descriptives, weak-item flags, and AI-suggested rewrites for items that drag the scale down.</span>
+        </div>
+        <div class="check-row">
+          <strong>Response quality</strong>
+          <span>Straight-lining, duplicate vectors, low-effort open-ended answers, and per-channel quality skew.</span>
+        </div>
+        <div class="check-row">
+          <strong>Open-ended alignment</strong>
+          <span>Theme extraction, sentiment, and a check on whether the qualitative answers agree with the numbers.</span>
+        </div>
+        <div class="check-row">
+          <strong>Equity gaps</strong>
+          <span>Per-group means, ANOVA, and pairwise Cohen's d on every detected demographic axis. k-anonymity protects small cells.</span>
+        </div>
+        <div class="check-row">
+          <strong>Key drivers</strong>
+          <span>Standardized regression and Johnson Relative Weights rank what moves your outcome. Action Priority Map names where to fix first.</span>
+        </div>
+        <div class="check-row">
+          <strong>Pre and post</strong>
+          <span>Paired t-test or Wilcoxon, Cohen's d_z, and a Jacobson-Truax Reliable Change Index at 90, 95, and 99 percent confidence.</span>
+        </div>
+        <div class="check-row">
+          <strong>Readiness check</strong>
+          <span>Pre-publish review of the design itself. Items per construct, construct coverage, length sanity, reverse-scoring balance.</span>
+        </div>
+      </div>
+
+      <p style="text-align:center;margin-top:28px;font-size:15px;color:var(--ink-6);">
+        <a href="methodology.html" style="color:var(--ink-8);text-decoration:underline;">Read the full methodology &rarr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 7: AI THAT EXPLAINS, NOT DECIDES
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="ai-band">
+        <div>
+          <span class="kicker">AI that explains, not decides</span>
+          <h2>The statistics stay transparent. AI does the translation.</h2>
+          <p>AI helps explain the results, improve weak items, and draft plain-language reports. The statistics remain visible underneath, every claim is anchored to the underlying number, and a reviewer can always trace a recommendation back to its source.</p>
+          <ul>
+            <li>Plain-language narrators on every analysis card</li>
+            <li>AI-suggested rewrites for weak items and gaps in construct coverage</li>
+            <li>Auto-drafted report paragraphs you can keep, edit, or discard</li>
+            <li>Methodology published so you can audit the math yourself</li>
+          </ul>
+          <p style="margin-top:18px;">
+            <a href="ai-features.html" class="btn btn-outline btn-lg">See how AI is used</a>
+          </p>
+        </div>
+        <div>
+          <div class="ai-quote">
+            "AI helps explain the results, improve weak items, and draft plain-language reports. The statistics remain visible underneath."
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 8: LEARNING CENTER (BLOG)
+       ============================================================ -->
+  <section class="section section-soft">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Learning center</span>
+        <h2>The reliability questions everyone eventually has to answer.</h2>
+        <p>Short pieces on the questions reviewers actually ask. Plain language first, formulas linked.</p>
+      </div>
+
+      <div class="blog3">
+        <a class="blog-card" href="posts/reliability-101-in-five-minutes.html">
+          <span class="blog-kicker">Reliability</span>
+          <h3>Reliability 101 in five minutes</h3>
+          <p>What Cronbach's alpha actually means, when omega is the better number, and how to read either one without a stats degree.</p>
+        </a>
+        <a class="blog-card" href="posts/what-a-reliability-number-tells-you.html">
+          <span class="blog-kicker">Methodology</span>
+          <h3>What a reliability number tells you</h3>
+          <p>0.6 is not the same as 0.9. A practical guide to the ranges, what they imply for interpretation, and how to defend each one.</p>
+        </a>
+        <a class="blog-card" href="posts/reading-your-first-relicheck-report.html">
+          <span class="blog-kicker">Walkthrough</span>
+          <h3>Reading your first ReliCheck report</h3>
+          <p>A guided tour of a real Strength Index, item-level flags, and the plain-language recommendations a Dean would accept.</p>
+        </a>
+      </div>
+
+      <p style="text-align:center;margin-top:28px;font-size:15px;color:var(--ink-6);">
+        <a href="blog.html" style="color:var(--ink-8);text-decoration:underline;">Visit the learning center &rarr;</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 9: FINAL CTA
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="final-strip">
+        <h2>When your numbers get questioned, ReliCheck helps you answer.</h2>
+        <p>Score the next survey before the room does. Start free, upload a result you already have, or open a sample report and see the deliverable first.</p>
+        <div class="hero-actions">
+          <a href="import-data.html" class="btn btn-primary btn-lg">Check my survey</a>
+          <a href="samples/course-evaluation.html" class="btn btn-outline btn-lg">View sample report</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+</body>
+</html>

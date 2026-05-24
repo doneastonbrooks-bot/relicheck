@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Methodology · ReliCheck</title>
+  <meta name="description" content="How ReliCheck computes its statistics: scope, Likert coding, Cronbach's alpha, split-half reliability, KMO, item-total correlations, and missing-data handling." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="preview-banner">Preview build, not yet live. <a href="index.html">Home</a> · <a href="pricing.html">Pricing</a> · <a href="education.html">Education</a> · <a href="reliability-guide.html">Reliability guide</a> · <a href="compare.html">Compare</a> · <a href="app.html">App</a></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Product <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="#"><strong>Build</strong><span>Question types, logic, branding.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Collect</strong><span>Public links, email, QR, embeds.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Analyze</strong><span>Reliability and item flags.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Report</strong><span>PDF, Excel, SPSS, Sheets, Drive.</span></a>
+          <a class="nav-dd-item" href="#"><strong>AI features</strong><span>Question review, themes, summaries.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Why reliability matters</strong><span>The case for evidence-driven surveys.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide"><div class="nav-dd-grid">
+          <a class="nav-dd-item" href="education.html"><strong>Education &amp; Evaluation</strong><span>Course feedback, accreditation, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          <a class="nav-dd-item" href="#"><strong>Mixed-Methods</strong><span>Quant scales and qual themes.</span></a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger">Templates <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="#">Course Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Student Belonging</a>
+          <a class="nav-dd-item compact" href="#">Employee Engagement</a>
+          <a class="nav-dd-item compact" href="#">Program Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Customer Satisfaction</a>
+          <a class="nav-dd-item compact" href="#">Climate Survey</a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" style="color:var(--ink-9);background:var(--bg-soft);">Resources <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="compare.html">Compare</a>
+          <a class="nav-dd-item compact" href="methodology.html">Methodology</a>
+          <a class="nav-dd-item compact" href="reliability-guide.html">Reliability guide</a>
+          <a class="nav-dd-item compact" href="#">Help center</a>
+          <a class="nav-dd-item compact" href="#">Blog</a>
+        </div></div>
+      </div>
+      <a href="pricing.html" class="nav-dd-trigger">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="#signup" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Resources</h5><a href="compare.html">Compare</a><a href="methodology.html">Methodology</a><a href="reliability-guide.html">Reliability guide</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="education.html">Education</a><a href="#">HR &amp; Teams</a><a href="#">Customer Feedback</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="#login" class="btn btn-outline">Sign in</a><a href="#signup" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="#">Resources</a> / Methodology</div>
+    <span class="kicker">Methodology</span>
+    <h1 style="margin-top:var(--s-3);">How ReliCheck computes its statistics</h1>
+    <p class="lede">A reference for the methods behind every reliability number, item flag, and quality warning ReliCheck shows in your dashboard. Designed for researchers, evaluators, and instructors who need to defend the numbers they share.</p>
+    <div class="article-meta">
+      <span>Last updated May 2026</span>
+      <span>·</span>
+      <span>Reading time: 12 min</span>
+      <span>·</span>
+      <span>Audience: research, evaluation, HR</span>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="article-layout">
+      <aside class="article-toc">
+        <h4>On this page</h4>
+        <ul>
+          <li><a href="#scope" class="is-active">Scope and conventions</a></li>
+          <li><a href="#likert">Likert coding and reverse-scoring</a></li>
+          <li><a href="#alpha">Cronbach's alpha</a></li>
+          <li><a href="#split-half">Split-half reliability</a></li>
+          <li><a href="#kmo">KMO sampling adequacy</a></li>
+          <li><a href="#item-total">Item-total correlations</a></li>
+          <li><a href="#missing">Missing-data handling</a></li>
+          <li><a href="#refs">Primary references</a></li>
+        </ul>
+      </aside>
+
+      <article class="prose">
+        <section id="scope">
+          <h2>Scope and conventions</h2>
+          <p>This document describes the statistical methods ReliCheck applies to multi-item scale data collected through its survey platform. The intent is to give a researcher, evaluator, or instructor enough detail to reproduce, defend, or critique any number that appears in a ReliCheck report.</p>
+          <p>Throughout, <em>n</em> refers to the number of complete-case respondents on a given scale, <em>k</em> to the number of items, and item subscripts run 1 through <em>k</em>. Default rounding is two decimals for reliability statistics and three decimals for correlations.</p>
+          <div class="callout">
+            <div class="callout-title">Convention</div>
+            <p style="margin:0;"><strong>Reliability statistics</strong> are computed only when at least three valid items and at least 30 complete-case respondents are available. Below those thresholds, ReliCheck displays the count instead of an estimate, with a sample-size warning.</p>
+          </div>
+        </section>
+
+        <section id="likert">
+          <h2>Likert coding and reverse-scoring</h2>
+          <p>Likert items are stored with their displayed labels and a numeric code. ReliCheck preserves the author's original anchors, applies forward coding by default, and offers per-item reverse-scoring during analysis. Reverse-scored items are flagged in every output so a reader can verify the direction of effect.</p>
+          <p>For a five-point scale coded 1 through 5, a reverse-scored item <code>x</code> becomes <code>6 − x</code>. ReliCheck never silently flips coding. The flip is visible in the item table, the methods appendix of every export, and the audit log.</p>
+        </section>
+
+        <section id="alpha">
+          <h2>Cronbach's alpha</h2>
+          <p>Cronbach's alpha is reported as the standard internal-consistency estimate for unidimensional Likert scales. ReliCheck computes alpha from the item covariance matrix using the standard formula:</p>
+          <blockquote>α = (k / (k − 1)) × (1 − Σ var(item) / var(total))</blockquote>
+          <p>The denominator <em>var(total)</em> is the variance of the row-summed scale score across complete-case respondents. The numerator sums each item's variance independently.</p>
+          <h3>Reporting thresholds</h3>
+          <p>ReliCheck flags scales with α &lt; 0.70 as <strong>weak</strong> and α &lt; 0.60 as <strong>unreliable</strong>. These cutoffs are conventions, not laws, and are explained alongside the number in every report so a reader sees both the value and the interpretation in context.</p>
+          <h3>Confidence intervals</h3>
+          <p>A 95% confidence interval is reported using the Feldt-Woodruff approximation, which assumes complete data and an interval-level scale. When either assumption is violated by the data, ReliCheck adds a method note rather than dropping the interval.</p>
+        </section>
+
+        <section id="split-half">
+          <h2>Split-half reliability</h2>
+          <p>Split-half reliability is reported as a complement to alpha when the scale has at least four items. Items are split by odd/even index and by random partition; ReliCheck reports both, and the larger of the two divergence flags is shown.</p>
+          <p>The Spearman-Brown correction is applied to the half-test correlation to estimate full-test reliability. When the two halves disagree by more than 0.10, ReliCheck surfaces a <strong>halves disagree</strong> warning, which usually points to a multidimensional structure or a single dominant item.</p>
+        </section>
+
+        <section id="kmo">
+          <h2>KMO sampling adequacy</h2>
+          <p>The Kaiser-Meyer-Olkin measure of sampling adequacy is computed at both the overall and per-item level. Overall KMO is reported as a single number; per-item KMO is shown in the item table next to each row.</p>
+          <p>Conventional cutoffs (Kaiser, 1974): KMO &lt; 0.50 unacceptable, 0.50-0.59 miserable, 0.60-0.69 mediocre, 0.70-0.79 middling, 0.80-0.89 meritorious, ≥ 0.90 marvelous. ReliCheck shows the value, the band, and a one-sentence interpretation.</p>
+        </section>
+
+        <section id="item-total">
+          <h2>Item-total correlations</h2>
+          <p>Two flavors are reported per item: the <strong>uncorrected</strong> correlation between the item and the row sum (which includes the item itself), and the <strong>corrected</strong> correlation between the item and the row sum minus the item. The corrected version is the one used for diagnostic flagging.</p>
+          <p>Items with a corrected item-total correlation below 0.20 are flagged as <strong>weak contributors</strong> and shown alongside an "alpha if deleted" projection so the analyst can see what the scale would look like without them.</p>
+        </section>
+
+        <section id="missing">
+          <h2>Missing-data handling</h2>
+          <p>ReliCheck reports unit non-response and item non-response separately. Reliability statistics are computed on complete cases by default, with a configurable pairwise-deletion option for KMO and inter-item correlations only.</p>
+          <p>Imputation is never applied to reliability estimation. When the analyst opts into imputation for downstream reporting, the method (mean, median, multiple imputation) is recorded in the methods appendix and surfaced as a banner on the relevant outputs.</p>
+        </section>
+
+        <section id="refs">
+          <h2>Primary references</h2>
+          <p>The methods above follow conventional psychometric practice as documented in Cronbach (1951), Spearman-Brown (1910), Kaiser (1974), Nunnally and Bernstein (1994), and Feldt &amp; Woodruff (1989). Each output in ReliCheck links to the relevant reference for further reading.</p>
+        </section>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>See the methods in action</h2>
+      <p>Open a sample course evaluation report to see exactly how reliability, item flags, and AI summaries appear together in a real ReliCheck output.</p>
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary btn-lg">View sample report</a>
+        <a href="index.html" class="btn btn-outline btn-lg">Back to home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand" style="color:#fff;"><span class="brand-mark"></span> ReliCheck</a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Overview</a></li><li><a href="#">AI features</a></li><li><a href="#">Templates</a></li><li><a href="#">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="#">Education</a></li><li><a href="#">HR &amp; Teams</a></li><li><a href="#">Customer feedback</a></li><li><a href="#">Research</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="#">Reliability guide</a></li><li><a href="#">Help center</a></li><li><a href="#">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li><li><a href="#">Contact</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 ReliCheck Survey. All rights reserved.</span>
+      <span>Made for teams that need to explain their numbers.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const header = document.getElementById('siteHeader');
+  const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 6);
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => { clearTimeout(timer); if (s) { document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); }); dd.setAttribute('data-open', 'true'); } else { timer = setTimeout(() => dd.removeAttribute('data-open'), 120); } };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+
+  // Active TOC link as the user scrolls
+  const tocLinks = Array.from(document.querySelectorAll('.article-toc a'));
+  const sections = tocLinks.map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+  const setActive = () => {
+    const y = window.scrollY + 140;
+    let active = sections[0];
+    sections.forEach(s => { if (s.offsetTop <= y) active = s; });
+    tocLinks.forEach(a => a.classList.toggle('is-active', a.getAttribute('href') === '#' + (active && active.id)));
+  };
+  document.addEventListener('scroll', setActive, { passive: true });
+  setActive();
+</script>
+</body>
+</html>

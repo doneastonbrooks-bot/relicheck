@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . AI Tools Hub</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: #f6f7fb; color: #1a1f33; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    .sidebar { background: #0f172a; color: #d1d5e0; padding: 20px 0; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 22px 24px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+    .sidebar-brand .logo { width: 28px; height: 28px; border-radius: 6px; background: #e85d3a; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; color: #ffffff; font-size: 16px; }
+    .sidebar-brand .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: #ffffff; }
+    .sidebar-section { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7088; padding: 14px 22px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 22px; color: #d1d5e0; text-decoration: none; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active { background: #1e293b; color: #ffffff; border-left-color: #e85d3a; }
+    .nav-item .icon { width: 18px; flex: 0 0 18px; opacity: 0.85; }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot { margin-top: auto; padding: 16px 22px; border-top: 1px solid #1e293b; font-size: 12px; color: #6b7088; }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+    .topbar { background: #ffffff; border-bottom: 1px solid #e5e8ed; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .crumbs { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #6b7088; }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e5e8ed; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7088; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #e85d3a, #d44e2c); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 13px; }
+
+    .hero {
+      background: linear-gradient(135deg, #1a1f33 0%, #2a3354 60%, #3a2f54 100%);
+      color: #ffffff;
+      padding: 48px 40px 56px;
+      border-bottom: 1px solid #e5e8ed;
+    }
+    .hero .wrap { max-width: 1320px; margin: 0 auto; }
+    .hero .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: rgba(232, 93, 58, 0.20);
+      color: #fbbf85;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+      margin-bottom: 16px;
+    }
+    .hero h1 { font-family: 'Fraunces', serif; font-size: 36px; margin: 0 0 10px 0; letter-spacing: -0.01em; line-height: 1.15; }
+    .hero p { margin: 0; font-size: 16px; color: #c5cbd4; max-width: 640px; }
+
+    /* Filter strip */
+    .filters { padding: 24px 40px 0; max-width: 1320px; margin: 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #ffffff; border: 1px solid #e5e8ed; border-radius: 999px; font-size: 13px; font-weight: 600; color: #1a1f33; cursor: pointer; }
+    .chip.on { background: #1a1f33; color: #ffffff; border-color: #1a1f33; }
+    .chip .ct { font-size: 11px; background: rgba(0,0,0,0.06); padding: 1px 7px; border-radius: 999px; margin-left: 2px; }
+    .chip.on .ct { background: rgba(255,255,255,0.18); }
+
+    /* Sections */
+    .body { padding: 24px 40px 80px; max-width: 1320px; margin: 0 auto; }
+    .section { margin-bottom: 36px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+    .section h2 { font-family: 'Fraunces', serif; font-size: 20px; margin: 0; }
+    .section-head .sub { font-size: 12px; color: #6b7088; }
+
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+
+    .tool {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 12px;
+      padding: 18px;
+      text-decoration: none;
+      color: inherit;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: border-color 0.12s, transform 0.12s;
+    }
+    .tool:hover {
+      border-color: #6b3fb5;
+      transform: translateY(-1px);
+    }
+    .tool .ic-row { display: flex; align-items: center; gap: 12px; }
+    .tool .ic {
+      width: 38px; height: 38px;
+      border-radius: 9px;
+      background: #f3eaff;
+      color: #6b3fb5;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      flex: 0 0 38px;
+    }
+    .tool h3 { font-family: 'Fraunces', serif; font-size: 15px; margin: 0; line-height: 1.25; }
+    .tool .desc { font-size: 13px; color: #6b7088; line-height: 1.45; flex: 1; }
+    .tool .meta { font-size: 11px; color: #6b7088; padding-top: 10px; border-top: 1px solid #f0f2f6; display: flex; gap: 10px; justify-content: space-between; }
+    .tool .meta .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: #f3eaff;
+      color: #6b3fb5;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .tool .meta .badge.new { background: #fde2d7; color: #c2410c; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><span class="logo">R</span><span class="name">ReliCheck</span></div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item active" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+    <div class="sidebar-foot"><strong>Professional plan</strong>Renewed May 15</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumbs"><a href="home.html">Home</a><span class="sep">&rsaquo;</span><strong>AI Tools</strong></div>
+      <div class="topbar-right">
+        <button class="topbar-btn">&#8981;</button>
+        <button class="topbar-btn">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="wrap">
+        <span class="tag">19 AI TOOLS . 7 / 50 USED THIS MONTH</span>
+        <h1>AI built into every step.</h1>
+        <p>Generate items, group constructs, narrate dashboards, draft reports. Use any tool standalone, or let them surface contextually inside the builder and analytics.</p>
+      </div>
+    </div>
+
+    <div class="filters">
+      <span class="chip on">All <span class="ct">19</span></span>
+      <span class="chip">Design <span class="ct">5</span></span>
+      <span class="chip">Collection <span class="ct">2</span></span>
+      <span class="chip">Analysis <span class="ct">8</span></span>
+      <span class="chip">Reporting <span class="ct">4</span></span>
+    </div>
+
+    <div class="body">
+
+      <!-- Design -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Design</h2>
+          <span class="sub">Build better surveys before you send</span>
+        </div>
+        <div class="grid">
+          <a class="tool" href="builder.html">
+            <div class="ic-row"><div class="ic">&#10022;</div><h3>Generate items</h3></div>
+            <div class="desc">Describe a construct, get item drafts ready to edit and add to the builder.</div>
+            <div class="meta"><span class="badge">DESIGN</span><span>used 4x this month</span></div>
+          </a>
+          <a class="tool" href="builder.html">
+            <div class="ic-row"><div class="ic">&#9776;</div><h3>Suggest constructs</h3></div>
+            <div class="desc">Group existing items into constructs automatically. Edit and accept.</div>
+            <div class="meta"><span class="badge">DESIGN</span><span>used 2x this month</span></div>
+          </a>
+          <a class="tool" href="builder.html">
+            <div class="ic-row"><div class="ic">&#10003;</div><h3>Check purpose alignment</h3></div>
+            <div class="desc">Tag every item as core, supporting, tangential, or off-topic against your stated purpose.</div>
+            <div class="meta"><span class="badge">DESIGN</span><span>used 1x this month</span></div>
+          </a>
+          <a class="tool" href="templates.html">
+            <div class="ic-row"><div class="ic">&#9638;</div><h3>Recommend a scale</h3></div>
+            <div class="desc">Find a validated scale that fits your purpose, with citations.</div>
+            <div class="meta"><span class="badge">DESIGN</span><span>used 0x this month</span></div>
+          </a>
+          <a class="tool" href="builder.html">
+            <div class="ic-row"><div class="ic">&#9999;</div><h3>Improve item wording</h3></div>
+            <div class="desc">Rewrite any item to be clearer, less double-barreled, and more neutral.</div>
+            <div class="meta"><span class="badge">DESIGN</span><span>used 0x this month</span></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Collection -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Collection</h2>
+          <span class="sub">Get cleaner responses while data is coming in</span>
+        </div>
+        <div class="grid">
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">&#9737;</div><h3>Response quality checker</h3></div>
+            <div class="desc">Catches straight-lining, duplicate vectors, and short open-ended responses as they come in.</div>
+            <div class="meta"><span class="badge">COLLECTION</span><span>auto-runs</span></div>
+          </a>
+          <a class="tool" href="#">
+            <div class="ic-row"><div class="ic">&#9851;</div><h3>Invitation draft writer</h3></div>
+            <div class="desc">Drafts invitation and reminder copy in your brand voice.</div>
+            <div class="meta"><span class="badge new">NEW</span><span>just added</span></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Analysis -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Analysis</h2>
+          <span class="sub">Plain-language interpretation of every dashboard</span>
+        </div>
+        <div class="grid">
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">&#9711;</div><h3>Can I use these results?</h3></div>
+            <div class="desc">Four-tier verdict on whether your data is ready to act on, with reasons.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>used 3x this month</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">R</div><h3>Reliability narrator</h3></div>
+            <div class="desc">Reads your alpha/omega gap and explains what it means for your scale.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>auto-runs</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">D</div><h3>Description narrator</h3></div>
+            <div class="desc">Summarizes distribution, outliers, and central tendency in one paragraph.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>auto-runs</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">V</div><h3>Validity narrator</h3></div>
+            <div class="desc">Interprets EFA/CFA factor structure for non-statisticians.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>auto-runs</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">O</div><h3>Open-ended narrator</h3></div>
+            <div class="desc">Theming, sentiment, and quote pulls from open-ended answers.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>used 2x this month</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">C</div><h3>Compare narrator</h3></div>
+            <div class="desc">Interprets group differences, effect sizes, and what they mean in plain terms.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>used 1x this month</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">PP</div><h3>Pre/Post narrator</h3></div>
+            <div class="desc">Reads paired-design results, RCI, and clinically meaningful change.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>auto-runs</span></div>
+          </a>
+          <a class="tool" href="analysis-guided.html">
+            <div class="ic-row"><div class="ic">K</div><h3>Key driver narrator</h3></div>
+            <div class="desc">Names the strongest drivers of an outcome and what to focus on.</div>
+            <div class="meta"><span class="badge">ANALYSIS</span><span>auto-runs</span></div>
+          </a>
+        </div>
+      </section>
+
+      <!-- Reporting -->
+      <section class="section">
+        <div class="section-head">
+          <h2>Reporting</h2>
+          <span class="sub">Turn findings into something shareable</span>
+        </div>
+        <div class="grid">
+          <a class="tool" href="report-detail.html">
+            <div class="ic-row"><div class="ic">&#9636;</div><h3>Draft report paragraph</h3></div>
+            <div class="desc">Generate a methods or findings paragraph from any analytics tab.</div>
+            <div class="meta"><span class="badge">REPORTING</span><span>used 3x this month</span></div>
+          </a>
+          <a class="tool" href="report-detail.html">
+            <div class="ic-row"><div class="ic">&#9974;</div><h3>Executive summary writer</h3></div>
+            <div class="desc">One-page summary tuned for leadership audiences.</div>
+            <div class="meta"><span class="badge">REPORTING</span><span>used 1x this month</span></div>
+          </a>
+          <a class="tool" href="#">
+            <div class="ic-row"><div class="ic">&#9776;</div><h3>Subject report builder (360s)</h3></div>
+            <div class="desc">Generates one tailored report per leader from multi-rater feedback.</div>
+            <div class="meta"><span class="badge new">NEW</span><span>just added</span></div>
+          </a>
+          <a class="tool" href="#">
+            <div class="ic-row"><div class="ic">&#9851;</div><h3>Audience translator</h3></div>
+            <div class="desc">Same findings, three voices: executive, methods, frontline.</div>
+            <div class="meta"><span class="badge">REPORTING</span><span>used 0x this month</span></div>
+          </a>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

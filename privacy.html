@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy policy · ReliCheck</title>
+  <meta name="description" content="ReliCheck privacy policy. What we collect, what we don't, retention, anonymity, and your rights." />
+  <link rel="canonical" href="https://relichecksurvey.com/privacy.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Privacy policy · ReliCheck" />
+  <meta property="og:description" content="ReliCheck privacy policy. What we collect, what we don't, retention, anonymity, and your rights." />
+  <meta property="og:url" content="https://relichecksurvey.com/privacy.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Privacy policy · ReliCheck" />
+  <meta name="twitter:description" content="ReliCheck privacy policy. What we collect, what we don't, retention, anonymity, and your rights." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / Privacy</div>
+    <span class="kicker">Legal</span>
+    <h1 style="margin-top:var(--s-3);">Privacy policy</h1>
+    <p class="lede">Last updated May 2026. This policy explains what data ReliCheck collects, why, and how we handle it.</p>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="prose">
+      <h2>Data we collect</h2>
+      <p>Account data: name, email, organization, and authentication metadata. Survey data: surveys you build, responses you collect, and any uploaded datasets. Usage data: aggregate platform metrics for product improvement.</p>
+      <h2>Data we do not collect</h2>
+      <p>We do not sell user data. We do not use your survey content or responses to train any AI model, ours or our providers'. Theme extraction and report drafting are performed via API calls that opt out of training data on the model provider side.</p>
+      <h2>How we use data</h2>
+      <p>Account data is used to operate the service and communicate about it. Survey data is used only as required to deliver the features you've enabled. Usage data drives product improvement and is aggregated.</p>
+      <h2>Sharing</h2>
+      <p>We use a small set of subprocessors for hosting, email delivery, payments, and AI features. Each subprocessor is bound by a data processing agreement and is listed in the security overview available on request.</p>
+      <h2>Retention</h2>
+      <p>Account and survey data are retained while your account is active. After cancellation, data is exportable for 30 days, then deleted within 90 days unless legal requirements (such as billing records) require longer retention.</p>
+      <h2>Anonymity in surveys</h2>
+      <p>ReliCheck supports anonymous surveys, k-anonymity rollups, and audit trails that record who saw what without revealing respondents' identities. Anonymity settings are configured per survey.</p>
+      <h2>Your rights</h2>
+      <p>You can export, correct, or delete your data at any time from Account settings. For requests under GDPR, CCPA, or other regional privacy laws, contact <a href="mailto:privacy@relichecksurvey.com">privacy@relichecksurvey.com</a>.</p>
+      <h2>Security</h2>
+      <p>We use TLS 1.2+ in transit, AES-256 at rest, hashed credentials and tokens, and audit logging on sensitive actions. Vulnerability reports go to <a href="mailto:security@relichecksurvey.com">security@relichecksurvey.com</a>.</p>
+      <h2>Changes</h2>
+      <p>Material changes to this policy are announced in-app and by email at least 14 days before they take effect.</p>
+    </div>
+  </div>
+</section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

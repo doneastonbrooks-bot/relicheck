@@ -1,0 +1,961 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Take survey . ReliCheck</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #fafbfd;
+      --panel:     #ffffff;
+      --panel-2:   #fafbfd;
+      --border:    #e5e8ed;
+      --border-strong: #c5cbd4;
+      --text:      #1a1f33;
+      --text-soft: #4a5168;
+      --text-mute: #6b7088;
+      --primary:   #e85d3a;
+      --primary-2: #d44e2c;
+      --primary-soft: #fde2d7;
+      --good:      #166534;
+      --warn:      #92400e;
+      --bad:       #991b1b;
+      --info:      #3a4dc8;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100vh; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Progress bar pinned to top */
+    .progress-bar {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: 4px;
+      background: #f0f2f6;
+      z-index: 50;
+    }
+    .progress-bar .fill {
+      height: 100%;
+      width: 0%;
+      background: var(--primary);
+      transition: width 0.3s ease;
+    }
+
+    /* Top header */
+    .top-head {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      position: sticky; top: 4px; z-index: 10;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand .mark {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: var(--primary);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif; font-weight: 700;
+      color: #ffffff; font-size: 16px;
+    }
+    .brand .name {
+      font-family: 'Fraunces', serif; font-weight: 600; font-size: 16px;
+      color: var(--text);
+    }
+    .top-meta { font-size: 13px; color: var(--text-mute); }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
+    .save-btn {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      font-family: inherit;
+    }
+    .save-btn:hover { background: var(--bg); }
+    .save-state {
+      font-size: 13px; color: var(--text-mute);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .save-state .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+    .save-state.saving .dot { background: var(--warn); }
+    .save-state.error .dot { background: var(--bad); }
+
+    /* Title strip */
+    .title-strip {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 22px 24px 18px;
+    }
+    .title-wrap { max-width: 720px; margin: 0 auto; }
+    .title-strip h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.01em;
+    }
+    .title-strip p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-mute);
+      line-height: 1.5;
+    }
+    .progress-text {
+      font-size: 13px;
+      color: var(--text-mute);
+      margin-top: 10px;
+      display: flex; gap: 8px; align-items: center;
+    }
+    .progress-text strong {
+      color: var(--text); font-family: 'Fraunces', serif;
+      font-weight: 700; font-size: 14px;
+    }
+
+    /* Form area */
+    .form {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 28px 24px 80px;
+    }
+
+    /* Question card */
+    .q {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 24px 24px 18px;
+      margin-bottom: 14px;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .q.hidden { display: none; }
+    .q.invalid { border-color: var(--bad); }
+    .q-num {
+      font-family: 'Fraunces', serif;
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-mute);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .q-num .req { color: var(--primary); margin-left: 6px; }
+    .q h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      margin: 0 0 16px 0;
+      line-height: 1.4;
+      color: var(--text);
+    }
+    .q-error {
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--bad);
+      display: none;
+    }
+    .q.invalid .q-error { display: block; }
+
+    /* Likert grid */
+    .likert {
+      display: grid;
+      gap: 8px;
+      padding-bottom: 4px;
+    }
+    .likert.k-2 { grid-template-columns: repeat(2, 1fr); }
+    .likert.k-3 { grid-template-columns: repeat(3, 1fr); }
+    .likert.k-4 { grid-template-columns: repeat(4, 1fr); }
+    .likert.k-5 { grid-template-columns: repeat(5, 1fr); }
+    .likert.k-6 { grid-template-columns: repeat(6, 1fr); }
+    .likert.k-7 { grid-template-columns: repeat(7, 1fr); }
+    .likert.k-8, .likert.k-9, .likert.k-10, .likert.k-11 {
+      grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    }
+    @media (max-width: 600px) {
+      .likert.k-5, .likert.k-6, .likert.k-7 { grid-template-columns: repeat(3, 1fr); }
+    }
+    .lk-option {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.12s;
+      user-select: none;
+    }
+    .lk-option:hover {
+      border-color: var(--primary);
+      background: #fffaf7;
+      transform: translateY(-1px);
+    }
+    .lk-option.on {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .lk-option .v {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text);
+      margin-bottom: 4px;
+      line-height: 1;
+    }
+    .lk-option.on .v { color: var(--primary-2); }
+    .lk-option .lab {
+      font-size: 11px;
+      color: var(--text-mute);
+      line-height: 1.3;
+      font-weight: 500;
+      min-height: 26px;
+    }
+    .lk-option.on .lab { color: var(--primary-2); }
+    .lk-anchors {
+      display: flex; justify-content: space-between;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--text-mute);
+    }
+
+    /* Multiple choice + multi */
+    .mc {
+      display: flex; flex-direction: column;
+      gap: 8px;
+      padding-bottom: 4px;
+    }
+    .mc-option {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s;
+      user-select: none;
+    }
+    .mc-option:hover { border-color: var(--primary); background: #fffaf7; }
+    .mc-option.on { border-color: var(--primary); background: var(--primary-soft); }
+    .mc-option .rad {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border-strong);
+      border-radius: 50%;
+      flex: 0 0 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .mc-option.on .rad { border-color: var(--primary); }
+    .mc-option.on .rad::after {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+    .mc-option.checkbox .rad { border-radius: 4px; }
+    .mc-option.checkbox.on .rad::after {
+      border-radius: 1px;
+      content: "X";
+      background: transparent;
+      color: var(--primary);
+      width: auto; height: auto;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .mc-option .lab { font-size: 14px; color: var(--text); }
+
+    /* Open-ended */
+    .open-q textarea {
+      width: 100%;
+      min-height: 110px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--panel-2);
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--text);
+      resize: vertical;
+    }
+    .open-q textarea:focus { outline: none; border-color: var(--primary); background: var(--panel); }
+    .open-q .help {
+      font-size: 12px;
+      color: var(--text-mute);
+      margin-top: 6px;
+      display: flex; justify-content: space-between;
+    }
+
+    /* Nav */
+    .nav-row {
+      display: flex; justify-content: flex-end; align-items: center;
+      margin-top: 28px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: var(--text);
+      color: #ffffff;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: inherit;
+    }
+    .btn:hover { background: var(--primary); }
+    .btn.primary { background: var(--primary); }
+    .btn.primary:hover { background: var(--primary-2); }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* Trust footer */
+    .trust {
+      max-width: 720px;
+      margin: 22px auto 40px;
+      padding: 18px 24px;
+      background: var(--panel);
+      border: 1px dashed var(--border-strong);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--text-mute);
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+    .trust .ic {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: #ecfdf3;
+      color: var(--good);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 16px;
+    }
+    .trust strong { color: var(--text); font-weight: 600; }
+
+    /* Phase 147: Powered-by footer shown to every respondent on every survey. */
+    .powered-by {
+      max-width: 720px;
+      margin: 28px auto 56px;
+      text-align: center;
+      color: var(--text-mute);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    .powered-by .pb-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .powered-by .pb-row img {
+      height: 18px; width: auto; vertical-align: middle;
+    }
+    .powered-by .pb-cta {
+      display: block;
+      margin-top: 6px;
+      color: var(--text-mute);
+    }
+    .powered-by .pb-cta a {
+      color: var(--text-mute);
+      text-decoration: underline;
+    }
+    .powered-by .pb-cta a:hover { color: var(--primary); }
+
+    /* Loading / error states */
+    .center-state {
+      max-width: 560px;
+      margin: 80px auto 0;
+      padding: 36px;
+      text-align: center;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+    .center-state .icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 22px;
+      margin-bottom: 16px;
+    }
+    .center-state.error .icon { background: #fee2e2; color: var(--bad); }
+    .center-state.ok .icon { background: #ecfdf3; color: var(--good); }
+    .center-state h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      margin: 0 0 8px 0;
+      letter-spacing: -0.01em;
+    }
+    .center-state p { margin: 0 0 14px 0; color: var(--text-mute); line-height: 1.55; font-size: 14px; }
+    .spinner {
+      width: 22px; height: 22px;
+      border: 2.5px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Section divider */
+    .section-divider {
+      max-width: 720px;
+      margin: 28px auto 8px;
+      padding: 0 24px;
+    }
+    .section-divider .tag {
+      display: inline-block;
+      padding: 4px 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+    .section-divider h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
+    }
+    .section-divider p { margin: 0; font-size: 14px; color: var(--text-mute); }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--text); color: #ffffff;
+      padding: 10px 18px; border-radius: 8px;
+      font-size: 14px; font-weight: 500;
+      box-shadow: 0 8px 24px rgba(15,23,42,0.20);
+      opacity: 0; transition: opacity 0.18s ease, transform 0.18s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); pointer-events: auto; }
+  </style>
+</head>
+<body>
+
+<div class="progress-bar"><div class="fill" id="progressFill"></div></div>
+
+<header class="top-head" id="topHead" style="display:none;">
+  <div class="brand">
+    <span class="mark">R</span>
+    <span class="name">ReliCheck</span>
+  </div>
+  <div class="top-meta" id="topMeta"></div>
+  <div class="top-actions" id="topActions"></div>
+</header>
+
+<div id="titleStrip" class="title-strip" style="display:none;">
+  <div class="title-wrap">
+    <h1 id="surveyTitle"></h1>
+    <p id="surveyDesc"></p>
+    <div class="progress-text" id="progressText"></div>
+  </div>
+</div>
+
+<main id="formHost">
+  <div class="center-state">
+    <div class="spinner"></div>
+    <h2>Loading survey...</h2>
+    <p>One moment while we fetch the questions.</p>
+  </div>
+</main>
+
+<!-- Phase 147: Powered-by footer (SurveyMonkey-style attribution shown on every survey). -->
+<div class="powered-by" aria-label="Powered by ReliCheck">
+  <div class="pb-row">
+    <span>Powered by</span>
+    <a href="index.html" style="display:inline-flex;align-items:center;color:inherit;text-decoration:none;">
+      <img src="logo-brand.svg" alt="ReliCheck" />
+    </a>
+  </div>
+  <div class="pb-cta">
+    See how easy it is to <a href="index.html">create a survey</a>.
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   take-2026.html (Phase 99)
+   Respondent-facing survey runner. No auth.
+   Calls /api/public/* endpoints. Mirrors classic take.html behavior.
+   ============================================================ */
+
+/* ---- Tiny helpers ---- */
+function $(sel) { return document.querySelector(sel); }
+function $all(sel) { return Array.from(document.querySelectorAll(sel)); }
+function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function showToast(msg) {
+  const t = $('#toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+/* ---- URL params ---- */
+function getSlug() {
+  const params = new URLSearchParams(location.search);
+  const fromQuery = params.get('slug');
+  if (fromQuery) return fromQuery;
+  // /s/<slug> rewritten path support.
+  const m = location.pathname.match(/\/s\/([A-Za-z0-9_-]{4,32})/);
+  if (m) return m[1];
+  return '';
+}
+function getInv() {
+  const v = new URLSearchParams(location.search).get('inv') || '';
+  return /^[a-f0-9]{32}$/i.test(v) ? v : '';
+}
+function getChannel() {
+  const v = new URLSearchParams(location.search).get('ch') || '';
+  return /^[a-z0-9_-]{1,32}$/.test(v) ? v : '';
+}
+
+/* ---- State ---- */
+const STATE = {
+  slug:    getSlug(),
+  inv:     getInv(),
+  channel: getChannel(),
+  survey:  null,
+  answers: {},
+  submitting: false,
+  saveTimer: null,
+  saveState: 'idle',
+};
+
+/* ---- API helpers ---- */
+async function apiGet(url) {
+  const res = await fetch(url, { credentials: 'omit' });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || data.error || res.statusText);
+  return data;
+}
+async function apiPost(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'omit',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || data.error || res.statusText);
+  return data;
+}
+
+/* ---- Skip-logic evaluator ---- */
+function evalShowIf(question) {
+  if (!question || !question.showIf) return true;
+  const rule = question.showIf;
+  const parent = STATE.answers[rule.questionId];
+  if (parent === undefined || parent === null || parent === '') return false;
+  const cmp = (typeof rule.value === 'number') ? Number(parent) : parent;
+  if (rule.op === 'not_equals') return cmp !== rule.value;
+  return cmp === rule.value; // default equals
+}
+
+/* ---- Required + answered detection ---- */
+function isAnswered(question) {
+  const v = STATE.answers[question.id];
+  if (v === undefined || v === null) return false;
+  if (typeof v === 'string') return v.trim() !== '';
+  if (Array.isArray(v))      return v.length > 0;
+  return Number.isFinite(v);
+}
+function visibleQuestions() {
+  if (!STATE.survey) return [];
+  return (STATE.survey.questions || []).filter(evalShowIf);
+}
+function answeredCount() {
+  return visibleQuestions().filter(isAnswered).length;
+}
+
+/* ---- Progress UI ---- */
+function updateProgress() {
+  const v = visibleQuestions();
+  const a = v.filter(isAnswered).length;
+  const total = v.length;
+  const pct = total > 0 ? Math.round((a / total) * 100) : 0;
+  $('#progressFill').style.width = pct + '%';
+  const txt = $('#progressText');
+  if (txt) {
+    txt.innerHTML =
+      '<strong>' + a + '</strong> of <strong>' + total + '</strong> questions answered' +
+      (a > 0 ? ' . ' + pct + '%' : '');
+  }
+}
+
+/* ---- Section divider helper ---- */
+function renderSectionDivider(idx, label, sub) {
+  return '<div class="section-divider"><span class="tag">SECTION ' + idx + '</span>' +
+    '<h2>' + escapeHtml(label) + '</h2>' +
+    (sub ? '<p>' + escapeHtml(sub) + '</p>' : '') +
+  '</div>';
+}
+
+/* ---- Question type renderers ---- */
+function renderLikert(q, idx) {
+  const settings = (STATE.survey && STATE.survey.settings) || {};
+  const points = q.likertPoints || settings.likertPoints || 5;
+  const low    = q.likertLow    || settings.likertLow    || 'Strongly disagree';
+  const high   = q.likertHigh   || settings.likertHigh   || 'Strongly agree';
+  const current = STATE.answers[q.id];
+
+  let html = '<div class="likert k-' + points + '" data-qid="' + escapeHtml(q.id) + '">';
+  for (let i = 1; i <= points; i++) {
+    const label = (i === 1) ? low : (i === points) ? high : '';
+    html +=
+      '<div class="lk-option' + (current === i ? ' on' : '') + '" data-val="' + i + '">' +
+        '<div class="v">' + i + '</div>' +
+        '<div class="lab">' + escapeHtml(label) + '</div>' +
+      '</div>';
+  }
+  html += '</div>';
+  if (points >= 6) {
+    html += '<div class="lk-anchors"><span>' + escapeHtml(low) + '</span><span>' + escapeHtml(high) + '</span></div>';
+  }
+  return html;
+}
+function renderSingle(q) {
+  const opts = Array.isArray(q.options) ? q.options : [];
+  const current = STATE.answers[q.id];
+  return '<div class="mc" data-qid="' + escapeHtml(q.id) + '">' +
+    opts.map((opt, i) =>
+      '<div class="mc-option' + (current === i ? ' on' : '') + '" data-val="' + i + '">' +
+        '<span class="rad"></span>' +
+        '<span class="lab">' + escapeHtml(typeof opt === 'string' ? opt : (opt.label || ('Option ' + (i + 1)))) + '</span>' +
+      '</div>'
+    ).join('') +
+  '</div>';
+}
+function renderMulti(q) {
+  const opts = Array.isArray(q.options) ? q.options : [];
+  const current = Array.isArray(STATE.answers[q.id]) ? STATE.answers[q.id] : [];
+  return '<div class="mc" data-qid="' + escapeHtml(q.id) + '">' +
+    opts.map((opt, i) =>
+      '<div class="mc-option checkbox' + (current.indexOf(i) !== -1 ? ' on' : '') + '" data-val="' + i + '">' +
+        '<span class="rad"></span>' +
+        '<span class="lab">' + escapeHtml(typeof opt === 'string' ? opt : (opt.label || ('Option ' + (i + 1)))) + '</span>' +
+      '</div>'
+    ).join('') +
+  '</div>';
+}
+function renderOpen(q) {
+  const v = STATE.answers[q.id] || '';
+  return '<div class="open-q">' +
+    '<textarea data-qid="' + escapeHtml(q.id) + '" placeholder="Type your answer here. Skip if you would rather not say.">' + escapeHtml(v) + '</textarea>' +
+    '<div class="help">' +
+      '<span>' + (q.required ? 'Required' : 'Optional') + '</span>' +
+      '<span><strong style="color:var(--text);" data-words="' + escapeHtml(q.id) + '">' + (v ? v.trim().split(/\s+/).filter(Boolean).length : 0) + '</strong> words</span>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderQuestion(q, displayIdx) {
+  let inner = '';
+  if (q.type === 'likert')  inner = renderLikert(q, displayIdx);
+  else if (q.type === 'single') inner = renderSingle(q);
+  else if (q.type === 'multi')  inner = renderMulti(q);
+  else if (q.type === 'open')   inner = renderOpen(q);
+  else return '';
+  const hidden = !evalShowIf(q);
+  return '<article class="q' + (hidden ? ' hidden' : '') + '" data-q-id="' + escapeHtml(q.id) + '">' +
+    '<div class="q-num">Question ' + displayIdx + (q.required ? '<span class="req">required</span>' : '') + '</div>' +
+    '<h3>' + escapeHtml(q.prompt || '(no prompt)') + '</h3>' +
+    inner +
+    '<div class="q-error">This question is required.</div>' +
+  '</article>';
+}
+
+/* ---- Submission ---- */
+function visibleRequiredMissing() {
+  return visibleQuestions().filter(q => q.required && !isAnswered(q));
+}
+function setQuestionInvalid(qid, isInvalid) {
+  const el = document.querySelector('[data-q-id="' + qid + '"]');
+  if (el) el.classList.toggle('invalid', !!isInvalid);
+}
+
+async function submitForm() {
+  if (STATE.submitting) return;
+  const missing = visibleRequiredMissing();
+  document.querySelectorAll('.q.invalid').forEach(el => el.classList.remove('invalid'));
+  if (missing.length > 0) {
+    missing.forEach(q => setQuestionInvalid(q.id, true));
+    showToast(missing.length + ' required question' + (missing.length === 1 ? '' : 's') + ' to answer');
+    const first = document.querySelector('.q.invalid');
+    if (first && first.scrollIntoView) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+  STATE.submitting = true;
+  const submitBtn = $('#btnSubmit');
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Submitting...'; }
+
+  // Strip hidden answers from the payload.
+  const visibleIds = new Set(visibleQuestions().map(q => q.id));
+  const answers = {};
+  Object.keys(STATE.answers).forEach(qid => {
+    if (visibleIds.has(qid)) answers[qid] = STATE.answers[qid];
+  });
+
+  const payload = { slug: STATE.slug, answers: answers };
+  if (STATE.inv)     payload.inv = STATE.inv;
+  if (STATE.channel) payload.ch  = STATE.channel;
+  if (STATE.survey && STATE.survey.assigned_arm && STATE.survey.assigned_arm.id) {
+    payload.arm_id = STATE.survey.assigned_arm.id;
+  }
+
+  try {
+    await apiPost('/api/public/submit.php', payload);
+    renderThanks();
+  } catch (e) {
+    STATE.submitting = false;
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit answers'; }
+    showToast('Could not submit: ' + (e.message || 'try again'));
+  }
+}
+
+function renderThanks() {
+  $('#titleStrip').style.display = 'none';
+  $('#topActions').innerHTML = '';
+  $('#progressFill').style.width = '100%';
+  const thank = (STATE.survey && STATE.survey.settings && STATE.survey.settings.thankYou) ||
+    'Your answers to "' + (STATE.survey.title || 'this survey') + '" have been recorded.';
+  $('#formHost').innerHTML =
+    '<div class="center-state ok">' +
+      '<div class="icon">&#10003;</div>' +
+      '<h2>Thank you</h2>' +
+      '<p>' + escapeHtml(thank) + '</p>' +
+    '</div>';
+}
+
+/* ---- Autosave (debounced) ---- */
+function scheduleAutosave() {
+  if (!STATE.inv) return; // anonymous respondents don't autosave to server
+  if (STATE.saveTimer) clearTimeout(STATE.saveTimer);
+  STATE.saveTimer = setTimeout(doAutosave, 900);
+}
+async function doAutosave() {
+  if (!STATE.inv) return;
+  setSaveState('saving', 'Saving...');
+  try {
+    const body = { slug: STATE.slug, inv: STATE.inv, answers: STATE.answers };
+    if (STATE.channel) body.ch = STATE.channel;
+    const r = await apiPost('/api/public/save_partial.php', body);
+    if (r && r.ok === false) throw new Error(r.reason || 'save failed');
+    setSaveState('saved', 'Saved');
+  } catch (e) {
+    setSaveState('error', 'Save failed');
+  }
+}
+function setSaveState(kind, text) {
+  STATE.saveState = kind;
+  const el = $('#saveState');
+  if (!el) return;
+  el.className = 'save-state' + (kind === 'saving' ? ' saving' : kind === 'error' ? ' error' : '');
+  el.innerHTML = '<span class="dot"></span>' + escapeHtml(text);
+}
+
+/* ---- Answer change wiring ---- */
+function setAnswer(qid, value) {
+  if (value === null || value === undefined || (Array.isArray(value) && value.length === 0)) {
+    delete STATE.answers[qid];
+  } else {
+    STATE.answers[qid] = value;
+  }
+  // Clear any "invalid" highlight on the just-answered question.
+  setQuestionInvalid(qid, false);
+  // Re-evaluate skip logic for everything (cheap).
+  $all('.q').forEach(el => {
+    const id = el.getAttribute('data-q-id');
+    const q = (STATE.survey.questions || []).find(x => x.id === id);
+    if (!q) return;
+    el.classList.toggle('hidden', !evalShowIf(q));
+  });
+  updateProgress();
+  scheduleAutosave();
+}
+
+function wireForm() {
+  // Likert + single tiles use click delegation.
+  document.addEventListener('click', (e) => {
+    const lk = e.target.closest('.lk-option');
+    if (lk) {
+      const wrap = lk.closest('.likert');
+      const qid = wrap.getAttribute('data-qid');
+      const val = parseInt(lk.getAttribute('data-val'), 10);
+      wrap.querySelectorAll('.lk-option').forEach(o => o.classList.remove('on'));
+      lk.classList.add('on');
+      setAnswer(qid, val);
+      return;
+    }
+    const mc = e.target.closest('.mc-option');
+    if (mc) {
+      const wrap = mc.closest('.mc');
+      const qid = wrap.getAttribute('data-qid');
+      const val = parseInt(mc.getAttribute('data-val'), 10);
+      const isCheckbox = mc.classList.contains('checkbox');
+      if (isCheckbox) {
+        const list = Array.isArray(STATE.answers[qid]) ? STATE.answers[qid].slice() : [];
+        const at = list.indexOf(val);
+        if (at >= 0) { list.splice(at, 1); mc.classList.remove('on'); }
+        else         { list.push(val);    mc.classList.add('on'); }
+        list.sort((a, b) => a - b);
+        setAnswer(qid, list);
+      } else {
+        wrap.querySelectorAll('.mc-option').forEach(o => o.classList.remove('on'));
+        mc.classList.add('on');
+        setAnswer(qid, val);
+      }
+      return;
+    }
+  });
+  // Open-ended textarea uses input event.
+  document.addEventListener('input', (e) => {
+    const ta = e.target.closest('textarea[data-qid]');
+    if (!ta) return;
+    const qid = ta.getAttribute('data-qid');
+    const v = ta.value;
+    setAnswer(qid, v);
+    // Update word count display.
+    const ws = document.querySelector('[data-words="' + qid + '"]');
+    if (ws) ws.textContent = v.trim() ? v.trim().split(/\s+/).filter(Boolean).length : 0;
+  });
+}
+
+/* ---- Initial render ---- */
+function renderSurvey() {
+  const s = STATE.survey;
+  if (!s) return;
+
+  // Title strip.
+  $('#surveyTitle').textContent = s.title || 'Survey';
+  const desc = s.description || '';
+  $('#surveyDesc').textContent = desc;
+  if (!desc) $('#surveyDesc').style.display = 'none';
+  $('#titleStrip').style.display = '';
+
+  // Top head meta and save state.
+  $('#topHead').style.display = '';
+  $('#topMeta').innerHTML = 'Anonymous . takes a few minutes';
+  if (STATE.inv) {
+    $('#topActions').innerHTML = '<span class="save-state" id="saveState"><span class="dot"></span>Saved</span>';
+  } else {
+    $('#topActions').innerHTML = '';
+  }
+
+  // Body.
+  const qs = Array.isArray(s.questions) ? s.questions : [];
+  let html = '<div class="form">';
+  let displayIdx = 0;
+  qs.forEach(q => {
+    if (!q || !q.type) return;
+    if (q.type === 'section') {
+      html += renderSectionDivider(displayIdx + 1, q.title || 'Section', q.description || '');
+      return;
+    }
+    displayIdx++;
+    html += renderQuestion(q, displayIdx);
+  });
+  html +=
+    '<div class="nav-row">' +
+      '<button class="btn primary" id="btnSubmit" type="button">Submit answers</button>' +
+    '</div>' +
+  '</div>' +
+
+  '<div class="trust">' +
+    '<div class="ic">L</div>' +
+    '<div>' +
+      '<strong>Anonymous and aggregate-only.</strong> Your answers are reviewed in aggregate, not individually. ReliCheck never shows your name or email with your responses.' +
+    '</div>' +
+  '</div>';
+
+  $('#formHost').innerHTML = html;
+  updateProgress();
+
+  const sub = $('#btnSubmit');
+  if (sub) sub.addEventListener('click', submitForm);
+}
+
+/* ---- Boot ---- */
+async function boot() {
+  if (!STATE.slug) {
+    $('#formHost').innerHTML =
+      '<div class="center-state error">' +
+        '<div class="icon">!</div>' +
+        '<h2>No survey specified</h2>' +
+        '<p>This link is missing a survey identifier. Please use the share link you were given.</p>' +
+      '</div>';
+    return;
+  }
+
+  // Fetch the survey definition.
+  let data;
+  try {
+    data = await apiGet('/api/public/survey.php?slug=' + encodeURIComponent(STATE.slug));
+  } catch (e) {
+    $('#formHost').innerHTML =
+      '<div class="center-state error">' +
+        '<div class="icon">!</div>' +
+        '<h2>Survey not available</h2>' +
+        '<p>' + escapeHtml(e.message || 'We could not load this survey. The link may have expired, or the survey is no longer published.') + '</p>' +
+      '</div>';
+    return;
+  }
+  STATE.survey = (data && data.survey) || data;
+
+  // If there's an invitation token, try to resume.
+  if (STATE.inv) {
+    try {
+      const draft = await apiGet('/api/public/load_partial.php?slug=' + encodeURIComponent(STATE.slug) + '&inv=' + encodeURIComponent(STATE.inv));
+      if (draft && draft.ok && draft.answers && typeof draft.answers === 'object') {
+        STATE.answers = draft.answers;
+        if (draft.channel && !STATE.channel) STATE.channel = draft.channel;
+      }
+    } catch (_) { /* draft optional; continue with empty answers */ }
+  }
+
+  wireForm();
+  renderSurvey();
+  if (STATE.inv) setSaveState('saved', 'Saved');
+}
+
+boot();
+</script>
+</body>
+</html>

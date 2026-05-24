@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer Feedback · ReliCheck</title>
+  <meta name="description" content="CSAT, NPS, product, and service experience surveys with reliability checks per dimension, theme extraction, and actionable reports." />
+  <link rel="canonical" href="https://relichecksurvey.com/customer-feedback.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Customer Feedback · ReliCheck" />
+  <meta property="og:description" content="CSAT, NPS, product, and service experience surveys with reliability checks per dimension, theme extraction, and actionable reports." />
+  <meta property="og:url" content="https://relichecksurvey.com/customer-feedback.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Customer Feedback · ReliCheck" />
+  <meta name="twitter:description" content="CSAT, NPS, product, and service experience surveys with reliability checks per dimension, theme extraction, and actionable reports." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<style>
+  .cf-hero { padding: clamp(48px, 7vw, 96px) 0 clamp(40px, 6vw, 72px); background: linear-gradient(180deg, #ffffff 0%, var(--bg-soft) 100%); position: relative; overflow: hidden; }
+  .cf-hero::before { content:''; position:absolute; top:-120px; right:-120px; width:520px; height:520px; background: radial-gradient(circle, rgba(232,93,58,0.08), transparent 70%); pointer-events:none; }
+  .cf-hero-grid { display:grid; grid-template-columns: 1.05fr 1fr; gap: clamp(32px, 5vw, 72px); align-items:center; position: relative; }
+  @media (max-width: 920px) { .cf-hero-grid { grid-template-columns: 1fr; } }
+  .cf-hero h1 { font-family: var(--font-display); font-weight: 500; font-size: clamp(34px, 5vw, 56px); line-height: 1.1; letter-spacing: -0.022em; color: var(--navy); margin: 14px 0 18px; max-width: 18ch; }
+  .cf-hero .lede { font-size: var(--text-lg); color: var(--ink-7); max-width: 56ch; margin: 0 0 24px; }
+  .cf-hero .hero-meta { margin-top: 18px; font-size: 13.5px; color: var(--ink-6); }
+
+  .cf-snapshot { background:#fff; border:1px solid var(--line); border-radius:18px; padding:24px 26px; box-shadow: 0 14px 40px rgba(11,23,51,0.08); }
+  .cf-snap-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+  .cf-snap-title { font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-6); }
+  .cf-snap-pulse { display:inline-flex; align-items:center; gap:6px; font-size: 12.5px; font-weight: 600; color: var(--ink-7); }
+  .cf-snap-pulse::before { content:''; width:7px; height:7px; border-radius:50%; background: #2aa861; box-shadow: 0 0 0 0 rgba(42,168,97,0.4); animation: cf-pulse 2s infinite; }
+  @keyframes cf-pulse { 0%{box-shadow:0 0 0 0 rgba(42,168,97,0.5);} 70%{box-shadow:0 0 0 8px rgba(42,168,97,0);} 100%{box-shadow:0 0 0 0 rgba(42,168,97,0);} }
+
+  .cf-snap-tiles { display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom: 18px; }
+  .cf-tile { padding:14px 16px; border-radius:12px; background: var(--bg-soft); }
+  .cf-tile-label { font-size: 14px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-6); }
+  .cf-tile-value { font-family: var(--font-display); font-weight: 600; font-size: 36px; line-height: 1.1; color: var(--accent); margin-top: 4px; }
+  .cf-tile-trend { font-size: 14px; color: var(--ink-7); margin-top: 4px; }
+  .cf-tile-alpha .cf-tile-value { color: var(--navy); }
+
+  .cf-snap-bars { display:flex; flex-direction:column; gap: 10px; }
+  .cf-bar-row { display:grid; grid-template-columns: 90px 1fr 38px; align-items:center; gap:12px; font-size: 13px; color: var(--ink-7); }
+  .cf-bar-track { height: 8px; background: var(--bg-muted); border-radius: 999px; overflow: hidden; }
+  .cf-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #f1846a); border-radius: 999px; }
+  .cf-bar-num { text-align:right; font-weight: 600; color: var(--navy); }
+
+  .cf-snap-foot { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; font-size: 12.5px; color: var(--ink-6); }
+  .cf-snap-foot strong { color: var(--ink-8); font-weight: 600; }
+  .cf-illus { display:inline-block; font-size: 14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: var(--accent-active); background: var(--accent-soft); padding:3px 9px; border-radius:999px; }
+</style>
+
+<section class="cf-hero">
+  <div class="container-content cf-hero-grid">
+    <div>
+      <span class="kicker">Customer Feedback</span>
+      <h1>NPS that means something, satisfaction you can ship from.</h1>
+      <p class="lede">Validated experience scales with reliability checks per dimension, theme extraction across open-ended responses, and reports that name the next thing to fix.</p>
+      <div class="hero-actions">
+        <a href="signup.html" class="btn btn-primary btn-lg">Launch a customer survey</a>
+        <a href="samples.html" class="btn btn-outline btn-lg">See sample report</a>
+      </div>
+      <div class="hero-meta">Used by <strong>CX, product, and service</strong> teams whose decisions live or die by these numbers</div>
+    </div>
+    <aside class="cf-snapshot" aria-label="Sample dashboard snapshot">
+      <div class="cf-snap-head">
+        <span class="cf-snap-title">Fall product survey</span>
+        <span class="cf-snap-pulse">Live · 1,243 responses</span>
+      </div>
+      <div class="cf-snap-tiles">
+        <div class="cf-tile">
+          <div class="cf-tile-label">NPS</div>
+          <div class="cf-tile-value">+28</div>
+          <div class="cf-tile-trend">↓ 11 vs prior cycle</div>
+        </div>
+        <div class="cf-tile cf-tile-alpha">
+          <div class="cf-tile-label">Composite α</div>
+          <div class="cf-tile-value">0.86</div>
+          <div class="cf-tile-trend">Strong; r(NPS) = 0.71</div>
+        </div>
+      </div>
+      <div class="cf-snap-bars">
+        <div class="cf-bar-row"><span>Fit</span><span class="cf-bar-track"><span class="cf-bar-fill" style="width:62%;"></span></span><span class="cf-bar-num">3.1</span></div>
+        <div class="cf-bar-row"><span>Fabric</span><span class="cf-bar-track"><span class="cf-bar-fill" style="width:58%;"></span></span><span class="cf-bar-num">2.9</span></div>
+        <div class="cf-bar-row"><span>Value</span><span class="cf-bar-track"><span class="cf-bar-fill" style="width:78%;"></span></span><span class="cf-bar-num">3.9</span></div>
+        <div class="cf-bar-row"><span>Service</span><span class="cf-bar-track"><span class="cf-bar-fill" style="width:82%;"></span></span><span class="cf-bar-num">4.1</span></div>
+      </div>
+      <div class="cf-snap-foot">
+        <span><strong>2 dimensions</strong> driving the NPS dip</span>
+        <span class="cf-illus">Illustrative</span>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">What you can do</span><h2>Customer surveys that hold up to scrutiny</h2></div>
+    <div class="feat-grid">
+      <article class="feat-card"><span class="tag">CSAT</span><h3>Customer satisfaction</h3><p>Validated CSAT scales with reliability checks across the dimensions you care about: support, product, billing, onboarding.</p></article>
+      <article class="feat-card"><span class="tag">NPS</span><h3>Net Promoter</h3><p>Single-item NPS plus a follow-up scale for diagnostic depth. Theme extraction summarizes detractor and promoter comments.</p></article>
+      <article class="feat-card"><span class="tag">Product</span><h3>Product feedback</h3><p>Feature-level usability and value scales, with the option to compare segments without losing reliability scoring.</p></article>
+      <article class="feat-card"><span class="tag">Service</span><h3>Service experience</h3><p>Post-interaction surveys with first-contact resolution, effort, and resolution-quality items, all reliability-checked.</p></article>
+      <article class="feat-card"><span class="tag">Onboarding</span><h3>Onboarding NPS</h3><p>30-day onboarding pulse with theme extraction for early dropouts and time-to-value signals.</p></article>
+      <article class="feat-card"><span class="tag">Win/loss</span><h3>Win/loss</h3><p>Structured outcome scales for closed/won and closed/lost deals, paired with open-ended theme extraction.</p></article>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">Customer story</span><h2>How one team did it</h2></div>
+    <a href="case-studies/customer-feedback.html" class="cs-teaser-card">
+      <div class="cs-teaser-body">
+        <span class="cs-teaser-chip">Illustrative example</span>
+        <h3>A consumer brand ships product changes from 1,200 NPS responses</h3>
+        <p>NPS plus 8 satisfaction items. Composite α 0.86. Three product changes shipped within 60 days.</p>
+        <span class="cs-teaser-cta">Read the story →</span>
+      </div>
+      <div class="cs-teaser-stats">
+        <div class="cs-teaser-cell"><span class="cs-teaser-label">Responses</span><span class="cs-teaser-value">1,243</span></div><div class="cs-teaser-cell"><span class="cs-teaser-label">Composite α</span><span class="cs-teaser-value">0.86</span></div><div class="cs-teaser-cell"><span class="cs-teaser-label">Changes shipped</span><span class="cs-teaser-value">3</span></div>
+      </div>
+    </a>
+  </div>
+</section>
+
+<style>
+  .cs-teaser-card { display:grid; grid-template-columns: 1.4fr 1fr; gap: 32px; align-items:center; background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px 32px; box-shadow: var(--shadow-sm); text-decoration:none; color:inherit; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; }
+  .cs-teaser-card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+  @media (max-width: 720px) { .cs-teaser-card { grid-template-columns: 1fr; gap: 18px; } }
+  .cs-teaser-chip { display:inline-block; font-size: 14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: var(--accent-active); background: var(--accent-soft); padding: 4px 10px; border-radius:999px; margin-bottom:12px; }
+  .cs-teaser-body h3 { font-family: var(--font-display); font-weight:500; font-size: 22px; line-height:1.25; color: var(--navy); margin: 0 0 8px; }
+  .cs-teaser-body p { color: var(--ink-7); margin: 0 0 14px; font-size: 15.5px; line-height: 1.55; }
+  .cs-teaser-cta { color: var(--accent); font-weight:600; font-size:14.5px; }
+  .cs-teaser-stats { display:grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .cs-teaser-cell { display:flex; flex-direction:column; gap:2px; padding:12px 14px; background: var(--bg-soft); border-radius:10px; }
+  .cs-teaser-label { font-size: 14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: var(--ink-6); }
+  .cs-teaser-value { font-family: var(--font-display); font-weight:600; font-size: 22px; color: var(--accent); }
+</style>
+
+<section class="section"><div class="container-content"><div class="cta-band">
+      <h2>CX programs that survive the QBR</h2>
+      <p>Run a sample CSAT or NPS in 10 minutes and see reliability statistics on the same screen as the score.</p>
+      <div class="hero-actions"><a href="signup.html" class="btn btn-primary btn-lg">Start free</a><a href="compare.html" class="btn btn-outline btn-lg">Compare with other tools</a></div>
+    </div></div></section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

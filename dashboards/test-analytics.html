@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Test analytics dashboards · ReliCheck</title>
+  <meta name="description" content="The eight-tab classroom-test analytics dashboard in ReliCheck: Overview, Reliability, Difficulty, Quality, Answer Choices, Skill Performance, In-test Pre/Post, Item Health. Faithful previews of every sub-tab." />
+  <link rel="canonical" href="https://relichecksurvey.com/dashboards/test-analytics.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Test analytics dashboards · ReliCheck" />
+  <meta property="og:description" content="The eight-tab Test analytics dashboard with previews of each sub-tab." />
+  <meta property="og:url" content="https://relichecksurvey.com/dashboards/test-analytics.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Test analytics dashboards · ReliCheck" />
+  <meta name="twitter:description" content="The eight-tab Test analytics dashboard." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles-2026.css?v=20260516-style" />
+  <style>
+    .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; }
+    @media (min-width: 1100px) { .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .dash-card { background: #fff; border: 1px solid #e3e6ee; border-radius: 14px; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(11, 23, 51, 0.04); }
+    .dash-card-head { display: flex; align-items: center; gap: 12px; }
+    .dash-card-head .pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #ecfdf3; color: #1f8a4d; }
+    .dash-card h3 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 19px; letter-spacing: -0.01em; color: #0b1733; margin: 0; line-height: 1.25; }
+    .dash-card .question { font-size: 14px; color: #6b7088; margin: 0 0 4px; line-height: 1.4; }
+    .dash-card .body { font-size: 14px; color: #454a63; margin: 4px 0 0; line-height: 1.55; }
+    .dash-frame { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+    .dash-frame .ctx { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #6b7088; padding: 4px 6px; border-bottom: 1px solid #e3e6ee; margin: -2px -2px 6px; }
+    .dash-frame .ctx .left { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .dash-frame .ctx .dot { width: 7px; height: 7px; border-radius: 999px; background: #1f9d55; flex: 0 0 auto; }
+    .dash-frame .tabs { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; padding-bottom: 6px; border-bottom: 1px solid #e3e6ee; margin-bottom: 4px; }
+    .dash-frame .tab { font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: #fff; border: 1px solid #e3e6ee; color: #6b7088; white-space: nowrap; }
+    .dash-frame .tab.is-active { background: #fff3eb; color: #e85d3a; border-color: #f3c2cd; }
+    .dash-frame .panel { background: #fff; border: 1px solid #e3e6ee; border-radius: 8px; padding: 12px 14px; }
+    .dash-frame .panel-row { display: flex; align-items: center; gap: 14px; }
+    .dash-frame .narrator { font-size: 11px; color: #454a63; line-height: 1.45; }
+    .dash-frame .narrator .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .dash-frame .narrator .pill.good { background: #ecfdf3; color: #1f9d55; }
+    .dash-frame .narrator .pill.warn { background: #fff8e6; color: #8a5b00; }
+    .dash-frame .narrator .pill.bad  { background: #fdeff2; color: #c8334b; }
+    .dash-frame .narrator .eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; margin-bottom: 4px; }
+    .dash-frame .kpi-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .dash-frame .kpi { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 6px; padding: 8px 10px; text-align: left; }
+    .dash-frame .kpi .l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7088; }
+    .dash-frame .kpi .v { font-family: Fraunces, Georgia, serif; font-size: 16px; font-weight: 700; color: #0b1733; }
+    .dash-frame .kpi .v.warn { color: #c75617; }
+    .dash-frame .kpi .v.bad  { color: #c8334b; }
+    .dash-frame .kpi .v.good { color: #1f9d55; }
+    .dash-frame .kpi .s { font-size: 9px; color: #6b7088; margin-top: 1px; }
+    .dash-frame .bar-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 8px; align-items: center; font-size: 10px; color: #454a63; margin-top: 4px; }
+    .dash-frame .bar-row .lab { color: #0b1733; }
+    .dash-frame .bar-row .track { height: 8px; background: #eef1f5; border-radius: 999px; overflow: hidden; }
+    .dash-frame .bar-row .track > span { display: block; height: 100%; border-radius: 999px; }
+    .dash-frame .mini-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .dash-frame .mini-table th, .dash-frame .mini-table td { padding: 4px 6px; text-align: left; border-bottom: 1px solid #e3e6ee; }
+    .dash-frame .mini-table th { color: #6b7088; font-weight: 700; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .dash-frame .mini-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+    .level-cross-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 28px; }
+    .level-cross-links a { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 12px; text-decoration: none; color: #0b1733; transition: border-color 0.15s, background 0.15s; }
+    .level-cross-links a:hover { border-color: #e85d3a; background: #fff; }
+    .level-cross-links .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; }
+    .level-cross-links .title { font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; color: #0b1733; }
+    .level-cross-links .desc { font-size: 13px; color: #454a63; line-height: 1.5; }
+    .level-cross-links .arrow { font-size: 13px; color: #e85d3a; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+
+<header class="article-header is-centered">
+  <div class="container-content">
+    <div class="crumb"><a href="/index.html">Home</a> / <a href="/dashboards/survey-assessment.html">Dashboards</a> / Test analytics</div>
+    <span class="kicker">Dashboards · Level 3 of 3</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:30ch;">Test analytics dashboards</h1>
+    <p class="lede" style="margin:0 auto;">The eight-tab Test analytics dashboard, built for classroom assessments where each item has a single correct answer. <strong>Reliability, item difficulty, distractor analysis, skill rollups, item health.</strong></p>
+  </div>
+</header>
+
+
+<section class="section">
+  <div class="container-content">
+
+    <div class="dash-grid">
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab · Phase 100</span></div>
+        <h3>Overview</h3>
+        <p class="question">Headline numbers + score distribution</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>78% pass · α 0.84</span></div>
+          <div class="tabs"><span class="tab is-active">Overview</span><span class="tab">Reliability</span><span class="tab">Difficulty</span><span class="tab">Quality</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div class="kpi-strip">
+              <div class="kpi"><div class="l">Pass rate</div><div class="v good">78%</div><div class="s">at 60%</div></div>
+              <div class="kpi"><div class="l">Mean</div><div class="v">68.4%</div><div class="s">range 28-100</div></div>
+              <div class="kpi"><div class="l">α (KR-20)</div><div class="v good">0.84</div><div class="s">25 items</div></div>
+              <div class="kpi"><div class="l">SEM</div><div class="v">1.9</div><div class="s">on raw</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Score distribution</div>
+            <svg viewBox="0 0 220 60" style="width:100%;height:60px;">
+              <rect x="14" y="50" width="14" height="6" fill="#c83333"/>
+              <rect x="30" y="46" width="14" height="10" fill="#c83333"/>
+              <rect x="46" y="40" width="14" height="16" fill="#b07d18"/>
+              <rect x="62" y="32" width="14" height="24" fill="#b07d18"/>
+              <rect x="78" y="22" width="14" height="34" fill="#65a30d"/>
+              <rect x="94" y="14" width="14" height="42" fill="#65a30d"/>
+              <rect x="110" y="8" width="14" height="48" fill="#1f9d55"/>
+              <rect x="126" y="14" width="14" height="42" fill="#1f9d55"/>
+              <rect x="142" y="22" width="14" height="34" fill="#1f9d55"/>
+              <rect x="158" y="36" width="14" height="20" fill="#1f9d55"/>
+              <line x1="105" y1="4" x2="105" y2="56" stroke="#e85d3a" stroke-dasharray="3 3"/>
+              <text x="100" y="10" text-anchor="end" font-size="9" fill="#e85d3a">pass cut</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Six KPI tiles (mean, median, range, SD, items, pass rate), score-distribution histogram, top strongest and flagged items, AI narrator pinned at the top in teacher voice.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab</span></div>
+        <h3>Reliability</h3>
+        <p class="question">Reliability of the test itself</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>α 0.84 · ω 0.86</span></div>
+          <div class="tabs"><span class="tab">Overview</span><span class="tab is-active">Reliability</span><span class="tab">Difficulty</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">α (KR-20)</div><div class="v good">0.84</div><div class="s">25 items</div></div>
+              <div class="kpi"><div class="l">McDonald ω</div><div class="v good">0.86</div><div class="s">1-factor PAF</div></div>
+              <div class="kpi"><div class="l">Split-half</div><div class="v good">0.78</div><div class="s">Spearman-Brown</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">α if deleted (top movers)</div>
+            <div class="bar-row"><span class="lab">If Q12 out</span><span class="track"><span style="width:90%;background:#1f9d55;"></span></span><span style="color:#1f9d55;">+0.03</span></div>
+            <div class="bar-row"><span class="lab">If Q05 out</span><span class="track"><span style="width:60%;background:#65a30d;"></span></span><span style="color:#65a30d;">+0.02</span></div>
+            <div class="bar-row"><span class="lab">If Q03 out</span><span class="track"><span style="width:24%;background:#cfd2dc;"></span></span><span style="color:#6b7088;">-0.01</span></div>
+          </div>
+        </div>
+        <p class="body">Cronbach's alpha as KR-20 on dichotomous items, McDonald's omega, Spearman-Brown split-half, SEM, alpha-if-deleted with delta per item.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab</span></div>
+        <h3>Difficulty</h3>
+        <p class="question">How hard is each question?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>25 items · sorted</span></div>
+          <div class="tabs"><span class="tab">Reliability</span><span class="tab is-active">Difficulty</span><span class="tab">Quality</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">% correct, easy to hard</div>
+            <div class="bar-row"><span class="lab">Q07</span><span class="track"><span style="width:71%;background:#1f9d55;"></span></span><span>71%</span></div>
+            <div class="bar-row"><span class="lab">Q14</span><span class="track"><span style="width:69%;background:#1f9d55;"></span></span><span>69%</span></div>
+            <div class="bar-row"><span class="lab">Q03</span><span class="track"><span style="width:67%;background:#65a30d;"></span></span><span>67%</span></div>
+            <div class="bar-row"><span class="lab">Q15</span><span class="track"><span style="width:43%;background:#b07d18;"></span></span><span>43%</span></div>
+            <div class="bar-row"><span class="lab">Q12</span><span class="track"><span style="width:38%;background:#c83333;"></span></span><span>38%</span></div>
+            <div class="bar-row"><span class="lab">Q05</span><span class="track"><span style="width:28%;background:#c83333;"></span></span><span>28%</span></div>
+          </div>
+        </div>
+        <p class="body">Percent correct per item with labels Very Easy (90%+), Easy, Moderate, Hard, Very Hard. Inline horizontal bar chart sorted by difficulty.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab</span></div>
+        <h3>Quality</h3>
+        <p class="question">Does each item discriminate between strong and weak students?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>r_pb · top 27% vs bottom 27%</span></div>
+          <div class="tabs"><span class="tab">Difficulty</span><span class="tab is-active">Quality</span><span class="tab">Answer Choices</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <table class="mini-table">
+              <thead><tr><th>Item</th><th class="r">% correct</th><th class="r">r_pb</th><th>Label</th></tr></thead>
+              <tbody>
+                <tr><td>Q07</td><td class="r">71%</td><td class="r" style="color:#1f9d55;">0.62</td><td><span class="narrator pill good" style="font-size:9px;">Strong</span></td></tr>
+                <tr><td>Q03</td><td class="r">67%</td><td class="r" style="color:#1f9d55;">0.48</td><td><span class="narrator pill" style="font-size:9px;background:#f1f7e7;color:#3f7000;">Good</span></td></tr>
+                <tr><td>Q15</td><td class="r">43%</td><td class="r" style="color:#b07d18;">0.22</td><td><span class="narrator pill warn" style="font-size:9px;">Review</span></td></tr>
+                <tr><td>Q12</td><td class="r">38%</td><td class="r" style="color:#c8334b;">0.14</td><td><span class="narrator pill bad" style="font-size:9px;">Problem</span></td></tr>
+                <tr><td>Q05</td><td class="r">28%</td><td class="r" style="color:#c8334b;">-0.08</td><td><span class="narrator pill bad" style="font-size:9px;">Negative</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="body">Point-biserial correlation between the item and the rest-of-test total, plus the classical top-27% vs bottom-27% discrimination index. Labels Strong / Good / Review / Problem / Negative.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab · Phase 73</span></div>
+        <h3>Answer Choices</h3>
+        <p class="question">Are wrong answers doing their job?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>Q12 (flagged)</span></div>
+          <div class="tabs"><span class="tab">Quality</span><span class="tab is-active">Answer Choices</span><span class="tab">Skill</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Q12 distractors</div>
+            <div class="bar-row"><span class="lab">A</span><span class="track"><span style="width:26%;background:#b07d18;"></span></span><span>26%</span></div>
+            <div class="bar-row"><span class="lab">B (key)</span><span class="track"><span style="width:38%;background:#1f9d55;"></span></span><span>38%</span></div>
+            <div class="bar-row"><span class="lab">C</span><span class="track"><span style="width:32%;background:#c83333;"></span></span><span>32%</span></div>
+            <div class="bar-row"><span class="lab">D</span><span class="track"><span style="width:4%;background:#cfd2dc;"></span></span><span>4%</span></div>
+          </div>
+          <div class="panel">
+            <div class="narrator">
+              <span class="pill bad">Possible miskey</span>
+              <div style="margin-top:6px;">Option C pulls 32% of the class and 22% of the top quartile. The prompt may be ambiguous; consider revising "Which step solves" to "Which is the first step."</div>
+            </div>
+          </div>
+        </div>
+        <p class="body">Per-item per-option count plus the share of top-quartile students who chose each option. Flags non-functioning distractors and possible miskeys.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab · Phase 73/97</span></div>
+        <h3>Skill Performance</h3>
+        <p class="question">Which skills are sticking?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>4 skill tags</span></div>
+          <div class="tabs"><span class="tab">Answer Choices</span><span class="tab is-active">Skill</span><span class="tab">Pre/Post</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <table class="mini-table">
+              <thead><tr><th>Skill</th><th class="r">Items</th><th class="r">Mean</th><th>Band</th></tr></thead>
+              <tbody>
+                <tr><td>Algebra</td><td class="r">9</td><td class="r" style="color:#1f9d55;">81%</td><td><span class="narrator pill good" style="font-size:9px;">Mastery</span></td></tr>
+                <tr><td>Geometry</td><td class="r">8</td><td class="r" style="color:#65a30d;">71%</td><td><span class="narrator pill" style="font-size:9px;background:#f1f7e7;color:#3f7000;">Proficient</span></td></tr>
+                <tr><td>Fractions</td><td class="r">3</td><td class="r" style="color:#65a30d;">79%</td><td><span class="narrator pill" style="font-size:9px;background:#f1f7e7;color:#3f7000;">Proficient</span></td></tr>
+                <tr><td>Word problems</td><td class="r">5</td><td class="r" style="color:#c8334b;">41%</td><td><span class="narrator pill bad" style="font-size:9px;">Foundational</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="body">Mean percent correct by skill tag with mastery bands. Skill x question-range matrix (rows = skill tags, columns = item buckets) with cells color-coded by mastery band.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab · Phase 73</span></div>
+        <h3>In-test Pre/Post</h3>
+        <p class="question">Did students improve within the test?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>First half vs second half</span></div>
+          <div class="tabs"><span class="tab">Skill</span><span class="tab is-active">Pre/Post</span><span class="tab">Item Health</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">First half</div><div class="v">64%</div><div class="s">Q1-12</div></div>
+              <div class="kpi"><div class="l">Second half</div><div class="v warn">52%</div><div class="s">Q13-25</div></div>
+              <div class="kpi"><div class="l">d_z</div><div class="v warn">-0.51</div><div class="s">paired t = -4.62</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="narrator">
+              <span class="pill warn">Drop in second half</span>
+              <div style="margin-top:6px;">Students fatigued or material climbed in difficulty. Check the difficulty curve through the test.</div>
+            </div>
+          </div>
+        </div>
+        <p class="body">Paired t-test between two user-selected item subsets (default first half vs second half). Cohen's d_z, plus per-respondent improved / unchanged / declined counts.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">Test sub-tab · Phase 73</span></div>
+        <h3>Item Health Report</h3>
+        <p class="question">Composite per-item status</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Algebra Unit Test, n=82</span><span>25 items classified</span></div>
+          <div class="tabs"><span class="tab">Pre/Post</span><span class="tab is-active">Item Health</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Health summary</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:11px;color:#454a63;">
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#1f9d55;vertical-align:middle;margin-right:6px;"></span>Strong &middot; 12</div>
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#65a30d;vertical-align:middle;margin-right:6px;"></span>Easy + discriminates &middot; 4</div>
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#b07d18;vertical-align:middle;margin-right:6px;"></span>Hard + discriminates &middot; 5</div>
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#cfd2dc;vertical-align:middle;margin-right:6px;"></span>Too easy &middot; 1</div>
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#c83333;vertical-align:middle;margin-right:6px;"></span>Problem &middot; 2</div>
+              <div><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#7a1c1c;vertical-align:middle;margin-right:6px;"></span>Possible miskey &middot; 1</div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="narrator">
+              <div class="eyebrow">Action list</div>
+              <div>Q12 audit answer key &middot; Q05 rewrite or replace &middot; Q15 review wording &middot; Q07 add to bank.</div>
+            </div>
+          </div>
+        </div>
+        <p class="body">One label per item: Strong / Easy but Discriminates / Too Easy / Hard but Discriminates / Problem / Possible Miskey. Built from difficulty, point-biserial, and distractor signals.</p>
+      </article>
+
+    </div>
+
+    <div class="level-cross-links">
+      <a href="/dashboards/survey-assessment.html">
+        <span class="kicker">Or jump to</span>
+        <span class="title">Survey assessment</span>
+        <span class="desc">Strength Index, Readiness, Reliability, Validity, Response Quality, Completion. The credibility-first reads.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+      <a href="/dashboards/data-analysis.html">
+        <span class="kicker">Or jump to</span>
+        <span class="title">Data analysis</span>
+        <span class="desc">Description, Compare, Subgroups, Equity Gaps, Predictors, Key Drivers, IRT, MLM, Trends, Open-Ended.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+
+</main>
+
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+
+</body>
+</html>

@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Validity guide · ReliCheck</title>
+  <meta name="description" content="Factor analysis, KMO, Bartlett's test, and rotation choices in plain language. What each statistic means, when to use it, and how to read what ReliCheck reports." />
+  <link rel="canonical" href="https://relichecksurvey.com/validity-guide.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Validity guide · ReliCheck" />
+  <meta property="og:description" content="Factor analysis, KMO, Bartlett's test, and rotation choices in plain language. What each statistic means, when to use it, and how to read what ReliCheck reports." />
+  <meta property="og:url" content="https://relichecksurvey.com/validity-guide.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Validity guide · ReliCheck" />
+  <meta name="twitter:description" content="Factor analysis, KMO, Bartlett's test, and rotation choices in plain language. What each statistic means, when to use it, and how to read what ReliCheck reports." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="help.html">Resources</a> / Validity guide</div>
+    <span class="kicker">Validity guide</span>
+    <h1 style="margin-top:var(--s-3);">Validity, factor analysis, and what your items are actually measuring</h1>
+    <p class="lede">A working guide to the validity statistics that decide whether your scale measures the thing you claim it measures. What factor analysis is, when to rotate, what KMO and Bartlett's test add, and how to read the new ReliCheck Validity dashboard.</p>
+    <div class="article-meta">
+      <span>Updated May 2026</span>
+      <span>·</span>
+      <span>Reading time: 16 min</span>
+      <span>·</span>
+      <span>Audience: research, evaluation, HR, instructors</span>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="article-layout">
+      <aside class="article-toc">
+        <h4>On this page</h4>
+        <ul>
+          <li><a href="#covers" class="is-active">What this guide covers</a></li>
+          <li><a href="#why">Why validity is a separate question</a></li>
+          <li><a href="#fa">What factor analysis does</a></li>
+          <li><a href="#method">PCA vs principal axis factoring</a></li>
+          <li><a href="#how-many">How many factors to keep</a></li>
+          <li><a href="#rotation">Rotation, in plain terms</a></li>
+          <li><a href="#kmo-bart">KMO and Bartlett's test</a></li>
+          <li><a href="#reading">Reading a loading matrix</a></li>
+          <li><a href="#per-factor">Per-factor alpha</a></li>
+          <li><a href="#pitfalls">Common pitfalls</a></li>
+          <li><a href="#what-we-show">What ReliCheck shows you</a></li>
+        </ul>
+      </aside>
+
+      <article class="prose">
+        <section id="covers">
+          <h2>What this guide covers</h2>
+          <p>This is the validity counterpart to the reliability guide. If reliability tells you whether your scale is a steady ruler, validity tells you whether you brought the right ruler in the first place. The guide walks through factor analysis (the workhorse of construct validity), the choices the ReliCheck Validity dashboard asks you to make, and the conventions for reading the output without overclaiming.</p>
+        </section>
+
+        <section id="why">
+          <h2>Why validity is a separate question</h2>
+          <p>Validity is whether you brought the right ruler. A steady ruler still has to measure the right thing. A high reliability score means your items move together. It does not mean they move because of the construct you have in mind. A 10-item engagement scale could have a strong reliability number and still be measuring general job satisfaction, optimism, or how much someone likes their commute. Reliability is necessary, but it is not enough. Validity asks the harder question: is the underlying thing behind these items the one you named?</p>
+          <div class="callout">
+            <div class="callout-title">Plain language</div>
+            <p style="margin:0;"><strong>Reliability is the ruler's steadiness. Validity is whether the ruler measures length, weight, or temperature.</strong> Both matter, and they take different evidence to defend.</p>
+          </div>
+        </section>
+
+        <section id="fa">
+          <h2>What factor analysis does</h2>
+          <p>Exploratory factor analysis looks at how your items correlate with each other and asks: how many underlying dimensions would best explain this pattern of correlations? Each underlying dimension is a factor. Each item gets a loading on each factor, which is roughly the correlation between the item and the factor. Items with high loadings on the same factor are probably measuring the same thing; items with high loadings on different factors are measuring different things.</p>
+          <p>If you ran factor analysis on a workplace survey and two clean factors fell out, one mostly capturing engagement items and one mostly capturing workload items, you would have evidence that engagement and workload are distinct constructs in your data. If your "engagement" scale split across both factors, you would have evidence that the scale is doing two jobs at once, and you should consider treating it as two subscales instead of one composite.</p>
+        </section>
+
+        <section id="method">
+          <h2>PCA vs principal axis factoring</h2>
+          <p>The Method dropdown in the ReliCheck Validity dashboard offers two extraction methods, and they answer slightly different questions.</p>
+          <h3>Principal components (PCA)</h3>
+          <p>PCA explains the total variance in your items, including the variance that is unique to each item (measurement error and item-specific quirks). It is fast, deterministic, and a fine first look. Use it when you want a quick sense of how many dimensions are in your data.</p>
+          <h3>Principal axis factoring (PAF)</h3>
+          <p>PAF explains only the shared variance among the items, which is the variance you can actually attribute to a latent construct. It does this by iterating: it estimates how much of each item's variance is shared, decomposes the correlation matrix on that basis, and repeats until the estimates stabilize. Use PAF when you are arguing for construct validity in a manuscript or report. The numbers are slightly more conservative than PCA and more defensible to a reviewer.</p>
+          <p>For most surveys, the two methods agree on how many factors are present and on which items load where. They tend to disagree on the exact size of the loadings.</p>
+        </section>
+
+        <section id="how-many">
+          <h2>How many factors to keep</h2>
+          <p>ReliCheck uses the Kaiser criterion, which retains every factor with an eigenvalue of at least one. Eigenvalues below one are explaining less variance than a single item would on its own, so they are generally not substantive. The scree plot in the Validity dashboard shows every factor's eigenvalue as a bar, green when above the cutoff and coral when below, with a dashed line at eigenvalue equals one for reference.</p>
+          <p>Kaiser is a useful default, not a law. Two other things to consider:</p>
+          <ul>
+            <li><strong>The elbow.</strong> Look for the bend in the scree plot where the bars flatten. If Kaiser retains four factors but the elbow is at two, the third and fourth factors are probably noise.</li>
+            <li><strong>Interpretability.</strong> A factor only counts if you can name it. If the items loading on factor three do not share a coherent meaning, retaining it adds clutter, not insight.</li>
+          </ul>
+        </section>
+
+        <section id="rotation">
+          <h2>Rotation, in plain terms</h2>
+          <p>The first time you extract factors, the math points them at the directions of maximum variance. Those directions are mathematically convenient but almost never line up with the human concepts you care about. Rotation re-aims the factors so each item loads strongly on one factor and weakly on the others, which makes the result interpretable.</p>
+          <h3>None</h3>
+          <p>Useful for diagnostics. You can see the raw structure, and items that load on more than one factor stand out. Not what you want for a final report.</p>
+          <h3>Varimax</h3>
+          <p>An orthogonal rotation that keeps the factors uncorrelated with each other. Items end up loading clearly on one factor and near zero on the rest. Use Varimax when you have theoretical reasons to expect the constructs to be independent, like engagement and workload in some models, or when you want the cleanest possible interpretation.</p>
+          <h3>Oblimin and Promax (coming soon)</h3>
+          <p>Oblique rotations that allow the factors to correlate. Use these when your constructs are theoretically related, like motivation and engagement, or self-efficacy and confidence. The ReliCheck dashboard lists these in the Rotation dropdown so you know what is on the roadmap; they will ship in a follow-up release.</p>
+        </section>
+
+        <section id="kmo-bart">
+          <h2>KMO and Bartlett's test</h2>
+          <p>Two prerequisites tell you whether factor analysis is even worth running on your data.</p>
+          <h3>KMO sampling adequacy</h3>
+          <p>The Kaiser-Meyer-Olkin measure ranges from zero to one and asks whether your correlation matrix has enough shared variance to factor. ReliCheck uses Kaiser's conventional labels: 0.90 and up is marvelous, 0.80 to 0.90 is meritorious, 0.70 to 0.80 is middling, 0.60 to 0.70 is mediocre, below 0.60 is unacceptable. Aim for 0.70 or higher before treating your factors as solid.</p>
+          <h3>Bartlett's test of sphericity</h3>
+          <p>Bartlett's test asks whether the correlation matrix is statistically distinguishable from an identity matrix. A significant result (typically p less than .05) means the items are correlated enough to factor. A non-significant result is a stop sign: the items are not co-varying, and any factors you extract are essentially noise. ReliCheck shows the test result in the Validity dashboard footer.</p>
+        </section>
+
+        <section id="reading">
+          <h2>Reading a loading matrix</h2>
+          <p>The Factor Loading Matrix in the Validity dashboard shows one row per item and one column per retained factor, with cells colored on a red-to-white-to-green gradient (red is a strong negative loading, white is near zero, green is strong positive). Conventional thresholds for interpretation:</p>
+          <ul>
+            <li><strong>|loading| ≥ 0.50</strong>: a strong loading. The item is doing real work for that factor.</li>
+            <li><strong>0.30 ≤ |loading| &lt; 0.50</strong>: a moderate loading. Worth keeping if it makes theoretical sense, worth reviewing if it does not.</li>
+            <li><strong>|loading| &lt; 0.30</strong>: a weak loading. The item is barely contributing.</li>
+          </ul>
+          <p>The Status column flags items that have at least one strong loading and a communality (the share of the item's variance explained by the retained factors) of at least 0.40. Items below that bar are tagged Review, not Strong. A "Review" item is not necessarily a bad item; it is one that did not fit cleanly into the current factor solution and deserves a second look.</p>
+          <div class="callout">
+            <div class="callout-title">In the dashboard</div>
+            <p style="margin:0;">The full loading matrix and factor structure are summarized at the top of the Validity tab by the <a href="ai-features.html#narrators"><strong>Validity Narrator</strong></a> in one or two plain-language sentences. It names whether the data supports one construct or several and points to the strongest grouping by item content.</p>
+          </div>
+        </section>
+
+        <section id="per-factor">
+          <h2>Per-factor alpha</h2>
+          <p>Each Factor Structure Summary card in the dashboard shows a Cronbach's alpha for that factor on its own, computed from just the items that load on it. This is the validity-aware reliability number: instead of asking how well your entire item bank hangs together, it asks how well each subscale hangs together. Reverse-loading items are mirrored before the alpha is computed so a negative loading does not artificially deflate the value.</p>
+          <p>A clean factor with five items and a per-factor alpha of 0.85 is the most defensible kind of result: the items measure one thing, and they measure it consistently.</p>
+        </section>
+
+        <section id="cfa">
+          <h2>Confirmatory factor analysis (CFA)</h2>
+          <p>Exploratory factor analysis asks what structure emerges from the data. Confirmatory factor analysis asks whether the structure you proposed actually fits the data. Once you have assigned each item to a construct in the Questions builder, the Validity tab runs a single-factor or multi-factor CFA and reports the four fit indices reviewers expect.</p>
+          <h3>Chi-square divided by degrees of freedom</h3>
+          <p>The chi-square test asks whether the model-implied covariance matrix could plausibly have produced the data you observed. Big sample sizes make almost every model fail this test, so the raw chi-square is rarely useful on its own. The ratio of chi-square to df is the rough rule: a value at or below 3 is solid, between 3 and 5 is workable, above 5 is a sign the model is not capturing what is in the data.</p>
+          <h3>Comparative Fit Index (CFI) and Tucker-Lewis Index (TLI)</h3>
+          <p>Both indices compare your model against an independence baseline (no relationships at all). Values run from roughly 0 to 1; higher is better. The conventional cutoff is CFI at or above 0.95 for good fit and 0.90 for acceptable. TLI penalizes model complexity slightly more than CFI, so the two often disagree by a few points; a strong scale clears both thresholds.</p>
+          <h3>RMSEA and SRMR</h3>
+          <p>Root Mean Square Error of Approximation summarizes how much error per item the model leaves on the table. Conventional cutoffs: at or below 0.06 for good fit, 0.06 to 0.08 for acceptable, above 0.08 for cause for concern. ReliCheck also reports the 90 percent confidence interval; the upper bound should sit under 0.08 for a clean read. SRMR is the average size of the residual correlations (what the model could not explain); 0.08 or below is good. These four indices together come from Hu and Bentler's standard table.</p>
+          <p>When the indices disagree, the rule of thumb is: trust CFI plus RMSEA for overall model fit, and use SRMR for spotting items that the model handles poorly. The standardized loadings table on the CFA card shows you per-item whether each item loads strongly on its assigned factor.</p>
+        </section>
+
+        <section id="invariance">
+          <h2>Measurement invariance</h2>
+          <p>If you compare scores across departments, demographic groups, or experimental arms, you are implicitly assuming the survey measures the same thing the same way for every group. Measurement invariance is the formal test of that assumption. ReliCheck fits three nested models in sequence on the same group axis:</p>
+          <h3>Configural, metric, scalar</h3>
+          <p><strong>Configural</strong> invariance holds when the same factor structure shows up in every group; the items "hang together" the same way, but the strength of the relationships can differ. <strong>Metric</strong> invariance adds a constraint that the factor loadings are equal across groups; the items relate to the construct the same way. <strong>Scalar</strong> invariance adds equal item intercepts; this is the level you need before it is safe to compare mean scores across groups.</p>
+          <h3>How ReliCheck decides whether invariance holds</h3>
+          <p>Following Cheung and Rensvold (2002) and Chen (2007), the change in fit indices between levels is the signal. Invariance holds at a given level when the absolute change in CFI is at most 0.010, the absolute change in RMSEA is at most 0.015, and the absolute change in SRMR is at most 0.030 for metric or 0.015 for scalar. The card reports each delta in a single diagnostics table and surfaces a verdict pill so you can tell at a glance which level was reached.</p>
+          <h3>What an invariance failure means</h3>
+          <p>Failing metric invariance means the items do not relate to the construct the same way across groups; one group might be reading "I feel like I belong" more literally than another, or a translated version weighted certain items differently. Failing scalar invariance means the item intercepts differ; one group is using the scale at a different baseline than another even when their underlying trait level is the same. Either failure means raw mean comparisons across groups are risky, and you should report the invariance result alongside any group differences in your write-up.</p>
+        </section>
+
+        <section id="irt">
+          <h2>Item response theory (IRT)</h2>
+          <p>Classical test theory talks about scales: how reliable is the whole instrument, how well do the items hang together. Item response theory talks about items: where on the underlying trait does each item separate respondents, and how sharply does it discriminate. The two are complementary; IRT does not replace alpha and CFA, it answers a different question about the same data.</p>
+          <h3>The Graded Response Model</h3>
+          <p>ReliCheck fits Samejima's (1969) Graded Response Model on a 21-point quadrature grid. Every Likert item gets a discrimination parameter (a) and ordered category boundaries (b<sub>1</sub>, b<sub>2</sub>, ..., b<sub>K-1</sub>) with standard errors. Discrimination tells you how sharply the item separates respondents at different trait levels: above 1.5 is strong, 0.8 to 1.5 is workable, below 0.8 is weak. Boundaries tell you the trait level at which the cumulative probability of responding at or above each category crosses 50 percent.</p>
+          <h3>Item information and the test information function</h3>
+          <p>Where does each item carry its weight on the trait scale? The item information function answers that. An item with high information at trait level 0 (the middle of the scale) is most useful for telling apart average-trait respondents; an item with information that peaks at +2 only helps you tell high-trait respondents apart. The test information function adds all the items together. A test information value of 4 corresponds to a marginal reliability of about 0.80, which is the same target as Cronbach's alpha.</p>
+          <h3>Marginal reliability and person ability</h3>
+          <p>Marginal reliability is the IRT counterpart to Cronbach's alpha. Values above 0.85 are strong, 0.75 to 0.85 are workable, below 0.65 is shaky. Each respondent also gets an expected a posteriori (EAP) ability estimate with a posterior standard error, computed over the same trait distribution the model was fit on. EAP scores are what you would use for a paper on subgroup gaps in latent trait, rather than raw sum scores.</p>
+        </section>
+
+        <section id="pitfalls">
+          <h2>Common pitfalls</h2>
+          <h3>Too small a sample</h3>
+          <p>Factor analysis is unstable below about 100 respondents, and a common rule of thumb is at least five respondents per item. ReliCheck warns when the sample is small enough to make the factor structure unreliable; treat the result as exploratory in that case.</p>
+          <h3>Confusing PCA with theory</h3>
+          <p>PCA chooses factors that explain variance. The result is a description of your data, not a theory of the construct. Use it to see structure, then defend the structure with PAF, a rotation, and conceptual argument.</p>
+          <h3>Skipping rotation</h3>
+          <p>An unrotated solution is almost never the right thing to report. Items spread across factors and the result looks weaker than it is. Always rotate before interpreting.</p>
+          <h3>Overinterpreting cross-loadings</h3>
+          <p>An item that loads 0.55 on one factor and 0.42 on another is doing two jobs. Drop it, rewrite it, or assign it to the factor where it makes the most conceptual sense; do not let the math alone decide.</p>
+          <h3>Forgetting that EFA is exploratory</h3>
+          <p>Exploratory factor analysis surfaces structure. It does not confirm it. The serious follow-up is a confirmatory factor analysis on a second sample, which ReliCheck runs directly on the Validity tab under the EFA dashboard. You no longer need to leave for Mplus, lavaan, or AMOS to close that loop.</p>
+        </section>
+
+        <section id="what-we-show">
+          <h2>What ReliCheck shows you, and what it does not</h2>
+          <p>The Validity dashboard reports factor count by the Kaiser criterion, per-factor and cumulative variance explained, KMO sampling adequacy, Bartlett's test of sphericity, the full loading matrix with a gradient legend, per-factor Cronbach's alpha, communalities, and an item-by-item Strong or Review status. The dropdowns let you switch between PCA and principal axis factoring, and between no rotation and Varimax, and the result updates in place. AI-suggested factor names propose short construct labels based on the item wording (never on response data), and you can edit any label by clicking it.</p>
+          <p>Underneath the EFA dashboard sits the Confirmatory Factor Analysis card, the Measurement Invariance card, and (on its own tab) the Item Response Theory card. The full sequence from EFA structure to CFA fit to invariance across groups to IRT item-level discrimination runs inside the same view; the methodology section your reviewers expect is right there.</p>
+          <p>What ReliCheck does not do (yet): oblique rotation in EFA (coming soon), bifactor or hierarchical CFA, multidimensional IRT, or judge whether the items you wrote belong in the scale in the first place. The dashboard tells you what your data looks like. You still decide what it means.</p>
+          <div class="callout">
+            <div class="callout-title">Validity earlier in the workflow</div>
+            <p style="margin:0;">Factor analysis describes the structure your data already has. The <a href="ai-features.html#construct-mapper"><strong>Construct Mapper</strong></a> in the Questions builder proposes the structure before respondents see the survey, so the factor analysis has a hypothesis to test rather than a blind fishing expedition. The <a href="ai-features.html#purpose-checker"><strong>Survey Purpose Checker</strong></a> audits the draft against the decision the survey is meant to inform, which is a different kind of validity entirely. <a href="ai-features.html">See all fifteen tools →</a></p>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>Put validity to work</h2>
+      <p>Pair the validity dashboard with the reliability guide for an evidence trail you can take into a manuscript, a board meeting, or a funder report.</p>
+      <div class="hero-actions">
+        <a href="reliability-guide.html" class="btn btn-primary btn-lg">Read the reliability guide</a>
+        <a href="methodology.html" class="btn btn-outline btn-lg">See the methodology</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

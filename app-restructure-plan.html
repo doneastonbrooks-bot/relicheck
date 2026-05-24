@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Restructure . Draft Plan (internal reference)</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+
+  <style>
+    body { background: #f6f7fb; }
+
+    /* Top banner */
+    .plan-hero {
+      background: #0f172a;
+      color: #f6f8fc;
+      padding: 36px 24px;
+      text-align: center;
+      border-bottom: 4px solid #e85d3a;
+    }
+    .plan-hero .draft-tag {
+      display: inline-block;
+      background: #e85d3a;
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 14px;
+    }
+    .plan-hero h1 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 32px;
+      margin: 0 0 8px 0;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .plan-hero p {
+      max-width: 760px;
+      margin: 0 auto;
+      color: #cbd5e1;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    /* Layout container */
+    .plan-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+    }
+
+    /* Section headings */
+    .plan-section h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 26px;
+      color: var(--ink-9);
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+    }
+    .plan-section h2 .num {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #e85d3a;
+      color: #ffffff;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 32px;
+      text-align: center;
+      margin-right: 12px;
+      vertical-align: 4px;
+    }
+    .plan-section .section-sub {
+      color: var(--ink-7);
+      font-size: 15px;
+      line-height: 1.6;
+      margin: 0 0 24px 0;
+    }
+
+    /* Twelve-level grid */
+    .levels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    @media (max-width: 900px) { .levels-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .levels-grid { grid-template-columns: 1fr; } }
+    .level-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-left: 4px solid #e85d3a;
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .level-card .lvl-num {
+      flex: 0 0 32px;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .level-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 16px;
+      margin: 0 0 4px 0;
+      color: var(--ink-9);
+      line-height: 1.25;
+    }
+    .level-card p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ink-7);
+      line-height: 1.45;
+    }
+
+    /* Wireframe-style screens for the journey strip */
+    .journey {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .journey-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+    @media (max-width: 1100px) { .journey-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .journey-grid { grid-template-columns: 1fr; } }
+    .screen {
+      background: #fafbfd;
+      border: 1px solid #e5e8ed;
+      border-radius: 10px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-height: 220px;
+    }
+    .screen .scr-step {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+    }
+    .screen h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 14px;
+      margin: 0 0 2px 0;
+      line-height: 1.3;
+      color: var(--ink-9);
+    }
+    .screen .scr-mock {
+      background: #ffffff;
+      border: 1px solid #ececf2;
+      border-radius: 6px;
+      padding: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .scr-mock .scr-bar { height: 6px; background: #e5e8ed; border-radius: 3px; }
+    .scr-mock .scr-bar.accent { background: #fde2d7; }
+    .scr-mock .scr-bar.short { width: 55%; }
+    .scr-mock .scr-bar.long  { width: 90%; }
+    .scr-mock .scr-bar.med   { width: 70%; }
+    .scr-mock .scr-row {
+      display: flex; gap: 6px; align-items: center;
+    }
+    .scr-mock .scr-pill {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .scr-mock .scr-pill.good { background: #ecfdf3; color: #166534; }
+    .scr-mock .scr-pill.warn { background: #fff8e6; color: #92400e; }
+    .scr-mock .scr-pill.info { background: #eef1ff; color: #3a4dc8; }
+
+    /* Tables */
+    .plan-table-wrap {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    table.plan-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    .plan-table th {
+      background: #fafafa;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .plan-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      color: var(--ink-8);
+      line-height: 1.5;
+    }
+    .plan-table tr:last-child td { border-bottom: none; }
+    .plan-table td strong { color: var(--ink-9); }
+
+    /* Two-column lists for flows */
+    .flows-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    @media (max-width: 900px) { .flows-grid { grid-template-columns: 1fr; } }
+    .flow-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 24px;
+    }
+    .flow-card[data-tone="create"]  { border-top: 4px solid #166534; }
+    .flow-card[data-tone="upload"]  { border-top: 4px solid #3a4dc8; }
+    .flow-card .ft-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+      margin-bottom: 6px;
+    }
+    .flow-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      margin: 0 0 12px 0;
+      color: var(--ink-9);
+    }
+    .flow-card ol {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--ink-7);
+      font-size: 14.5px;
+      line-height: 1.6;
+    }
+    .flow-card li { margin-bottom: 4px; }
+
+    /* Pattern cards for dashboard summary-first pattern */
+    .pattern-strip {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 1023px) { .pattern-strip { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .pattern-strip { grid-template-columns: 1fr; } }
+    .pattern-step {
+      background: #fafbfd;
+      border: 1px solid #e5e8ed;
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .pattern-step .ps-num {
+      font-size: 11px;
+      font-weight: 700;
+      color: #e85d3a;
+      letter-spacing: 0.1em;
+    }
+    .pattern-step h4 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 15px;
+      margin: 4px 0 6px 0;
+      line-height: 1.25;
+      color: var(--ink-9);
+    }
+    .pattern-step p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ink-7);
+      line-height: 1.45;
+    }
+
+    /* Two-mode dashboard side by side */
+    .modes-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+    @media (max-width: 900px) { .modes-grid { grid-template-columns: 1fr; } }
+    .mode-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 24px;
+    }
+    .mode-card[data-tone="guided"] { border-top: 4px solid #166534; }
+    .mode-card[data-tone="tech"]   { border-top: 4px solid #c2410c; }
+    .mode-card .mode-eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-6);
+    }
+    .mode-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      margin: 4px 0 12px 0;
+      color: var(--ink-9);
+    }
+    .mode-card p {
+      margin: 0 0 12px 0;
+      color: var(--ink-7);
+      font-size: 14.5px;
+      line-height: 1.55;
+    }
+    .mode-card .mode-eg {
+      background: #fafbfd;
+      border-left: 3px solid #e5e8ed;
+      padding: 10px 14px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 12.5px;
+      color: var(--ink-8);
+      border-radius: 4px;
+      line-height: 1.5;
+    }
+
+    /* Cross-cutting band */
+    .crosscut {
+      background: #0f172a;
+      color: #cbd5e1;
+      border-radius: 12px;
+      padding: 26px;
+    }
+    .crosscut h2 { color: #ffffff; margin: 0 0 14px 0; font-family: 'Fraunces', serif; font-size: 22px; }
+    .crosscut-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 1023px) { .crosscut-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px) { .crosscut-grid { grid-template-columns: 1fr; } }
+    .crosscut-cell {
+      border-left: 3px solid #e85d3a;
+      padding-left: 12px;
+    }
+    .crosscut-cell strong { display: block; color: #ffffff; font-size: 14px; margin-bottom: 4px; }
+    .crosscut-cell span { font-size: 13px; line-height: 1.5; }
+
+    /* Anti-patterns box */
+    .antibox {
+      background: #fff5f3;
+      border: 1px solid #f3d8c0;
+      border-radius: 12px;
+      padding: 22px 24px;
+    }
+    .antibox h3 { font-family: 'Fraunces', serif; font-size: 18px; color: #9a3412; margin: 0 0 10px 0; }
+    .antibox ul { margin: 0; padding-left: 20px; color: var(--ink-8); line-height: 1.55; }
+    .antibox li { margin-bottom: 6px; }
+
+    /* Sitemap tree */
+    .sitemap {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px 28px;
+      font-family: ui-monospace, Menlo, Consolas, monospace;
+      font-size: 13px;
+      line-height: 1.75;
+      color: var(--ink-8);
+      white-space: pre;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+<header class="plan-hero">
+  <span class="draft-tag">Draft v1 . Internal reference . Not for publishing</span>
+  <h1>ReliCheck App Restructure</h1>
+  <p>One platform. Twelve interface levels. Guided for beginners, deep for experts, report-ready for teams. This document captures the architecture before any code is written, so the build can hold tightly to a single coherent shape.</p>
+</header>
+
+<div class="plan-wrap">
+
+  <!-- ============================================================
+       1 . THE GOVERNING PRINCIPLE
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">1</span>The governing principle: guided sophistication</h2>
+    <p class="section-sub">Every user enters through the same simple workflow. The depth of analysis, explanation, recommendations, and reporting expands by membership level and user expertise. One app, progressive depth.</p>
+    <div class="modes-grid">
+      <div class="mode-card" data-tone="guided">
+        <span class="mode-eyebrow">A new user should feel</span>
+        <h3>"I know what to do next."</h3>
+        <p>Clear paths, plain language, recommended next step always visible. The app does not ask the user to know what analysis they need; it asks what they have and what they want to understand.</p>
+      </div>
+      <div class="mode-card" data-tone="tech">
+        <span class="mode-eyebrow">An advanced user should feel</span>
+        <h3>"The methodology is not hidden from me."</h3>
+        <p>Full statistical tables, assumptions, item-level diagnostics, and exportable methodology one click below the plain-language layer. Credibility is always available.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       2 . THE TWELVE INTERFACE LEVELS
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">2</span>The twelve interface levels</h2>
+    <p class="section-sub">ReliCheck uses twelve progressive levels of interface depth. New users stay in the early levels. Advanced users drill in. Reports match the level the audience needs.</p>
+    <div class="levels-grid">
+      <div class="level-card"><div class="lvl-num">01</div><div><h3>Home / Entry</h3><p>Where users land, see status, and choose what to do.</p></div></div>
+      <div class="level-card"><div class="lvl-num">02</div><div><h3>Create / Upload</h3><p>Build an instrument or upload existing data.</p></div></div>
+      <div class="level-card"><div class="lvl-num">03</div><div><h3>Project Overview</h3><p>High-level summary of project, data, and readiness.</p></div></div>
+      <div class="level-card"><div class="lvl-num">04</div><div><h3>Data Quality Scan</h3><p>Missing data, duplicates, straight-lining, subgroup sizes, scale checks.</p></div></div>
+      <div class="level-card"><div class="lvl-num">05</div><div><h3>Analysis Selection</h3><p>Choose the type of analysis to run, or accept ReliCheck's recommendation.</p></div></div>
+      <div class="level-card"><div class="lvl-num">06</div><div><h3>Analysis Results . Guided View</h3><p>Plain language findings, visuals, recommendations.</p></div></div>
+      <div class="level-card"><div class="lvl-num">07</div><div><h3>Analysis Results . Technical View</h3><p>Full statistical details, tables, diagnostics, assumptions.</p></div></div>
+      <div class="level-card"><div class="lvl-num">08</div><div><h3>Recommendations</h3><p>What to revise, what to keep, what to interpret with caution.</p></div></div>
+      <div class="level-card"><div class="lvl-num">09</div><div><h3>Reports & Exports</h3><p>Create, customize, and export reports at different depths.</p></div></div>
+      <div class="level-card"><div class="lvl-num">10</div><div><h3>AI Tools (embedded)</h3><p>Question improvement, dashboard narrator, report writer, methods writer.</p></div></div>
+      <div class="level-card"><div class="lvl-num">11</div><div><h3>Team / Roles / Sharing</h3><p>Permissions, audit, project access, branded outputs.</p></div></div>
+      <div class="level-card"><div class="lvl-num">12</div><div><h3>Account / Admin / Privacy</h3><p>Membership, billing, governance, data deletion, integrations.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       3 . THE USER JOURNEY (WIREFRAME STRIP)
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">3</span>The full user journey</h2>
+    <p class="section-sub">The same path every user walks, regardless of tier. Each screen is a layer of depth, not a separate product.</p>
+    <div class="journey">
+      <div class="journey-grid">
+        <div class="screen">
+          <span class="scr-step">Step 01</span>
+          <h4>Home / Entry</h4>
+          <div class="scr-mock">
+            <div class="scr-row"><span class="scr-pill info">Good morning</span></div>
+            <div class="scr-bar long"></div>
+            <div class="scr-bar accent short"></div>
+            <div class="scr-row"><span class="scr-pill good">In progress</span><span class="scr-pill warn">Needs review</span></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 02</span>
+          <h4>Create or upload</h4>
+          <div class="scr-mock">
+            <div class="scr-bar long"></div>
+            <div class="scr-row"><span class="scr-pill info">Create</span><span class="scr-pill info">Upload</span></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar accent long"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 03</span>
+          <h4>Project overview</h4>
+          <div class="scr-mock">
+            <div class="scr-row"><span class="scr-pill good">Data ready</span></div>
+            <div class="scr-bar long"></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-row"><span class="scr-pill warn">2 items flagged</span></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 04</span>
+          <h4>Analysis selection</h4>
+          <div class="scr-mock">
+            <div class="scr-bar long"></div>
+            <div class="scr-bar accent med"></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 05</span>
+          <h4>Results . Guided View</h4>
+          <div class="scr-mock">
+            <div class="scr-row"><span class="scr-pill good">Strong</span></div>
+            <div class="scr-bar long"></div>
+            <div class="scr-bar long"></div>
+            <div class="scr-bar accent med"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 06</span>
+          <h4>Results . Technical View</h4>
+          <div class="scr-mock">
+            <div class="scr-bar long"></div>
+            <div class="scr-row"><span class="scr-pill info">.86</span><span class="scr-pill info">.88</span><span class="scr-pill info">.84</span></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar long"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 07</span>
+          <h4>Recommendations</h4>
+          <div class="scr-mock">
+            <div class="scr-row"><span class="scr-pill warn">Revise</span><span class="scr-pill good">Keep</span></div>
+            <div class="scr-bar long"></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar accent med"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+        <div class="screen">
+          <span class="scr-step">Step 08</span>
+          <h4>Reports & Exports</h4>
+          <div class="scr-mock">
+            <div class="scr-bar long"></div>
+            <div class="scr-row"><span class="scr-pill info">Basic</span><span class="scr-pill info">Exec</span><span class="scr-pill info">Tech</span></div>
+            <div class="scr-bar med"></div>
+            <div class="scr-bar accent med"></div>
+            <div class="scr-bar short"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       4 . THE TWO INTAKE FLOWS
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">4</span>The two intake flows</h2>
+    <p class="section-sub">Two clean paths from the home dashboard. Both end at the same analysis surface; the build steps differ.</p>
+    <div class="flows-grid">
+      <div class="flow-card" data-tone="create">
+        <p class="ft-label">Flow A</p>
+        <h3>User creates an instrument in ReliCheck</h3>
+        <ol>
+          <li>Start Project</li>
+          <li>Choose: Create Survey or Create Test</li>
+          <li>Select method: scratch, template, AI builder, or import existing questions</li>
+          <li>Build the instrument</li>
+          <li>Run Pre-Publish Readiness Check</li>
+          <li>Revise weak questions</li>
+          <li>Distribute or export the instrument</li>
+          <li>Collect responses</li>
+          <li>Analyze results</li>
+          <li>Generate report</li>
+        </ol>
+      </div>
+      <div class="flow-card" data-tone="upload">
+        <p class="ft-label">Flow B</p>
+        <h3>User uploads existing survey or test data</h3>
+        <ol>
+          <li>Start Project</li>
+          <li>Choose: Upload Data</li>
+          <li>Select data type: survey, test, dataset, or open-ended</li>
+          <li>Upload file (CSV, Excel, Qualtrics, SurveyMonkey, Google Forms, SPSS later)</li>
+          <li>Map columns to variable types (wizard-assisted)</li>
+          <li>Confirm what each column means</li>
+          <li>Run Data Quality Scan</li>
+          <li>Choose analysis path (or accept recommendation)</li>
+          <li>View dashboard</li>
+          <li>Generate report</li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       5 . THE DUAL-MODE DASHBOARD
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">5</span>The dual-mode dashboard</h2>
+    <p class="section-sub">Not two separate dashboards. One dashboard with two readings of the same numbers. Switching between modes never changes the math; it changes the language.</p>
+    <div class="modes-grid">
+      <div class="mode-card" data-tone="guided">
+        <span class="mode-eyebrow">Mode 1 . Guided View</span>
+        <h3>For HR, leadership, business users, school admins, nontechnical evaluators</h3>
+        <p>Plain-language summaries, strength scores, color-coded readiness indicators, "what this means" explanations, recommended next steps, AI-generated narrative summaries, simple charts, report-ready language.</p>
+        <div class="mode-eg">ReliCheck found that your employee engagement scale is moderately reliable. Most items are working together, but two questions may be weakening the scale. Before using this survey for major decisions, consider revising Item 4 and Item 9.</div>
+      </div>
+      <div class="mode-card" data-tone="tech">
+        <span class="mode-eyebrow">Mode 2 . Technical View</span>
+        <h3>For researchers, evaluators, advanced analysts, institutional researchers, psychometric users</h3>
+        <p>Full statistical tables, assumptions, sample-size warnings, confidence intervals, effect sizes, reliability coefficients, factor loadings, KMO and Bartlett's test, correlation matrices, regression outputs, missing-data diagnostics, item-level statistics, exportable tables, methodology notes.</p>
+        <div class="mode-eg">Cronbach's alpha = .82, McDonald's omega = .85, average inter-item correlation = .41. Item 4 produced the lowest corrected item-total correlation at .22. Removing Item 4 would increase alpha to .86.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       6 . THE SUMMARY-FIRST UI PATTERN
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">6</span>The summary-first UI pattern</h2>
+    <p class="section-sub">Every analysis page follows the same five-step layered structure. The pattern repeats across reliability, factor analysis, descriptive, open-ended, group comparison, pre/post, predictors, and test-item dashboards.</p>
+    <div class="pattern-strip">
+      <div class="pattern-step">
+        <span class="ps-num">01</span>
+        <h4>What ReliCheck found</h4>
+        <p>One-paragraph headline. Strength score or verdict pill.</p>
+      </div>
+      <div class="pattern-step">
+        <span class="ps-num">02</span>
+        <h4>Why it matters</h4>
+        <p>Plain-language explanation for the audience that has to act on it.</p>
+      </div>
+      <div class="pattern-step">
+        <span class="ps-num">03</span>
+        <h4>What to do next</h4>
+        <p>Specific item-level or analytic recommendations.</p>
+      </div>
+      <div class="pattern-step">
+        <span class="ps-num">04</span>
+        <h4>Technical details</h4>
+        <p>Expandable panel with coefficients, tables, assumptions, diagnostics.</p>
+      </div>
+      <div class="pattern-step">
+        <span class="ps-num">05</span>
+        <h4>Add to report</h4>
+        <p>Send this section to Executive, Technical, or Full Evidence report.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       7 . MEMBERSHIP TIER MATRIX
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">7</span>Membership tier matrix</h2>
+    <p class="section-sub">Five tiers. All tiers see the same general structure. Advanced features unlock by plan. Tier never creates a different product; it controls depth.</p>
+    <div class="plan-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th style="width:14%;">Tier</th>
+            <th style="width:26%;">Best for</th>
+            <th style="width:30%;">Capabilities</th>
+            <th style="width:30%;">Reports</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Free / Starter</strong></td>
+            <td>Trying the platform; checking a survey; basic recommendations</td>
+            <td>Basic survey upload, basic descriptive analysis, limited SSI preview, basic item clarity check, basic AI explanation, limited exports</td>
+            <td>Basic Survey Check, Basic Descriptive Summary, Basic Recommendations</td>
+          </tr>
+          <tr>
+            <td><strong>Individual / Researcher</strong></td>
+            <td>Graduate students, faculty, independent researchers, program evaluators, consultants, small HR teams, small business users</td>
+            <td>Full SSI, full descriptives, reliability, open-ended themes, basic factor analysis, subgroup comparisons, pre/post, AI report writer, more exports</td>
+            <td>Survey Strength, Reliability, Descriptive, Open-Ended, Program Summary</td>
+          </tr>
+          <tr>
+            <td><strong>Professional</strong></td>
+            <td>HR departments, marketing teams, evaluation offices, institutional research, school districts, nonprofit evaluation, consultants with multiple clients</td>
+            <td>Everything in Researcher plus advanced factor analysis, predictor and key-driver analysis, regression, trend analysis, advanced subgroup comparisons, response-quality diagnostics, report customization</td>
+            <td>Executive Summary, Technical Analysis, Key Drivers, Subgroup Comparison, Trend Analysis, Survey Improvement Plan</td>
+          </tr>
+          <tr>
+            <td><strong>Business / Team</strong></td>
+            <td>Companies, colleges, districts, agencies, research teams, consulting firms</td>
+            <td>Everything in Professional plus multiple users, role-based access, project folders, team dashboards, branded reports, shared templates, approval workflows, department dashboards</td>
+            <td>Branded Executive, Department Comparison, Team Insights, Quarterly Trend, Client-Ready, Board Brief</td>
+          </tr>
+          <tr>
+            <td><strong>Enterprise / Institutional</strong></td>
+            <td>Universities, large companies, agencies, statewide organizations, large consulting firms, research centers</td>
+            <td>Everything in Business plus SSO, advanced permissions, audit logs, API access, custom templates, custom report formats, data governance controls, advanced privacy thresholds, integration support, dedicated support, custom methodology notes</td>
+            <td>Institutional Evidence, Accreditation, Compliance-Safe, Multi-Project Evaluation, Custom Executive, Custom Technical Appendix</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       8 . REPORT LEVELS
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">8</span>Report levels (orthogonal to tier)</h2>
+    <p class="section-sub">Think by report depth, not only by membership tier. Every analysis can produce reports at any of these levels, with depth-appropriate language and content.</p>
+    <div class="plan-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th style="width:18%;">Level</th>
+            <th style="width:22%;">Audience</th>
+            <th style="width:60%;">What it includes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1 . Basic Summary</strong></td>
+            <td>Beginners and lower tiers</td>
+            <td>What was analyzed, key findings, simple charts, basic recommendations, plain-language interpretation. No heavy methods.</td>
+          </tr>
+          <tr>
+            <td><strong>2 . Practical Recommendations</strong></td>
+            <td>Users who need to improve a survey, test, or dataset</td>
+            <td>Strengths, weaknesses, items to revise, data-quality concerns, recommended next steps, suggested rewritten items. One of ReliCheck's biggest differentiators.</td>
+          </tr>
+          <tr>
+            <td><strong>3 . Executive Report</strong></td>
+            <td>Leaders and teams</td>
+            <td>High-level findings, decision implications, key risks, recommended actions, charts, plain-language evidence summary. Useful for HR, business, education, marketing, and program evaluation leaders.</td>
+          </tr>
+          <tr>
+            <td><strong>4 . Technical Report</strong></td>
+            <td>Advanced users, methodologists</td>
+            <td>Methods, assumptions, statistical tables, reliability coefficients, factor results, regression outputs, limitations, interpretation cautions, appendix. The credibility layer.</td>
+          </tr>
+          <tr>
+            <td><strong>5 . Full Evidence Report</strong></td>
+            <td>High-tier users; submission, defense, accreditation</td>
+            <td>Executive summary, data quality review, all analysis sections, technical appendix, instrument improvement recommendations, AI narrative, charts, export tables, methodology notes, limitations, action plan. The premium report.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       9 . ROLES AND PERMISSIONS
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">9</span>Roles and permissions</h2>
+    <p class="section-sub">For Team, Business, and Enterprise tiers. Six roles, role-based access controls, project-level scoping. Crucial for HR, education, program evaluation, and research clients.</p>
+    <div class="plan-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th style="width:22%;">Role</th>
+            <th style="width:78%;">Capabilities</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Owner</strong></td><td>Manage billing, users, templates, all projects, exports, and settings.</td></tr>
+          <tr><td><strong>Admin</strong></td><td>Manage users, projects, templates, and reports. No billing access.</td></tr>
+          <tr><td><strong>Analyst</strong></td><td>Upload data, run analysis, generate reports, and export results.</td></tr>
+          <tr><td><strong>Builder</strong></td><td>Create and edit surveys/tests. Cannot see sensitive response data unless granted access.</td></tr>
+          <tr><td><strong>Viewer</strong></td><td>View dashboards and reports. Cannot edit or export raw data.</td></tr>
+          <tr><td><strong>Client / External Reviewer</strong></td><td>View selected reports only. No access to dashboards or raw data.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       10 . PRIVACY DESIGN
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">10</span>Privacy-centered design</h2>
+    <p class="section-sub">Privacy is built into the app, not added at the end. Especially important for HR (employee data), education (student data, FERPA), and research (IRB compliance) use cases.</p>
+    <div class="levels-grid">
+      <div class="level-card"><div class="lvl-num">P1</div><div><h3>Small subgroup suppression</h3><p>Hide subgroups below the k-anonymity threshold entirely, not just masked.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P2</div><div><h3>Role-based access</h3><p>Restrict raw response access by role; surface only what each role needs.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P3</div><div><h3>Report redaction</h3><p>Author-controlled hide/show of sensitive segments before share.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P4</div><div><h3>Anonymous response mode</h3><p>Strip identifiers at upload or collection time.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P5</div><div><h3>Data deletion controls</h3><p>User-initiated deletion with admin audit trail.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P6</div><div><h3>Export permissions</h3><p>Restrict who can export raw data versus aggregate reports.</p></div></div>
+      <div class="level-card"><div class="lvl-num">P7</div><div><h3>Audit trail (Enterprise)</h3><p>Who saw what, when, and what they exported.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       11 . AI INTEGRATION PRINCIPLES
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">11</span>AI integration principles</h2>
+    <p class="section-sub">AI is embedded in the workflow, not a separate gimmick. The standard: AI can explain and draft. ReliCheck analysis must anchor the claim.</p>
+    <div class="plan-table-wrap">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th style="width:22%;">Stage</th>
+            <th style="width:78%;">Where AI shows up</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Instrument creation</strong></td><td>Improve a question, detect bias, rewrite at a clearer reading level, align an item to a construct, suggest response options, generate a survey from a goal.</td></tr>
+          <tr><td><strong>Upload and mapping</strong></td><td>Identify variable types, detect likely scales, find open-ended fields, suggest grouping variables, flag messy columns.</td></tr>
+          <tr><td><strong>Analysis</strong></td><td>Explain a result, answer "what does this mean?", flag interpretation cautions, summarize a chart, compare groups in plain language.</td></tr>
+          <tr><td><strong>Reports</strong></td><td>Write executive summary, technical methods section, limitations, recommendations, board-ready language, client-ready language.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       12 . LOOK, FEEL, VOICE
+       ============================================================ -->
+  <section class="plan-section">
+    <h2><span class="num">12</span>Look, feel, and voice</h2>
+    <p class="section-sub">Calm, credible, structured. Closer to a clean analytics workspace plus a survey-improvement lab plus a report-writing assistant. Not SurveyMonkey.</p>
+    <div class="modes-grid">
+      <div class="mode-card" data-tone="guided">
+        <span class="mode-eyebrow">Visual style</span>
+        <h3>Calm, professional, evidence-focused</h3>
+        <p>Light background. Deep navy or charcoal text. Coral/orange accent for key actions. Soft cards. Clear section headings. Plenty of spacing. Tables only when needed. Expandable technical panels. Report-ready chart previews.</p>
+      </div>
+      <div class="mode-card" data-tone="tech">
+        <span class="mode-eyebrow">Tone</span>
+        <h3>Plain-language first, technical when requested</h3>
+        <p>Evidence-focused. Direct about limitations. Helpful without sounding gimmicky. Avoid academic-only voice. Avoid playful or cold voices. Avoid the "wall of statistics" problem on first paint.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       ANTI-PATTERNS
+       ============================================================ -->
+  <section class="plan-section">
+    <h2>Anti-patterns to avoid</h2>
+    <p class="section-sub">Six design mistakes that would undo guided sophistication.</p>
+    <div class="antibox">
+      <ul>
+        <li><strong>Statistical-first dashboards</strong>: never let the first paint be a wall of coefficients. Advanced statistics should be available, never forced.</li>
+        <li><strong>Forcing analysis choice upfront</strong>: do not make the user pick "Cronbach's alpha vs KMO vs IRT" before any data is in. Let ReliCheck recommend.</li>
+        <li><strong>Hiding the technical layer</strong>: do not collapse methodology completely. Advanced users need it one click away to trust the platform.</li>
+        <li><strong>Reports as an afterthought</strong>: reports are a main outcome, not a leftover feature. Every analysis page sends to a report.</li>
+        <li><strong>AI as a separate page</strong>: AI lives inside the workflow. A standalone "AI" page is for marketing, not for the app.</li>
+        <li><strong>Different apps per tier</strong>: one product, deeper access by plan. Never make Free and Enterprise feel like different products.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SITEMAP
+       ============================================================ -->
+  <section class="plan-section">
+    <h2>Recommended app sitemap</h2>
+    <p class="section-sub">Global navigation handles account, projects, templates, reports, billing, and team. Project navigation handles work inside one survey, test, or dataset.</p>
+    <div class="sitemap">APP STRUCTURE
+
+1. Home Dashboard
+   - Create New Project
+   - Upload Data
+   - Continue Recent Project
+   - Reports Ready
+   - Alerts and Recommendations
+   - Membership Usage
+
+2. Projects
+   - All Projects
+   - Survey Projects
+   - Test Projects
+   - Dataset Projects
+   - Archived Projects
+
+3. Create / Upload
+   - Create Survey
+   - Create Test
+   - Use Template
+   - AI Instrument Builder
+   - Upload Survey Data
+   - Upload Test Data
+   - Upload General Dataset
+
+4. Project Workspace
+   - Overview
+   - Instrument
+   - Data
+   - Analysis
+   - Recommendations
+   - Reports
+   - Exports
+   - Settings
+
+5. Analysis Center
+   - Survey Strength Index
+   - Readiness Check
+   - Descriptive Analysis
+   - Reliability Analysis
+   - Factor / Validity Analysis
+   - Open-Ended Analysis
+   - Group Comparisons
+   - Trends / Pre-Post
+   - Predictors / Key Drivers
+   - Test & Item Analysis
+
+6. Reports
+   - Basic Summary Report
+   - Recommendations Report
+   - Executive Report
+   - Technical Report
+   - Full Evidence Report
+   - Branded Report
+   - Report Builder
+
+7. AI Tools
+   - Question Improvement
+   - Survey Builder
+   - Data Explainer
+   - Dashboard Narrator
+   - Report Writer
+   - Technical Methods Writer
+   - Recommendations Writer
+
+8. Team
+   - Users
+   - Roles
+   - Permissions
+   - Shared Templates
+   - Project Access
+   - Activity Log
+
+9. Account
+   - Membership
+   - Billing
+   - Usage
+   - Plan Limits
+   - Upgrade Options
+
+10. Help
+   - Getting Started
+   - Analysis Guides
+   - Report Guides
+   - Methodology
+   - Contact Support</div>
+  </section>
+
+  <!-- ============================================================
+       CROSS-CUTTING FEATURES (matches the mock's bottom strip)
+       ============================================================ -->
+  <section class="crosscut">
+    <h2>Across all levels . Powerful features always available</h2>
+    <div class="crosscut-grid">
+      <div class="crosscut-cell"><strong>AI Assistance</strong><span>Get help at any step.</span></div>
+      <div class="crosscut-cell"><strong>Smart Recommendations</strong><span>Improve your surveys and data.</span></div>
+      <div class="crosscut-cell"><strong>Data Quality Alerts</strong><span>We flag issues early.</span></div>
+      <div class="crosscut-cell"><strong>Privacy Protection</strong><span>Your data is safe and secure.</span></div>
+      <div class="crosscut-cell"><strong>Save & Continue</strong><span>Pick up where you left off.</span></div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       PRODUCT IDENTITY
+       ============================================================ -->
+  <section class="plan-section">
+    <h2>Product identity, in one sentence</h2>
+    <p class="section-sub" style="font-family: 'Fraunces', Georgia, serif; font-size: 19px; color: var(--ink-9); line-height: 1.5; max-width: 880px;">
+      A project-based analysis workspace for building stronger instruments, analyzing survey, test, and data evidence, and producing reports people can actually use.
+    </p>
+  </section>
+
+</div>
+
+</body>
+</html>

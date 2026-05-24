@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Help center · ReliCheck</title>
+  <meta name="description" content="Step-by-step guides for building, distributing, and analyzing surveys, plus answers to common questions." />
+  <link rel="canonical" href="https://relichecksurvey.com/help.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Help center · ReliCheck" />
+  <meta property="og:description" content="Step-by-step guides for building, distributing, and analyzing surveys, plus answers to common questions." />
+  <meta property="og:url" content="https://relichecksurvey.com/help.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Help center · ReliCheck" />
+  <meta name="twitter:description" content="Step-by-step guides for building, distributing, and analyzing surveys, plus answers to common questions." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<header class="article-header is-centered">
+  <div class="container-content">
+    <span class="kicker">Help center</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:20ch;">Search every help article, walk through the basics, or contact us.</h1>
+    <p class="lede" style="margin:0 auto var(--s-6);max-width:62ch;">Step-by-step articles for every part of the workflow, plus answers to the questions we hear most often. If you cannot find what you need, the support team responds within one business day.</p>
+    <div style="max-width:560px;margin:0 auto;position:relative;">
+      <input type="search" id="hcSearch" autocomplete="off" placeholder="Search every help article: SPSS, anonymity, alpha, billing…" style="width:100%;padding:14px 18px 14px 44px;border:1px solid var(--line-strong);border-radius:10px;font-size:15px;background:#fff;font-family:inherit;color:var(--ink-9);box-shadow:0 1px 2px rgba(11,23,51,.04);" />
+      <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--ink-5);font-size:16px;">🔍</span>
+    </div>
+    <p class="small muted" id="hcSearchSummary" style="margin-top:10px;min-height:1.4em;"></p>
+  </div>
+</header>
+
+<section class="section" id="hcResultsSection" style="display:none;padding-top:8px;">
+  <div class="container-content" style="max-width:760px;">
+    <div id="hcResults"></div>
+  </div>
+</section>
+
+<style>
+  .hc-result { display:block; padding:18px 22px; background:#fff; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; text-decoration:none; color:var(--ink-8); transition: border-color .2s ease; }
+  .hc-result:hover { border-color: var(--accent); }
+  .hc-result-meta { font-size: 14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: var(--ink-5); margin-bottom:6px; }
+  .hc-result-q { font-family: var(--font-display); font-weight: 500; font-size: 17px; color: var(--navy); margin: 0 0 6px; }
+  .hc-result-snip { font-size: 14px; color: var(--ink-7); line-height: 1.5; margin: 0; }
+  .hc-result mark { background: #fff3a6; color: var(--ink-9); padding: 0 2px; border-radius: 2px; }
+</style>
+
+<section class="section" id="hcTopicsSection">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">Browse by topic</span><h2>Help articles by topic</h2></div>
+    <div class="cards-3">
+      <a class="intent" href="help/getting-started.html"><h3>Getting started</h3><p>Create your first survey, invite respondents, and read your first reliability number.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/building-surveys.html"><h3>Building surveys</h3><p>Question types, logic, branding, AI question review, and validated templates.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/distributing.html"><h3>Distributing</h3><p>Public links, email lists, QR codes, embeds, and access controls.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/analyzing-reporting.html"><h3>Analyzing &amp; reporting</h3><p>Reliability statistics, item flags, AI summaries, and theme extraction.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/exports-integrations.html"><h3>Exports &amp; integrations</h3><p>PDF, Excel, SPSS, Google Sheets, Drive, and the developer API.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/privacy-compliance.html"><h3>Privacy &amp; compliance</h3><p>Anonymity protections, GDPR, FERPA, SOC 2 status, and data residency.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/account-billing.html"><h3>Account &amp; billing</h3><p>Plans, team seats, sharing, invoicing, and education or non-profit discounts.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="help/troubleshooting.html"><h3>Troubleshooting</h3><p>Common errors and unexpected behavior, with diagnostic steps for each.</p><span class="arrow">Open article →</span></a>
+      <a class="intent" href="reliability-guide.html"><h3>Reliability &amp; validity guide</h3><p>The longer-form companion: what each statistic means, how to read it, and the thresholds.</p><span class="arrow">Open guide →</span></a>
+    </div>
+  </div>
+</section>
+
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">Get help</span><h2>Other ways to reach us</h2></div>
+    <div class="cards-3">
+      <a class="intent" href="mailto:support@relichecksurvey.com">
+        <h3>Email support</h3>
+        <p>Reach the support team at <strong>support@relichecksurvey.com</strong>. Response within one business day on every plan, and within four business hours on Professional and Business.</p>
+        <span class="arrow">Open mail →</span>
+      </a>
+      <a class="intent" href="mailto:sales@relichecksurvey.com">
+        <h3>Sales &amp; quotes</h3>
+        <p>For procurement, custom contracts, and enterprise pricing, contact <strong>sales@relichecksurvey.com</strong>. Volume discounts and PO billing available.</p>
+        <span class="arrow">Open mail →</span>
+      </a>
+      <a class="intent" href="mailto:privacy@relichecksurvey.com">
+        <h3>Privacy &amp; DSAR</h3>
+        <p>For data-subject access requests, deletion requests, or compliance questions, write to <strong>privacy@relichecksurvey.com</strong>. We acknowledge within 5 business days and respond within 30.</p>
+        <span class="arrow">Open mail →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section"><div class="container-content"><div class="cta-band">
+      <h2>Still stuck?</h2>
+      <p>If you have searched and still cannot find an answer, email us. The support team reads every message and responds within one business day.</p>
+      <div class="hero-actions"><a href="mailto:support@relichecksurvey.com" class="btn btn-primary btn-lg">Contact support</a><a href="methodology.html" class="btn btn-outline btn-lg">Read the methods</a></div>
+    </div></div></section>
+</main>
+
+<script>
+window.__HELP_INDEX = [{"t":"Getting started","s":"getting-started","q":"How do I create my first survey?","a":"Sign in, click New survey, then pick either a blank survey or one of the validated templates. Add Likert, single-choice, multi-select, or open-ended items, set your scale anchors, then publish to get a share link.","h":"how-do-i-create-my-first-survey"},{"t":"Getting started","s":"getting-started","q":"What's the fastest way to get started?","a":"Start from a template. The Course Evaluation, Employee Engagement, and Customer Satisfaction templates each ship with reviewed items and the right scale defaults, so you can launch in a few minutes.","h":"what-s-the-fastest-way-to-get-started"},{"t":"Getting started","s":"getting-started","q":"Do respondents need an account?","a":"No. Respondents open your share link, fill out the survey, and submit. No sign-up, no app, no friction. The link can be public or restricted by email allowlist depending on your settings.","h":"do-respondents-need-an-account"},{"t":"Getting started","s":"getting-started","q":"What devices does ReliCheck support?","a":"Any modern browser. The respondent experience is mobile-first, so phone, tablet, and desktop all work cleanly. The author and analytics dashboards are designed for desktop and tablet.","h":"what-devices-does-relicheck-support"},{"t":"Building surveys","s":"building-surveys","q":"What question types are available?","a":"Likert (5- or 7-point agreement or frequency), single-choice (radio), multi-select (checkbox), and open-ended (free text). Each type has its own settings for required-vs-optional, reverse-scoring, and skip logic.","h":"what-question-types-are-available"},{"t":"Building surveys","s":"building-surveys","q":"How do I use skip logic?","a":"On the question editor, click Skip logic, pick the trigger (a previous answer), and choose what happens (skip to a question, end the survey, or show a follow-up). Logic is visible from the survey overview so you can audit the flow.","h":"how-do-i-use-skip-logic"},{"t":"Building surveys","s":"building-surveys","q":"Can I import a survey from somewhere else?","a":"Yes. Datasets uploaded as CSV or XLSX become a ReliCheck survey automatically: column headers become items, rows become responses. The mapping wizard lets you mark each column as Likert, single, multi, or open before importing.","h":"can-i-import-a-survey-from-somewhere-else"},{"t":"Building surveys","s":"building-surveys","q":"How does AI question review work?","a":"The AI reviewer flags double-barreled, leading, vague, and double-negative items as you write them. It does not change your wording; it suggests revisions you can accept, reject, or edit. The review is described in detail on the AI features page.","h":"how-does-ai-question-review-work"},{"t":"Building surveys","s":"building-surveys","q":"Can I brand the survey?","a":"Yes. Add your logo, accent color, and a custom thank-you message in survey settings. Business plans also support a custom domain (e.g. survey.yourorg.com).","h":"can-i-brand-the-survey"},{"t":"Distributing surveys","s":"distributing","q":"What distribution channels are supported?","a":"Public link, email invitations, QR code (auto-generated for posters and slides), and embed code for your own website. Each channel can have its own response cap and access window.","h":"what-distribution-channels-are-supported"},{"t":"Distributing surveys","s":"distributing","q":"Can I restrict who can respond?","a":"Yes. Restrict by email allowlist, single-use tokens, or domain (e.g. only addresses ending in @yourschool.edu). Combine with response caps to control sample size precisely.","h":"can-i-restrict-who-can-respond"},{"t":"Distributing surveys","s":"distributing","q":"Can the same person respond twice?","a":"By default, yes (anonymous responses are not deduplicated). Turn on single-use tokens or require sign-in to enforce one response per person.","h":"can-the-same-person-respond-twice"},{"t":"Analyzing and reporting","s":"analyzing-reporting","q":"How are reliability statistics computed?","a":"Cronbach\u2019s \u03b1, split-half, KMO, item-total correlations, and missing-data summaries are computed per scale on complete-case respondents. Full formulas live on the methodology page.","h":"how-are-reliability-statistics-computed"},{"t":"Analyzing and reporting","s":"analyzing-reporting","q":"What does an alpha of 0.83 mean?","a":"0.83 is in the strong band (\u2265 0.80). The items in that scale are measuring one thing consistently. Read the reliability guide for thresholds, confidence intervals, and the caveats every researcher should know.","h":"what-does-an-alpha-of-0-83-mean"},{"t":"Analyzing and reporting","s":"analyzing-reporting","q":"What is item-total correlation?","a":"The correlation between an individual item and the rest of the scale (the corrected version excludes the item from the total). An item below 0.20 is a weak contributor and worth reviewing.","h":"what-is-item-total-correlation"},{"t":"Analyzing and reporting","s":"analyzing-reporting","q":"How does AI theme extraction work?","a":"Open-ended responses are clustered into 3 to 8 themes with counts and example quotes. Themes are generated on demand and never stored without your approval. The model never sees response IDs or any other PII.","h":"how-does-ai-theme-extraction-work"},{"t":"Analyzing and reporting","s":"analyzing-reporting","q":"Can I see results in real time?","a":"Yes. Reliability statistics, item flags, and theme summaries refresh as new responses arrive. Statistics requiring a minimum sample (alpha needs at least 30 complete-case respondents) display a count instead until the threshold is met.","h":"can-i-see-results-in-real-time"},{"t":"Exports and integrations","s":"exports-integrations","q":"How do I export to SPSS?","a":"Open the survey\u2019s Reports tab, choose Export, and select SPSS .sav. Variable and value labels, plus reverse-scoring, are preserved automatically.","h":"how-do-i-export-to-spss"},{"t":"Exports and integrations","s":"exports-integrations","q":"What other export formats are available?","a":"PDF report, Word document, Excel workbook, raw CSV, SPSS .sav, R-compatible bundle (CSV plus an .R script with labels), and Stata bundle (CSV plus a .do file with labels).","h":"what-other-export-formats-are-available"},{"t":"Exports and integrations","s":"exports-integrations","q":"Can I send results to Google Sheets or Drive?","a":"Yes, on every plan. Connect your Google account once in Account \u2192 Integrations, then use the Send to Sheets or Save to Drive options on any survey\u2019s Reports tab.","h":"can-i-send-results-to-google-sheets-or-drive"},{"t":"Exports and integrations","s":"exports-integrations","q":"Is there an API?","a":"Yes, on Business plans. The REST API supports listing surveys, fetching responses, creating bearer tokens, and pushing dataset uploads. Developer docs are at /developers.","h":"is-there-an-api"},{"t":"Privacy and compliance","s":"privacy-compliance","q":"What anonymity protections does ReliCheck offer?","a":"Anonymous mode hides respondent identifiers from the dashboard. K-anonymity suppression on group rollups protects small subgroups from re-identification (groups below the threshold show counts only, never breakdowns).","h":"what-anonymity-protections-does-relicheck-offer"},{"t":"Privacy and compliance","s":"privacy-compliance","q":"Where is data stored?","a":"Default storage is in IONOS data centers in the EU. US-region storage is available on Business plans. Survey content is encrypted at rest with per-tenant key separation.","h":"where-is-data-stored"},{"t":"Privacy and compliance","s":"privacy-compliance","q":"Is ReliCheck GDPR compliant?","a":"Yes. ReliCheck offers a Data Processing Agreement (DPA) on request, EU data residency by default, encryption in transit and at rest, data-subject access request (DSAR) tooling on every account, documented sub-processor lists, and breach-notification procedures aligned with Article 33. Full details are in the privacy policy.","h":"is-relicheck-gdpr-compliant"},{"t":"Privacy and compliance","s":"privacy-compliance","q":"Is ReliCheck FERPA compliant?","a":"Yes. Education customer data is treated as an education record under FERPA. ReliCheck signs as a designated school official under the school official exception when required, with access controls, audit logging, and customer-specific FERPA agreements available on Team and Institution plans.","h":"is-relicheck-ferpa-aligned"},{"t":"Privacy and compliance","s":"privacy-compliance","q":"What about SOC 2?","a":"SOC 2 Type II audit is currently underway, with the Type I observation period complete. Current audit status, the audit firm, and the Type I report are available to enterprise prospects under NDA via sales.","h":"what-about-soc-2"},{"t":"Account and billing","s":"account-billing","q":"How do I add teammates?","a":"Professional and Business plans include team sharing. Invite from Account \u2192 Team. Roles include admin, editor, and viewer.","h":"how-do-i-add-teammates"},{"t":"Account and billing","s":"account-billing","q":"Can I share results with non-account holders?","a":"Yes. Reports can be shared via a read-only link, and PDF / Word / Excel / SPSS exports work for any audience without an account.","h":"can-i-share-results-with-non-account-holders"},{"t":"Account and billing","s":"account-billing","q":"How do I change plans?","a":"Go to Account \u2192 Billing \u2192 Change plan. The change takes effect immediately, with a prorated charge or credit on your next invoice.","h":"how-do-i-change-plans"},{"t":"Account and billing","s":"account-billing","q":"How do I cancel my subscription?","a":"Account \u2192 Billing \u2192 Cancel. Your access continues through the end of the current paid period. Survey content is retained per the retention policy.","h":"how-do-i-cancel-my-subscription"},{"t":"Account and billing","s":"account-billing","q":"Do you offer education or non-profit pricing?","a":"Yes. Educators, students, verified non-profits, and government use cases get up to 30% off all paid tiers. Contact sales for verification and a promo code.","h":"do-you-offer-education-or-non-profit-pricing"},{"t":"Account and billing","s":"account-billing","q":"Can I get an invoice instead of paying by card?","a":"Yes, on Business plans. Annual contracts can be invoiced with net-30 or net-45 terms. Email sales@relichecksurvey.com to set up.","h":"can-i-get-an-invoice-instead-of-paying-by-card"},{"t":"Troubleshooting","s":"troubleshooting","q":"Why is alpha not showing for my scale?","a":"Reliability statistics need at least three valid items and at least 30 complete-case respondents. Below those thresholds, ReliCheck shows the count and a sample-size note instead of an estimate.","h":"why-is-alpha-not-showing-for-my-scale"},{"t":"Troubleshooting","s":"troubleshooting","q":"My alpha is unexpectedly low. What now?","a":"Check three things: are reverse-scored items flagged, do all items measure the same construct, and is the sample large enough? Item-total correlations point at weak contributors. The reliability guide pitfalls covers the most common causes.","h":"my-alpha-is-unexpectedly-low-what-now"},{"t":"Troubleshooting","s":"troubleshooting","q":"I uploaded a CSV and the import failed.","a":"The mapping wizard requires column headers in row 1 and at least one Likert, single-choice, or open-ended column. Files over 10MB or with more than 50,000 rows need to be split. CSVs with mixed delimiters (comma plus semicolon) need cleaning first.","h":"i-uploaded-a-csv-and-the-import-failed"},{"t":"Troubleshooting","s":"troubleshooting","q":"Respondents say the share link does not work.","a":"Check three things: is the survey published (not just saved), is the access window open, and is the response cap not exceeded. Settings under the survey\u2019s Distribute tab show all three at a glance.","h":"respondents-say-the-share-link-does-not-work"},{"t":"Troubleshooting","s":"troubleshooting","q":"The AI features are not responding.","a":"AI features need an API key configured server-side. If you self-host or your admin has not set anthropic_api_key in the platform config, AI features return a clear \"AI features are not configured\" message. Contact your admin or support.","h":"the-ai-features-are-not-responding"}];
+
+  // Help center search across the embedded index of every help-article FAQ.
+  (function () {
+    var input    = document.getElementById('hcSearch');
+    var summary  = document.getElementById('hcSearchSummary');
+    var results  = document.getElementById('hcResults');
+    var section  = document.getElementById('hcResultsSection');
+    var topics   = document.getElementById('hcTopicsSection');
+    var index    = window.__HELP_INDEX || [];
+    if (!input || !results || !index.length) return;
+
+    function escapeHtml(s) {
+      return s.replace(/[&<>"']/g, function (c) {
+        return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' })[c];
+      });
+    }
+    function highlight(text, q) {
+      if (!q) return escapeHtml(text);
+      var safeText = escapeHtml(text);
+      var safeQ    = escapeHtml(q).replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+      return safeText.replace(new RegExp(safeQ, 'gi'), function (m) { return '<mark>' + m + '</mark>'; });
+    }
+    function snippet(answer, q) {
+      var lower = answer.toLowerCase();
+      var idx = lower.indexOf(q.toLowerCase());
+      if (idx === -1) return answer.length > 180 ? answer.slice(0, 180) + '…' : answer;
+      var start = Math.max(0, idx - 60);
+      var end   = Math.min(answer.length, idx + q.length + 120);
+      return (start > 0 ? '… ' : '') + answer.slice(start, end) + (end < answer.length ? ' …' : '');
+    }
+
+    function applyFilter() {
+      var q = (input.value || '').trim();
+      if (!q) {
+        section.style.display = 'none';
+        results.innerHTML = '';
+        if (topics) topics.style.display = '';
+        summary.textContent = '';
+        return;
+      }
+      if (topics) topics.style.display = 'none';
+      section.style.display = '';
+      var lower = q.toLowerCase();
+      var matches = index.filter(function (entry) {
+        return entry.q.toLowerCase().indexOf(lower) !== -1
+            || entry.a.toLowerCase().indexOf(lower) !== -1
+            || entry.t.toLowerCase().indexOf(lower) !== -1;
+      });
+      if (!matches.length) {
+        results.innerHTML = '';
+        summary.textContent = 'No results for "' + q + '". Try a different keyword, or contact support below.';
+        return;
+      }
+      results.innerHTML = matches.map(function (m) {
+        var url = 'help/' + m.s + '.html#' + m.h;
+        return '<a class="hc-result" href="' + url + '">'
+             + '<div class="hc-result-meta">' + escapeHtml(m.t) + '</div>'
+             + '<div class="hc-result-q">' + highlight(m.q, q) + '</div>'
+             + '<p class="hc-result-snip">' + highlight(snippet(m.a, q), q) + '</p>'
+             + '</a>';
+      }).join('');
+      summary.textContent = matches.length + ' result' + (matches.length === 1 ? '' : 's') + ' for "' + q + '"';
+    }
+
+    input.addEventListener('input', applyFilter);
+    input.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Escape') { input.value = ''; applyFilter(); }
+    });
+  })();
+</script>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mixed-Methods Studio: Beta User Guide · ReliCheck</title>
+  <meta name="description" content="A short guide for the closed-beta cohort using ReliCheck Mixed-Methods Studio." />
+  <meta name="robots" content="noindex,follow" />
+  <link rel="canonical" href="https://relichecksurvey.com/mm-beta-guide.html" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    /* Container override: marketing-site .container-content is capped
+       narrower than the app. The beta guide is internal-facing, so let it
+       stretch toward the viewport with the same clamp() pattern App 2.0 uses.
+       Reading column inside the body still has its own max-width for line
+       length, but the hero and TOC use the wider container. */
+    .mmg-page-wrap { width: 100%; padding: 0 clamp(24px, 4vw, 80px); box-sizing: border-box; }
+    .mmg-page-wrap .mmg-inner { max-width: 1400px; margin: 0 auto; }
+
+    .mmg-hero {
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+      color: #fff;
+      padding: var(--s-7) 0;
+      margin-bottom: var(--s-6);
+    }
+    .mmg-hero-logo { display: flex; align-items: center; gap: 10px; margin-bottom: var(--s-4); }
+    .mmg-hero-logo img { height: 32px; width: auto; filter: brightness(0) invert(1); }
+    .mmg-hero-logo span { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.75); }
+    .mmg-hero h1 {
+      font-family: Fraunces, serif;
+      font-size: 44px;
+      line-height: 1.1;
+      margin: 0 0 var(--s-3);
+      color: #fff;
+      max-width: 18ch;
+    }
+    .mmg-hero .lede {
+      color: rgba(255,255,255,0.85);
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 60ch;
+      margin: 0 0 var(--s-5);
+    }
+    .mmg-hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .mmg-hero-actions .btn-primary {
+      background: #fff;
+      color: #1e1b4b;
+      border: none;
+      font-weight: 600;
+    }
+    .mmg-hero-actions .btn-primary:hover { background: #f4f5f7; color: #1e1b4b; }
+    .mmg-hero-actions .btn-outline {
+      background: transparent;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.4);
+    }
+    .mmg-hero-actions .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
+
+    .mmg-body { max-width: 72ch; margin: 0 auto; }
+    .mmg-body h2 { font-family: Fraunces, serif; font-size: 28px; margin-top: var(--s-7); margin-bottom: var(--s-3); color: var(--ink-9); padding-top: var(--s-4); border-top: 1px solid var(--line); }
+    .mmg-body h2:first-of-type { border-top: none; padding-top: 0; margin-top: 0; }
+    .mmg-body h3 { font-family: Fraunces, serif; font-size: 20px; margin-top: var(--s-5); margin-bottom: var(--s-2); color: var(--ink-9); }
+    .mmg-body p, .mmg-body li { line-height: 1.7; color: var(--ink-8); font-size: 16px; }
+    .mmg-body ul, .mmg-body ol { padding-left: 1.4em; margin-top: var(--s-2); }
+    .mmg-body li { margin-bottom: var(--s-2); }
+    .mmg-body code { background: #f4f5f7; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+
+    .mmg-welcome-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin: var(--s-5) 0 var(--s-6);
+    }
+    .mmg-welcome-card {
+      background: #f3f6fb;
+      border: 1px solid #d6def0;
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .mmg-welcome-card h4 {
+      font-family: Fraunces, serif;
+      font-size: 16px;
+      margin: 0 0 6px;
+      color: var(--ink-9);
+    }
+    .mmg-welcome-card p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink-7);
+    }
+
+    .mmg-toc {
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: var(--s-6);
+    }
+    .mmg-toc h4 {
+      font-family: Inter, sans-serif;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-6);
+      margin: 0 0 12px;
+    }
+    .mmg-toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 4px 24px;
+    }
+    .mmg-toc-grid a {
+      display: block;
+      padding: 6px 0;
+      color: var(--ink-9);
+      text-decoration: none;
+      font-size: 14px;
+      border-bottom: 1px solid transparent;
+    }
+    .mmg-toc-grid a:hover { color: var(--accent); }
+
+    .mmg-callout {
+      background: #fff8e6;
+      border-left: 4px solid #d9a800;
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin: var(--s-4) 0;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ink-8);
+    }
+
+    .mmg-phase-block {
+      background: #f3f6fb;
+      border: 1px solid #d6def0;
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin-top: var(--s-4);
+    }
+    .mmg-phase-block strong { color: #1a1f2b; }
+
+    .mmg-screenshot {
+      margin: var(--s-4) 0;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fafbfc;
+    }
+    .mmg-screenshot img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    .mmg-screenshot .mmg-screenshot-placeholder {
+      aspect-ratio: 16 / 9;
+      background: repeating-linear-gradient(45deg, #e8ebf2, #e8ebf2 10px, #eef1f7 10px, #eef1f7 20px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink-6);
+      font-size: 13px;
+      text-align: center;
+      padding: 24px;
+    }
+    .mmg-screenshot-caption {
+      padding: 10px 16px;
+      font-size: 13px;
+      color: var(--ink-6);
+      background: #fff;
+      border-top: 1px solid var(--line);
+    }
+
+    .mmg-tab-list {
+      background: #fafbfc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 6px 0;
+      margin: var(--s-3) 0;
+    }
+    .mmg-tab-list > div {
+      padding: 10px 20px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .mmg-tab-list > div:not(:last-child) { border-bottom: 1px solid var(--line); }
+    .mmg-tab-list strong { color: #1a1f2b; }
+
+    .mmg-quote {
+      border-left: 3px solid #cfd6df;
+      padding: 0 22px;
+      color: var(--ink-6);
+      font-style: italic;
+      margin: var(--s-3) 0;
+      line-height: 1.7;
+    }
+
+    .mmg-footer-strip {
+      margin-top: var(--s-7);
+      padding-top: var(--s-4);
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .mmg-footer-strip-meta {
+      font-size: 13px;
+      color: var(--ink-5);
+    }
+    .mmg-footer-strip img { height: 24px; width: auto; opacity: 0.7; }
+
+    @media print {
+      #relicheck-nav, .mmg-hero-actions, #footer { display: none; }
+      .mmg-hero { background: #fff; color: #1a1f2b; padding: 0 0 var(--s-3); margin-bottom: var(--s-4); border-bottom: 2px solid #1e1b4b; }
+      .mmg-hero h1, .mmg-hero .lede { color: inherit; }
+      .mmg-hero-logo img { filter: none; }
+      .mmg-hero-logo span { color: #5a6470; }
+      .mmg-toc { page-break-after: always; }
+      h2 { page-break-after: avoid; }
+      .mmg-screenshot { page-break-inside: avoid; }
+      .mmg-body { max-width: none; }
+      body { font-size: 11pt; }
+    }
+  </style>
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<main>
+
+<!-- ============================================================
+     PAGE 1 . HERO + INTRO WELCOME
+     ============================================================ -->
+<header class="mmg-hero">
+  <div class="mmg-page-wrap"><div class="mmg-inner">
+    <div class="mmg-hero-logo">
+      <img src="logo-brand.svg" alt="ReliCheck" />
+      <span>Mixed-Methods Studio &middot; Closed beta</span>
+    </div>
+    <h1>Beta user guide.</h1>
+    <p class="lede">A walkthrough of Mixed-Methods Studio for dissertation-level researchers and mixed-methods faculty in the closed-beta cohort. Read it once. Come back when something looks unfamiliar.</p>
+    <div class="mmg-hero-actions">
+      <a href="mm-beta-guide.pdf" class="btn btn-primary" download>Download as PDF</a>
+      <a href="?draft=1#/mm" class="btn btn-outline">Open Mixed-Methods Studio</a>
+    </div>
+  </div></div>
+</header>
+
+<section class="section">
+  <div class="mmg-page-wrap"><div class="mmg-inner">
+  <div class="mmg-body">
+
+  <h2 id="welcome">Welcome to the cohort</h2>
+  <p>You are one of a small group of dissertation-level researchers and mixed-methods faculty testing Mixed-Methods Studio before public launch. The cohort is small on purpose. We want to learn from you what works, what does not, and what we should fix before more researchers depend on this tool.</p>
+  <p>The closed beta runs through the summer of 2026. You can use the studio for real research, including dissertation work, and the outputs (DOCX, PDF, SPSS-ready files) are yours. Citation language for the methods is included near the end of this guide.</p>
+
+  <div class="mmg-welcome-cards">
+    <div class="mmg-welcome-card">
+      <h4>Real work is welcome</h4>
+      <p>Your data, your projects, your reports. Everything saves on every step and is exportable any time.</p>
+    </div>
+    <div class="mmg-welcome-card">
+      <h4>Your feedback shapes it</h4>
+      <p>A dark Feedback button sits in the bottom-right of every Studio page. We read every note.</p>
+    </div>
+    <div class="mmg-welcome-card">
+      <h4>Methods are defensible</h4>
+      <p>You stay in control. The studio recommends; you accept or adjust. Citation language is provided.</p>
+    </div>
+  </div>
+
+  <div class="mmg-callout">If you are stuck or something looks wrong, click the dark <strong>Feedback</strong> button in the bottom-right of any Studio page. For urgent issues, email <a href="mailto:support@relichecksurvey.com">support@relichecksurvey.com</a> with "MM Studio beta" in the subject.</div>
+
+  <div class="mmg-toc">
+    <h4>On this page</h4>
+    <div class="mmg-toc-grid">
+      <a href="#what">What Mixed-Methods Studio does</a>
+      <a href="#phases">The three phases</a>
+      <a href="#phase1">Phase 1: Get data in</a>
+      <a href="#phase2">Phase 2: Builder</a>
+      <a href="#phase3">Phase 3: Analyze and report</a>
+      <a href="#export">Exporting your work</a>
+      <a href="#cite">Citing the methods</a>
+      <a href="#feedback">Sending feedback</a>
+      <a href="#trouble">If something goes wrong</a>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       PAGE 2 . OVERVIEW
+       ============================================================ -->
+
+  <h2 id="what">What Mixed-Methods Studio does</h2>
+  <p>Mixed-Methods Studio takes survey data that combines closed-ended items (Likert scales, ratings, demographics) with open-ended comments and walks you through coding, categorizing, integrating, and reporting on it. The work that traditionally lives across NVivo, SPSS, and Word collapses into one flow.</p>
+  <p>You bring a dataset. The studio writes themes from the open-ended responses, codes every row with a theme and a sentiment, builds derived variables you can analyze with the closed-ended items, drafts integration paragraphs that bring the quant and qual together, runs a methodological audit, and exports a draft report in DOCX or PDF.</p>
+  <p>You stay in control of every decision. The studio recommends; you accept or adjust. Themes can be renamed, merged, or recoded. Suggested analyses can be ignored. The narrative drafts can be rewritten.</p>
+
+  <h2 id="phases">The three phases</h2>
+  <p>The studio runs in three phases. Each unlocks once the previous is complete. The studio jumps you to the next phase automatically, so you can follow the path or click any unlocked phase directly.</p>
+  <div class="mmg-phase-block"><strong>Phase 1. Get data in.</strong> Upload a file, link an existing ReliCheck survey, or paste rows. The studio expects one row per response.</div>
+  <div class="mmg-phase-block"><strong>Phase 2. Builder.</strong> Review the rows, run the theme builder, and confirm the per-response coding.</div>
+  <div class="mmg-phase-block"><strong>Phase 3. Analyze and report.</strong> Eight tabs of analysis, ending with an editable report you can export.</div>
+
+  <!-- ============================================================
+       PAGE 3 . PHASE 1
+       ============================================================ -->
+
+  <h2 id="phase1">Phase 1: Get data in</h2>
+  <p>Three intake routes. Pick whichever matches the data you have.</p>
+  <ul>
+    <li><strong>Upload a file.</strong> CSV, TSV, XLSX, XLS, SAV (SPSS), or DTA (Stata). The studio reads the headers and asks you which columns are which. One column needs to be an open-ended response. Optional: numeric scores, group labels (gender, school, condition), and question IDs if multiple open-ended items share rows.</li>
+    <li><strong>Link a ReliCheck survey.</strong> If the survey already lives in your account, the studio reads it directly. Useful when you have an active distribution and want analysis as responses arrive.</li>
+    <li><strong>Paste rows.</strong> For quick tests. Open-ended text in one column, optional score in another.</li>
+  </ul>
+
+  <div class="mmg-screenshot">
+    <img src="mm-guide-phase1.png" alt="Mixed-Methods Studio Phase 1 intake screen showing upload, link survey, and paste options." onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+    <div class="mmg-screenshot-placeholder" style="display:none;">Screenshot placeholder: save the real screenshot as<br><code>mm-guide-phase1.png</code> in the project root.</div>
+    <div class="mmg-screenshot-caption">Phase 1 intake. Three routes for getting data into a Studio project.</div>
+  </div>
+
+  <p>After upload, the studio shows a preview and a Quality Brief. The brief flags rows that look broken (empty, single-character, copy-paste duplicates) so you can clean before coding. Cleaning here saves time downstream.</p>
+  <div class="mmg-callout">The pathway matters. If your data has both Likert scores <em>and</em> open-ended comments per row, pick the <strong>scores + comments</strong> pathway. This unlocks the Score-to-Theme and Alignment tabs in Phase 3.</div>
+
+  <!-- ============================================================
+       PAGE 4 . PHASE 2
+       ============================================================ -->
+
+  <h2 id="phase2">Phase 2: Builder</h2>
+  <p>This is where the studio writes themes from your open-ended responses and codes every row.</p>
+  <ol>
+    <li><strong>Review and clean.</strong> The Builder shows the rows the Quality Brief flagged. Remove, edit, or keep each. The studio also lets you remap which column is the open-ended text if the auto-pick was wrong.</li>
+    <li><strong>Run the build.</strong> The studio runs a two-pass process: it reads a discovery sample to surface candidate themes, then codes the remaining responses in batches. On 100 to 500 responses this takes 30 to 90 seconds. Larger datasets take longer; the studio shows progress.</li>
+    <li><strong>Review categories.</strong> You see a list of themes with example quotes. Rename anything that does not match how you would say it in a paper. Merge themes that overlap. Mark themes you want to drop. The category list is editable for the life of the project.</li>
+  </ol>
+
+  <div class="mmg-screenshot">
+    <img src="mm-guide-phase2.png" alt="Mixed-Methods Studio Phase 2 Builder showing the theme builder running with progress and discovered categories." onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+    <div class="mmg-screenshot-placeholder" style="display:none;">Screenshot placeholder: save the real screenshot as<br><code>mm-guide-phase2.png</code> in the project root.</div>
+    <div class="mmg-screenshot-caption">Phase 2 Builder. Two-pass theme discovery and batched coding.</div>
+  </div>
+
+  <div class="mmg-callout">If the theme list looks off on your data, run the build again. The discovery sample is random, so a second run on the same dataset often surfaces a cleaner set. The studio remembers your edits across runs.</div>
+
+  <!-- ============================================================
+       PAGE 5 . PHASE 3
+       ============================================================ -->
+
+  <h2 id="phase3">Phase 3: Analyze and report</h2>
+  <p>Eight tabs of analysis. The studio recommends an order at the top of the tab row. The tabs are not locked: a doctoral researcher with a specific question can jump straight to the relevant tab. The recommended order, for first-time users:</p>
+
+  <div class="mmg-tab-list">
+    <div><strong>1. Categories.</strong> Review the themes the Builder discovered. Rename, merge, or cluster before analysis.</div>
+    <div><strong>2. Dataset.</strong> Sanity-check the per-response coding and the new variables the studio wrote into your dataset (theme, sentiment, derived columns).</div>
+    <div><strong>3. Score-to-Theme</strong> <em>(scores + comments pathway only)</em>. How each Likert score distributes across themes. A first read on whether the words agree with the numbers.</div>
+    <div><strong>4. Alignment</strong> <em>(scores + comments pathway only)</em>. Where the numbers and the words agree or diverge per group.</div>
+    <div><strong>5. Analysis.</strong> The studio suggests IV/DV pairs and a recommended test. You pick the ones that match your question and run them. The math runs from a built-in stats library.</div>
+    <div><strong>6. Joint Display.</strong> Quant and qual side-by-side per group. The mixed-methods table reviewers expect to see.</div>
+    <div><strong>7. Integration.</strong> Drafted paragraphs that integrate the quant and qual findings. Edit them in the Report tab.</div>
+    <div><strong>8. Strength Check.</strong> A methodological audit: sample sizes, theme coverage, missing pieces.</div>
+    <div><strong>9. Report.</strong> Assemble and export the full mixed-methods report.</div>
+  </div>
+
+  <div class="mmg-screenshot">
+    <img src="mm-guide-phase3.png" alt="Mixed-Methods Studio Phase 3 showing the Analyze tab row with recommended order strip and the active analysis tab." onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+    <div class="mmg-screenshot-placeholder" style="display:none;">Screenshot placeholder: save the real screenshot as<br><code>mm-guide-phase3.png</code> in the project root.</div>
+    <div class="mmg-screenshot-caption">Phase 3 Analyze. Recommended order strip above the tab row; eight tabs of analysis.</div>
+  </div>
+
+  <p>On the Analysis tab, the studio recommends a test (correlation, t-test, chi-square, ANOVA, regression) based on the variable types. The recommendation is a starting point, not a verdict. Read the test result with the lens you would apply to any quantitative output: effect size, sample size, assumption fit. The studio shows the assumption checks alongside the result.</p>
+  <p>On the Joint Display, you see the quant column (means, proportions) and the qual column (top themes, example quotes) per group. This is the table most mixed-methods journals expect to see in a paper.</p>
+  <p>On the Integration tab, the studio drafts one paragraph per theme that brings together the quant patterns and the qual evidence. These drafts are starting points. Edit them in the Report tab using the rich-text editor and the rewrite tool.</p>
+  <p>On Strength Check, the studio gives a per-project audit: sample size adequacy, theme coverage, alignment depth, missing pieces. Use it as a self-check before sharing your report.</p>
+
+  <!-- ============================================================
+       PAGE 6 . EXPORT, CITE, FEEDBACK, TROUBLE
+       ============================================================ -->
+
+  <h2 id="export">Exporting your work</h2>
+  <p>From the Report tab, you can export the assembled report as <strong>DOCX</strong> or <strong>PDF</strong>. The DOCX is editable. The PDF is a clean read-only version.</p>
+  <p>From the Dataset tab, you can export the coded dataset as <strong>CSV</strong> or as a <strong>SPSS-ready</strong> file (with value labels and variable labels preserved).</p>
+  <p>From the Categories tab, you can export the theme list with example quotes as CSV.</p>
+  <p>Your work is saved on every step. You can leave and come back. Exports are unlimited.</p>
+
+  <h2 id="cite">Citing the methods</h2>
+  <p>If you publish work that used Mixed-Methods Studio, please describe the method in your own words. A starting language template:</p>
+  <div class="mmg-quote">
+    Open-ended responses were coded using a software-assisted approach (ReliCheck Mixed-Methods Studio, closed beta). The system performed inductive theme discovery on a sample of responses, then coded the remaining responses against the resulting category set in batched passes. The author reviewed and revised the categories before analysis. Joint displays and integration paragraphs were generated by the system and revised by the author.
+  </div>
+  <p>If a reviewer or committee member asks how the coding was done, you can describe the two-pass process: discovery sample to surface candidate themes, batched coding against the resulting set, author review at every step. The author retains full editorial control over theme names, category structure, integration narrative, and final report.</p>
+
+  <h2 id="feedback">Sending feedback</h2>
+  <p>The dark <strong>Feedback</strong> button sits in the bottom-right of every Studio page. Click it to open a short form: an optional rating, a comment box, and an auto-attached context line so we know which page or tab you were on. We read every note.</p>
+  <p>Useful things to send: a label that confused you, a result that looks wrong, a feature you wish existed, a step that took longer than you expected. Useful things to <em>not</em> send: requests for analyses outside the mixed-methods workflow (those belong in the standard project view).</p>
+
+  <h2 id="trouble">If something goes wrong</h2>
+  <p>The studio is in closed beta. Expect rough edges. If something breaks:</p>
+  <ul>
+    <li><strong>The page won't load or shows a spinner forever.</strong> Refresh the browser. Your work is saved server-side; you will not lose progress.</li>
+    <li><strong>The Builder returns no themes or weird themes.</strong> Run it again. The discovery sample is random; a second run often produces a cleaner set on the same data.</li>
+    <li><strong>An export fails.</strong> Try the other format (DOCX instead of PDF, or vice versa). The Report tab keeps your edits regardless of export status.</li>
+    <li><strong>Anything else.</strong> Send a feedback note describing what you clicked and what you expected to see. The auto-attached context tells us where in the flow you were.</li>
+  </ul>
+  <p>For urgent issues, email <a href="mailto:support@relichecksurvey.com">support@relichecksurvey.com</a> with "MM Studio beta" in the subject.</p>
+
+  <div class="mmg-footer-strip">
+    <img src="logo-brand.svg" alt="ReliCheck" />
+    <span class="mmg-footer-strip-meta">Mixed-Methods Studio &middot; Closed beta &middot; Last updated 2026-05-20</span>
+  </div>
+
+  </div>
+  </div></div>
+</section>
+
+</main>
+
+<div id="footer"></div>
+<script src="/assets/js/footer.js?v=20260517" defer></script>
+</body>
+</html>

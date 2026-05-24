@@ -1,0 +1,543 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . Create / Upload</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       SHARED APP SHELL (matches mockups/home.html)
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #f6f7fb;
+      color: #1a1f33;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      min-height: 100vh;
+    }
+    /* Sidebar */
+    .sidebar {
+      background: #0f172a;
+      color: #d1d5e0;
+      padding: 20px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 22px 24px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 16px;
+    }
+    .sidebar-brand .logo {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 16px;
+    }
+    .sidebar-brand .name {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 18px;
+      color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+    .sidebar-section {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7088;
+      padding: 14px 22px 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 22px;
+      color: #d1d5e0;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active {
+      background: #1e293b;
+      color: #ffffff;
+      border-left-color: #e85d3a;
+    }
+    .nav-item .icon {
+      width: 18px; height: 18px;
+      flex: 0 0 18px;
+      display: inline-block;
+      opacity: 0.85;
+    }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 16px 22px;
+      border-top: 1px solid #1e293b;
+      font-size: 12px;
+      color: #6b7088;
+    }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+
+    /* Top bar */
+    .topbar {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      padding: 14px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .crumbs {
+      display: flex; gap: 6px; align-items: center;
+      font-size: 13px; color: #6b7088;
+    }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs a:hover { color: #1a1f33; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      border: 1px solid #e5e8ed;
+      background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      color: #6b7088;
+    }
+    .topbar-btn:hover { background: #f6f7fb; color: #1a1f33; }
+    .avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #e85d3a, #d44e2c);
+      display: flex; align-items: center; justify-content: center;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    /* Main */
+    .main { padding: 32px 40px 80px; max-width: 1180px; }
+
+    .page-head h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      margin: 0 0 8px 0;
+      color: #1a1f33;
+      letter-spacing: -0.01em;
+    }
+    .page-head p {
+      margin: 0 0 32px 0;
+      color: #6b7088;
+      font-size: 16px;
+      max-width: 640px;
+    }
+
+    /* Two-column intake */
+    .intake {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 1023px) { .intake { grid-template-columns: 1fr; } }
+
+    .col {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      padding: 24px;
+      display: flex; flex-direction: column;
+      gap: 14px;
+    }
+    .col h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      margin: 0 0 2px 0;
+      color: #1a1f33;
+    }
+    .col .col-sub {
+      font-size: 13px; color: #6b7088;
+      margin-bottom: 6px;
+    }
+
+    /* Option tiles */
+    .opt {
+      display: grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid #e5e8ed;
+      border-radius: 10px;
+      background: #ffffff;
+      text-decoration: none;
+      color: #1a1f33;
+      transition: border-color 0.12s, background 0.12s, transform 0.12s;
+    }
+    .opt:hover {
+      border-color: #e85d3a;
+      background: #fffaf7;
+      transform: translateY(-1px);
+    }
+    .opt-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      background: #fde2d7;
+      color: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      flex: 0 0 44px;
+    }
+    .opt .opt-icon.alt { background: #eef1ff; color: #3a4dc8; }
+    .opt-body { min-width: 0; }
+    .opt-name {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: #1a1f33;
+      line-height: 1.25;
+    }
+    .opt-desc {
+      font-size: 13px;
+      color: #6b7088;
+      margin-top: 2px;
+      line-height: 1.4;
+    }
+    .opt-arrow { color: #c5cbd4; font-size: 18px; }
+    .opt:hover .opt-arrow { color: #e85d3a; }
+
+    .opt-meta {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 6px;
+      padding: 2px 8px;
+      background: #f0f2f6;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #4a5168;
+      letter-spacing: 0.02em;
+    }
+
+    /* Footer help line */
+    .help-line {
+      margin-top: 28px;
+      padding: 20px 24px;
+      background: #ffffff;
+      border: 1px dashed #c5cbd4;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .help-line .ht {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      color: #1a1f33;
+      margin: 0;
+    }
+    .help-line .hd { font-size: 13px; color: #6b7088; margin-top: 2px; }
+    .help-line a.cta {
+      background: #1a1f33;
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .help-line a.cta:hover { background: #e85d3a; }
+
+    /* Recent files strip */
+    .recent {
+      margin-top: 24px;
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .recent-head {
+      padding: 14px 22px;
+      border-bottom: 1px solid #e5e8ed;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .recent-head h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+      margin: 0;
+    }
+    .recent-head .sub { font-size: 12px; color: #6b7088; }
+    .recent-list { display: grid; }
+    .recent-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto auto;
+      gap: 14px;
+      align-items: center;
+      padding: 12px 22px;
+      border-bottom: 1px solid #f0f2f6;
+      text-decoration: none;
+      color: #1a1f33;
+      font-size: 13px;
+    }
+    .recent-row:last-child { border-bottom: none; }
+    .recent-row:hover { background: #fafbfd; }
+    .recent-row .ext {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: #eef1ff;
+      color: #3a4dc8;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 11px;
+    }
+    .recent-row .ext.csv { background: #ecfdf3; color: #166534; }
+    .recent-row .ext.xls { background: #fdf6e2; color: #92400e; }
+    .recent-row .meta { color: #6b7088; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">R</span>
+      <span class="name">ReliCheck</span>
+    </div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item active" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+
+    <div class="sidebar-foot">
+      <strong>Professional plan</strong>
+      Renewed May 15
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+       ============================================================ -->
+  <main>
+    <div class="topbar">
+      <div class="crumbs">
+        <a href="home.html">Home</a>
+        <span class="sep">&rsaquo;</span>
+        <strong>Create / Upload</strong>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" aria-label="Search">&#8981;</button>
+        <button class="topbar-btn" aria-label="Notifications">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="page-head">
+        <h1>How would you like to get started?</h1>
+        <p>Build something inside ReliCheck, or bring data in from another tool. You can switch paths later.</p>
+      </div>
+
+      <!-- ============================================================
+           TWO-COLUMN INTAKE
+           ============================================================ -->
+      <div class="intake">
+
+        <!-- LEFT COLUMN: BUILD INSIDE RELICHECK -->
+        <section class="col">
+          <header>
+            <h2>Build inside ReliCheck</h2>
+            <div class="col-sub">Author a new survey or test, or start from a template.</div>
+          </header>
+
+          <a class="opt" href="#">
+            <div class="opt-icon">+</div>
+            <div class="opt-body">
+              <div class="opt-name">Create a survey</div>
+              <div class="opt-desc">Likert, multiple choice, open-ended. Skip logic and reliability built in.</div>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon">&#10003;</div>
+            <div class="opt-body">
+              <div class="opt-name">Create a test</div>
+              <div class="opt-desc">Multiple choice with answer keys. Item analysis runs automatically.</div>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon">&#9638;</div>
+            <div class="opt-body">
+              <div class="opt-name">Start from a template</div>
+              <div class="opt-desc">Validated scales for engagement, well-being, resilience, and more.</div>
+              <span class="opt-meta">5 starter scales</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon">&#10022;</div>
+            <div class="opt-body">
+              <div class="opt-name">Generate with AI</div>
+              <div class="opt-desc">Describe what you want to measure. AI drafts items aligned to your purpose.</div>
+              <span class="opt-meta">New</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+        </section>
+
+        <!-- RIGHT COLUMN: UPLOAD EXISTING -->
+        <section class="col">
+          <header>
+            <h2>Upload what you already have</h2>
+            <div class="col-sub">Bring in an existing survey, test, or dataset. Then analyze in ReliCheck.</div>
+          </header>
+
+          <a class="opt" href="#">
+            <div class="opt-icon alt">&uarr;</div>
+            <div class="opt-body">
+              <div class="opt-name">Upload survey responses</div>
+              <div class="opt-desc">CSV or Excel export from Qualtrics, SurveyMonkey, Google Forms.</div>
+              <span class="opt-meta">.csv .xlsx</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon alt">&uarr;</div>
+            <div class="opt-body">
+              <div class="opt-name">Upload test responses</div>
+              <div class="opt-desc">Student responses with answer key. Generates item analysis and reliability.</div>
+              <span class="opt-meta">.csv .xlsx</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon alt">&uarr;</div>
+            <div class="opt-body">
+              <div class="opt-name">Upload a dataset</div>
+              <div class="opt-desc">Any wide-format dataset. Map columns to constructs after upload.</div>
+              <span class="opt-meta">.csv .xlsx</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+
+          <a class="opt" href="#">
+            <div class="opt-icon alt">&#9776;</div>
+            <div class="opt-body">
+              <div class="opt-name">Import survey definition</div>
+              <div class="opt-desc">Paste survey text or upload a Qualtrics .qsf. Opens in the builder.</div>
+              <span class="opt-meta">.qsf .docx text</span>
+            </div>
+            <div class="opt-arrow">&rsaquo;</div>
+          </a>
+        </section>
+
+      </div>
+
+      <!-- ============================================================
+           SAMPLE PROJECT HELP LINE
+           ============================================================ -->
+      <div class="help-line">
+        <div>
+          <p class="ht">Not sure which path to take?</p>
+          <div class="hd">Try a sample project. Walk through one end to end before bringing your own data.</div>
+        </div>
+        <a class="cta" href="analysis-guided.html">Try a sample project</a>
+      </div>
+
+      <!-- ============================================================
+           RECENT FILES
+           ============================================================ -->
+      <section class="recent">
+        <header class="recent-head">
+          <h3>Recent uploads</h3>
+          <span class="sub">From your last 14 days</span>
+        </header>
+        <div class="recent-list">
+          <a class="recent-row" href="analysis-guided.html">
+            <div class="ext csv">CSV</div>
+            <div>
+              <div style="font-weight:600;">engagement-may-2026.csv</div>
+              <div class="meta">412 rows . 28 columns . uploaded 2 hours ago</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#166534;background:#ecfdf3;padding:3px 10px;border-radius:999px;letter-spacing:0.04em;">READY</span>
+            <span style="color:#6b7088;">&rsaquo;</span>
+          </a>
+          <a class="recent-row" href="#">
+            <div class="ext xls">XLS</div>
+            <div>
+              <div style="font-weight:600;">student-satisfaction-spring.xlsx</div>
+              <div class="meta">1,245 rows . 22 columns . uploaded yesterday</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#3a4dc8;background:#eef1ff;padding:3px 10px;border-radius:999px;letter-spacing:0.04em;">ANALYZED</span>
+            <span style="color:#6b7088;">&rsaquo;</span>
+          </a>
+          <a class="recent-row" href="#">
+            <div class="ext csv">CSV</div>
+            <div>
+              <div style="font-weight:600;">math-test-grade7.csv</div>
+              <div class="meta">330 rows . 35 columns . uploaded 5 days ago</div>
+            </div>
+            <span style="font-size:11px;font-weight:700;color:#92400e;background:#fff8e6;padding:3px 10px;border-radius:999px;letter-spacing:0.04em;">NEEDS KEY</span>
+            <span style="color:#6b7088;">&rsaquo;</span>
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

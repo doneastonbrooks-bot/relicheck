@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Methodology · ReliCheck</title>
+  <meta name="description" content="How ReliCheck computes its statistics: scope, Likert coding, Cronbach's alpha, split-half reliability, KMO, item-total correlations, and missing-data handling." />
+  <link rel="canonical" href="https://relichecksurvey.com/methodology.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Methodology · ReliCheck" />
+  <meta property="og:description" content="How ReliCheck computes its statistics: scope, Likert coding, Cronbach's alpha, split-half reliability, KMO, item-total correlations, and missing-data handling." />
+  <meta property="og:url" content="https://relichecksurvey.com/methodology.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Methodology · ReliCheck" />
+  <meta name="twitter:description" content="How ReliCheck computes its statistics: scope, Likert coding, Cronbach's alpha, split-half reliability, KMO, item-total correlations, and missing-data handling." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="help.html">Resources</a> / Methodology</div>
+    <span class="kicker">Methodology</span>
+    <h1 style="margin-top:var(--s-3);">How ReliCheck computes its statistics</h1>
+    <p class="lede">A reference for the methods behind every reliability number, item flag, and quality warning ReliCheck shows in your dashboard. Designed for researchers, evaluators, and instructors who need to defend the numbers they share.</p>
+    <div class="article-meta">
+      <span>Last updated May 2026</span>
+      <span>·</span>
+      <span>Reading time: 12 min</span>
+      <span>·</span>
+      <span>Audience: research, evaluation, HR</span>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="article-layout">
+      <aside class="article-toc">
+        <h4>On this page</h4>
+        <ul>
+          <li><a href="#scope" class="is-active">Scope and conventions</a></li>
+          <li><a href="#likert">Likert coding and reverse-scoring</a></li>
+          <li><a href="#alpha">Cronbach's alpha</a></li>
+          <li><a href="#omega">McDonald's omega</a></li>
+          <li><a href="#split-half">Split-half reliability</a></li>
+          <li><a href="#test-retest">Test-retest reliability</a></li>
+          <li><a href="#kmo">KMO sampling adequacy</a></li>
+          <li><a href="#bartlett">Bartlett's test of sphericity</a></li>
+          <li><a href="#fa">Factor analysis (EFA)</a></li>
+          <li><a href="#rotation">Rotation</a></li>
+          <li><a href="#per-factor-alpha">Per-factor reliability</a></li>
+          <li><a href="#item-total">Item-total correlations</a></li>
+          <li><a href="#cfa">Confirmatory factor analysis</a></li>
+          <li><a href="#invariance">Measurement invariance</a></li>
+          <li><a href="#irt">Item response theory</a></li>
+          <li><a href="#mirt">Multidimensional IRT (MIRT)</a></li>
+          <li><a href="#regression">OLS and logistic regression</a></li>
+          <li><a href="#mediation-moderation">Mediation and moderation</a></li>
+          <li><a href="#bca">BCa bootstrap CI</a></li>
+          <li><a href="#mlm">Multilevel modeling</a></li>
+          <li><a href="#glmm">Logistic GLMM (binary outcomes)</a></li>
+          <li><a href="#mlm3">Three-level MLM</a></li>
+          <li><a href="#df">Satterthwaite and Kenward-Roger df</a></li>
+          <li><a href="#keydrivers">Key Driver Analysis</a></li>
+          <li><a href="#ipm">Action Priority Map (IPM)</a></li>
+          <li><a href="#equity">Equity Gap analysis</a></li>
+          <li><a href="#response-quality">Response Quality dashboard</a></li>
+          <li><a href="#completion">Completion and missingness dashboard</a></li>
+          <li><a href="#trends">Trends (wave-over-wave)</a></li>
+          <li><a href="#readiness">Survey Readiness Score</a></li>
+          <li><a href="#strength-score">Survey Strength Score</a></li>
+          <li><a href="#cover-page">Cover page and informed consent</a></li>
+          <li><a href="#suites">Workflow suites</a></li>
+          <li><a href="#missing">Missing-data handling</a></li>
+          <li><a href="#refs">Primary references</a></li>
+        </ul>
+      </aside>
+
+      <article class="prose">
+        <section id="scope">
+          <h2>Scope and conventions</h2>
+          <p>Here is the math behind the Survey Strength Score, written for the reader who wants the details. The intent is to give a researcher, evaluator, or instructor enough detail to reproduce, defend, or critique any number that appears in a ReliCheck report.</p>
+          <p>Throughout, <em>n</em> refers to the number of complete-case respondents on a given scale, <em>k</em> to the number of items, and item subscripts run 1 through <em>k</em>. Default rounding is two decimals for reliability statistics and three decimals for correlations.</p>
+          <div class="callout">
+            <div class="callout-title">Convention</div>
+            <p style="margin:0;"><strong>Reliability statistics</strong> are computed only when at least three valid items and at least 30 complete-case respondents are available. Below those thresholds, ReliCheck displays the count instead of an estimate, with a sample-size warning.</p>
+          </div>
+        </section>
+
+        <section id="likert">
+          <span id="descriptive" style="display:block;position:relative;top:-80px;visibility:hidden;" aria-hidden="true"></span>
+          <h2>Likert coding and reverse-scoring</h2>
+          <p>Likert items are stored with their displayed labels and a numeric code. ReliCheck preserves the author's original anchors, applies forward coding by default, and offers per-item reverse-scoring during analysis. Reverse-scored items are flagged in every output so a reader can verify the direction of effect.</p>
+          <p>For a five-point scale coded 1 through 5, a reverse-scored item <code>x</code> becomes <code>6 − x</code>. ReliCheck never silently flips coding. The flip is visible in the item table, the methods appendix of every export, and the audit log.</p>
+        </section>
+
+        <section id="alpha">
+          <h2>Cronbach's alpha</h2>
+          <p>Cronbach's alpha is reported as the standard internal-consistency estimate for unidimensional Likert scales. ReliCheck computes alpha from the item covariance matrix using the standard formula:</p>
+          <blockquote>α = (k / (k − 1)) × (1 − Σ var(item) / var(total))</blockquote>
+          <p>The denominator <em>var(total)</em> is the variance of the row-summed scale score across complete-case respondents. The numerator sums each item's variance independently.</p>
+          <h3>Reporting thresholds</h3>
+          <p>ReliCheck flags scales with α &lt; 0.70 as <strong>weak</strong> and α &lt; 0.60 as <strong>unreliable</strong>. These cutoffs are conventions, not laws, and are explained alongside the number in every report so a reader sees both the value and the interpretation in context.</p>
+          <h3>Confidence intervals</h3>
+          <p>A 95% confidence interval is reported using the Feldt-Woodruff approximation. The bounds are 1 minus (1 minus alpha) times the right-tailed F critical value at df1 = n − 1 and df2 = (n − 1)(k − 1). The lower bound uses the upper-tail F critical at the 0.025 level; the upper bound uses the lower-tail F critical at the same level. The F inverse is computed via bisection on the right-tail F CDF (200 iterations, 1e-8 tolerance). The CI surfaces inline under the alpha gauge on the Reliability tab.</p>
+          <h3>Standard error of measurement</h3>
+          <p>The standard error of measurement (SEM) re-expresses reliability in the units of the scale. ReliCheck reports SEM as the standard deviation of total scale scores multiplied by the square root of (1 − α). The number sits inline under the alpha gauge so a reader sees the precision implied by the reliability coefficient on the same surface.</p>
+          <div class="callout">
+            <div class="callout-title">In the dashboard</div>
+            <p style="margin:0;">Alpha, item-total correlation, and alpha-if-deleted are translated into a plain-language paragraph at the top of the Reliability tab by the <a href="ai-features.html#reliability-explainer"><strong>Reliability Explainer</strong></a>. The math here drives the narration there.</p>
+          </div>
+        </section>
+
+        <section id="omega">
+          <h2>McDonald's omega</h2>
+          <p>McDonald's omega is reported next to alpha for every scale of three or more items. Alpha treats every item as an equally strong indicator of the construct (the tau-equivalence assumption); omega drops that assumption and estimates reliability under a congeneric model in which loadings are allowed to differ. ReliCheck estimates omega by fitting a one-factor principal axis solution to the inter-item correlation matrix and combining the standardized loadings with the implied unique variances:</p>
+          <blockquote>ω = (Σ λᵢ)² / ((Σ λᵢ)² + Σ (1 − λᵢ²))</blockquote>
+          <p>where λᵢ is the standardized loading of item <em>i</em> on the common factor and the denominator's second term is the sum of the implied unique variances. The estimator is closed-form once the one-factor PAF converges; ReliCheck caps the iterative reweighting at 100 passes with a 1e-6 communality tolerance.</p>
+          <h3>Reporting thresholds</h3>
+          <p>Omega lives on the same 0-to-1 scale as alpha and is interpreted with the same conventional bands: ≥ 0.80 strong, 0.70-0.79 workable, &lt; 0.70 weak. For most short scales alpha and omega land within a couple of points of each other. The Reliability tab shows both and the AI narrator reads the gap as a diagnostic.</p>
+          <h3>The alpha-omega gap</h3>
+          <p>A wide alpha-omega gap is informative on its own. When ω &gt; α by more than a few hundredths, the items have heterogeneous loadings and alpha is biased low; reporting omega is the more defensible choice. When ω &lt; α (uncommon in practice), the scale may be multidimensional or have inflated inter-item covariances from response-style artifacts; check the factor solution before trusting either coefficient.</p>
+          <h3>Confidence interval on omega</h3>
+          <p>ReliCheck reports a 95% bootstrap percentile confidence interval on omega. The procedure resamples respondents with replacement 100 times, refits the one-factor PAF on each resample, recomputes omega, and reports the 2.5th and 97.5th percentiles of the resulting distribution. Because each resample fits a PAF the compute is small but not free, so the omega CI surfaces only when the survey has at least 30 respondents and 3 items. Below the threshold the dashboard reports "95% CI: needs n ≥ 30" so the missing CI is explained rather than blank.</p>
+          <h3>Per-construct reliability</h3>
+          <p>When a survey's Likert items carry a construct tag (set via the Construct Mapper AI or the inline construct input on the Questions builder), ReliCheck computes alpha and omega on each subset of items. The Item statistics sub-tab on the Reliability page lists every construct in a table with its item count, alpha, omega, and a note. Constructs with fewer than two items are listed but not scored; constructs with two items show alpha but not omega; three or more items show both. Untagged items appear in a final row to flag missing tags.</p>
+        </section>
+
+        <section id="split-half">
+          <h2>Split-half reliability</h2>
+          <p>Split-half reliability is reported as a complement to alpha when the scale has at least four items. Items are split by odd/even index and by random partition; ReliCheck reports both, and the larger of the two divergence flags is shown.</p>
+          <p>The Spearman-Brown correction is applied to the half-test correlation to estimate full-test reliability. When the two halves disagree by more than 0.10, ReliCheck surfaces a <strong>halves disagree</strong> warning, which usually points to a multidimensional structure or a single dominant item.</p>
+        </section>
+
+        <section id="test-retest">
+          <span id="prepost" style="display:block;position:relative;top:-80px;visibility:hidden;" aria-hidden="true"></span>
+          <h2>Test-retest reliability</h2>
+          <p>Alpha, omega, and split-half all measure the internal consistency of a single administration. Test-retest reliability asks a different question: when the same respondents take the survey twice, do they get similar scores? Stability across time is essential for any instrument used to track change. A pulse-engagement survey, a periodic climate assessment, or a pre/post evaluation all assume the instrument itself stays constant while the people change.</p>
+          <p>ReliCheck pairs respondents across two waves of the same survey using a user-picked wave column (a question whose answer marks Time 1 vs Time 2, or a column from a longitudinal upload) and a respondent-ID column. For each matched pair, the total Likert composite is computed at Wave 1 and Wave 2. The dashboard reports two coefficients:</p>
+          <ul>
+            <li><strong>Paired Pearson r.</strong> The simple correlation between Wave 1 and Wave 2 total scores. Reports rank-order stability: respondents who scored high at Wave 1 also score high at Wave 2.</li>
+            <li><strong>Intraclass correlation ICC(3,1).</strong> Two-way mixed-effects, consistency, single rater. Reports both rank-order stability and the agreement between the two waves on a common metric. ICC is the formal coefficient psychometricians cite for test-retest reliability.</li>
+          </ul>
+          <p>The ICC formula is <em>(BMS minus EMS) / (BMS plus EMS)</em>, where BMS is the between-subjects mean square and EMS is the residual mean square from a two-way ANOVA decomposition. ReliCheck implements this in <code>Stats.intraclassCorrelation(pairs)</code> and returns NaN when fewer than three pairs are available.</p>
+          <h3>Reporting thresholds</h3>
+          <p>The conventional bands match alpha and omega: ICC at or above 0.80 is strong, 0.70 to 0.80 is workable, 0.50 to 0.70 is modest, and below 0.50 is weak. A weak ICC means the instrument is too noisy to support change-over-time interpretation; the items need revision before pre/post or longitudinal analysis is meaningful.</p>
+          <h3>Per-construct stability</h3>
+          <p>When Likert items carry construct tags, the test-retest dashboard adds a per-construct table with ICC and paired r computed on each subscale's column-sliced subset of the response matrix. Multi-construct instruments often show different stability profiles across constructs; a global ICC can hide a single weak subscale.</p>
+          <div class="callout">
+            <div class="callout-title">In the dashboard</div>
+            <p style="margin:0;">Test-retest lives on the Reliability tab's <strong>More analyses</strong> sub-tab. The analyzer auto-detects candidate wave and ID columns from both the survey questions and the raw response data, so dataset uploads with extra columns still surface in the pickers.</p>
+          </div>
+        </section>
+
+        <section id="kmo">
+          <h2>KMO sampling adequacy</h2>
+          <p>The Kaiser-Meyer-Olkin measure of sampling adequacy is computed at both the overall and per-item level. Overall KMO is reported as a single number; per-item KMO is shown in the item table next to each row.</p>
+          <p>Conventional cutoffs (Kaiser, 1974): KMO &lt; 0.50 unacceptable, 0.50-0.59 miserable, 0.60-0.69 mediocre, 0.70-0.79 middling, 0.80-0.89 meritorious, ≥ 0.90 marvelous. ReliCheck shows the value, the band, and a one-sentence interpretation.</p>
+        </section>
+
+        <section id="bartlett">
+          <h2>Bartlett's test of sphericity</h2>
+          <p>Bartlett's test asks whether the inter-item correlation matrix is statistically distinguishable from an identity matrix. The test statistic is</p>
+          <blockquote>χ² = − (n − 1 − (2k + 5) / 6) × ln |R|</blockquote>
+          <p>where <em>R</em> is the correlation matrix, <em>n</em> is the complete-case sample size, and <em>k</em> is the number of items. ReliCheck computes ln |R| from the eigenvalues returned by the Jacobi solver. Degrees of freedom are <em>k(k − 1) / 2</em>. The upper-tail p-value is approximated via the Wilson-Hilferty transform, which is accurate to better than three decimal places across the range that matters for survey-scale matrices.</p>
+          <p>A significant Bartlett result (<em>p</em> &lt; 0.05) is a green light for factor analysis. A non-significant result is reported in the Validity dashboard as a caution and the factor solution is annotated as provisional.</p>
+        </section>
+
+        <section id="fa">
+          <h2>Factor analysis (EFA)</h2>
+          <p>ReliCheck runs exploratory factor analysis on the inter-item correlation matrix and offers two extraction methods. Both decompose a symmetric matrix using a classical Jacobi rotation solver with a 100-iteration cap and a 1e-12 off-diagonal tolerance, and both produce eigenvalues sorted in descending order with the matching eigenvectors.</p>
+          <h3>Principal components (PCA)</h3>
+          <p>The default. The unaltered correlation matrix is decomposed directly. Loadings on factor <em>f</em> for item <em>i</em> are computed as <em>v<sub>fi</sub></em> × √λ<sub>f</sub>, where <em>λ<sub>f</sub></em> is the <em>f</em>-th eigenvalue and <em>v<sub>fi</sub></em> is the <em>i</em>-th element of the corresponding eigenvector. Communality is the sum of squared loadings over the retained factors. PCA explains total item variance, including unique variance.</p>
+          <h3>Principal axis factoring (PAF)</h3>
+          <p>The iterative variant. The diagonal of the correlation matrix is replaced with current communality estimates, the resulting reduced matrix is decomposed, and the communalities are re-derived from the retained factors. The cycle repeats until the largest single-item change in communality drops below 1e-5 or 50 iterations have run, whichever comes first. The number of retained factors is locked from the initial Kaiser pass on the unaltered correlation matrix so the iteration cannot drift onto a different factor count. Initial communality estimates use the maximum absolute off-diagonal correlation per row, clamped to the interval [0.1, 0.99]. PAF explains common variance only.</p>
+          <h3>How many factors</h3>
+          <p>The Kaiser criterion is the default retention rule: every factor with an eigenvalue ≥ 1.0 is retained, with a minimum of one. The scree plot in the Validity dashboard renders every factor's eigenvalue as a bar, colored green above the cutoff and coral below.</p>
+          <div class="callout">
+            <div class="callout-title">In the dashboard</div>
+            <p style="margin:0;">The factor structure described here is summarized at the top of the Validity tab by the <a href="ai-features.html#narrators"><strong>Dashboard Narrator</strong></a> in one or two plain-language sentences. The <a href="ai-features.html#construct-mapper"><strong>Construct Mapper</strong></a> proposes construct groupings before items are even collected so the structure has a hypothesis to test.</p>
+          </div>
+        </section>
+
+        <section id="rotation">
+          <h2>Rotation</h2>
+          <p>The Rotation dropdown in the Validity dashboard switches between an unrotated solution and Varimax.</p>
+          <h3>Varimax (orthogonal)</h3>
+          <p>The Kaiser-normalized Varimax algorithm. Loadings are pre-scaled by 1 / √h² where h² is the item communality, plane rotations are applied pairwise across all factor pairs (p, q) using the standard angle</p>
+          <blockquote>φ = atan2(D − 2AB / n, C − (A² − B²) / n) / 4</blockquote>
+          <p>where A, B, C, and D are the standard within-factor sums over the Kaiser-normalized loadings. Iteration continues until the sum of |φ| across all pairs drops below 1e-6 or 50 sweeps complete. Loadings are then de-normalized by multiplying each row back by its original √h². Per-factor variance share is recomputed from the rotated loadings as Σℓ² / k so the dashboard's variance KPI reflects post-rotation values.</p>
+          <h3>Oblimin and Promax</h3>
+          <p>Oblique rotations are on the roadmap and listed in the dashboard as disabled options. Until they ship, ReliCheck recommends Varimax for orthogonal constructs and exporting the response data to a dedicated psychometrics package for oblique solutions.</p>
+        </section>
+
+        <section id="per-factor-alpha">
+          <h2>Per-factor reliability</h2>
+          <p>Each retained factor gets its own Cronbach's alpha computed from just the items whose dominant absolute loading on that factor is at least 0.30. Items with a negative dominant loading are reverse-scored before alpha is computed: each value is replaced with (max + min − x) where max and min are the observed bounds of that item across the complete-case sample. This mirroring keeps sign disagreement from artificially deflating the alpha. Factors with fewer than two qualifying items are reported with α undefined and the Status pill reads "Insufficient items".</p>
+        </section>
+
+        <section id="item-total">
+          <span id="item-analysis" style="display:block;position:relative;top:-80px;visibility:hidden;" aria-hidden="true"></span>
+          <h2>Item-total correlations</h2>
+          <p>Two flavors are reported per item: the <strong>uncorrected</strong> correlation between the item and the row sum (which includes the item itself), and the <strong>corrected</strong> correlation between the item and the row sum minus the item. The corrected version is the one used for diagnostic flagging.</p>
+          <p>Items with a corrected item-total correlation below 0.20 are flagged as <strong>weak contributors</strong> and shown alongside an "alpha if deleted" projection so the analyst can see what the scale would look like without them.</p>
+        </section>
+
+        <section id="cfa">
+          <h2>Confirmatory factor analysis (CFA)</h2>
+          <p>Where exploratory factor analysis asks <em>what structure emerges from the data</em>, confirmatory factor analysis asks <em>does the proposed structure fit the data</em>. ReliCheck fits a single-factor or multi-factor CFA using alternating least squares (ULS-equivalent on the off-diagonals of the correlation matrix), with factor variances fixed at 1 for identification and no cross-loadings.</p>
+          <p>Reported fit indices follow Hu and Bentler (1999) conventional cutoffs. CFI and TLI at or above 0.95 indicate good fit; RMSEA at or below 0.06 with the upper 90 percent confidence interval below 0.08 indicates good fit; SRMR at or below 0.08 indicates good fit. The model chi-square, degrees of freedom, and per-item standardized loadings are surfaced alongside the indices so a methods reviewer can audit each one.</p>
+          <p>The 90 percent confidence interval on RMSEA inverts the noncentral chi-square distribution via Sankaran's approximation of Wilson-Hilferty, bisected on the noncentrality parameter. The factor correlation matrix is displayed underneath the loadings; correlations above 0.85 (in absolute value) are flagged because the two factors may be measuring the same thing.</p>
+        </section>
+
+        <section id="invariance">
+          <h2>Measurement invariance</h2>
+          <p>When the same survey is administered to two or more groups (departments, demographics, experimental arms), the question reviewers will ask is whether the instrument means the same thing across those groups. Measurement invariance is the formal test. ReliCheck fits the configural, metric, and scalar models in sequence on the covariance plus mean structure across groups.</p>
+          <p><strong>Configural</strong> invariance holds when the same factor structure shows up in every group; loadings, intercepts, and residual variances are free to differ. <strong>Metric</strong> invariance holds when factor loadings are equal across groups; the items relate to the construct the same way. <strong>Scalar</strong> invariance holds when both loadings and intercepts are equal; this is the gate that licenses comparing latent or composite means across groups.</p>
+          <p>Verdicts follow Cheung and Rensvold (2002) and Chen (2007). Invariance is upheld at a given level when the absolute change in CFI is at most 0.010, the absolute change in RMSEA is at most 0.015, and the absolute change in SRMR is at most 0.030 for metric or 0.015 for scalar.</p>
+        </section>
+
+        <section id="irt">
+          <h2>Item response theory (IRT)</h2>
+          <p>For ordered-category items such as Likert scales, ReliCheck fits Samejima's (1969) Graded Response Model via marginal maximum likelihood with an EM algorithm on a 21-point discretized standard-normal quadrature grid. Each item gets a discrimination parameter (a) and ordered category boundaries (b<sub>1</sub>, b<sub>2</sub>, ..., b<sub>K-1</sub>) with standard errors recovered from the expected Fisher information at convergence.</p>
+          <p>Item information functions show where on the latent trait scale each item provides the most precision. The test information function (TIF) is the sum across items; a TIF value of 4 corresponds approximately to a marginal reliability of 0.80. Person abilities are reported as expected a posteriori (EAP) estimates over the quadrature grid, with posterior standard errors per respondent.</p>
+          <p>Marginal reliability is computed as 1 minus the expected posterior variance, integrated over the trait distribution. This is the IRT-version of Cronbach's alpha; values above 0.80 are strong, 0.70 to 0.80 are workable, and below 0.70 are shaky.</p>
+          <h3>Dichotomous IRT: 2PL and 3PL</h3>
+          <p>When items are dichotomous (correct or incorrect, endorsed or not), ReliCheck switches to the two-parameter logistic model 2PL with item probability P(y = 1 | theta) = sigmoid(a (theta minus b)), or the three-parameter logistic 3PL which adds a lower-asymptote parameter c capturing the probability a respondent answers correctly without knowing. Estimation is marginal maximum likelihood with EM and per-item Newton steps using expected Fisher information. The c parameter in 3PL is constrained to the range zero to 0.40 with a weakly informative Beta(2, 5) prior so the EM does not chase the lower asymptote into unstable regions. If a Likert survey is opened in 2PL or 3PL mode, items are dichotomized at the per-item median so the dichotomous model has well-defined inputs.</p>
+        </section>
+
+        <section id="mirt">
+          <h2>Multidimensional item response theory (MIRT)</h2>
+          <p>When one survey is built to measure two latent traits at once (for example positive affect and negative affect, or job engagement and burnout on a single instrument), single-factor IRT is the wrong model. ReliCheck fits a two-dimensional Graded Response Model with per-item discrimination loadings a<sub>1</sub> and a<sub>2</sub> on the two traits and the same K minus one ordered category boundaries as the single-factor GRM. Estimation is marginal maximum likelihood via EM on a tensor-product 9-by-9 Gaussian quadrature grid; per-item Newton steps use expected information. Identification fixes the trait scale to N(0, I<sub>2</sub>) before rotation.</p>
+          <p>For interpretability the loading matrix is rotated using a closed-form Kaiser Varimax. Each item then gets a primary loading (the larger of |a<sub>1</sub>| and |a<sub>2</sub>|), a secondary loading, a communality h<sup>2</sup> = a<sub>1</sub><sup>2</sup> + a<sub>2</sub><sup>2</sup>, and a Hofmann complexity index 4 a<sub>1</sub><sup>2</sup> a<sub>2</sub><sup>2</sup> divided by h<sup>2</sup> squared. Items with complexity at or above 0.30 are flagged as cross-loaders and are candidates for revision or for assignment to one trait only. Per-trait marginal reliability is reported separately along with a trait-specific test information function evaluated at the orthogonal axis. The trait correlation is zero by construction under Varimax; Promax (oblique) rotation is on the roadmap when a real-world correlated-traits dataset asks for it.</p>
+        </section>
+
+        <section id="regression">
+          <h2>Regression and predictor analysis</h2>
+          <p>For continuous outcomes, ReliCheck fits ordinary least squares via the normal equations, reporting coefficient estimates with standard errors from sigma-squared times the diagonal of the inverse covariance matrix, two-sided t-tests at the residual degrees of freedom, F-tests for overall model significance, R-squared and adjusted R-squared, and standardized betas for comparing predictors on different scales.</p>
+          <p>For binary outcomes (a category answer treated as positive vs. all other answers), ReliCheck fits logistic regression by iteratively reweighted least squares with Newton-Raphson steps. Wald standard errors, z-statistics, and two-sided p-values come from the inverse expected information matrix at convergence. Model fit is reported as McFadden pseudo-R-squared plus the deviance chi-square against the intercept-only null model.</p>
+          <p>Predictors can mix continuous variables (Likert items, construct subscales, composite means) with single-choice categorical questions, which are one-hot encoded with the largest category as the reference. Variance inflation factor is computed per non-intercept column; values above 5 are flagged for review and values above 10 indicate strong multicollinearity that destabilizes coefficient estimates.</p>
+        </section>
+
+        <section id="mediation-moderation">
+          <h2>Mediation and moderation</h2>
+          <p><strong>Mediation</strong> tests whether X reaches Y through a mediator M. ReliCheck fits three regressions (M on X for path a; Y on X for the total effect c; Y on X and M for paths b and c', the direct effect). The indirect effect is a times b. A bootstrap percentile 95 percent confidence interval is computed from 5000 resamples (Preacher and Hayes 2008), with the Sobel z-test reported as a secondary check. The verdict tier (full, partial, no mediation, no effect) follows the joint pattern of the total, direct, and indirect effect tests.</p>
+          <p><strong>Binary outcomes and binary mediators.</strong> When the outcome Y is binary, ReliCheck switches the Y model to logistic regression so paths b and c' live on the log-odds scale. When the mediator M is binary, the M-on-X regression switches the same way. The indirect effect a times b remains the headline number; users should interpret it as "is the path reliable" rather than as a probability difference, since the units on a binary-Y branch are log-odds. The bootstrap CI still applies and is the canonical inference in this setting.</p>
+          <p><strong>Moderation</strong> tests whether the effect of X on Y depends on a moderator W. ReliCheck mean-centers X and W before fitting Y as a linear combination of X, W, and their interaction X times W (Aiken and West 1991). The conditional slope of X is reported at W minus one SD, W at the mean, and W plus one SD. Johnson-Neyman boundaries are computed as the W values where the conditional slope just crosses the significance threshold at alpha = 0.05; outside that region the slope is statistically reliable, inside it is not. When Y is binary the model fits a logistic interaction and the Johnson-Neyman calculation uses the normal critical value rather than t; conditional slopes are reported on the log-odds scale.</p>
+        </section>
+
+        <section id="bca">
+          <h2>Bias-corrected and accelerated bootstrap CI</h2>
+          <p>The percentile bootstrap CI is fine when the bootstrap distribution of the indirect effect is roughly symmetric, but mediation indirect effects are often skewed. The bias-corrected and accelerated (BCa) interval of Efron (1987) adjusts both for bias (z<sub>0</sub>, the proportion of bootstrap replications below the observed indirect effect, mapped through the inverse standard normal CDF) and for acceleration (a, estimated from the jackknife). The adjusted quantile bounds are alpha<sub>lo</sub> = Phi(z<sub>0</sub> + (z<sub>0</sub> + z<sub>0.025</sub>) / (1 minus a (z<sub>0</sub> + z<sub>0.025</sub>))) and the symmetric upper bound, where Phi is the standard normal CDF. ReliCheck offers BCa as an alternative to the percentile interval on the mediation card; for most users with continuous outcomes and modest sample sizes, BCa gives noticeably tighter coverage near the true value.</p>
+        </section>
+
+        <section id="mlm">
+          <h2>Multilevel modeling</h2>
+          <p>Survey responses are not always independent. Employees nest within teams. Students nest within classrooms. Customers nest within branches. When this happens, ordinary least squares understates standard errors and inflates false-positive rates because it treats clustered observations as if they were drawn at random. ReliCheck's multilevel model accounts for the nesting directly.</p>
+          <p>The model is a two-level linear mixed-effects regression. Each respondent has a fixed-effect design row (always including an intercept and the predictors the analyst selected) and a random-effect design row (always including the group-level intercept and, optionally, random slopes on any predictor the analyst opts in to). Group-level random effects are assumed normally distributed with a covariance matrix T; residuals are assumed normally distributed with variance sigma-squared. Estimation uses restricted maximum likelihood (REML) via an expectation-maximization (EM) algorithm. The Woodbury matrix identity keeps per-group V-inverse calculations tractable for surveys with hundreds of small groups.</p>
+          <p>The intraclass correlation coefficient (ICC) reports the share of unexplained variance that lives between groups rather than within them. Above 0.10 indicates meaningful clustering and above 0.20 indicates strong clustering; below 0.05 indicates the grouping does not buy you much. Variance components are reported separately for the intercept, each random slope, and the within-group residual. Marginal R-squared (variance explained by fixed effects alone) and conditional R-squared (fixed plus random effects together) follow Nakagawa and Schielzer (2013). A likelihood-ratio test against the no-random-effects OLS null reports whether the multilevel structure earns its keep on this dataset.</p>
+          <p>Fixed-effect standard errors come from the inverse of the cluster-aware information matrix at convergence, so p-values reflect the nesting. Three inference options are available: Wald z (the default for J at or above 20 groups), Satterthwaite, and Kenward-Roger. The MLM tab now supports two-level linear models, two-level logistic GLMM for binary outcomes, and three-level linear models for nested-in-nested data; each is selectable from a Model Type dropdown.</p>
+        </section>
+
+        <section id="glmm">
+          <h2>Logistic GLMM (binary outcomes)</h2>
+          <p>When the outcome is binary (employees who left versus stayed, students who passed versus failed, contacts who responded versus did not), the linear mixed model is the wrong model. ReliCheck switches to a two-level logistic generalized linear mixed model with a random intercept per group. Estimation uses penalized quasi-likelihood (Breslow and Clayton 1993) wrapped around the linear mixed-model EM. PQL is biased downward for the random-effect variance when clusters are very small or probabilities are extreme, and the narrator flags this when ICC is near zero or J is below 8; for medium-to-large J the bias is small enough that fixed-effect estimates and standard errors are close to what Laplace or adaptive Gauss-Hermite quadrature would return.</p>
+          <p>The model reports odds ratios with 95 percent Wald confidence intervals on the log-odds scale, exponentiated for display. The latent-scale ICC uses the standard logistic residual variance of pi squared over three: ICC<sub>latent</sub> = tau<sup>2</sup> divided by (tau<sup>2</sup> + pi<sup>2</sup>/3). A latent ICC at or above 0.10 indicates meaningful clustering on the log-odds scale; below 0.05 indicates the grouping does not change the probability much.</p>
+        </section>
+
+        <section id="mlm3">
+          <h2>Three-level multilevel modeling</h2>
+          <p>For deeply nested designs (students in classrooms in schools, employees in teams in offices, patients in clinics in regions) a two-level model collapses one of the layers into either the residual or the group level. The three-level linear mixed-effects model adds a second random intercept so each observation gets a level-2 cluster effect (u<sub>jk</sub> for classroom j inside school k) and a level-3 cluster effect (v<sub>k</sub> for school k), with independent normal priors and variances tau<sub>u</sub><sup>2</sup> and tau<sub>v</sub><sup>2</sup>.</p>
+          <p>The model identification requires that level-2 units nest cleanly inside level-3 units; if a level-2 unit appears in two level-3 units (a crossed rather than nested design), the solver returns an error rather than silently averaging across the crossing. Estimation is REML via EM using a Woodbury identity inside each level-3 cluster. ReliCheck reports ICC at level 2 (within-school, between-classroom), ICC at level 3 (between-school), and combined ICC (share of total variance at level 2 plus level 3). A likelihood-ratio test against the corresponding two-level model reports whether the third layer earns its keep; when it does not, the user is steered back to the simpler model. Random slopes at either level are tracked for a later release; this build is intercept-only at both levels.</p>
+        </section>
+
+        <section id="df">
+          <h2>Satterthwaite and Kenward-Roger degrees of freedom</h2>
+          <p>Wald z tests on mixed-model fixed effects assume the variance components are known. For small numbers of groups they are not, and the resulting p-values are anti-conservative (too small). The Satterthwaite (1946) approximation gives a per-coefficient degrees-of-freedom value that shrinks toward the number of groups for predictors that vary only between groups and toward the within-group degrees of freedom for predictors that vary only within groups; mixed predictors interpolate by the variance ratio. For the random-intercept-only models that ReliCheck currently fits, Satterthwaite reduces to the between-within partition of Snijders and Bosker (2012, p. 95), which is what the implementation uses.</p>
+          <p>The Kenward-Roger (1997) adjustment goes one step further: it inflates the variance of beta-hat by a Kackar-Harville (1984) bias-correction term that accounts for the uncertainty in the estimated variance components, then computes Satterthwaite-style df on the inflated variance. For random-intercept-only models with balanced cluster sizes the KR inflation factor is small (typically below 1.05) and most users will see negligible practical differences; for small-J unbalanced designs the inflation does material work. ReliCheck reports the inflation factor next to the table caption so users can see when the correction is moving the answer.</p>
+        </section>
+
+        <section id="keydrivers">
+          <h2>Key Driver Analysis</h2>
+          <p>Key Driver Analysis ranks the survey factors most strongly associated with a chosen outcome (satisfaction, belonging, engagement, retention intention, program effectiveness). ReliCheck computes four numbers per driver and ranks them by the most appropriate one for the outcome type. The Pearson product-moment correlation gives the bivariate association, useful as a quick scan. The standardized regression coefficient (a beta computed on z-scored predictors and outcome) gives the partial effect, the part of the driver that remains after the other predictors have had their turn. For continuous outcomes ReliCheck also computes <strong>Johnson's Relative Weights</strong> (Johnson 2000), which apportion the model R-squared across correlated predictors so the numbers sum to 100 percent of explained variance and rank drivers fairly even when they covary.</p>
+          <p>The Relative Weight algorithm orthogonalizes the predictors via the symmetric square-root of the predictor correlation matrix, regresses the outcome on the orthogonalized predictors, then projects the squared beta values back through Lambda-squared to recover per-driver weights. The decomposition is invariant to which predictor is entered first into the model, which is the property that makes it preferable to standardized betas when interpreting a ranked importance list. For binary outcomes (logistic regression on standardized predictors) ReliCheck reports the absolute standardized log-odds coefficient as the ranking metric instead; Relative Weights do not extend cleanly to logistic regression. Significant drivers are highlighted; drivers with a strong bivariate correlation but a near-zero partial coefficient are flagged for the multicollinearity story they tell.</p>
+        </section>
+
+        <section id="ipm">
+          <h2>Action Priority Map (IPM)</h2>
+          <p>The Action Priority Map translates the Key Driver output into a 2x2 importance-performance matrix in the Martilla-James (1977) tradition. Importance is measured by Johnson's Relative Weights for continuous outcomes or by the absolute standardized log-odds coefficient for binary outcomes; performance is measured by the raw mean of each predictor on its native scale. Median splits on each axis create four quadrants with action labels: Fix First (high importance, low performance), Protect (high importance, high performance), Do Not Overinvest (low importance, high performance), and Monitor (low importance, low performance).</p>
+          <p>The map is rendered as a color-coded SVG scatter with the median lines drawn in light gray and a per-quadrant count summarized in the legend. A Fix First callout below the chart lists the factors landing in that quadrant by name, with their importance and mean values, so the user gets the action list inline without needing to read coordinates off the plot. The quadrant cutoffs are deliberately the empirical medians rather than the scale midpoint; the operating question is "which factors are above or below the typical predictor in this survey," not "which factors are above or below an absolute reference." For surveys where the importance dimension is logistic and predictors covary, the standardized log-odds coefficient is preferred over odds ratios because it preserves the rank structure across binary and continuous outcomes on the same axis.</p>
+        </section>
+
+        <section id="equity">
+          <h2>Equity Gap analysis</h2>
+          <p>Equity Gap analysis surfaces outcome differences across protected-class or program groups (gender, race or ethnicity, age band, role, tenure, etc.) on the composite Likert outcome and reports them in a way an HR partner or DEI lead can act on. For each detected grouping variable the analyzer computes per-group means with 95% confidence intervals, an omnibus one-way ANOVA F test of "do any groups differ at all," and the pairwise Cohen's d for every group pair sorted by absolute magnitude. Each axis lands on a verdict tier driven by the largest absolute d on that axis: parity (|d| &lt; 0.20), small (|d| &lt; 0.50), meaningful (|d| &lt; 0.80), or large (|d| &geq; 0.80). The thresholds match Cohen's (1988) original effect-size conventions and the IO-psychology adaptation widely used in employment-disparity work.</p>
+          <p>A composite Equity Gap Score (0 to 100, 100 = parity across every axis) rolls the per-axis maxima into a single number. The penalty per axis is max(0, (max |d| - 0.10) * 70), averaged across detected axes; the score is then 100 minus that mean penalty, clamped to [0, 100]. Score-to-status bands run parity (85+), small gaps (70 to 84), meaningful gaps (50 to 69), and large gaps (below 50). The score is intentionally averaged rather than summed because adding axes should not mechanically lower the score when the new axis is itself near parity; the average preserves the per-axis verdict structure for inspection.</p>
+          <p>Privacy is enforced with a hard k-anonymity floor: subgroups smaller than the maximum of 5 and the user's `kAnonymityMin` Privacy setting are hidden entirely (not masked) and do not contribute to either the per-axis verdict or the composite. The hidden count is reported in the dashboard so the reader knows that smaller-group stories may be missing from the analysis. Welch corrections per pair, the four-fifths adverse-impact ratio, and intersectional axis-by-axis interactions are deferred to a later release.</p>
+        </section>
+
+        <section id="response-quality">
+          <h2>Response Quality dashboard</h2>
+          <p>The Response Quality dashboard inspects the responses themselves rather than the items. Three deterministic checks run client-side. <strong>Straight-lining</strong> flags respondents who give the same value to every Likert item in a contiguous run; the threshold is configurable but defaults to "all items identical." <strong>Duplicate vectors</strong> flag pairs of respondents whose answer strings match exactly across every Likert item, which catches copy-paste submissions and shared-device duplicates without identifying who submitted them. <strong>Short open-ended</strong> flags respondents whose open-text answers are below a minimum word count (default five), excluding single-word answers like "fine" or "n/a" that often signal disengagement.</p>
+          <p>Per-question missingness is reported alongside the row-level checks so analysts can see whether a quality signal is concentrated in a specific item (often a clarity issue) or spread evenly across the survey (often a respondent-fatigue issue). Channel-level skew compares straight-lining and short-open rates across distribution channels (email, web link, QR, etc.) to surface paths that may be attracting low-effort responses. The dashboard exposes a Clean Dataset CSV export so analysts can save a copy of the response set with the flagged rows removed before downstream modeling. Speeding detection (against a server-stamped `started_at` column) is queued for the next release; the column ships in the schema so the cohort starting now has time-on-page data when the analyzer goes live.</p>
+        </section>
+
+        <section id="completion">
+          <h2>Completion and missingness dashboard</h2>
+          <p>The Completion dashboard reports a 0-to-100 Completion Score driven by per-question completion rates and per-respondent answered-rates. Per-question missingness counts each item that was not answered (independent of skip logic, which marks items as not-asked rather than missing), and per-respondent missingness counts the share of presented items each respondent skipped. The completion funnel plots cumulative response-rate by question position (1, 2, 3, ...) so the modal drop-off point is visible as the largest single-step drop on the curve. The drop-off-point card names the specific question where the most respondents stopped answering, useful as a clarity-and-length signal.</p>
+          <p>A respondent-by-question heatmap displays the answer matrix sorted by completion rate so patterned skips (block of respondents who all skipped the same item, or block of items skipped by the same respondents) jump out visually. By-group missingness is reported when a single-choice grouping variable is available; this surfaces accessibility or engagement gaps where one group is systematically dropping more items than others. Little's MCAR test, multiple-imputation diagnostics, and per-construct completion gaps are queued for a later release. The current dashboard is descriptive; nothing here imputes or fills missing values.</p>
+        </section>
+
+        <section id="trends">
+          <h2>Trends (wave-over-wave)</h2>
+          <p>The Trends dashboard surfaces wave-over-wave change in the composite Likert outcome and per-construct subscale means. Wave detection prefers the channel-tag convention (the `Q_CHANNEL` answer field that the Pulse Schedule and Calendar Event distribution paths set automatically), so a survey that ships through Pulse always has its waves correctly named. When channel tags are absent the analyzer falls back to quarterly bins by submitted_at; surveys that have collected responses across multiple calendar quarters get a trend read without any channel-tag setup.</p>
+          <p>Per wave, the analyzer reports the response count, the composite Likert mean, the within-wave Cronbach's alpha (so a quality slip can be distinguished from a real outcome shift), and the per-construct subscale means when the survey has tagged constructs. The current-vs-previous wave comparison runs Welch's t-test on the composite means and reports a significance flag, with the explicit caveat that "significant change" with small samples per wave is fragile. The Trend Score (0 to 100, with 50 = steady) is a directional summary that combines composite delta, prior-wave alpha holding, and the significance flag into a single read; the score is rendered in a 132-pixel ring matching the Strength Index ring chrome so the two reads share visual vocabulary.</p>
+        </section>
+
+        <section id="readiness">
+          <h2>Survey Readiness Score</h2>
+          <p>The Survey Readiness Score is a 0-to-100 design-quality composite that runs on the survey itself, not on the response data. Where the Strength Index answers "how good is this survey now that data is in," Readiness answers "is this survey ready to send out at all." The score sums six weighted domains. <strong>Items per construct (25 points)</strong> awards full marks when every tagged construct has three or more items (the McDonald's omega minimum); two-item constructs get a partial credit; constructs with one item get a smaller share. <strong>Construct coverage (20 points)</strong> rewards the share of Likert items carrying a construct tag, with bands at 100, 75, 50, and below. <strong>Grouping variables (15 points)</strong> awards full marks when at least two single-choice questions can serve as group axes (department, role, year, etc.); one variable gets partial credit; zero locks Compare, Subgroups, and Equity Gaps from running.</p>
+          <p><strong>Survey purpose (15 points)</strong> awards full marks when a clear purpose statement is set in Settings (40 or more characters), partial when set but short, zero when unset. <strong>Length sanity (15 points)</strong> awards full marks for surveys in the 5-to-25 item drop-off-friendly range, partial for 26 to 40, less for 41 to 60, and a token 2 points for very short or very long surveys. <strong>Reverse-scoring balance (10 points)</strong> awards full marks when every tagged construct includes at least one reverse-scored item (an acquiescence-bias check), partial when only some constructs do, zero when none do.</p>
+          <p>Score-to-status bands run Ready (85+), Almost ready (70 to 84), Needs work (50 to 69), and Not ready (below 50). The Readiness check is paired with a severity-tagged issue list (blocker, warning, nudge) so the user gets both an at-a-glance verdict and a prioritized to-do. The check runs even with zero responses, which is the entire point: pre-publish gating is the moment of decision where this score is most useful. The full dashboard lives on the Analytics tab; a compact card sits at the top of the Distribute view where the user is already deciding whether to send; a small Readiness pill in the survey ctx-bar makes the score visible from every survey-context view.</p>
+        </section>
+
+        <section id="strength-score">
+          <h2>Survey Strength Score</h2>
+          <p>The Survey Strength Score is a 0-to-100 composite of six weighted domains. The intent is a single number a non-statistician can scan, backed by transparent component math any reviewer can audit. The weights are fixed by design and printed in the dashboard alongside every score.</p>
+          <h3>Domain weights</h3>
+          <p>Reliability contributes 25 points; Factor Structure and Item Quality each contribute 20; Response Quality contributes 15; Open-Ended Alignment and Actionability each contribute 10. The total caps at 100. A score of 90 or above is "excellent," 80 to 89 is "strong," 70 to 79 is "usable," 60 to 69 is "needs strengthening," and below 60 is "weak."</p>
+          <h3>Reliability domain (25 pts)</h3>
+          <p>The Reliability domain anchors on McDonald's omega when the scale has at least three items and three respondents; Cronbach's alpha is the fallback when omega cannot be estimated. The base band awards 24 points at &geq; 0.90, 21 at &geq; 0.80, 17 at &geq; 0.70, 12 at &geq; 0.60, and 6 otherwise. The same bands apply to alpha when alpha is the primary signal.</p>
+          <p>Beyond the base band the domain reads the alpha-omega gap as a tau-equivalence proxy: a gap above 0.10 deducts 3 points and adds a "items may not load equally on one factor" signal; a gap between 0.05 and 0.10 deducts 1 point and adds a "the 1-factor assumption is mildly strained" signal; a gap at or below 0.05 with both metrics at or above 0.80 adds a positive signal noting reliability holds under the weaker measurement-model assumption.</p>
+          <p>Three item-level penalty stacks apply on top of the base band: 2 points per item with a corrected item-total below 0.30 (cap 8), 3 points per item with a negative item-total (cap 6), and 2 points per item that would improve alpha by more than 0.02 if removed (cap 4). The domain floors at zero and caps at 25.</p>
+          <h3>Factor Structure (20 pts)</h3>
+          <p>Anchored on KMO with bands at 0.80, 0.70, and 0.60 awarding 18, 15, 11, and 5 base points. Loading-pattern penalties subtract 2 points per weak loading (|loading| &lt; 0.40, cap 6), 2 points per cross-loading (top two loadings within 0.20 of each other and both at or above 0.30, cap 4), and 2 points per single-item factor (cap 4).</p>
+          <h3>Item Quality (20 pts)</h3>
+          <p>Starts at 20 and subtracts 2 points per item showing a ceiling or floor effect (70% of responses at the extreme, cap 6), 2 points per very-low-variance item (SD below 15% of range, cap 6), 1 point per highly skewed item (|skew| &gt; 2, cap 4), 1 point per high-kurtosis item (|kurt| &gt; 5, cap 4), and 2 points per item missed by at least 20% of respondents (cap 4).</p>
+          <h3>Response Quality (15 pts)</h3>
+          <p>Sample-size brackets at 100, 50, 30, 10, and 1 award 15, 13, 11, 8, and 5 base points. Completion-rate and missingness penalties subtract small amounts, and straight-lining detection deducts when respondents give the same value to every Likert item.</p>
+          <h3>Open-Ended Alignment (10 pts)</h3>
+          <p>Neutral 7 points when the survey has no open-ended items. Otherwise a base of 4 plus a response-rate bonus, an average-words bonus, and a volume bonus when at least 10 answers are present.</p>
+          <h3>Actionability (10 pts)</h3>
+          <p>Starts at 10 and subtracts for surveys with fewer than 5 items, more than 30 items, a single-factor solution across 8 or more items, more than 5 factors, reverse-coded items with very weak item-total correlations, and prompts shorter than 12 characters.</p>
+          <div class="callout">
+            <div class="callout-title">Why omega leads in the new calibration</div>
+            <p style="margin:0;">Reliability domain previously read alpha alone; omega has been added because alpha penalizes scales whose items contribute unequally to the construct. Anchoring on omega keeps the score honest for heterogeneous scales while the gap check preserves the multidimensionality warning when alpha and omega disagree. The dashboard signals describe both metrics in plain language so a reviewer sees the math and the interpretation in the same place.</p>
+          </div>
+        </section>
+
+        <section id="cover-page">
+          <h2>Cover page and informed consent</h2>
+          <p>Every survey can ship with an optional cover page that respondents see before any items are presented. Three consent modes are available. <strong>Required</strong> mode shows a checkbox the respondent must tick before the Continue button activates; this is the IRB-friendly mode for studies that need an explicit consent record. <strong>Optional</strong> mode shows the checkbox but allows the respondent to continue without ticking; this is a softer disclosure path for survey designs where consent is implied by participation. <strong>None</strong> mode hides the checkbox entirely and shows just a Continue button; this is the right choice for a friendly welcome screen, sponsor disclosure, or anonymized program-evaluation work where formal consent is captured elsewhere.</p>
+          <p>The cover-page editor lives on the Distribute view (not in Settings), because cover-page choices are deployment-time decisions that interact with the distribution channel. The body field accepts up to 5,000 characters of plain text with line breaks preserved; HTML is escaped. A starter button pre-fills the body with a generic informed-consent template the survey owner can edit to match their study, sponsor, and contact information. The same cover page renders identically across every distribution channel: web link, email invitation, QR code, website embed, Slack and Teams cards, and the AI conversational take mode.</p>
+        </section>
+
+        <section id="suites">
+          <h2>Workflow suites</h2>
+          <p>The methods described above sit inside <a href="suites.html">workflow suites</a>, which are curated bundles of templates, distribution paths, analytics tabs, and AI narrators that match a research-design pattern rather than a survey type. A suite is not a methodology change; the math is identical whether a survey is born inside a suite or attached to one afterward. The suite simply preselects the methodological choices that fit the design so the analyst is not configuring k-anonymity, channel tagging, and pre/post wave columns from a blank canvas every time.</p>
+          <p>There are eight system suites. The <strong>360 Feedback Suite</strong> bundles manager 360, leadership feedback, peer, team-effectiveness, supervisor evaluation, and self-vs-others starters; the distribution path enforces one survey per (subject, rater) pair, channel tags by relationship, and the subject report aggregates per-question mean, per-relationship breakdowns, and the self-vs-others gap diagnostic. The <strong>HR &amp; Teams Suite</strong> bundles engagement, exit, stay, onboarding, manager 360 lite, DEI climate, change readiness, remote and hybrid, and customer-facing-team feedback; reliability and per-construct alpha drive the headline numbers. The <strong>Pulse Survey Suite</strong> wires recurring weekly, biweekly, monthly, or quarterly waves auto-tagged so Compare, Pre/Post, and the Reliable Change Index can slice by wave without manual merging. The <strong>Program Evaluation Suite</strong> couples pre/post designs and grant outcomes with the Jacobson-Truax RCI and the Pre/Post analytics tab. The <strong>Education Suite</strong> covers course evaluation, student belonging, school climate, and the supporting student-service work. The <strong>Test &amp; Item Analysis Suite</strong> is the only suite whose entity type is the test (not the survey), and it lights up the classroom-test analytics dashboard with reliability (alpha, omega, split-half, SEM), difficulty, point-biserial discrimination, distractor analysis, and the Item Health Report. The <strong>Researcher Suite</strong> bundles pilot study, construct validation, scale development, mixed-methods, demographic intake, and IRB-friendly consent, and pairs with the full methodology library described in the sections above. The <strong>Customer Experience Suite</strong> covers CSAT, NPS, product, service, website, and post-event feedback, and is the natural surface for the Key Drivers tab.</p>
+          <p>Suites preserve every analytic choice documented on this page. Confidence intervals on alpha and omega, the Cheung-Rensvold and Chen invariance cutoffs, the BCa adjustment on the indirect effect, and the Satterthwaite or Kenward-Roger small-sample df corrections all apply the same way inside a suite as outside one. The suite is a starting point and an organizing container, not a method.</p>
+        </section>
+
+        <section id="missing">
+          <h2>Missing-data handling</h2>
+          <p>ReliCheck reports unit non-response and item non-response separately. Reliability statistics are computed on complete cases by default, with a configurable pairwise-deletion option for KMO and inter-item correlations only.</p>
+          <p>Imputation is never applied to reliability estimation. When the analyst opts into imputation for downstream reporting, the method (mean, median, multiple imputation) is recorded in the methods appendix and surfaced as a banner on the relevant outputs.</p>
+        </section>
+
+        <section id="refs">
+          <h2>Primary references</h2>
+          <p>The classical methods follow conventional psychometric practice as documented in Cronbach (1951), Spearman-Brown (1910), Kaiser (1974), Kaiser (1958) for Varimax, Bartlett (1950) for the sphericity test, Nunnally and Bernstein (1994), Feldt &amp; Woodruff (1989), and McDonald (1999) for omega. The Jacobi eigendecomposition follows the classical formulation in Golub and Van Loan (1996). The chi-square upper-tail approximation uses Wilson-Hilferty (1931).</p>
+          <p>For confirmatory factor analysis and structural-equation fit indices ReliCheck follows Hu and Bentler (1999). Measurement invariance cutoffs follow Cheung and Rensvold (2002) and Chen (2007). The Graded Response Model implementation follows Samejima (1969) with marginal maximum likelihood estimation as in Bock and Aitkin (1981). The 2PL and 3PL dichotomous models follow Birnbaum (1968) with EM estimation. Multidimensional IRT follows Reckase (2009) with Kaiser (1958) Varimax rotation in closed form for two dimensions. Mediation with bootstrap percentile and BCa confidence intervals follows Preacher and Hayes (2008), Hayes (2018), and Efron (1987) for the BCa adjustment. Moderation with Johnson-Neyman regions follows Aiken and West (1991) and Johnson and Neyman (1936). Logistic regression follows McCullagh and Nelder (1989). The multilevel model estimation follows Laird and Ware (1982) for the EM derivation, Raudenbush and Bryk (2002) for the hierarchical linear model presentation, and Nakagawa and Schielzer (2013) for the marginal and conditional R-squared definitions. The Penalized Quasi-Likelihood logistic GLMM follows Breslow and Clayton (1993). Satterthwaite (1946) and Kenward and Roger (1997) provide the small-sample degrees-of-freedom corrections; the Kackar-Harville (1984) bias term is used inside the KR adjustment. Johnson's Relative Weights for Key Driver Analysis follow Johnson (2000).</p>
+          <p>For a longer plain-language treatment of factor analysis, KMO, Bartlett's test, and rotation choices, see the <a href="validity-guide.html">validity guide</a>. For the test and item analysis methods used in classroom and licensure testing, see the <a href="tests-overview.html">test and item analysis page</a>.</p>
+          <div class="callout">
+            <div class="callout-title">Where AI fits in</div>
+            <p style="margin:0;">The twenty <a href="ai-features.html"><strong>tools</strong></a> sit on top of the methods described above. The "Can I Use These Results?" verdict and the Response Quality Check translate the Strength Index and the response-quality flags into a usage recommendation. Dashboard narrators put alpha, KMO, factor structure, CFA fit indices, measurement invariance, IRT discrimination, mediation, moderation, multilevel ICC, and key-driver importance into plain language a non-statistician can act on. The Construct Mapper and Purpose Checker pull the methodological frame back into the survey-building step. A teacher-friendly Test Analytics narrator does the same job for classroom test reports.</p>
+          </div>
+        </section>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>See the methods in action</h2>
+      <p>Open a sample course evaluation report to see exactly how reliability, item flags, and AI summaries appear together in a real ReliCheck output.</p>
+      <div class="hero-actions">
+        <a href="samples.html" class="btn btn-primary btn-lg">View sample report</a>
+        <a href="index.html" class="btn btn-outline btn-lg">Back to home</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

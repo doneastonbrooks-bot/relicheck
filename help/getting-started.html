@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getting started · ReliCheck Help center</title>
+  <meta name="description" content="Create your first survey, invite respondents, and read your first reliability number." />
+  <link rel="canonical" href="https://relichecksurvey.com/help/getting-started.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Getting started · ReliCheck Help center" />
+  <meta property="og:description" content="Create your first survey, invite respondents, and read your first reliability number." />
+  <meta property="og:url" content="https://relichecksurvey.com/help/getting-started.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Getting started · ReliCheck Help center" />
+  <meta name="twitter:description" content="Create your first survey, invite respondents, and read your first reliability number." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+    .help-hero { padding: 56px 0 24px; background: linear-gradient(180deg, #ffffff 0%, var(--bg-soft) 100%); }
+    .help-hero .container-content { max-width: 880px; }
+    .help-crumbs { font-size: 13px; color: var(--ink-5); margin-bottom: 12px; }
+    .help-crumbs a { color: var(--ink-5); text-decoration: none; }
+    .help-crumbs a:hover { color: var(--accent); }
+    .help-hero h1 { font-family: var(--font-display); font-weight: 500; font-size: clamp(28px, 4vw, 40px); line-height: 1.15; letter-spacing: -0.02em; color: var(--navy); margin: 0 0 12px; }
+    .help-hero p { color: var(--ink-7); font-size: 16.5px; line-height: 1.55; max-width: 60ch; margin: 0; }
+
+    .help-body { max-width: 760px; margin: 32px auto 56px; padding: 0 24px; }
+    .help-body h2 { font-family: var(--font-display); font-weight: 500; font-size: 22px; color: var(--navy); margin: 32px 0 12px; }
+    .help-body details { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; }
+    .help-body details[open] { border-color: var(--line-strong); }
+    .help-body summary { font-weight: 600; color: var(--ink-9); cursor: pointer; font-size: 15.5px; }
+    .help-body details > p { font-size: 15px; line-height: 1.65; color: var(--ink-7); margin: 10px 0 0; }
+    .help-body details > p a { color: var(--accent); }
+
+    .help-related { max-width: 1100px; margin: 0 auto 80px; padding: 0 24px; }
+    .help-related h3 { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-5); margin: 0 0 16px; }
+    .help-related-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 900px) { .help-related-grid { grid-template-columns: 1fr; } }
+    .help-related-card { display: block; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; text-decoration: none; color: var(--ink-8); transition: border-color .2s ease; }
+    .help-related-card:hover { border-color: var(--accent); }
+    .help-related-card h4 { font-family: var(--font-display); font-weight: 500; font-size: 15px; color: var(--navy); margin: 0 0 4px; }
+    .help-related-card p { font-size: 13px; color: var(--ink-6); margin: 0; }
+
+    .help-back { max-width: 760px; margin: 16px auto 0; padding: 0 24px; font-size: 13px; }
+    .help-back a { color: var(--ink-5); text-decoration: none; }
+    .help-back a:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="../index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Check a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>The results</h5>
+            <a href="../overview.html#analyze"><strong>Survey Results overview</strong><span>How the Strength Score works.</span></a>
+            <a href="../overview.html#analyze"><strong>Survey Strength Score</strong><span>One score, five checks, clear next steps.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>What ReliCheck checks</h5>
+            <a href="../reliability-guide.html"><strong>Do your questions work together?</strong><span>Reliability and item-total checks.</span></a>
+            <a href="../validity-guide.html"><strong>What is your survey really measuring?</strong><span>Factor analysis, KMO, rotation.</span></a>
+            <a href="../reliability-guide.html"><strong>Are your results strong enough?</strong><span>Response quality and missing data.</span></a>
+            <a href="../ai-features.html"><strong>What are people saying?</strong><span>Open-ended themes and quotes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>See it</h5>
+            <a class="mega-link" href="../samples.html">Sample reports</a>
+            <a class="mega-link" href="../methodology.html">Methodology</a>
+            <a class="mega-link" href="../reliability-guide.html">Reliability guide</a>
+            <a class="mega-link" href="../validity-guide.html">Validity guide</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../import-data.html" class="nav-dd-trigger ">Import Data</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Build a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>Build</h5>
+            <a href="../overview.html#build"><strong>Question types</strong><span>Likert, choice, open-ended, matrix, ranking.</span></a>
+            <a href="../ai-features.html"><strong>AI question review</strong><span>Catch double-barreled, leading, vague items.</span></a>
+            <a href="../overview.html#collect"><strong>Collect responses</strong><span>Links, email, QR, embed.</span></a>
+            <a href="../import-survey.html"><strong>Upload your survey</strong><span>Bring a survey from SurveyMonkey or Qualtrics.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Templates</h5>
+            <a href="../app.html?template=course_evaluation"><strong>Course Evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../app.html?template=student_belonging"><strong>Student Belonging</strong><span>Validated belonging and connectedness scales.</span></a>
+            <a href="../app.html?template=workplace_engagement"><strong>Employee Engagement</strong><span>Quarterly pulse and annual engagement.</span></a>
+            <a href="../app.html?template=program_evaluation"><strong>Program Evaluation</strong><span>Pre/post outcome scales for grant reporting.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Popular templates</h5>
+            <a class="mega-link" href="../app.html?template=customer_satisfaction">Customer Satisfaction</a>
+            <a class="mega-link" href="../app.html?template=climate_survey">Climate Survey</a>
+            <a class="mega-link" href="../app.html?template=training_feedback">Training Feedback</a>
+            <a class="mega-link" href="../app.html?template=community_needs">Community Needs</a>
+            <a class="mega-see-all" href="../samples.html">View all templates →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../samples.html" class="nav-dd-trigger ">Sample Reports</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>By team</h5>
+            <a href="../education.html"><strong>Education</strong><span>Course evaluation, belonging, school climate.</span></a>
+            <a href="../hr-teams.html"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a href="../customer-feedback.html"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service feedback.</span></a>
+            <a href="../research.html"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>By use case</h5>
+            <a href="../education.html"><strong>Course evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../hr-teams.html"><strong>Engagement &amp; pulse</strong><span>Recurring employee surveys with k-anonymity.</span></a>
+            <a href="../program-evaluation.html"><strong>Program evaluation &amp; accreditation</strong><span>Same category, different scopes.</span></a>
+            <a href="../mixed-methods.html"><strong>Mixed-methods research</strong><span>Quantitative scales and qualitative themes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Other resources</h5>
+            <a class="mega-link" href="../case-studies.html">Customer stories</a>
+            <a class="mega-link" href="../compare.html">Compare</a>
+            <a class="mega-link" href="../help.html">Help center</a>
+            <a class="mega-link" href="../blog.html">Blog</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../pricing.html" class="nav-dd-trigger ">Pricing</a>
+    </nav>
+
+    <div class="nav-cta">
+      <a href="../login.html" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="../signup.html" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Check a Survey</h5><a href="../overview.html#analyze">Survey Results overview</a><a href="../reliability-guide.html">Reliability guide</a><a href="../validity-guide.html">Validity guide</a><a href="../methodology.html">Methodology</a><a href="../samples.html">Sample reports</a></div>
+    <div class="drawer-group"><h5>Import Data</h5><a href="../import-data.html">Import results</a><a href="../import-survey.html">Upload your survey</a></div>
+    <div class="drawer-group"><h5>Build a Survey</h5><a href="../overview.html#build">Build</a><a href="../ai-features.html">AI features</a><a href="../app.html?template=course_evaluation">Course Evaluation</a><a href="../app.html?template=workplace_engagement">Employee Engagement</a><a href="../app.html?template=program_evaluation">Program Evaluation</a></div>
+    <div class="drawer-group"><h5>Sample Reports</h5><a href="../samples.html">Sample reports</a><a href="../samples/interactive-course-evaluation.html">Interactive demo</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="../education.html">Education &amp; Evaluation</a><a href="../hr-teams.html">HR &amp; Teams</a><a href="../customer-feedback.html">Customer Feedback</a><a href="../research.html">Research</a><a href="../mixed-methods.html">Mixed-Methods</a><a href="../compare.html">Compare</a><a href="../case-studies.html">Customer stories</a><a href="../help.html">Help center</a><a href="../blog.html">Blog</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="../pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="../login.html" class="btn btn-outline">Sign in</a><a href="../signup.html" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+<main>
+  <div class="help-back"><a href="../help.html">&larr; Back to help center</a></div>
+  <section class="help-hero"><div class="container-content">
+    <div class="help-crumbs"><a href="../help.html">Help center</a> &nbsp;›&nbsp; Getting started</div>
+    <h1>Getting started</h1>
+    <p>Create your first survey, invite respondents, and read your first reliability number.</p>
+  </div></section>
+  <article class="help-body">
+    <h2>Account and first survey</h2>
+    <details id="how-do-i-create-my-first-survey"><summary>How do I create my first survey?</summary><p>Sign in, click <strong>New survey</strong>, then pick either a blank survey or one of the validated templates. Add Likert, single-choice, multi-select, or open-ended items, set your scale anchors, then publish to get a share link.</p></details>
+    <details id="what-s-the-fastest-way-to-get-started"><summary>What's the fastest way to get started?</summary><p>Start from a template. The <a href="../app.html?template=course_evaluation">Course Evaluation</a>, <a href="../app.html?template=workplace_engagement">Employee Engagement</a>, and <a href="../app.html?template=customer_satisfaction">Customer Satisfaction</a> templates each ship with reviewed items and the right scale defaults, so you can launch in a few minutes.</p></details>
+    <details id="do-respondents-need-an-account"><summary>Do respondents need an account?</summary><p>No. Respondents open your share link, fill out the survey, and submit. No sign-up, no app, no friction. The link can be public or restricted by email allowlist depending on your settings.</p></details>
+    <details id="what-devices-does-relicheck-support"><summary>What devices does ReliCheck support?</summary><p>Any modern browser. The respondent experience is mobile-first, so phone, tablet, and desktop all work cleanly. The author and analytics dashboards are designed for desktop and tablet.</p></details>
+  </article>
+  <section class="help-related"><h3>Other help topics</h3><div class="help-related-grid">
+    <a class="help-related-card" href="building-surveys.html"><h4>Building surveys</h4><p>Question types, logic, branding, AI question review, and validated templates.</p></a>
+    <a class="help-related-card" href="distributing.html"><h4>Distributing surveys</h4><p>Public links, email lists, QR codes, embeds, and access controls.</p></a>
+    <a class="help-related-card" href="analyzing-reporting.html"><h4>Analyzing and reporting</h4><p>Reliability statistics, item flags, AI summaries, and theme extraction.</p></a>
+  </div></section>
+  <section class="section"><div class="container-content"><div class="cta-band">
+    <h2>Still stuck?</h2>
+    <p>Email the support team at <strong>support@relichecksurvey.com</strong>. Response within one business day on every plan.</p>
+    <div class="hero-actions"><a href="mailto:support@relichecksurvey.com" class="btn btn-primary btn-lg">Contact support</a><a href="../help.html" class="btn btn-outline btn-lg">All help topics</a></div>
+  </div></div></section>
+<script>
+  // Auto-open the FAQ matching the URL hash, if present.
+  (function() { if (location.hash) { var d = document.querySelector('details' + location.hash); if (d) { d.setAttribute('open', ''); d.scrollIntoView({block: 'start', behavior: 'smooth'}); } } })();
+</script>
+</main>
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="../index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="../overview.html">Overview</a></li><li><a href="../ai-features.html">AI features</a></li><li><a href="../pricing.html">Pricing</a></li><li><a href="../developers.html">Developers</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="../education.html">Education</a></li><li><a href="../hr-teams.html">HR &amp; Teams</a></li><li><a href="../customer-feedback.html">Customer feedback</a></li><li><a href="../research.html">Research</a></li></ul></div>
+      <div><h4>Learn</h4><ul><li><a href="../methodology.html">Methodology</a></li><li><a href="../reliability-guide.html">Reliability guide</a></li><li><a href="../validity-guide.html">Validity guide</a></li><li><a href="../compare.html">Compare</a></li><li><a href="../help.html">Help center</a></li><li><a href="../blog.html">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="../about.html">About</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Terms</a></li><li><a href="../case-studies.html">Customer stories</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        header.classList.add('is-mega-open');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          if (!document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  if (toggle) toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+</body>
+</html>

@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hybrid Work Engagement · Sample ReliCheck Report</title>
+  <meta name="description" content="A sample ReliCheck analytics report on hybrid work engagement (n=50, 7 Likert items)." />
+  <link rel="canonical" href="https://relichecksurvey.com/samples/hybrid-engagement.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Hybrid Work Engagement · Sample ReliCheck Report" />
+  <meta property="og:description" content="A sample ReliCheck analytics report on hybrid work engagement (n=50, 7 Likert items)." />
+  <meta property="og:url" content="https://relichecksurvey.com/samples/hybrid-engagement.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Hybrid Work Engagement · Sample ReliCheck Report" />
+  <meta name="twitter:description" content="A sample ReliCheck analytics report on hybrid work engagement (n=50, 7 Likert items)." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+
+    :root {
+      --ink: #1a1f33;
+      --ink-2: #454a63;
+      --ink-3: #6b7088;
+      --line: #cfd2dc;
+      --line-soft: #e3e6ee;
+      --panel: #f6f7fb;
+      --panel-2: #f1f3f9;
+      --accent: #e85d3a;
+      --primary: #3d57f5;
+      --good: #1f8a4d;
+      --warn: #b07d18;
+      --bad:  #c83333;
+      --navy: #0b1733;
+      --font-display: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: #eef0f5;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--line-soft);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .topbar a {
+      color: var(--ink-2);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .topbar a:hover { color: var(--accent); }
+    .topbar .right a { margin-left: 14px; }
+    .topbar .right .cta {
+      background: var(--accent);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 6px;
+    }
+    .topbar .right .cta:hover { color: #fff; opacity: 0.92; }
+
+    .doc {
+      max-width: 880px;
+      margin: 30px auto 50px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 48px 60px;
+      font-family: var(--font-display);
+      font-size: 13px;
+      line-height: 1.5;
+      color: var(--ink);
+      box-shadow: 0 4px 24px rgba(11, 23, 51, 0.06);
+    }
+    @media (max-width: 720px) { .doc { padding: 28px 24px; } }
+    .doc h1 {
+      font-size: 26px;
+      margin: 0 0 6px;
+      letter-spacing: -0.012em;
+      font-weight: 500;
+    }
+    .doc .meta {
+      color: var(--ink-3);
+      font-size:14px;
+      margin-bottom: 20px;
+    }
+    .doc h2 {
+      font-size: 16px;
+      margin: 30px 0 8px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 4px;
+      font-weight: 500;
+    }
+    .doc h3 {
+      font-size: 14px;
+      margin: 20px 0 6px;
+      color: var(--ink-2);
+      font-weight: 600;
+    }
+    .doc p { margin: 6px 0; }
+    .summary-block {
+      background: #fffaf6;
+      border-left: 3px solid var(--accent);
+      padding: 14px 18px;
+      margin: 14px 0 10px;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .summary-block strong { color: var(--ink); }
+    .takeaways {
+      margin: 8px 0;
+      padding-left: 22px;
+    }
+    .takeaways li { margin-bottom: 4px; }
+    .tile-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 10px 0 6px;
+    }
+    @media (max-width: 660px) { .tile-row { grid-template-columns: 1fr 1fr; } }
+    .tile {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: var(--panel);
+    }
+    .tile.good  { border-color: #b7e2cb; background: #ecfdf3; }
+    .tile.warn  { border-color: #ffe7a8; background: #fff8e6; }
+    .tile.bad   { border-color: #f4c5c5; background: #fdecec; }
+    .tile .lbl {
+      font-size:14px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--ink-3);
+      font-weight: 700;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .tile .val {
+      font-size: 22px;
+      font-weight: 700;
+      margin-top: 2px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .tile.good .val { color: var(--good); }
+    .tile.warn .val { color: var(--warn); }
+    .tile.bad  .val { color: var(--bad); }
+    .tile .sub {
+      font-size:14px;
+      color: var(--ink-3);
+      margin-top: 2px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .note {
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: #fff8e6;
+      border: 1px solid #ffe7a8;
+      color: #6b4d00;
+      font-size:14px;
+      border-radius: 4px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    table.data {
+      width: 100%;
+      border-collapse: collapse;
+      font-size:14px;
+      margin-top: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    table.data th, table.data td {
+      border: 1px solid var(--line);
+      padding: 6px 8px;
+      text-align: left;
+    }
+    table.data th {
+      background: var(--panel-2);
+      font-size:14px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .heat {
+      width: 100%;
+      border-collapse: collapse;
+      font-size:14px;
+      font-variant-numeric: tabular-nums;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .heat th {
+      background: var(--panel-2);
+      padding: 4px 6px;
+      border: 1px solid var(--line);
+      font-weight: 600;
+      font-size:14px;
+    }
+    .heat td {
+      padding: 6px 4px;
+      border: 1px solid var(--line);
+      text-align: center;
+    }
+    .desc-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .desc-item:last-child { border-bottom: 0; }
+    .desc-item .qprompt {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .desc-item .qmeta {
+      font-size:14px;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .desc-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 8px 0 8px;
+    }
+    .desc-stats .ds {
+      background: var(--panel);
+      border: 1px solid var(--line-soft);
+      border-radius: 5px;
+      padding: 7px 9px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .desc-stats .ds-l { font-size:14px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); }
+    .desc-stats .ds-v { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .hist {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 56px;
+      margin-top: 4px;
+    }
+    .hist .bar {
+      flex: 1;
+      background: var(--primary);
+      opacity: 0.9;
+      border-radius: 3px 3px 0 0;
+      position: relative;
+      min-height: 2px;
+    }
+    .hist .bar-label {
+      position: absolute;
+      bottom: -16px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size:14px;
+      color: var(--ink-3);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .open-themes {
+      margin-top: 6px;
+      padding: 12px 16px;
+      background: var(--panel);
+      border-radius: 6px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 13px;
+    }
+    .open-themes .theme {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .open-themes .theme:last-child { border-bottom: 0; }
+    .open-themes .theme-name { font-weight: 600; }
+    .open-themes .theme-count { color: var(--ink-3); font-size:14px; }
+    .open-themes .theme-quote { color: var(--ink-2); font-style: italic; margin-top: 3px; font-family: var(--font-display); }
+    .footer-note {
+      margin-top: 30px;
+      padding-top: 14px;
+      border-top: 1px solid var(--line-soft);
+      font-size:14px;
+      color: var(--ink-3);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .pos { color: var(--good); font-weight: 600; }
+    .neg { color: var(--bad); font-weight: 600; }
+    .neutral { color: var(--ink-2); }
+
+    /* ---- SSI hero (Phase 47) ---- */
+    .ssi-hero {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 22px;
+      align-items: center;
+      padding: 18px 20px;
+      margin: 6px 0 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, #f6f9ff 0%, #fff 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    @media (max-width: 660px) { .ssi-hero { grid-template-columns: 1fr; } }
+    .ssi-ring {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      margin: 0 auto;
+    }
+    .ssi-ring svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+    .ssi-ring .num {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .ssi-ring .num .n { font-size: 36px; font-weight: 700; color: var(--ink); }
+    .ssi-ring .num .of { font-size: 13px; color: var(--ink-3); margin-top: -2px; }
+    .ssi-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .ssi-status-pill.good { background: #ecfdf3; color: var(--good); border: 1px solid #b7e2cb; }
+    .ssi-status-pill.warn { background: #fff8e6; color: var(--warn); border: 1px solid #ffe7a8; }
+    .ssi-status-pill.bad  { background: #fdecec; color: var(--bad);  border: 1px solid #f4c5c5; }
+    .ssi-hero h3 { margin: 0 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-3); font-weight: 700; }
+    .ssi-hero p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--ink-2); font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+
+    .ssi-domains {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    @media (max-width: 900px) { .ssi-domains { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 540px) { .ssi-domains { grid-template-columns: repeat(2, 1fr); } }
+    .ssi-domain {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 10px 10px 12px;
+      background: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    .ssi-domain[data-tone="good"] { border-color: #b7e2cb; background: #f5fdf8; }
+    .ssi-domain[data-tone="warn"] { border-color: #ffe7a8; background: #fffbef; }
+    .ssi-domain[data-tone="bad"]  { border-color: #f4c5c5; background: #fef5f5; }
+    .ssi-domain .nm { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); font-weight: 700; }
+    .ssi-domain .v  { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .ssi-domain .v .of { font-size: 12px; color: var(--ink-3); font-weight: 500; }
+    .ssi-domain .bar { height: 4px; background: var(--line-soft); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+    .ssi-domain .bar > span { display: block; height: 100%; background: var(--good); border-radius: 3px; }
+    .ssi-domain[data-tone="warn"] .bar > span { background: var(--warn); }
+    .ssi-domain[data-tone="bad"]  .bar > span { background: var(--bad); }
+
+    /* ---- Verdict + Quality cards (Phases 51 / 52) ---- */
+    .insight-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 10px 0 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+    }
+    .insight-card[data-tone="good"] { background: #f5fdf8; border-color: #b7e2cb; }
+    .insight-card[data-tone="ok"]   { background: #f4f6fb; border-color: var(--line); }
+    .insight-card[data-tone="warn"] { background: #fffbef; border-color: #ffe7a8; }
+    .insight-card[data-tone="bad"]  { background: #fef5f5; border-color: #f4c5c5; }
+    .insight-card .ic-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .insight-card .ic-eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-3);
+      font-weight: 700;
+    }
+    .insight-card .ic-headline { font-weight: 700; color: var(--ink); font-size: 15px; margin: 4px 0 6px; }
+    .insight-card .ic-body { line-height: 1.6; color: var(--ink-2); }
+    .insight-card .ic-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    @media (max-width: 660px) { .insight-card .ic-grid { grid-template-columns: 1fr; } }
+    .insight-card .ic-bucket {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .insight-card .ic-bucket strong { display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+    .insight-card .ic-checks {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    @media (max-width: 660px) { .insight-card .ic-checks { grid-template-columns: 1fr; } }
+    .insight-card .ic-check {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+    }
+    .insight-card .ic-check .ck { font-size: 18px; font-weight: 700; color: var(--good); }
+    .insight-card .ic-check[data-tone="warn"] .ck { color: var(--warn); }
+    .insight-card .ic-check[data-tone="bad"]  .ck { color: var(--bad); }
+
+    /* ---- AI Narrator inline (Phase 54) ---- */
+    .narrator {
+      background: #f0f5ff;
+      border: 1px solid #c9d6f3;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 10px 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ink-2);
+    }
+    .narrator .nr-eyebrow {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #3d57f5;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .narrator .nr-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #3d57f5; }
+    .narrator strong { color: var(--ink); }
+
+    /* ---- Score breakdown table (Phase 47) ---- */
+    table.breakdown {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin: 10px 0;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    table.breakdown td { padding: 6px 8px; border-bottom: 1px solid var(--line-soft); }
+    table.breakdown td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+    table.breakdown tr.tot td { border-top: 2px solid var(--ink); border-bottom: 0; padding-top: 8px; font-weight: 700; }
+    table.breakdown .dom-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+    table.breakdown .dom-dot.good { background: var(--good); }
+    table.breakdown .dom-dot.warn { background: var(--warn); }
+    table.breakdown .dom-dot.bad  { background: var(--bad); }
+
+    /* ---- Factor loadings matrix (Phase 46) ---- */
+    table.loadings {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    table.loadings th, table.loadings td { border: 1px solid var(--line); padding: 6px 10px; }
+    table.loadings th { background: var(--panel-2); font-weight: 600; }
+    table.loadings td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.loadings .strong { font-weight: 700; background: rgba(31, 138, 77, 0.10); }
+    table.loadings .weak { color: var(--ink-3); }
+</style>
+</head>
+<body>
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="../index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Check a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>The results</h5>
+            <a href="../overview.html#analyze"><strong>Survey Results overview</strong><span>How the Strength Score works.</span></a>
+            <a href="../overview.html#analyze"><strong>Survey Strength Score</strong><span>One score, five checks, clear next steps.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>What ReliCheck checks</h5>
+            <a href="../reliability-guide.html"><strong>Do your questions work together?</strong><span>Reliability and item-total checks.</span></a>
+            <a href="../validity-guide.html"><strong>What is your survey really measuring?</strong><span>Factor analysis, KMO, rotation.</span></a>
+            <a href="../reliability-guide.html"><strong>Are your results strong enough?</strong><span>Response quality and missing data.</span></a>
+            <a href="../ai-features.html"><strong>What are people saying?</strong><span>Open-ended themes and quotes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>See it</h5>
+            <a class="mega-link" href="../samples.html">Sample reports</a>
+            <a class="mega-link" href="../methodology.html">Methodology</a>
+            <a class="mega-link" href="../reliability-guide.html">Reliability guide</a>
+            <a class="mega-link" href="../validity-guide.html">Validity guide</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../import-data.html" class="nav-dd-trigger ">Import Data</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Build a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>Build</h5>
+            <a href="../overview.html#build"><strong>Question types</strong><span>Likert, choice, open-ended, matrix, ranking.</span></a>
+            <a href="../ai-features.html"><strong>AI question review</strong><span>Catch double-barreled, leading, vague items.</span></a>
+            <a href="../overview.html#collect"><strong>Collect responses</strong><span>Links, email, QR, embed.</span></a>
+            <a href="../import-survey.html"><strong>Upload your survey</strong><span>Bring a survey from SurveyMonkey or Qualtrics.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Templates</h5>
+            <a href="../app.html?template=course_evaluation"><strong>Course Evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../app.html?template=student_belonging"><strong>Student Belonging</strong><span>Validated belonging and connectedness scales.</span></a>
+            <a href="../app.html?template=workplace_engagement"><strong>Employee Engagement</strong><span>Quarterly pulse and annual engagement.</span></a>
+            <a href="../app.html?template=program_evaluation"><strong>Program Evaluation</strong><span>Pre/post outcome scales for grant reporting.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Popular templates</h5>
+            <a class="mega-link" href="../app.html?template=customer_satisfaction">Customer Satisfaction</a>
+            <a class="mega-link" href="../app.html?template=climate_survey">Climate Survey</a>
+            <a class="mega-link" href="../app.html?template=training_feedback">Training Feedback</a>
+            <a class="mega-link" href="../app.html?template=community_needs">Community Needs</a>
+            <a class="mega-see-all" href="../samples.html">View all templates →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../samples.html" class="nav-dd-trigger ">Sample Reports</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>By team</h5>
+            <a href="../education.html"><strong>Education</strong><span>Course evaluation, belonging, school climate.</span></a>
+            <a href="../hr-teams.html"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a href="../customer-feedback.html"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service feedback.</span></a>
+            <a href="../research.html"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>By use case</h5>
+            <a href="../education.html"><strong>Course evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../hr-teams.html"><strong>Engagement &amp; pulse</strong><span>Recurring employee surveys with k-anonymity.</span></a>
+            <a href="../program-evaluation.html"><strong>Program evaluation &amp; accreditation</strong><span>Same category, different scopes.</span></a>
+            <a href="../mixed-methods.html"><strong>Mixed-methods research</strong><span>Quantitative scales and qualitative themes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Other resources</h5>
+            <a class="mega-link" href="../case-studies.html">Customer stories</a>
+            <a class="mega-link" href="../compare.html">Compare</a>
+            <a class="mega-link" href="../help.html">Help center</a>
+            <a class="mega-link" href="../blog.html">Blog</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../pricing.html" class="nav-dd-trigger ">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="../login.html" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="../signup.html" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Check a Survey</h5><a href="../overview.html#analyze">Survey Results overview</a><a href="../reliability-guide.html">Reliability guide</a><a href="../validity-guide.html">Validity guide</a><a href="../methodology.html">Methodology</a><a href="../samples.html">Sample reports</a></div>
+    <div class="drawer-group"><h5>Import Data</h5><a href="../import-data.html">Import results</a><a href="../import-survey.html">Upload your survey</a></div>
+    <div class="drawer-group"><h5>Build a Survey</h5><a href="../overview.html#build">Build</a><a href="../ai-features.html">AI features</a><a href="../app.html?template=course_evaluation">Course Evaluation</a><a href="../app.html?template=workplace_engagement">Employee Engagement</a><a href="../app.html?template=program_evaluation">Program Evaluation</a></div>
+    <div class="drawer-group"><h5>Sample Reports</h5><a href="../samples.html">Sample reports</a><a href="../samples/interactive-course-evaluation.html">Interactive demo</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="../education.html">Education &amp; Evaluation</a><a href="../hr-teams.html">HR &amp; Teams</a><a href="../customer-feedback.html">Customer Feedback</a><a href="../research.html">Research</a><a href="../mixed-methods.html">Mixed-Methods</a><a href="../compare.html">Compare</a><a href="../case-studies.html">Customer stories</a><a href="../help.html">Help center</a><a href="../blog.html">Blog</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="../pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="../login.html" class="btn btn-outline">Sign in</a><a href="../signup.html" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+<div class="topbar">
+    <a href="../samples.html">&larr; All sample reports</a>
+    <div class="right">
+      <a href="../overview.html">How ReliCheck works</a>
+      <a class="cta" href="../signup.html">Run one on your data</a>
+    </div>
+  </div>
+
+  <article class="doc">
+    <h1>Hybrid Work Engagement</h1>
+    <div class="meta">
+      Generated May 12, 2026 · 50 responses · 7 Likert items + 1 exploratory item · Evidence Report mode<br>
+      Source: 50-person engineering and design team after a hybrid policy change
+    </div>
+
+    <h2>Survey Strength Index</h2>
+    <div class="ssi-hero">
+      <div class="ssi-ring" aria-label="Survey Strength Index, 86 out of 100">
+        <svg viewBox="0 0 132 132">
+          <circle cx="66" cy="66" r="56" fill="none" stroke="#e3e6ee" stroke-width="10" />
+          <circle cx="66" cy="66" r="56" fill="none" stroke="#1f8a4d" stroke-width="10"
+                  stroke-dasharray="351.86" stroke-dashoffset="49.26" stroke-linecap="round" />
+        </svg>
+        <div class="num"><span class="n">86</span><span class="of">/ 100</span></div>
+      </div>
+      <div>
+        <h3>Strength Index</h3>
+        <span class="ssi-status-pill good">★ Strong</span>
+        <p>This survey is statistically strong and ready for interpretation, with one item recommended for review. Reliability, sampling adequacy, and response quality all sit in the green; the exploratory morning-preference item is dragging the item-quality domain by a few points and should be reported separately from the engagement scale.</p>
+      </div>
+    </div>
+    <div class="ssi-domains">
+      <div class="ssi-domain" data-tone="good"><div class="nm">Reliability</div><div class="v">21<span class="of"> / 25</span></div><div class="bar"><span style="width:84%"></span></div></div>
+      <div class="ssi-domain" data-tone="good"><div class="nm">Factor</div><div class="v">17<span class="of"> / 20</span></div><div class="bar"><span style="width:85%"></span></div></div>
+      <div class="ssi-domain" data-tone="good"><div class="nm">Item quality</div><div class="v">17<span class="of"> / 20</span></div><div class="bar"><span style="width:85%"></span></div></div>
+      <div class="ssi-domain" data-tone="good"><div class="nm">Response</div><div class="v">14<span class="of"> / 15</span></div><div class="bar"><span style="width:93%"></span></div></div>
+      <div class="ssi-domain" data-tone="warn"><div class="nm">Open-ended</div><div class="v">8<span class="of"> / 10</span></div><div class="bar"><span style="width:80%"></span></div></div>
+      <div class="ssi-domain" data-tone="good"><div class="nm">Actionability</div><div class="v">9<span class="of"> / 10</span></div><div class="bar"><span style="width:90%"></span></div></div>
+    </div>
+
+    <h3>Score breakdown</h3>
+    <table class="breakdown">
+      <tr><td><span class="dom-dot good"></span>Reliability strength</td><td class="num">21 / 25</td><td class="num" style="color:var(--ink-3);">25%</td></tr>
+      <tr><td><span class="dom-dot good"></span>Factor structure</td><td class="num">17 / 20</td><td class="num" style="color:var(--ink-3);">20%</td></tr>
+      <tr><td><span class="dom-dot good"></span>Item quality</td><td class="num">17 / 20</td><td class="num" style="color:var(--ink-3);">20%</td></tr>
+      <tr><td><span class="dom-dot good"></span>Response quality</td><td class="num">14 / 15</td><td class="num" style="color:var(--ink-3);">15%</td></tr>
+      <tr><td><span class="dom-dot warn"></span>Open-ended alignment</td><td class="num">8 / 10</td><td class="num" style="color:var(--ink-3);">10%</td></tr>
+      <tr><td><span class="dom-dot good"></span>Actionability</td><td class="num">9 / 10</td><td class="num" style="color:var(--ink-3);">10%</td></tr>
+      <tr class="tot"><td>Total Survey Strength Index</td><td class="num">86 / 100</td><td class="num">100%</td></tr>
+    </table>
+
+    <h2>Can I use these results?</h2>
+    <div class="insight-card" data-tone="good">
+      <div class="ic-head">
+        <span class="ic-eyebrow">Verdict</span>
+        <span class="ssi-status-pill good">Yes, with cautions</span>
+      </div>
+      <div class="ic-headline">Yes, share these findings internally with a note about sample size before generalizing.</div>
+      <div class="ic-body">The reliability and factor evidence support reading the engagement score and item-level patterns as real signal in this team. The small sample (n = 50) makes external generalization risky; replicate with n &ge; 100 before publishing externally or testing invariance across teams.</div>
+      <div class="ic-grid">
+        <div class="ic-bucket">
+          <strong>Safe to use for</strong>
+          Reporting team-level engagement to leadership; identifying workload and recognition as the two top intervention candidates; comparing means across tenure buckets.
+        </div>
+        <div class="ic-bucket">
+          <strong>Use caution for</strong>
+          Generalizing beyond the 50 respondents; reporting an exact factor structure as the engagement model; making causal claims about the hybrid policy change.
+        </div>
+        <div class="ic-bucket">
+          <strong>Not recommended for</strong>
+          Cross-group invariance testing; longitudinal change without a follow-up wave; high-stakes promotion or compensation decisions.
+        </div>
+      </div>
+    </div>
+
+    <h2>Data quality check</h2>
+    <div class="insight-card" data-tone="good">
+      <div class="ic-head">
+        <span class="ic-eyebrow">Response quality</span>
+        <span class="ssi-status-pill good">Clean</span>
+      </div>
+      <div class="ic-headline">Response set is clean. Use the data as collected.</div>
+      <div class="ic-body">Three automated checks scanned the 50 respondents for low-effort response patterns. None of the flags crossed our action threshold; the lone short open-ended answer is a single-word response on Q12 ("More.") that we did not exclude.</div>
+      <div class="ic-checks">
+        <div class="ic-check"><div class="ck">0 / 50</div>Straight-lining (same Likert answer on every item)</div>
+        <div class="ic-check"><div class="ck">0 / 50</div>Duplicate response vectors</div>
+        <div class="ic-check" data-tone="warn"><div class="ck">1 / 47</div>Open-ended answers under 3 characters</div>
+      </div>
+    </div>
+
+    <h2>Plain-English summary</h2>
+    <div class="summary-block">
+      <p><strong>Bottom line:</strong> the engagement scale shows strong internal consistency in this team (Cronbach's α = 0.82, McDonald's ω = 0.84, KMO = 0.88), so the overall score and item-level patterns are trustworthy. Average engagement sits in the moderate range, with manager support and meaningful work scoring highest, and workload pressure scoring lowest.</p>
+      <p><strong>What stands out:</strong></p>
+      <ul class="takeaways">
+        <li>Engagement is solid but not enthusiastic. Mean score of 3.5 on a 5-point scale puts most respondents in the "agree" column without strong endorsement.</li>
+        <li>Workload is the standout pain point. Roughly one in three respondents agree that their workload is unmanageable most days, and the open-text responses reinforce this.</li>
+        <li>The morning-preference item (Q8) does not load on the engagement factor (item-total r = -0.05). Reporting it separately raises alpha to 0.84.</li>
+        <li>Recognition (Q7) shows the widest range of opinion (SD = 1.04), suggesting the experience varies a lot by manager.</li>
+      </ul>
+    </div>
+
+    <h2>Reliability summary</h2>
+    <div class="narrator">
+      <div class="nr-eyebrow"><span class="dot"></span>Reliability Narrator . researcher voice</div>
+      <p>Internal consistency on the seven engagement items is strong. Cronbach's alpha was 0.82 and McDonald's omega total was 0.84, both above the conventional 0.70 cutoff and comfortably above 0.80, suggesting the items measure a coherent construct rather than a set of loosely related opinions. <strong>The close alignment between alpha and omega suggests roughly equal item contributions to the underlying factor</strong>, which means alpha is not understating reliability here. Split-half reliability (Spearman-Brown corrected) was 0.82, consistent with the alpha estimate. The KMO sampling adequacy of 0.88 is meritorious; the inter-item correlation matrix is well-suited to factor extraction.</p>
+    </div>
+    <div class="tile-row" style="grid-template-columns:repeat(5,1fr);">
+      <div class="tile good">
+        <div class="lbl">Cronbach's α</div>
+        <div class="val">0.821</div>
+        <div class="sub">good internal consistency</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">McDonald's ω total</div>
+        <div class="val">0.836</div>
+        <div class="sub">1-factor congeneric model</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">Split-half (Spearman-Brown)</div>
+        <div class="val">0.824</div>
+        <div class="sub">raw r = 0.701 · halves: 4/4</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">KMO sampling adequacy</div>
+        <div class="val">0.881</div>
+        <div class="sub">meritorious</div>
+      </div>
+      <div class="tile">
+        <div class="lbl">Sample / items</div>
+        <div class="val">50 · 7</div>
+        <div class="sub">0 responses dropped (incomplete Likert)</div>
+      </div>
+    </div>
+    <div class="note">Sample size of 50 is small for factor-analytic interpretation. Reliability estimates here are usable; KMO and component structure should be confirmed in a larger sample (n &ge; 100 preferred).</div>
+
+    <h2>Item-total statistics</h2>
+    <table class="data">
+      <thead>
+        <tr><th>#</th><th>Item</th><th class="num">Mean</th><th class="num">SD</th><th class="num">Corrected r<sub>it</sub></th><th class="num">α if deleted</th><th class="num">KMO (item)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Q1</td><td>I feel motivated by my work.</td><td class="num">3.40</td><td class="num">0.97</td><td class="num pos">0.758</td><td class="num">0.769</td><td class="num">0.872</td></tr>
+        <tr><td>Q2</td><td>I find my work meaningful and worthwhile.</td><td class="num">3.52</td><td class="num">1.03</td><td class="num pos">0.623</td><td class="num">0.788</td><td class="num">0.884</td></tr>
+        <tr><td>Q3</td><td>I feel disconnected from my teammates. <em style="color:var(--ink-3);font-size:14px;">(reverse-scored)</em></td><td class="num">3.38</td><td class="num">0.97</td><td class="num pos">0.601</td><td class="num">0.792</td><td class="num">0.921</td></tr>
+        <tr><td>Q4</td><td>I receive useful feedback from my manager.</td><td class="num">3.30</td><td class="num">0.89</td><td class="num pos">0.771</td><td class="num">0.771</td><td class="num">0.871</td></tr>
+        <tr><td>Q5</td><td>My workload is unmanageable most days. <em style="color:var(--ink-3);font-size:14px;">(reverse-scored)</em></td><td class="num">3.42</td><td class="num">1.03</td><td class="num pos">0.837</td><td class="num">0.755</td><td class="num">0.857</td></tr>
+        <tr><td>Q6</td><td>I have the tools I need to do my job well.</td><td class="num">3.38</td><td class="num">0.95</td><td class="num pos">0.736</td><td class="num">0.773</td><td class="num">0.945</td></tr>
+        <tr><td>Q7</td><td>I am recognized when I do good work.</td><td class="num">3.22</td><td class="num">1.04</td><td class="num pos">0.650</td><td class="num">0.786</td><td class="num">0.875</td></tr>
+        <tr><td>Q8</td><td>I prefer working in the morning over the afternoon.</td><td class="num">2.78</td><td class="num">1.17</td><td class="num neg">-0.054</td><td class="num">0.840 ▲</td><td class="num">0.701</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:14px;color:var(--ink-3);margin-top:8px;font-family:-apple-system,sans-serif;">▲ indicates α improves if this item is deleted. Q8 is included as an exploratory item; its negative item-total correlation suggests it does not measure the engagement construct and should be reported separately.</p>
+
+    <h2>Inter-item correlation matrix</h2>
+    <table class="heat">
+      <tr><th></th><th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th><th>Q6</th><th>Q7</th></tr>
+      <tr><th>Q1</th><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,68%);">0.61</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,80%);">0.48</td></tr>
+      <tr><th>Q2</th><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,86%);">0.36</td><td style="background:hsl(220,75%,80%);">0.46</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,86%);">0.36</td></tr>
+      <tr><th>Q3</th><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,86%);">0.36</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,82%);">0.41</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,84%);">0.38</td></tr>
+      <tr><th>Q4</th><td style="background:hsl(220,75%,68%);">0.61</td><td style="background:hsl(220,75%,80%);">0.46</td><td style="background:hsl(220,75%,82%);">0.41</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,75%);">0.54</td><td style="background:hsl(220,75%,80%);">0.46</td></tr>
+      <tr><th>Q5</th><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,72%);">0.58</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,68%);">0.62</td><td style="background:hsl(220,75%,72%);">0.59</td></tr>
+      <tr><th>Q6</th><td style="background:hsl(220,75%,75%);">0.55</td><td style="background:hsl(220,75%,82%);">0.42</td><td style="background:hsl(220,75%,84%);">0.39</td><td style="background:hsl(220,75%,75%);">0.54</td><td style="background:hsl(220,75%,68%);">0.62</td><td style="background:#1c2f5e;color:#fff;">1.00</td><td style="background:hsl(220,75%,80%);">0.48</td></tr>
+      <tr><th>Q7</th><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:hsl(220,75%,86%);">0.36</td><td style="background:hsl(220,75%,84%);">0.38</td><td style="background:hsl(220,75%,80%);">0.46</td><td style="background:hsl(220,75%,72%);">0.59</td><td style="background:hsl(220,75%,80%);">0.48</td><td style="background:#1c2f5e;color:#fff;">1.00</td></tr>
+    </table>
+    <p style="font-size:14px;color:var(--ink-3);margin-top:8px;font-family:-apple-system,sans-serif;">Pearson r between each pair of Likert items after reverse-scoring is applied. All inter-item correlations sit comfortably in the 0.36 to 0.62 range, suggesting items measure related but non-redundant facets of engagement.</p>
+
+    <h2>Factor structure</h2>
+    <div class="narrator">
+      <div class="nr-eyebrow"><span class="dot"></span>Validity Narrator . researcher voice</div>
+      <p>Principal Axis Factoring with Varimax rotation on the seven engagement items returned a single factor (eigenvalue 3.81, 54.4% of variance explained). Item loadings range from 0.55 to 0.81 with no cross-loadings above 0.30, supporting a unidimensional reading of the scale. <strong>The morning-preference item (Q8) was excluded from the factor model</strong> because its corrected item-total correlation was below 0.20 in the reliability step; reporting it separately is the conservative call. Bartlett's test of sphericity was significant (chi-square 132.4, df 21, p &lt; .001), so the correlation matrix is not an identity. Sample size of 50 is below the conventional n &ge; 100 minimum for confirmatory factor analysis; treat the structure here as exploratory and replicate before reporting it as a confirmed model.</p>
+    </div>
+    <div class="tile-row" style="grid-template-columns:repeat(4,1fr);">
+      <div class="tile good">
+        <div class="lbl">Factors retained</div>
+        <div class="val">1</div>
+        <div class="sub">Kaiser criterion: eigenvalue &gt; 1</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">Variance explained</div>
+        <div class="val">54.4%</div>
+        <div class="sub">eigenvalue 3.81 of 7</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">Bartlett's sphericity</div>
+        <div class="val">p &lt; .001</div>
+        <div class="sub">chi-square 132.4, df 21</div>
+      </div>
+      <div class="tile good">
+        <div class="lbl">Method</div>
+        <div class="val" style="font-size:14px;">PAF · Varimax</div>
+        <div class="sub">7 items, Q8 excluded</div>
+      </div>
+    </div>
+
+    <h3>Loading matrix</h3>
+    <table class="loadings">
+      <thead>
+        <tr><th>Item</th><th>Statement</th><th class="num">Factor 1 loading</th><th class="num">Communality</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Q5</td><td>Workload is manageable <em style="color:var(--ink-3);">(reverse-scored)</em></td><td class="num strong">0.81</td><td class="num">0.66</td></tr>
+        <tr><td>Q4</td><td>I receive useful feedback from my manager</td><td class="num strong">0.78</td><td class="num">0.61</td></tr>
+        <tr><td>Q1</td><td>I feel motivated by my work</td><td class="num strong">0.76</td><td class="num">0.58</td></tr>
+        <tr><td>Q6</td><td>I have the tools I need to do my job well</td><td class="num strong">0.74</td><td class="num">0.55</td></tr>
+        <tr><td>Q7</td><td>I am recognized when I do good work</td><td class="num strong">0.66</td><td class="num">0.44</td></tr>
+        <tr><td>Q2</td><td>I find my work meaningful and worthwhile</td><td class="num strong">0.62</td><td class="num">0.38</td></tr>
+        <tr><td>Q3</td><td>I feel connected to my teammates <em style="color:var(--ink-3);">(reverse-scored)</em></td><td class="num strong">0.55</td><td class="num">0.30</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:14px;color:var(--ink-3);margin-top:8px;font-family:-apple-system,sans-serif;">Loadings are the Varimax-rotated standardized regression weights of each item on the retained factor. Cells highlighted in green clear the 0.40 salient-loading threshold (Hair et al., 2010). Q8 is excluded from the loading matrix; its loading on this factor would have been 0.07.</p>
+
+    <h2>Per-item descriptives</h2>
+
+    <div class="desc-item">
+      <div class="qmeta">Q1 · Likert (5-point)</div>
+      <div class="qprompt">I feel motivated by my work.</div>
+      <div class="desc-stats">
+        <div class="ds"><div class="ds-l">N</div><div class="ds-v">50</div></div>
+        <div class="ds"><div class="ds-l">Mean</div><div class="ds-v">3.40</div></div>
+        <div class="ds"><div class="ds-l">SD</div><div class="ds-v">0.97</div></div>
+        <div class="ds"><div class="ds-l">Skew / Kurt</div><div class="ds-v">-0.21 / -0.12</div></div>
+      </div>
+      <div class="hist">
+        <div class="bar" style="height:14%"><span class="bar-label">1</span></div>
+        <div class="bar" style="height:24%"><span class="bar-label">2</span></div>
+        <div class="bar" style="height:48%"><span class="bar-label">3</span></div>
+        <div class="bar" style="height:80%"><span class="bar-label">4</span></div>
+        <div class="bar" style="height:36%"><span class="bar-label">5</span></div>
+      </div>
+    </div>
+
+    <div class="desc-item" style="margin-top:18px;">
+      <div class="qmeta">Q5 · Likert (5-point) · reverse-scored</div>
+      <div class="qprompt">My workload is unmanageable most days.</div>
+      <div class="desc-stats">
+        <div class="ds"><div class="ds-l">N</div><div class="ds-v">50</div></div>
+        <div class="ds"><div class="ds-l">Mean (raw)</div><div class="ds-v">2.58</div></div>
+        <div class="ds"><div class="ds-l">SD</div><div class="ds-v">1.03</div></div>
+        <div class="ds"><div class="ds-l">% agree (4-5)</div><div class="ds-v">28%</div></div>
+      </div>
+      <div class="hist">
+        <div class="bar" style="height:32%"><span class="bar-label">1</span></div>
+        <div class="bar" style="height:78%"><span class="bar-label">2</span></div>
+        <div class="bar" style="height:54%"><span class="bar-label">3</span></div>
+        <div class="bar" style="height:24%"><span class="bar-label">4</span></div>
+        <div class="bar" style="height:14%"><span class="bar-label">5</span></div>
+      </div>
+    </div>
+
+    <div class="desc-item" style="margin-top:18px;">
+      <div class="qmeta">Q9 · Single choice</div>
+      <div class="qprompt">How long have you been in your current role?</div>
+      <table class="data" style="margin-top:8px;">
+        <tr><th>Option</th><th class="num">N</th><th class="num">%</th></tr>
+        <tr><td>Less than 1 year</td><td class="num">12</td><td class="num">24%</td></tr>
+        <tr><td>1 to 3 years</td><td class="num">15</td><td class="num">30%</td></tr>
+        <tr><td>3 to 5 years</td><td class="num">11</td><td class="num">22%</td></tr>
+        <tr><td>More than 5 years</td><td class="num">12</td><td class="num">24%</td></tr>
+      </table>
+    </div>
+
+    <div class="desc-item" style="margin-top:18px;">
+      <div class="qmeta">Q12 · Open-ended · AI theme extraction</div>
+      <div class="qprompt">What would you change to improve your experience?</div>
+      <div class="open-themes">
+        <div class="theme">
+          <div><span class="theme-name">Workload and staffing</span> <span class="theme-count">· 14 mentions</span></div>
+          <div class="theme-quote">"Workload is genuinely unsustainable. I work most weekends."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Manager and recognition</span> <span class="theme-count">· 9 mentions</span></div>
+          <div class="theme-quote">"Recognize the people doing the actual work, not just the people who self-promote."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Meetings and process</span> <span class="theme-count">· 8 mentions</span></div>
+          <div class="theme-quote">"Reduce the number of meetings, half of them could be emails."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Career and compensation</span> <span class="theme-count">· 6 mentions</span></div>
+          <div class="theme-quote">"More transparency around compensation and progression."</div>
+        </div>
+        <div class="theme">
+          <div><span class="theme-name">Hybrid logistics</span> <span class="theme-count">· 5 mentions</span></div>
+          <div class="theme-quote">"Designated team days so we are actually in the office together."</div>
+        </div>
+      </div>
+    </div>
+
+    <h2>Draft report paragraph</h2>
+    <div class="narrator">
+      <div class="nr-eyebrow"><span class="dot"></span>Draft Report Writer . researcher voice</div>
+      <p>The Hybrid Work Engagement survey was administered to 50 members of an engineering and design team following a hybrid policy change. Seven Likert items measuring engagement, plus one exploratory item, were retained for analysis. Internal consistency was strong, with Cronbach's alpha of 0.82 and McDonald's omega total of 0.84. Split-half reliability (Spearman-Brown corrected) was 0.82. Item-total correlations ranged from 0.60 to 0.84 on the seven engagement items; the exploratory morning-preference item (Q8) had an item-total correlation of -0.05 and was excluded from the scale.</p>
+      <p>Exploratory factor analysis using Principal Axis Factoring with Varimax rotation returned a single factor explaining 54.4 percent of the variance (eigenvalue 3.81). Bartlett's test of sphericity was significant (chi-square = 132.4, df = 21, p &lt; .001) and the Kaiser-Meyer-Olkin measure of sampling adequacy was 0.88, both supporting the use of the correlation matrix for factor extraction. All seven retained items showed salient loadings above 0.55 on the single factor with no cross-loadings above 0.30, supporting a unidimensional engagement scale in this sample. The Survey Strength Index for this dataset was 86 out of 100 (Strong), with all six weighted domains scoring in the green except open-ended alignment, which fell to the warn band on volume rather than coherence. Replication with n &ge; 100 is recommended before reporting the factor structure as confirmed or testing measurement invariance across subgroups.</p>
+      <div style="font-size:12px;color:var(--ink-3);margin-top:8px;font-family:-apple-system,sans-serif;">Voice: Researcher. Other voices available on the Strength Index tab: HR / leadership summary and Teacher / department coordinator.</div>
+    </div>
+
+    <h2>Methodology notes</h2>
+    <p>Cronbach's alpha reported is the standardized form. McDonald's omega total is computed from a one-factor congeneric model using a Principal Axis Factoring extraction; values are reported alongside alpha because omega does not assume tau-equivalence and is more accurate when items contribute unequally to the underlying factor. Split-half reliability uses the Spearman-Brown corrected first-half / second-half split. KMO (Kaiser-Meyer-Olkin) is computed from the anti-image correlation matrix. Bartlett's test of sphericity is reported on the inter-item correlation matrix. Reverse-scored items (Q3 and Q5) were reverse-coded before all calculations. The morning-preference item (Q8) was retained in descriptives but excluded from the reliability scale and factor model because its corrected item-total correlation is below the conventional 0.20 threshold.</p>
+    <p>The Survey Strength Index is a 0 to 100 composite of six weighted domains (Reliability Strength 25, Factor Structure 20, Item Quality 20, Response Quality 15, Open-Ended Alignment 10, Actionability 10). The "Can I use these results?" verdict and the Data Quality check are produced by ReliCheck's AI advisors from the same numbers shown elsewhere on this page; they do not introduce new statistics.</p>
+    <p>Open-text themes were generated by ReliCheck's AI theme extraction on Q11 and Q12 responses. Themes are illustrative groupings of respondent language, not formal coding.</p>
+
+    <div class="footer-note">
+      Generated by ReliCheck on 2026-05-12. Reproduce on your own data: build a survey or upload a dataset, then click Export full report (PDF) on the Strength Index tab.
+    </div>
+  </article>
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="../index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="../overview.html">Overview</a></li><li><a href="../ai-features.html">AI features</a></li><li><a href="../pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="../education.html">Education</a></li><li><a href="../hr-teams.html">HR &amp; Teams</a></li><li><a href="../customer-feedback.html">Customer feedback</a></li><li><a href="../research.html">Research</a></li></ul></div>
+      <div><h4>Learn</h4><ul><li><a href="../methodology.html">Methodology</a></li><li><a href="../reliability-guide.html">Reliability guide</a></li><li><a href="../validity-guide.html">Validity guide</a></li><li><a href="../compare.html">Compare</a></li><li><a href="../help.html">Help center</a></li><li><a href="../blog.html">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="../about.html">About</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        header.classList.add('is-mega-open');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          if (!document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  if (toggle) toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+
+</body>
+</html>

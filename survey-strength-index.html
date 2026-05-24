@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck Survey Strength Index&trade; &middot; ReliCheck</title>
+  <meta name="description" content="The ReliCheck Survey Strength Index (SSI) is the 0 to 100 composite score that answers one question: can this survey be trusted? Six weighted domains, five verdict tiers, plain-language guidance." />
+  <link rel="canonical" href="https://relichecksurvey.com/survey-strength-index.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ReliCheck Survey Strength Index&trade;" />
+  <meta property="og:description" content="The 0 to 100 composite score that answers whether your survey can be trusted. Six weighted domains, plain-language verdict, defensible math." />
+  <meta property="og:url" content="https://relichecksurvey.com/survey-strength-index.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ReliCheck Survey Strength Index&trade;" />
+  <meta name="twitter:description" content="The 0 to 100 composite score that answers whether your survey can be trusted." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    .ssi-hero-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: var(--s-7); align-items: center; }
+    @media (max-width: 860px) { .ssi-hero-grid { grid-template-columns: 1fr; gap: var(--s-5); } }
+    .ssi-ring-wrap { position: relative; display: flex; justify-content: center; align-items: center; }
+    .ssi-ring-num { position: absolute; text-align: center; font-family: 'Fraunces', serif; }
+    .ssi-ring-num .n { display: block; font-size: 76px; line-height: 1; font-weight: 600; color: var(--ink); letter-spacing: -0.02em; }
+    .ssi-ring-num .of { display: block; font-size: 14px; color: var(--ink-7); margin-top: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .ssi-tier-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: var(--s-5) 0; }
+    @media (max-width: 760px) { .ssi-tier-row { grid-template-columns: repeat(2, 1fr); } }
+    .ssi-tier { padding: 14px 12px; border-radius: 12px; border: 1px solid #e5e8ed; background: #fff; }
+    .ssi-tier .band { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-7); margin-bottom: 4px; }
+    .ssi-tier .label { font-weight: 600; font-size: 15px; color: var(--ink); margin-bottom: 4px; }
+    .ssi-tier .blurb { font-size: 13px; color: var(--ink-7); line-height: 1.4; }
+    .ssi-tier.t-excellent { border-left: 4px solid #1f9d55; }
+    .ssi-tier.t-strong { border-left: 4px solid #5db075; }
+    .ssi-tier.t-usable { border-left: 4px solid #d4a017; }
+    .ssi-tier.t-needs { border-left: 4px solid #d97706; }
+    .ssi-tier.t-weak { border-left: 4px solid #c0392b; }
+    .ssi-domain-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin: var(--s-4) 0; }
+    @media (max-width: 760px) { .ssi-domain-grid { grid-template-columns: 1fr; } }
+    .ssi-domain { padding: 18px; border-radius: 12px; border: 1px solid #e5e8ed; background: #fff; }
+    .ssi-domain-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .ssi-domain-head h3 { margin: 0; font-size: 17px; }
+    .ssi-domain-weight { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--accent, #1f4ed8); }
+    .ssi-domain-bar { height: 6px; border-radius: 3px; background: #eef1f5; overflow: hidden; margin: 10px 0 12px; }
+    .ssi-domain-bar > div { height: 100%; background: linear-gradient(90deg, #1f4ed8, #5b8def); border-radius: 3px; }
+    .ssi-domain p { margin: 0; font-size: 14px; color: var(--ink-7); line-height: 1.5; }
+    .ssi-domain .inputs { margin-top: 10px; font-size: 12px; color: var(--ink-7); letter-spacing: 0.04em; text-transform: uppercase; }
+    .ssi-stack-table { width: 100%; border-collapse: collapse; margin: var(--s-3) 0; }
+    .ssi-stack-table th, .ssi-stack-table td { padding: 12px 14px; text-align: left; border-bottom: 1px solid #eef1f5; font-size: 14px; }
+    .ssi-stack-table th { background: #f7f9fc; font-weight: 600; color: var(--ink); }
+    .ssi-stack-table td.weight { font-family: 'Fraunces', serif; font-size: 18px; color: var(--accent, #1f4ed8); width: 80px; }
+    .ssi-faq summary { cursor: pointer; padding: 14px 0; font-weight: 600; color: var(--ink); border-bottom: 1px solid #eef1f5; }
+    .ssi-faq[open] summary { color: var(--accent, #1f4ed8); }
+    .ssi-faq p { padding: 12px 0 18px; margin: 0; color: var(--ink-7); line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<header class="article-header">
+  <div class="container-content">
+    <div class="crumb"><a href="index.html">Home</a> / <a href="help.html">Resources</a> / ReliCheck Survey Strength Index&trade;</div>
+    <span class="kicker">ReliCheck Survey Strength Index&trade;</span>
+    <h1 style="margin-top:var(--s-3); max-width: 22ch;">One number that answers: can this survey be trusted?</h1>
+    <p class="lede">The ReliCheck Survey Strength Index (SSI&trade;) is the 0 to 100 composite score that rolls up reliability, factor structure, item quality, response quality, open-ended depth, and actionability into a single defensible verdict. The math is transparent, the bands are public, and every survey gets the same yardstick.</p>
+    <div class="article-meta">
+      <span>Updated May 2026</span>
+      <span>&middot;</span>
+      <span>Reading time: 9 min</span>
+      <span>&middot;</span>
+      <span>Audience: research, evaluation, HR, instructors</span>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container-content">
+    <div class="ssi-hero-grid">
+      <div class="ssi-ring-wrap">
+        <svg viewBox="0 0 200 200" width="280" height="280" aria-hidden="true">
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#eef1f5" stroke-width="16"/>
+          <circle cx="100" cy="100" r="80" fill="none" stroke="#1f9d55" stroke-width="16" stroke-linecap="round"
+                  stroke-dasharray="502" stroke-dashoffset="90" transform="rotate(-90 100 100)"/>
+        </svg>
+        <div class="ssi-ring-num">
+          <span class="n">82</span>
+          <span class="of">/ 100 &middot; Strong</span>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin: 0 0 12px;">A single, comparable score across every survey you run.</h2>
+        <p style="font-size: 17px; color: var(--ink-7); line-height: 1.6; margin: 0 0 16px;">A reliability coefficient, a KMO, a Bartlett's, a missing-data rate, a count of duplicates: each tells part of the story. The SSI&trade; combines them with weights derived from peer-reviewed measurement practice, so a reader without a stats background can still read the verdict and trust the math underneath it.</p>
+        <p style="font-size: 17px; color: var(--ink-7); line-height: 1.6; margin: 0;">Every ReliCheck report opens with the SSI&trade; ring, the verdict tier, and the recommended use cases. Reviewers, funders, and execs see the same number you do.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Verdict tiers</span>
+      <h2>Five bands. Each one tells you what the survey can defensibly support.</h2>
+    </div>
+    <div class="ssi-tier-row">
+      <div class="ssi-tier t-excellent">
+        <div class="band">90 to 100</div>
+        <div class="label">Excellent</div>
+        <div class="blurb">Defensible for high-stakes reporting, peer review, and external publication.</div>
+      </div>
+      <div class="ssi-tier t-strong">
+        <div class="band">75 to 89</div>
+        <div class="label">Strong</div>
+        <div class="blurb">Safe for internal planning, board reporting, and quarterly tracking.</div>
+      </div>
+      <div class="ssi-tier t-usable">
+        <div class="band">60 to 74</div>
+        <div class="label">Usable</div>
+        <div class="blurb">Workable for directional decisions; report with caveats and confidence intervals.</div>
+      </div>
+      <div class="ssi-tier t-needs">
+        <div class="band">45 to 59</div>
+        <div class="label">Needs strengthening</div>
+        <div class="blurb">Useful as pilot data; revise items or collect more responses before reporting.</div>
+      </div>
+      <div class="ssi-tier t-weak">
+        <div class="band">0 to 44</div>
+        <div class="label">Weak</div>
+        <div class="blurb">Do not report a single composite score; redesign the instrument or sampling plan.</div>
+      </div>
+    </div>
+    <p style="text-align: center; color: var(--ink-7); font-size: 14px; margin: 0;">Bands align with conventional reporting thresholds for reliability, sample adequacy, and missing-data tolerance.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">The six domains</span>
+      <h2>How the 100 points are allocated.</h2>
+      <p class="lede" style="max-width: 60ch; margin: var(--s-3) auto 0;">Each domain awards points based on conventional psychometric thresholds. The weights reflect how much each domain affects whether a result holds up under scrutiny.</p>
+    </div>
+
+    <div class="ssi-domain-grid">
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Reliability</h3><span class="ssi-domain-weight">25</span></div>
+        <div class="ssi-domain-bar"><div style="width: 100%;"></div></div>
+        <p>Anchored on McDonald's omega when it can be estimated, with Cronbach's alpha as the fallback. Per-construct reliability and the alpha to omega gap shape the final allocation.</p>
+        <div class="inputs">Inputs: omega &middot; alpha &middot; SEM &middot; per-construct alpha</div>
+      </div>
+
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Factor structure</h3><span class="ssi-domain-weight">20</span></div>
+        <div class="ssi-domain-bar"><div style="width: 80%;"></div></div>
+        <p>Whether the items group into factors that match the constructs they were written to measure. Pulls from KMO, Bartlett's significance, variance explained, and confirmatory fit when CFA has been run.</p>
+        <div class="inputs">Inputs: KMO &middot; Bartlett's &middot; variance explained &middot; CFA fit</div>
+      </div>
+
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Item quality</h3><span class="ssi-domain-weight">20</span></div>
+        <div class="ssi-domain-bar"><div style="width: 80%;"></div></div>
+        <p>Per-item diagnostics. Rewards strong item-total correlations and clear discrimination; penalizes ceiling and floor effects, low-variance items, and items that hurt the scale on alpha-if-deleted.</p>
+        <div class="inputs">Inputs: item-total r &middot; ceiling/floor &middot; alpha-if-deleted</div>
+      </div>
+
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Response quality</h3><span class="ssi-domain-weight">15</span></div>
+        <div class="ssi-domain-bar"><div style="width: 60%;"></div></div>
+        <p>Whether the responses themselves look honest. Counts straight-lining, duplicate response vectors, missing-data rates, and sample size adequacy for the analyses being run.</p>
+        <div class="inputs">Inputs: straight-lining &middot; duplicates &middot; missingness &middot; n</div>
+      </div>
+
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Open-ended depth</h3><span class="ssi-domain-weight">10</span></div>
+        <div class="ssi-domain-bar"><div style="width: 40%;"></div></div>
+        <p>For surveys with open-ended items, rewards engagement and average response length. Surveys with no open-ended items skip the domain and the weight is redistributed proportionally.</p>
+        <div class="inputs">Inputs: response rate &middot; average length &middot; theme coverage</div>
+      </div>
+
+      <div class="ssi-domain">
+        <div class="ssi-domain-head"><h3>Actionability</h3><span class="ssi-domain-weight">10</span></div>
+        <div class="ssi-domain-bar"><div style="width: 40%;"></div></div>
+        <p>Whether the survey produces decisions a stakeholder can act on. Rewards clear construct labeling, paired groups for comparison, and outcome variables for predictor or driver analysis.</p>
+        <div class="inputs">Inputs: construct tags &middot; group variables &middot; outcome columns</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">The math, in one table</span>
+      <h2>Domain weights and what each one rewards.</h2>
+    </div>
+    <table class="ssi-stack-table">
+      <thead>
+        <tr><th>Domain</th><th class="weight">Weight</th><th>Full-credit threshold</th><th>Floor (zero credit)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Reliability</td><td class="weight">25</td><td>Omega &ge; 0.90</td><td>Omega &lt; 0.50</td></tr>
+        <tr><td>Factor structure</td><td class="weight">20</td><td>KMO &ge; 0.80, Bartlett's p &lt; 0.001, factors match constructs</td><td>KMO &lt; 0.50 or factors do not match</td></tr>
+        <tr><td>Item quality</td><td class="weight">20</td><td>All items r&ge;0.30, no ceiling or floor effects</td><td>Multiple items with r&lt;0.20 or strong skew</td></tr>
+        <tr><td>Response quality</td><td class="weight">15</td><td>n &ge; 100, &lt;5% straight-line, &lt;5% missing</td><td>n &lt; 30 or &gt;25% straight-line</td></tr>
+        <tr><td>Open-ended depth</td><td class="weight">10</td><td>&ge; 60% response rate, &ge; 25 words median</td><td>&lt; 10% response rate</td></tr>
+        <tr><td>Actionability</td><td class="weight">10</td><td>Constructs tagged, group variable present, outcome column present</td><td>None of the above</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size: 13px; color: var(--ink-7); margin-top: var(--s-3);">Partial credit scales linearly between the full-credit threshold and the floor. Surveys without open-ended items redistribute the 10 points proportionally across the other domains.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Why this design</span>
+      <h2>Why a composite score, instead of a list of statistics?</h2>
+    </div>
+    <div class="article-layout">
+      <article class="prose" style="grid-column: 1 / -1; max-width: 70ch; margin: 0 auto;">
+        <p>A reliability coefficient lives next to a KMO, which lives next to an item-total correlation, which lives next to a missing-data rate. Any one of them can be strong while another quietly fails. A reader who only checks alpha can publish a survey whose factor structure does not hold up; a reader who only checks KMO can publish one with a third of respondents straight-lining the items.</p>
+        <p>The SSI&trade; is the answer to a practical question that researchers ask anyway: <em>given everything we know about this survey, can it be trusted?</em> Rolling the diagnostics into a single composite forces the analyst to face the weakest link instead of cherry-picking the strongest. Weighting the domains by their conventional importance gives the score a defensible basis without claiming false precision.</p>
+        <p>The score is not a replacement for reading the report. The Reliability tab still shows alpha, omega, item-total correlations, and SEM. The Validity tab still shows EFA, CFA, and invariance. The SSI&trade; sits on top of those, summarizing the verdict so a stakeholder who does not read the technical appendix still gets the right answer.</p>
+        <h3>Where the weights came from</h3>
+        <p>The 25/20/20/15/10/10 allocation reflects three principles. First, reliability is the prerequisite for everything else, so it gets the largest single share. Second, factor structure and item quality together (40 points) reflect that "the right items, grouped the right way" is the second-most-important question after "the items are stable." Third, response quality and actionability are independent of the items themselves, so they round out the score without dominating it.</p>
+        <h3>What the score does not measure</h3>
+        <p>The SSI&trade; does not score the meaning of the result, the ethics of the sampling frame, the appropriateness of the construct, or the quality of the decision a stakeholder makes from the data. It scores measurement integrity. A survey with a 95 SSI&trade; can still be the wrong instrument for the question being asked. The numbers help; they do not replace the analyst.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">In the dashboard</span>
+      <h2>Where you see the SSI&trade; in ReliCheck.</h2>
+    </div>
+    <div class="cards-3">
+      <article class="card" style="cursor:default;">
+        <h3>Strength Index tab</h3>
+        <p>The default landing for every survey's analytics view. Ring, verdict tier, recommended use cases, six domain breakdowns, and the "Can I Use These Results?" advisor underneath.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>My Surveys list</h3>
+        <p>A health pill on every survey row shows its current SSI&trade; band at a glance, so you can scan a portfolio without opening individual reports.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>PDF export</h3>
+        <p>Every PDF report opens with the SSI&trade; ring on page one, then walks through the six domains with the supporting statistics for each.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>Public dashboard share</h3>
+        <p>When you share a read-only dashboard link, the SSI&trade; ring is the first thing the recipient sees. The verdict tier sets context before they read the numbers.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>Suite roll-ups</h3>
+        <p>Cross-survey suites display the trailing SSI&trade; trend so you can see whether instrument quality is improving, drifting, or holding steady across waves.</p>
+      </article>
+      <article class="card" style="cursor:default;">
+        <h3>AI narrator card</h3>
+        <p>The Strength Index tab includes an AI summary that reads the score and the underlying domain breakdown, then writes a one-paragraph verdict in plain language.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Common questions</span>
+      <h2>Reading the score in practice.</h2>
+    </div>
+    <div style="max-width: 70ch; margin: 0 auto;">
+      <details class="ssi-faq">
+        <summary>What if my survey has no Likert items?</summary>
+        <p>The Reliability and Factor Structure domains require Likert items to compute. If the survey is entirely open-ended, single-choice, or behavioral, those domains are skipped and the remaining domains are reweighted proportionally. The SSI&trade; still produces a score, anchored on response quality, open-ended depth, and actionability.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>How many responses do I need before the score is reliable?</summary>
+        <p>The score itself can be computed at any sample size. For the verdict tier to be defensible, aim for at least 30 responses per construct for internal consistency, and at least 100 responses overall for the Response Quality domain to clear its full-credit threshold. The dashboard flags small samples explicitly so the score is read in context.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>Why did my SSI&trade; drop after I added more responses?</summary>
+        <p>Two common reasons. First, the new responses may have introduced more straight-lining or missing data, dragging Response Quality down. Second, additional respondents can shift the factor structure, especially when the new respondents come from a different population than the original sample. The Strength Index tab's narrator names the specific domain that moved.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>Can two surveys with the same SSI&trade; have very different profiles?</summary>
+        <p>Yes. A survey at 78 with strong reliability and weaker open-ended depth has a different remediation path than a survey at 78 with strong response quality and weaker factor structure. The single number is the headline; the domain breakdown is where the actual diagnosis lives.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>Is the SSI&trade; comparable across different surveys?</summary>
+        <p>Within ReliCheck, yes. The same yardstick applies to every survey, so a 75 on a customer feedback instrument means the same level of measurement integrity as a 75 on an employee engagement survey. Across instruments measuring different constructs, the score is a measurement-integrity comparison, not a content comparison.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>How does the SSI&trade; relate to the "Can I Use These Results?" advisor?</summary>
+        <p>The advisor sits underneath the SSI&trade; ring on the Strength Index tab. It bundles the score, response quality flags, and sample size into a four-tier recommendation: yes, yes with cautions, use with care, or not yet. The SSI&trade; is the underlying measurement; the advisor is the practical guidance.</p>
+      </details>
+      <details class="ssi-faq">
+        <summary>Can I see the formula?</summary>
+        <p>Yes. The full per-domain scoring rules are documented in the <a href="methodology.html#strength-index">methodology page</a>, including the partial-credit interpolation and the redistribution rules for surveys without open-ended items. The intent is that any researcher can audit the math.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>See the ReliCheck Survey Strength Index&trade; on a real report.</h2>
+      <p>Open a sample report or run the score on your own data. Free to start, paid plans add unlimited responses and team sharing.</p>
+      <div class="hero-actions">
+        <a href="samples.html" class="btn btn-primary btn-lg">View sample report</a>
+        <a href="signup.html" class="btn btn-outline btn-lg">Run it on your data</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+</body>
+</html>

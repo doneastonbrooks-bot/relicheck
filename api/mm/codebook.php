@@ -1,0 +1,377 @@
+<?php
+// /api/mm/codebook.php
+//
+// GET  ?project_id=N                       list every category + its codebook entry
+// GET  ?project_id=N&category_id=K         single entry
+// POST { action: 'save',     project_id, category_id, fields... }
+// POST { action: 'draft',    project_id, category_id }   -- AI draft of all fields
+// POST { action: 'set_status', project_id, category_id, status }
+//
+// Phase 179. Reads/writes mm_codebooks (extended in schema_phase179.sql).
+// Guards every optional column read so the endpoint keeps working if the
+// migration has not yet been applied.
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/../_helpers.php';
+require_once __DIR__ . '/../_session.php';
+require_once __DIR__ . '/../_mm.php';
+require_once __DIR__ . '/../_ai.php';
+
+require_method('GET', 'POST');
+check_origin();
+$user = require_auth();
+$pdo  = db();
+$uid  = (int)$user['id'];
+
+// ---- Detect which Phase 179 columns are present --------------------------
+function mm_codebook_cols(PDO $pdo): array
+{
+    $cols = [];
+    $q = $pdo->query(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+          WHERE TABLE_SCHEMA = DATABASE()
+            AND TABLE_NAME   = 'mm_codebooks'"
+    );
+    foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $c) $cols[$c] = true;
+    return $cols;
+}
+$HAS = mm_codebook_cols($pdo);
+
+// Helper: pull a row from mm_codebooks for one (project, category). May be empty.
+function mm_codebook_row(PDO $pdo, int $projectId, int $categoryId, array $HAS): array
+{
+    $select = ['c.id AS cb_id', 'c.inclusion_rules', 'c.exclusion_rules',
+               'c.example_quotes_json', 'c.coding_confidence'];
+    foreach (['short_definition','full_description','borderline_cases',
+              'analyst_memo','parent_cluster','linked_variables_json','status'] as $f) {
+        if (!empty($HAS[$f])) $select[] = 'c.' . $f;
+    }
+    $sql = 'SELECT ' . implode(', ', $select) .
+           ' FROM mm_codebooks c WHERE c.project_id = :p AND c.theme_id = :t LIMIT 1';
+    $s = $pdo->prepare($sql);
+    $s->execute([':p' => $projectId, ':t' => $categoryId]);
+    $row = $s->fetch(PDO::FETCH_ASSOC);
+    return $row ?: [];
+}
+
+// Shape a row for the client. Always returns the full envelope; missing
+// columns come back as empty strings or empty arrays.
+function mm_codebook_shape(int $categoryId, array $row, array $cat): array
+{
+    $quotes = [];
+    if (!empty($row['example_quotes_json'])) {
+        $d = json_decode((string)$row['example_quotes_json'], true);
+        if (is_array($d)) $quotes = $d;
+    }
+    $linked = [];
+    if (!empty($row['linked_variables_json'])) {
+        $d = json_decode((string)$row['linked_variables_json'], true);
+        if (is_array($d)) $linked = $d;
+    }
+    return [
+        'category_id'       => $categoryId,
+        'name'              => (string)($cat['name'] ?? ''),
+        'description'       => (string)($cat['description'] ?? ''),
+        'source_mode'       => (string)($cat['source_mode'] ?? 'auto'),
+        'confidence'        => (string)($cat['confidence'] ?? 'moderate'),
+        'short_definition'  => (string)($row['short_definition'] ?? ''),
+        'full_description'  => (string)($row['full_description'] ?? ''),
+        'inclusion_rules'   => (string)($row['inclusion_rules'] ?? ''),
+        'exclusion_rules'   => (string)($row['exclusion_rules'] ?? ''),
+        'example_quotes'    => $quotes,
+        'borderline_cases'  => (string)($row['borderline_cases'] ?? ''),
+        'analyst_memo'      => (string)($row['analyst_memo'] ?? ''),
+        'parent_cluster'    => (string)($row['parent_cluster'] ?? ''),
+        'linked_variables'  => $linked,
+        'status'            => (string)($row['status'] ?? 'draft'),
+    ];
+}
+
+// ============================ GET =========================================
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $projectId  = (int)($_GET['project_id'] ?? 0);
+    $categoryId = (int)($_GET['category_id'] ?? 0);
+    if ($projectId <= 0) fail('bad_input', 'Missing project_id.', 400);
+    mm_require_project_or_coder($pdo, $uid, $projectId);
+
+    // Pull all categories for this project, plus their coded counts and a
+    // sentiment mix summary so the left-panel cards have something to render.
+    $cats = $pdo->prepare(
+        'SELECT c.id, c.name, c.description, c.source_mode, c.confidence, c.position,
+                (SELECT COUNT(*) FROM mm_coded_responses cr WHERE cr.category_id = c.id) AS coded_count
+           FROM mm_theme_categories c
+          WHERE c.project_id = :p
+       ORDER BY c.position ASC, c.id ASC'
+    );
+    $cats->execute([':p' => $projectId]);
+    $catRows = $cats->fetchAll(PDO::FETCH_ASSOC);
+
+    // Total responses for percent.
+    $total = (int)$pdo->query(
+        'SELECT COUNT(*) FROM mm_text_responses WHERE project_id = ' . (int)$projectId
+    )->fetchColumn();
+
+    // Sentiment mix per category (best-effort: skip if table missing).
+    $sentByCat = [];
+    try {
+        $s = $pdo->prepare(
+            'SELECT cr.category_id, s.sentiment, COUNT(*) AS n
+               FROM mm_coded_responses cr
+               JOIN mm_sentiment_scores s ON s.response_id = cr.response_id
+              WHERE cr.project_id = :p
+           GROUP BY cr.category_id, s.sentiment'
+        );
+        $s->execute([':p' => $projectId]);
+        foreach ($s->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $cid = (int)$r['category_id'];
+            $sentByCat[$cid] = $sentByCat[$cid] ?? ['positive'=>0,'neutral'=>0,'negative'=>0,'mixed'=>0];
+            $sentByCat[$cid][(string)$r['sentiment']] = (int)$r['n'];
+        }
+    } catch (Throwable $_) {}
+
+    // Codebook entries keyed by theme_id.
+    $cbByCat = [];
+    $select = ['theme_id', 'inclusion_rules', 'exclusion_rules', 'example_quotes_json', 'coding_confidence'];
+    foreach (['short_definition','full_description','borderline_cases',
+              'analyst_memo','parent_cluster','linked_variables_json','status'] as $f) {
+        if (!empty($HAS[$f])) $select[] = $f;
+    }
+    $cb = $pdo->prepare('SELECT ' . implode(', ', $select) . ' FROM mm_codebooks WHERE project_id = :p');
+    $cb->execute([':p' => $projectId]);
+    foreach ($cb->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $cbByCat[(int)$r['theme_id']] = $r;
+    }
+
+    if ($categoryId > 0) {
+        // Single entry mode.
+        $cat = null;
+        foreach ($catRows as $r) if ((int)$r['id'] === $categoryId) { $cat = $r; break; }
+        if (!$cat) fail('not_found', 'Category not found.', 404);
+        $shaped = mm_codebook_shape($categoryId, $cbByCat[$categoryId] ?? [], $cat);
+        $shaped['coded_count'] = (int)$cat['coded_count'];
+        $shaped['percent']     = $total > 0 ? round(((int)$cat['coded_count'] / $total) * 100, 1) : 0;
+        $shaped['sentiment_mix'] = $sentByCat[$categoryId] ?? ['positive'=>0,'neutral'=>0,'negative'=>0,'mixed'=>0];
+        json_out(['ok' => true, 'entry' => $shaped]);
+    }
+
+    // List mode: every category plus the codebook shape.
+    $out = [];
+    foreach ($catRows as $cat) {
+        $cid = (int)$cat['id'];
+        $entry = mm_codebook_shape($cid, $cbByCat[$cid] ?? [], $cat);
+        $entry['coded_count']   = (int)$cat['coded_count'];
+        $entry['percent']       = $total > 0 ? round(((int)$cat['coded_count'] / $total) * 100, 1) : 0;
+        $entry['sentiment_mix'] = $sentByCat[$cid] ?? ['positive'=>0,'neutral'=>0,'negative'=>0,'mixed'=>0];
+        $out[] = $entry;
+    }
+    json_out(['ok' => true, 'entries' => $out, 'total_responses' => $total]);
+}
+
+// ============================ POST ========================================
+$body       = read_json_body();
+$projectId  = (int)($body['project_id'] ?? 0);
+$action     = clean_string((string)($body['action'] ?? ''), 32);
+$categoryId = (int)($body['category_id'] ?? 0);
+if ($projectId <= 0) fail('bad_input', 'Missing project_id.', 400);
+mm_require_project($pdo, $uid, $projectId);
+
+// Ownership guard for the category.
+$cat = $pdo->prepare('SELECT id, name, description FROM mm_theme_categories WHERE id = :i AND project_id = :p LIMIT 1');
+$cat->execute([':i' => $categoryId, ':p' => $projectId]);
+$catRow = $cat->fetch(PDO::FETCH_ASSOC);
+if (!$catRow) fail('not_found', 'Category not found in this project.', 404);
+
+// -------------------- save --------------------
+if ($action === 'save' || $action === 'set_status') {
+    // Map of incoming field -> [column-name, value-cleaner].
+    // Only keys actually present in the body are written.
+    $writable = [
+        'short_definition' => ['short_definition',  'string'],
+        'full_description' => ['full_description',  'text'],
+        'inclusion_rules'  => ['inclusion_rules',   'text'],
+        'exclusion_rules'  => ['exclusion_rules',   'text'],
+        'borderline_cases' => ['borderline_cases',  'text'],
+        'analyst_memo'     => ['analyst_memo',      'text'],
+        'parent_cluster'   => ['parent_cluster',    'string'],
+        'example_quotes'   => ['example_quotes_json','json'],
+        'linked_variables' => ['linked_variables_json','json'],
+        'status'           => ['status',            'enum'],
+        'coding_confidence'=> ['coding_confidence', 'conf_enum'],
+    ];
+    $setBits = [];
+    $args = [':p' => $projectId, ':t' => $categoryId];
+    foreach ($writable as $bodyKey => [$col, $kind]) {
+        if (!array_key_exists($bodyKey, $body)) continue;
+        // Skip columns that don't exist yet (migration not run).
+        if (!isset($HAS[$col]) && !in_array($col, ['inclusion_rules','exclusion_rules','example_quotes_json','coding_confidence'], true)) continue;
+        $v = $body[$bodyKey];
+        switch ($kind) {
+            case 'string':
+                $val = $v === null ? null : clean_string((string)$v, 400);
+                break;
+            case 'text':
+                $val = $v === null ? null : clean_string((string)$v, 20000);
+                break;
+            case 'json':
+                $arr = is_array($v) ? $v : [];
+                $val = json_encode($arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            case 'enum':
+                $s = (string)$v;
+                if (!in_array($s, ['draft','reviewed','approved'], true)) {
+                    fail('bad_status', 'status must be draft, reviewed, or approved.', 400);
+                }
+                $val = $s;
+                break;
+            case 'conf_enum':
+                $s = (string)$v;
+                if (!in_array($s, ['high','moderate','low'], true)) $s = 'moderate';
+                $val = $s;
+                break;
+        }
+        $bind = ':v_' . $col;
+        $setBits[] = $col . ' = ' . $bind;
+        $args[$bind] = $val;
+    }
+    if (empty($setBits)) fail('bad_input', 'No writable fields supplied.', 400);
+
+    // Upsert. The unique key in mm_codebooks is theme_id, so we can use
+    // INSERT ... ON DUPLICATE KEY UPDATE.
+    //
+    // IMPORTANT: PDO with named placeholders rejects a single placeholder
+    // referenced twice in the same statement with SQLSTATE[HY093]. Because
+    // every field is referenced once in the INSERT VALUES half and once in
+    // the UPDATE SET half, each value gets TWO distinct placeholders:
+    //   :ins_<col> for INSERT, :upd_<col> for UPDATE.
+    // The pair is bound to the same value at execute time.
+    $insertCols = ['project_id', 'theme_id'];
+    $insertVals = [':ins_project_id', ':ins_theme_id'];
+    $bindArgs   = [':ins_project_id' => $projectId, ':ins_theme_id' => $categoryId];
+    $updateSet  = [];
+
+    // Re-derive the per-field plan from $writable + $body so we can build the
+    // two halves with cleanly separated placeholders.
+    foreach ($writable as $bodyKey => [$col, $kind]) {
+        if (!array_key_exists($bodyKey, $body)) continue;
+        if (!isset($HAS[$col]) && !in_array($col, ['inclusion_rules','exclusion_rules','example_quotes_json','coding_confidence'], true)) continue;
+        $v = $body[$bodyKey];
+        switch ($kind) {
+            case 'string':
+                $val = $v === null ? null : clean_string((string)$v, 400);
+                break;
+            case 'text':
+                $val = $v === null ? null : clean_string((string)$v, 20000);
+                break;
+            case 'json':
+                $arr = is_array($v) ? $v : [];
+                $val = json_encode($arr, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                break;
+            case 'enum':
+                $s = (string)$v;
+                if (!in_array($s, ['draft','reviewed','approved'], true)) {
+                    fail('bad_status', 'status must be draft, reviewed, or approved.', 400);
+                }
+                $val = $s;
+                break;
+            case 'conf_enum':
+                $s = (string)$v;
+                if (!in_array($s, ['high','moderate','low'], true)) $s = 'moderate';
+                $val = $s;
+                break;
+            default:
+                continue 2; // unknown kind: skip this field rather than crash.
+        }
+        $insCol = ':ins_' . $col;
+        $updCol = ':upd_' . $col;
+        $insertCols[]      = $col;
+        $insertVals[]      = $insCol;
+        $updateSet[]       = $col . ' = ' . $updCol;
+        $bindArgs[$insCol] = $val;
+        $bindArgs[$updCol] = $val;
+    }
+
+    $sql = 'INSERT INTO mm_codebooks (' . implode(', ', $insertCols) . ') VALUES (' . implode(', ', $insertVals) . ')' .
+           ' ON DUPLICATE KEY UPDATE ' . implode(', ', $updateSet);
+    $pdo->prepare($sql)->execute($bindArgs);
+
+    // Return the freshly-saved entry.
+    $fresh = mm_codebook_row($pdo, $projectId, $categoryId, $HAS);
+    $shaped = mm_codebook_shape($categoryId, $fresh, $catRow);
+    json_out(['ok' => true, 'entry' => $shaped]);
+}
+
+// -------------------- draft (AI) --------------------
+if ($action === 'draft') {
+    // Pull a sample of this theme's coded responses for the model.
+    $resp = $pdo->prepare(
+        'SELECT r.id, r.text, r.respondent_ref,
+                (SELECT sentiment FROM mm_sentiment_scores s WHERE s.response_id = r.id LIMIT 1) AS sentiment
+           FROM mm_coded_responses cr
+           JOIN mm_text_responses  r ON r.id = cr.response_id
+          WHERE cr.project_id = :p AND cr.category_id = :c
+       ORDER BY cr.confidence DESC, r.id ASC
+          LIMIT 20'
+    );
+    $resp->execute([':p' => $projectId, ':c' => $categoryId]);
+    $samples = $resp->fetchAll(PDO::FETCH_ASSOC);
+
+    if (!$samples) {
+        fail('no_samples', 'This category has no coded responses to draft from.', 409);
+    }
+
+    $excerpts = [];
+    foreach ($samples as $r) {
+        $t = trim((string)$r['text']);
+        if ($t === '') continue;
+        $excerpts[] = '- (' . ($r['respondent_ref'] ?: ('R' . $r['id'])) .
+                      ', ' . ($r['sentiment'] ?: 'neutral') . '): ' .
+                      mb_substr($t, 0, 400);
+    }
+
+    $system =
+        "You are helping a researcher draft a defensible codebook entry for a mixed-methods study. " .
+        "Write in clear, professional, academic prose. Avoid hype. Stay grounded in the supplied responses.\n\n" .
+        "Output strictly valid JSON with exactly these keys: " .
+        "short_definition, full_description, inclusion_rules, exclusion_rules, example_quotes, borderline_cases.\n" .
+        "  - short_definition: a single sentence, under 25 words.\n" .
+        "  - full_description: 2-4 sentences describing the construct.\n" .
+        "  - inclusion_rules: a bullet list as plain text. When does the code apply?\n" .
+        "  - exclusion_rules: a bullet list as plain text. When does the code NOT apply, even though it looks similar?\n" .
+        "  - example_quotes: an array of 2-3 short verbatim quotes lifted from the responses.\n" .
+        "  - borderline_cases: 1-2 sentences describing edge cases or ambiguity the analyst should watch for.\n" .
+        "Do not include any prose outside the JSON object.";
+
+    $userMsg =
+        "Theme name: " . (string)$catRow['name'] . "\n" .
+        ($catRow['description'] ? ("Existing description: " . (string)$catRow['description'] . "\n") : '') .
+        "\nCoded responses for this theme:\n" .
+        implode("\n", $excerpts);
+
+    $r = ai_complete($system, [['role' => 'user', 'content' => $userMsg]], 1200);
+    $parsed = ai_extract_json((string)$r['text']);
+    if (!$parsed) {
+        fail('ai_bad_response', 'The model did not return valid JSON.', 502);
+    }
+
+    // Coerce to the response envelope. Strings get trimmed; example_quotes
+    // is forced to an array of strings.
+    $quotes = $parsed['example_quotes'] ?? [];
+    if (!is_array($quotes)) $quotes = [];
+    $quotes = array_values(array_filter(array_map(function ($q) {
+        return is_string($q) ? trim($q) : (is_array($q) ? trim((string)($q['quote'] ?? $q['text'] ?? '')) : '');
+    }, $quotes)));
+
+    $draft = [
+        'short_definition' => trim((string)($parsed['short_definition'] ?? '')),
+        'full_description' => trim((string)($parsed['full_description'] ?? '')),
+        'inclusion_rules'  => trim((string)($parsed['inclusion_rules']  ?? '')),
+        'exclusion_rules'  => trim((string)($parsed['exclusion_rules']  ?? '')),
+        'example_quotes'   => $quotes,
+        'borderline_cases' => trim((string)($parsed['borderline_cases'] ?? '')),
+    ];
+
+    json_out(['ok' => true, 'draft' => $draft]);
+}
+
+fail('bad_action', 'Unknown action.', 400);

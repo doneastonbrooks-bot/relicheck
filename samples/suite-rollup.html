@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HR Suite Roll-Up &middot; Sample ReliCheck Report</title>
+  <meta name="description" content="A sample cross-survey roll-up dashboard for the HR Suite. Two surveys (Workplace Engagement + Exit Interview), this quarter vs last, with a plain-language AI narrator and shared-construct trends." />
+  <link rel="canonical" href="https://relichecksurvey.com/samples/suite-rollup.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="HR Suite Roll-Up &middot; Sample ReliCheck Report" />
+  <meta property="og:description" content="A sample cross-survey roll-up dashboard for the HR Suite. Two surveys, this quarter vs last, with a plain-language AI narrator and shared-construct trends." />
+  <meta property="og:url" content="https://relichecksurvey.com/samples/suite-rollup.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HR Suite Roll-Up &middot; Sample ReliCheck Report" />
+  <meta name="twitter:description" content="A sample cross-survey roll-up dashboard for the HR Suite." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+    :root {
+      --ink: #1a1f33;
+      --ink-2: #454a63;
+      --ink-3: #6b7088;
+      --line: #cfd2dc;
+      --line-soft: #e3e6ee;
+      --panel: #f6f7fb;
+      --panel-2: #f1f3f9;
+      --accent: #e85d3a;
+      --primary: #1F3A8A;
+      --good: #1f8a4d;
+      --warn: #b07d18;
+      --bad:  #c83333;
+      --navy: #0b1733;
+      --font-display: Georgia, "Times New Roman", serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: #eef0f5;
+    }
+    .topbar {
+      background: #fff;
+      border-bottom: 1px solid var(--line-soft);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .topbar a { color: var(--ink-2); text-decoration: none; font-size: 13px; font-weight: 500; }
+    .topbar a:hover { color: var(--accent); }
+    .topbar .right a { margin-left: 14px; }
+    .topbar .right .cta { background: var(--accent); color: #fff; padding: 7px 14px; border-radius: 6px; }
+    .topbar .right .cta:hover { color: #fff; opacity: 0.92; }
+
+    .sample-banner {
+      background: #fff7e0;
+      border-bottom: 1px solid #f0d99a;
+      padding: 10px 24px;
+      font-size: 14px;
+      color: #6b4f00;
+      text-align: center;
+    }
+    .sample-banner strong { color: #533c00; }
+
+    .doc {
+      max-width: 980px;
+      margin: 28px auto 60px;
+      padding: 0 16px;
+    }
+    .doc h1 {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 30px;
+      letter-spacing: -0.01em;
+      color: var(--navy);
+      margin: 0 0 6px;
+    }
+    .doc .lede {
+      font-size: 15px;
+      color: var(--ink-2);
+      margin: 0 0 22px;
+      line-height: 1.55;
+      max-width: 68ch;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line-soft);
+      border-radius: 14px;
+      padding: 18px 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+      margin-bottom: 16px;
+    }
+    .card-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .card-head h3 { font-family: var(--font-display); font-weight: 600; font-size: 19px; color: var(--navy); margin: 0; }
+    .card-head .period { font-size: 14px; color: var(--ink-3); margin-left: 4px; }
+    .card-head .refresh-btn {
+      margin-left: auto;
+      font-size: 13px;
+      padding: 5px 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--ink-2);
+      border-radius: 6px;
+      cursor: default;
+    }
+
+    .narrator {
+      border-left: 4px solid var(--warn);
+      padding: 12px 16px;
+      background: #fffaf0;
+      border-radius: 0 10px 10px 0;
+    }
+    .narrator .tone-pill {
+      display: inline-block;
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #6b4f00;
+      background: #fff;
+      padding: 2px 10px;
+      border-radius: 999px;
+      margin-bottom: 8px;
+      border: 1px solid #f0d99a;
+    }
+    .narrator .headline {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 0 0 6px;
+    }
+    .narrator .paragraph {
+      font-size: 14.5px;
+      line-height: 1.6;
+      color: var(--ink);
+      margin: 0 0 10px;
+    }
+    .narrator .highlights {
+      margin: 8px 0 0;
+      padding-left: 20px;
+      font-size: 14px;
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+    .narrator .highlights li { margin-bottom: 4px; }
+    .narrator .highlights strong { color: var(--ink); }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .kpi-tile {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: #fff;
+      padding: 12px 14px;
+    }
+    .kpi-tile .label {
+      font-size: 12px;
+      color: var(--ink-3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 700;
+    }
+    .kpi-tile .value {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--navy);
+      margin-top: 4px;
+      font-family: var(--font-display);
+    }
+    .kpi-tile .delta { margin-top: 4px; font-size: 13px; }
+    .kpi-tile .delta .arrow { font-weight: 700; font-size: 14px; }
+    .kpi-tile .delta .arrow.up    { color: var(--good); }
+    .kpi-tile .delta .arrow.down  { color: var(--bad); }
+    .kpi-tile .delta .arrow.flat  { color: var(--ink-3); }
+    .kpi-tile .delta .vs { color: var(--ink-3); margin-left: 4px; }
+
+    .section-head {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 18px 0 6px;
+    }
+
+    .trend-row, .survey-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: 14px;
+    }
+    .trend-row:last-child, .survey-row:last-child { border-bottom: 0; }
+    .trend-row .name, .survey-row .name {
+      flex: 1;
+      min-width: 0;
+    }
+    .trend-row .name strong, .survey-row .name strong { color: var(--ink); font-weight: 600; display: block; }
+    .trend-row .name .sub, .survey-row .name .sub { font-size: 13px; color: var(--ink-3); }
+    .trend-row .means {
+      text-align: right;
+      min-width: 150px;
+    }
+    .trend-row .means .cur { color: var(--ink); }
+    .trend-row .means .prev { color: var(--ink-3); font-size: 13px; }
+    .trend-row .delta, .survey-row .ssi {
+      min-width: 90px;
+      text-align: right;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .delta.up   { color: var(--good); }
+    .delta.down { color: var(--bad); }
+    .delta.flat { color: var(--ink-3); }
+
+    .footnote {
+      font-size: 13px;
+      color: var(--ink-3);
+      line-height: 1.55;
+      margin-top: 28px;
+      padding: 14px 18px;
+      background: var(--panel);
+      border-left: 3px solid var(--primary);
+      border-radius: 0 8px 8px 0;
+    }
+    .footnote a { color: var(--primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="left">
+    <a href="../index.html"><strong style="color:var(--navy);">ReliCheck</strong></a>
+    <a href="../samples.html" style="margin-left:18px;">&larr; Back to sample reports</a>
+  </div>
+  <div class="right">
+    <a href="../suites.html">Suites overview</a>
+    <a href="../ai-features.html#suite-rollup-narrator">Suite Roll-Up Narrator</a>
+    <a class="cta" href="../signup.html">Get started free</a>
+  </div>
+</div>
+
+<div class="sample-banner">
+  <strong>Sample report.</strong> Hand-built mockup of a populated HR Suite roll-up so you can see the shape before you collect your own data. Numbers below are illustrative.
+</div>
+
+<main class="doc">
+  <h1>HR Suite roll-up</h1>
+  <p class="lede">This is what the cross-survey roll-up card looks like when two surveys are attached to a workflow suite and both have responses in the current and previous quarter. The HR Suite shown here bundles a Workplace Engagement survey and an Exit Interview survey. Both tag their relevant Likert items with the construct name "engagement," which is what lets the roll-up compute a cross-survey trend rather than two separate per-survey charts.</p>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>Cross-survey roll-up</h3>
+      <span class="period">Q2 2026 vs Q1 2026</span>
+      <span class="refresh-btn">Refresh</span>
+    </div>
+
+    <div class="narrator">
+      <span class="tone-pill">Watch this quarter</span>
+      <div class="headline">Engagement is trending down across the HR Suite, and exit volume more than doubled.</div>
+      <p class="paragraph">Workplace Engagement and Exit Interview both moved against the suite this quarter. Engagement-tagged items dropped from a 3.9 average last quarter to 3.5 this quarter across the two surveys, the kind of move you would feel before any single survey crossed an alarm threshold. Exit volume climbed from 5 last quarter to 12 this, with Compensation now the plurality answer on the "primary reason for leaving" question (8 of 12), up from 0 of 5 in the previous quarter. The next two weeks are worth a deeper read of the open-ended exit responses.</p>
+      <ul class="highlights">
+        <li><strong>Engagement direction:</strong> shared construct down 0.4 points on a 5-point scale across both surveys, the largest movement in either instrument.</li>
+        <li><strong>Exit volume:</strong> 12 this quarter vs 5 last, a 140 percent increase. Compensation is the new plurality.</li>
+        <li><strong>Strongest survey:</strong> Workplace Engagement still posts a reliability score in the workable band; the slip is in the means, not the internal consistency.</li>
+      </ul>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-tile">
+        <div class="label">Responses</div>
+        <div class="value">47</div>
+        <div class="delta"><span class="arrow up">&uarr; +12</span><span class="vs">vs Q1 2026 (35)</span></div>
+      </div>
+      <div class="kpi-tile">
+        <div class="label">Avg Strength Index</div>
+        <div class="value">72.5</div>
+        <div class="delta"><span class="arrow down">&darr; -3.5</span><span class="vs">vs Q1 2026 (76.0)</span></div>
+      </div>
+      <div class="kpi-tile">
+        <div class="label">Surveys</div>
+        <div class="value">2</div>
+        <div class="delta"><span class="vs">in this suite</span></div>
+      </div>
+    </div>
+
+    <div class="section-head">Shared construct trends</div>
+    <div class="trend-row">
+      <div class="name">
+        <strong>engagement</strong>
+        <span class="sub">in 2 surveys this quarter</span>
+      </div>
+      <div class="means">
+        <div class="cur">Q2 2026: 3.50</div>
+        <div class="prev">Q1 2026: 3.90</div>
+      </div>
+      <div class="delta down">&darr; -0.40</div>
+    </div>
+
+    <div class="section-head">Per-survey this quarter</div>
+    <div class="survey-row">
+      <div class="name">
+        <strong>Workplace Engagement</strong>
+        <span class="sub">35 responses this quarter (prev 30)</span>
+      </div>
+      <div class="ssi">SSI 75 <span class="delta down" style="font-size:13px;">-3</span></div>
+    </div>
+    <div class="survey-row">
+      <div class="name">
+        <strong>Exit Interview</strong>
+        <span class="sub">12 responses this quarter (prev 5)</span>
+      </div>
+      <div class="ssi">SSI 70 <span class="delta down" style="font-size:13px;">-4</span></div>
+    </div>
+  </div>
+
+  <div class="footnote">
+    <strong>What you are looking at.</strong> Every suite detail view in ReliCheck shows a card identical to the one above once the suite has two or more attached surveys and at least one of them has responses. The numbers and narration are computed from the live response data on every Refresh; the AI narrator is cached per quarter in your browser so the page does not re-fire on every visit. The shared-construct trend line ("engagement" here) appears for any Likert construct tagged across two or more of the surveys in the suite. For the underlying methodology see the <a href="../methodology.html#suites">workflow suites section of the methodology page</a>; for the full AI feature description see the <a href="../ai-features.html#suite-rollup-narrator">Suite Roll-Up Narrator tool description</a>.
+  </div>
+</main>
+
+</body>
+</html>

@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Demo: Course Evaluation &middot; ReliCheck</title>
+  <meta name="description" content="An interactive ReliCheck report on a real 30-response course evaluation dataset. Click through reliability scoring, AI question review, and theme extraction. No signup required." />
+  <link rel="canonical" href="https://relichecksurvey.com/samples/interactive-course-evaluation.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Interactive Demo: Course Evaluation &amp;middot; ReliCheck" />
+  <meta property="og:description" content="An interactive ReliCheck report on a real 30-response course evaluation dataset. Click through reliability scoring, AI question review, and theme extraction. No signup required." />
+  <meta property="og:url" content="https://relichecksurvey.com/samples/interactive-course-evaluation.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Interactive Demo: Course Evaluation &amp;middot; ReliCheck" />
+  <meta name="twitter:description" content="An interactive ReliCheck report on a real 30-response course evaluation dataset. Click through reliability scoring, AI question review, and theme extraction. No signup required." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+
+    .demo-banner {
+      background: linear-gradient(135deg, #0b1733 0%, #1c2f5e 100%);
+      color: #fff;
+      padding: 14px 0;
+      font-size: 13.5px;
+      text-align: center;
+      letter-spacing: 0.01em;
+    }
+    .demo-banner strong { color: #ffb094; font-weight: 700; }
+    .demo-banner a { color: #fff; text-decoration: underline; font-weight: 600; }
+
+    .demo-shell {
+      max-width: 1100px;
+      margin: 32px auto 80px;
+      padding: 0 24px;
+    }
+    .demo-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 22px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .demo-head .meta-line {
+      font-size:14px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--coral, #e8573a);
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .demo-head h1 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(28px, 3.4vw, 36px);
+      letter-spacing: -0.014em;
+      color: var(--navy);
+      margin: 0 0 6px;
+      line-height: 1.15;
+    }
+    .demo-head .summary { font-size: 15px; color: var(--ink-2); margin: 0; }
+    .demo-meta-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+    .demo-meta-pills span {
+      background: var(--bg-soft);
+      border: 1px solid #e3e6ee;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--navy);
+      font-weight: 600;
+    }
+    .demo-meta-pills span.alpha { background: rgba(26, 122, 79, 0.08); border-color: rgba(26, 122, 79, 0.2); color: #1a7a4f; }
+
+    .demo-tabs {
+      display: flex;
+      gap: 4px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .demo-tab {
+      padding: 12px 18px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-family: inherit;
+      font-size: 14.5px;
+      font-weight: 600;
+      color: var(--ink-3);
+      cursor: pointer;
+      transition: color .15s ease, border-color .15s ease;
+    }
+    .demo-tab:hover { color: var(--navy); }
+    .demo-tab.active {
+      color: var(--navy);
+      border-bottom-color: var(--coral, #e8573a);
+    }
+    .demo-tab .tab-count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 7px;
+      margin-left: 6px;
+      background: var(--bg-soft);
+      border-radius: 999px;
+      font-size:14px;
+      color: var(--ink-2);
+      font-weight: 700;
+    }
+    .demo-tab.active .tab-count { background: rgba(232, 87, 58, 0.12); color: var(--coral, #e8573a); }
+
+    .demo-panel { display: none; }
+    .demo-panel.active { display: block; }
+
+    /* Reliability tab */
+    .rel-grid {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 28px;
+    }
+    @media (max-width: 880px) { .rel-grid { grid-template-columns: 1fr; } }
+    .rel-summary {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      padding: 22px 26px;
+      background: var(--bg-soft);
+      border: 1px solid #e3e6ee;
+      border-radius: 14px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .rel-summary .alpha-big {
+      font-family: var(--font-display);
+      font-size: 56px;
+      font-weight: 600;
+      color: var(--navy);
+      line-height: 1;
+      letter-spacing: -0.02em;
+    }
+    .rel-summary .alpha-label { font-size:14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 4px; }
+    .rel-summary .alpha-grade { color: #1a7a4f; font-weight: 700; font-size: 14px; }
+    .rel-summary .alpha-grade.warn { color: var(--coral, #e8573a); }
+    .rel-summary .alpha-context { font-size: 14px; color: var(--ink-2); line-height: 1.5; flex: 1; min-width: 220px; }
+    .rel-summary .alpha-context strong { color: var(--navy); }
+
+    .rel-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border: 1px solid #e3e6ee;
+      border-radius: 12px;
+      overflow: hidden;
+      font-size: 14px;
+    }
+    .rel-table thead { background: var(--bg-soft); }
+    .rel-table thead th {
+      text-align: left;
+      padding: 12px 14px;
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--navy);
+      letter-spacing: -0.005em;
+    }
+    .rel-table thead th.num { text-align: right; }
+    .rel-table tbody td { padding: 12px 14px; border-top: 1px solid #f0f2f7; vertical-align: top; }
+    .rel-table tbody td.num { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-1); }
+    .rel-table tbody tr.flagged { background: rgba(232, 87, 58, 0.05); }
+    .rel-table tbody tr.flagged td:first-child { border-left: 3px solid var(--coral, #e8573a); }
+    .rel-table tbody tr { cursor: pointer; transition: background .12s ease; }
+    .rel-table tbody tr:hover { background: rgba(11, 23, 51, 0.03); }
+    .rel-table tbody tr.flagged:hover { background: rgba(232, 87, 58, 0.08); }
+    .rel-table .item-id { font-weight: 700; color: var(--navy); margin-right: 6px; }
+    .rel-table .flag-pill { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; font-size:14px; background: var(--coral, #e8573a); color: #fff; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; vertical-align: middle; }
+
+    .rel-detail-card {
+      background: #fff;
+      border: 1px solid #e3e6ee;
+      border-radius: 12px;
+      padding: 20px 22px;
+      position: sticky;
+      top: 16px;
+    }
+    .rel-detail-card h4 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 17px;
+      color: var(--navy);
+      margin: 0 0 12px;
+    }
+    .rel-detail-card .item-q {
+      font-size: 14px;
+      color: var(--ink-2);
+      font-style: italic;
+      margin: 0 0 14px;
+      line-height: 1.5;
+    }
+    .rel-detail-card .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f2f7;
+      font-size: 13.5px;
+    }
+    .rel-detail-card .stat-row:last-of-type { border-bottom: none; }
+    .rel-detail-card .stat-row .lbl { color: var(--ink-3); }
+    .rel-detail-card .stat-row .val { font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+    .rel-detail-card .interp {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink-2);
+    }
+    .rel-detail-card .interp strong { color: var(--navy); }
+    .rel-detail-card .interp.warn { background: rgba(232, 87, 58, 0.08); }
+    .rel-detail-card .interp.warn strong { color: var(--coral, #e8573a); }
+    .rel-detail-card .empty { color: var(--ink-3); font-size: 13px; font-style: italic; }
+    .rel-histogram {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 64px;
+      margin: 12px 0 6px;
+    }
+    .rel-histogram .bar {
+      flex: 1;
+      background: var(--coral, #e8573a);
+      border-radius: 3px 3px 0 0;
+      min-height: 4px;
+      transition: opacity .12s ease;
+    }
+    .rel-histogram .bar.muted { background: #c4cad8; }
+    .rel-hist-axis { display: flex; gap: 4px; font-size:14px; color: var(--ink-3); margin-top: 2px; }
+    .rel-hist-axis span { flex: 1; text-align: center; }
+
+    /* AI tab */
+    .ai-callout {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 18px 22px;
+      background: rgba(232, 87, 58, 0.06);
+      border: 1px solid rgba(232, 87, 58, 0.22);
+      border-radius: 12px;
+      margin-bottom: 22px;
+    }
+    .ai-callout .ai-icon {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--coral, #e8573a); color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; flex-shrink: 0;
+    }
+    .ai-callout h3 { font-family: var(--font-display); font-weight: 500; font-size: 18px; color: var(--navy); margin: 0 0 4px; }
+    .ai-callout p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.55; }
+
+    .ai-question-list { display: flex; flex-direction: column; gap: 10px; }
+    .ai-question {
+      background: #fff;
+      border: 1px solid #e3e6ee;
+      border-radius: 10px;
+      padding: 16px 18px;
+      transition: border-color .12s ease;
+    }
+    .ai-question.flagged { border-left: 3px solid var(--coral, #e8573a); }
+    .ai-question.clean { opacity: 0.85; }
+    .ai-question .ai-q-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+    .ai-question .ai-q-id { font-weight: 700; color: var(--navy); font-size: 13px; }
+    .ai-question .ai-q-status {
+      font-size:14px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700;
+      padding: 3px 9px; border-radius: 999px; flex-shrink: 0;
+    }
+    .ai-question.flagged .ai-q-status { background: var(--coral, #e8573a); color: #fff; }
+    .ai-question.clean .ai-q-status { background: #1a7a4f; color: #fff; }
+    .ai-question .ai-q-text { font-size: 14.5px; color: var(--ink-1); margin: 0 0 8px; line-height: 1.5; }
+    .ai-question .ai-q-toggle {
+      background: none; border: none; padding: 0;
+      color: var(--coral, #e8573a); font-weight: 600; font-size: 13px;
+      cursor: pointer; font-family: inherit;
+    }
+    .ai-question .ai-q-toggle:hover { text-decoration: underline; }
+    .ai-question .ai-q-detail {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f0f2f7;
+    }
+    .ai-question.expanded .ai-q-detail { display: block; }
+    .ai-q-reason { background: var(--bg-soft); border-radius: 8px; padding: 12px 14px; font-size: 13.5px; line-height: 1.55; color: var(--ink-2); margin: 0 0 12px; }
+    .ai-q-reason strong { color: var(--navy); }
+    .ai-q-rewrite { margin-bottom: 0; }
+    .ai-q-rewrite-label { font-size:14px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); font-weight: 700; margin-bottom: 4px; }
+    .ai-q-rewrite-text {
+      font-size: 14px; color: var(--navy); font-weight: 500;
+      padding: 10px 14px; background: rgba(26, 122, 79, 0.05);
+      border: 1px solid rgba(26, 122, 79, 0.2); border-radius: 8px;
+      line-height: 1.5;
+    }
+    .ai-q-impact { margin-top: 12px; font-size: 13px; color: var(--ink-2); }
+    .ai-q-impact strong { color: #1a7a4f; }
+
+    /* Themes tab */
+    .theme-list { display: flex; flex-direction: column; gap: 12px; }
+    .theme {
+      background: #fff;
+      border: 1px solid #e3e6ee;
+      border-radius: 12px;
+      padding: 16px 20px;
+      transition: border-color .12s ease;
+      cursor: pointer;
+    }
+    .theme:hover { border-color: #cfd5e2; }
+    .theme.expanded { border-left: 3px solid var(--coral, #e8573a); }
+    .theme-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .theme-name { font-family: var(--font-display); font-weight: 500; font-size: 17px; color: var(--navy); }
+    .theme-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .theme-tag {
+      font-size:14px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 700;
+      padding: 3px 9px; border-radius: 999px;
+    }
+    .theme-tag.pos { background: rgba(26, 122, 79, 0.1); color: #1a7a4f; }
+    .theme-tag.neg { background: rgba(232, 87, 58, 0.1); color: var(--coral, #e8573a); }
+    .theme-tag.mixed { background: rgba(217, 148, 80, 0.15); color: #b56a1c; }
+    .theme-count { font-size:14px; color: var(--ink-3); font-weight: 600; }
+    .theme-summary { font-size: 14px; color: var(--ink-2); margin: 8px 0 0; line-height: 1.55; }
+    .theme-quotes {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f0f2f7;
+    }
+    .theme.expanded .theme-quotes { display: block; }
+    .theme-quote {
+      padding: 10px 14px;
+      background: var(--bg-soft);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      font-size: 13.5px;
+      color: var(--ink-1);
+      line-height: 1.55;
+    }
+    .theme-quote:last-child { margin-bottom: 0; }
+    .theme-quote .src { display: block; font-size:14px; color: var(--ink-3); margin-top: 4px; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 700; }
+
+    .demo-cta-block {
+      margin-top: 56px;
+      padding: 32px 32px 30px;
+      background: linear-gradient(135deg, var(--navy), #1c2f5e);
+      color: #fff;
+      border-radius: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 18px;
+    }
+    .demo-cta-block h3 { font-family: var(--font-display); font-weight: 500; font-size: 24px; margin: 0 0 6px; }
+    .demo-cta-block p { color: rgba(255,255,255,0.75); margin: 0; font-size: 14.5px; }
+    .demo-cta-block .btn-primary { background: var(--coral, #e8573a); border-color: var(--coral, #e8573a); }
+  
+</style>
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+    <div class="demo-shell">
+      <div class="demo-head">
+        <div>
+          <div class="meta-line">Education &middot; Course Evaluation &middot; n=30</div>
+          <h1>Undergraduate Statistics 201, Spring 2026</h1>
+          <p class="summary">Eight-item Likert evaluation of a mid-size lecture course. Students rated instructor preparation, course objectives, feedback quality, pacing, and overall recommendation.</p>
+        </div>
+        <div class="demo-meta-pills">
+          <span class="alpha">α = 0.883</span>
+          <span>k = 8 items</span>
+          <span>n = 30</span>
+        </div>
+      </div>
+
+      <div class="demo-tabs" role="tablist">
+        <button class="demo-tab active" data-panel="reliability" role="tab">Reliability scoring</button>
+        <button class="demo-tab" data-panel="ai-review" role="tab">AI question review <span class="tab-count">1</span></button>
+        <button class="demo-tab" data-panel="themes" role="tab">Theme extraction <span class="tab-count">5</span></button>
+      </div>
+
+      <!-- RELIABILITY TAB -->
+      <div class="demo-panel active" data-panel="reliability">
+        <div class="rel-summary">
+          <div>
+            <div class="alpha-label">Cronbach's alpha</div>
+            <div class="alpha-big">0.883</div>
+            <div class="alpha-grade">Excellent (&ge; 0.80)</div>
+          </div>
+          <div class="alpha-context">
+            Internal consistency across all eight items is strong. <strong>One item (Q5) shows weak correlation with the rest of the scale</strong> and removing it would raise alpha to 0.947. Click an item below to see why.
+          </div>
+        </div>
+        <div class="rel-grid">
+          <div>
+            <table class="rel-table" aria-label="Item statistics">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th class="num">M</th>
+                  <th class="num">SD</th>
+                  <th class="num">Item-total r</th>
+                  <th class="num">α if deleted</th>
+                </tr>
+              </thead>
+              <tbody id="relTbody"></tbody>
+            </table>
+          </div>
+          <div>
+            <div class="rel-detail-card" id="relDetail">
+              <h4>Click any row</h4>
+              <p class="empty">Select an item from the table to see distribution, item-total correlation, and what happens to alpha if you remove it.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI REVIEW TAB -->
+      <div class="demo-panel" data-panel="ai-review">
+        <div class="ai-callout">
+          <div class="ai-icon">AI</div>
+          <div>
+            <h3>1 of 8 items flagged for review</h3>
+            <p>The AI assistant scanned the items for clarity, double-barreled phrasing, leading language, and statistical fit with the rest of the scale. It then cross-referenced its read against the reliability statistics on the previous tab.</p>
+          </div>
+        </div>
+        <div class="ai-question-list" id="aiList"></div>
+      </div>
+
+      <!-- THEMES TAB -->
+      <div class="demo-panel" data-panel="themes">
+        <div class="ai-callout">
+          <div class="ai-icon">AI</div>
+          <div>
+            <h3>Five themes extracted from 30 open-ended responses</h3>
+            <p>Themes are grouped by what students wrote, not by what we expected to see. Click any theme to read the actual student quotes that produced it. Sentiment is a directional summary, not a hard label.</p>
+          </div>
+        </div>
+        <div class="theme-list" id="themeList"></div>
+      </div>
+
+      <div class="demo-cta-block">
+        <div>
+          <h3>Want this on your own data?</h3>
+          <p>Upload a CSV, build a survey from a template, or import from Google Sheets. Reliability, AI review, and themes in one report.</p>
+        </div>
+        <a href="../signup.html" class="btn btn-primary btn-lg">Create a free account</a>
+      </div>
+    </div>
+  </main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+    // ----------- DATA -----------
+    const items = [
+      { id: "Q1", text: "The instructor was clearly prepared for class.", mean: 5.47, sd: 1.07, itc: 0.757, alphaIfDeleted: 0.857, valid: true },
+      { id: "Q2", text: "The course objectives were clearly explained.", mean: 5.63, sd: 1.00, itc: 0.817, alphaIfDeleted: 0.852, valid: true },
+      { id: "Q3", text: "Assignments helped me learn the material.", mean: 5.47, sd: 0.90, itc: 0.695, alphaIfDeleted: 0.866, valid: true },
+      { id: "Q4", text: "The instructor provided helpful feedback on my work.", mean: 5.57, sd: 1.04, itc: 0.872, alphaIfDeleted: 0.846, valid: true },
+      { id: "Q5", text: "The pace of the course was not unmanageable for most students.", mean: 4.20, sd: 1.47, itc: 0.039, alphaIfDeleted: 0.947, valid: false,
+        flag: { kind: "double-negative",
+                reason: "Wording uses a double negative (\"not unmanageable\") and shifts the subject to \"most students\" rather than the respondent. Item-total correlation of 0.039 confirms it is measuring something other than what the rest of the scale measures.",
+                rewrite: "The pace of the course was appropriate for me." } },
+      { id: "Q6", text: "I learned what I expected to learn.", mean: 5.53, sd: 1.01, itc: 0.848, alphaIfDeleted: 0.849, valid: true },
+      { id: "Q7", text: "I would recommend this course to others.", mean: 5.50, sd: 1.01, itc: 0.826, alphaIfDeleted: 0.851, valid: true },
+      { id: "Q8", text: "Overall, this was a high-quality course.", mean: 5.60, sd: 1.10, itc: 0.742, alphaIfDeleted: 0.859, valid: true },
+    ];
+
+    // Distribution counts (1..7) for each item, derived from the 30 responses
+    const distributions = {
+      Q1: [0,1,3,2,9,9,6], Q2: [0,1,2,3,7,11,6], Q3: [0,0,3,4,8,12,3],
+      Q4: [0,1,2,4,6,11,6], Q5: [4,4,5,7,5,4,1], Q6: [0,1,3,3,8,11,4],
+      Q7: [0,1,3,4,6,11,5], Q8: [0,1,2,4,6,9,8]
+    };
+
+    const themes = [
+      { name: "Hands-on assignments and practical examples", count: 14, sentiment: "pos",
+        summary: "Students consistently named applied work and concrete examples as the most useful element of the course. Highest-frequency theme in positive responses.",
+        quotes: [
+          { text: "The assignments forced me to actually use the methods, not just memorize them.", src: "Open-ended Q1, Respondent 03" },
+          { text: "I appreciated the worked examples in lecture. They made the abstract stuff click.", src: "Open-ended Q1, Respondent 11" },
+          { text: "Doing the homework problems was the most valuable part by a mile.", src: "Open-ended Q1, Respondent 19" },
+        ] },
+      { name: "Clear, responsive feedback from the instructor", count: 9, sentiment: "pos",
+        summary: "Students valued substantive feedback on assignments and timely email responses. This theme co-occurs with strong scores on Q4 (helpful feedback).",
+        quotes: [
+          { text: "Comments on my assignments were detailed and explained why I lost points.", src: "Open-ended Q1, Respondent 07" },
+          { text: "Office hours were genuinely useful, not just a checkbox.", src: "Open-ended Q1, Respondent 22" },
+        ] },
+      { name: "Pacing and workload concerns", count: 11, sentiment: "neg",
+        summary: "Students flagged that the middle weeks felt rushed and the final two weeks especially. This theme aligns with the wide spread on Q5 (pacing) on the previous tab.",
+        quotes: [
+          { text: "Weeks 6 to 9 covered too much material too fast.", src: "Open-ended Q2, Respondent 05" },
+          { text: "Could you spread the regression unit over more class sessions?", src: "Open-ended Q2, Respondent 14" },
+          { text: "The final project window felt squeezed.", src: "Open-ended Q2, Respondent 28" },
+        ] },
+      { name: "Request for more practice problems", count: 6, sentiment: "mixed",
+        summary: "Several students wanted additional practice between the homework problem sets, especially with worked solutions. Mixed sentiment because students framed this as a constructive ask, not a complaint.",
+        quotes: [
+          { text: "More optional practice problems with answer keys would help.", src: "Open-ended Q2, Respondent 09" },
+          { text: "I wanted to drill the concepts more before the midterm.", src: "Open-ended Q2, Respondent 17" },
+        ] },
+      { name: "Discussion section quality", count: 5, sentiment: "mixed",
+        summary: "Students were split on the discussion section. Some called it the best part of the course; others described it as inconsistent across TAs.",
+        quotes: [
+          { text: "My TA was excellent and ran a really useful section.", src: "Open-ended Q1, Respondent 02" },
+          { text: "Section quality really depended on which TA you got.", src: "Open-ended Q2, Respondent 25" },
+        ] },
+    ];
+
+    // ----------- RENDER -----------
+    function renderRelTable() {
+      const tbody = document.getElementById("relTbody");
+      tbody.innerHTML = items.map(item => `
+        <tr data-id="${item.id}" class="${item.valid ? '' : 'flagged'}">
+          <td>
+            <span class="item-id">${item.id}</span>${item.text}
+            ${item.valid ? '' : '<span class="flag-pill">Flagged</span>'}
+          </td>
+          <td class="num">${item.mean.toFixed(2)}</td>
+          <td class="num">${item.sd.toFixed(2)}</td>
+          <td class="num">${item.itc.toFixed(3)}</td>
+          <td class="num">${item.alphaIfDeleted.toFixed(3)}</td>
+        </tr>
+      `).join("");
+      tbody.querySelectorAll("tr").forEach(tr => {
+        tr.addEventListener("click", () => showRelDetail(tr.dataset.id));
+      });
+    }
+
+    function showRelDetail(id) {
+      const item = items.find(x => x.id === id);
+      const dist = distributions[id];
+      const max = Math.max(...dist);
+      const bars = dist.map((c, i) => {
+        const pct = max > 0 ? (c / max) * 100 : 0;
+        const muted = i === 0 || i === 6 ? "" : "";
+        return `<div class="bar" style="height:${pct}%" title="${i+1}: ${c}"></div>`;
+      }).join("");
+      const interpClass = item.valid ? "" : "warn";
+      const interp = item.valid
+        ? `Item-total r of <strong>${item.itc.toFixed(2)}</strong> is in the strong range. Removing this item would <strong>lower</strong> alpha from 0.883 to ${item.alphaIfDeleted.toFixed(3)}, which means it is doing useful work in the scale.`
+        : `Item-total r of <strong>${item.itc.toFixed(2)}</strong> is essentially zero, meaning this item is not measuring the same construct as the rest of the scale. Removing it would <strong>raise</strong> alpha from 0.883 to ${item.alphaIfDeleted.toFixed(3)}. See the AI question review tab for the why and a suggested rewrite.`;
+      document.getElementById("relDetail").innerHTML = `
+        <h4>${item.id}: distribution and impact</h4>
+        <p class="item-q">"${item.text}"</p>
+        <div class="rel-histogram">${bars}</div>
+        <div class="rel-hist-axis">${[1,2,3,4,5,6,7].map(n => `<span>${n}</span>`).join("")}</div>
+        <div class="stat-row"><span class="lbl">Mean (1-7)</span><span class="val">${item.mean.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="lbl">SD</span><span class="val">${item.sd.toFixed(2)}</span></div>
+        <div class="stat-row"><span class="lbl">Item-total r</span><span class="val">${item.itc.toFixed(3)}</span></div>
+        <div class="stat-row"><span class="lbl">α if deleted</span><span class="val">${item.alphaIfDeleted.toFixed(3)}</span></div>
+        <div class="interp ${interpClass}">${interp}</div>
+      `;
+    }
+
+    function renderAi() {
+      const list = document.getElementById("aiList");
+      list.innerHTML = items.map(item => {
+        const isFlag = !item.valid;
+        const status = isFlag ? "Flagged" : "Looks good";
+        const cls = isFlag ? "flagged" : "clean";
+        const detail = isFlag ? `
+          <div class="ai-q-detail">
+            <p class="ai-q-reason"><strong>Why this was flagged:</strong> ${item.flag.reason}</p>
+            <div class="ai-q-rewrite">
+              <div class="ai-q-rewrite-label">Suggested rewrite</div>
+              <div class="ai-q-rewrite-text">${item.flag.rewrite}</div>
+            </div>
+            <p class="ai-q-impact"><strong>Impact:</strong> Replacing or removing this item would raise scale alpha from 0.883 to ${item.alphaIfDeleted.toFixed(3)}.</p>
+          </div>
+        ` : "";
+        const toggleBtn = isFlag ? `<button class="ai-q-toggle" type="button">Show why &rarr;</button>` : "";
+        return `
+          <div class="ai-question ${cls}" data-id="${item.id}">
+            <div class="ai-q-head">
+              <span class="ai-q-id">${item.id}</span>
+              <span class="ai-q-status">${status}</span>
+            </div>
+            <p class="ai-q-text">${item.text}</p>
+            ${toggleBtn}
+            ${detail}
+          </div>
+        `;
+      }).join("");
+      list.querySelectorAll(".ai-q-toggle").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const card = btn.closest(".ai-question");
+          const expanded = card.classList.toggle("expanded");
+          btn.textContent = expanded ? "Hide details" : "Show why →";
+        });
+      });
+    }
+
+    function renderThemes() {
+      const list = document.getElementById("themeList");
+      list.innerHTML = themes.map((t, idx) => {
+        const tagClass = t.sentiment === "pos" ? "pos" : (t.sentiment === "neg" ? "neg" : "mixed");
+        const tagLabel = t.sentiment === "pos" ? "Positive" : (t.sentiment === "neg" ? "Concern" : "Mixed");
+        const quotes = t.quotes.map(q => `
+          <div class="theme-quote">
+            "${q.text}"
+            <span class="src">${q.src}</span>
+          </div>
+        `).join("");
+        return `
+          <div class="theme" data-idx="${idx}">
+            <div class="theme-head">
+              <span class="theme-name">${t.name}</span>
+              <div class="theme-meta">
+                <span class="theme-tag ${tagClass}">${tagLabel}</span>
+                <span class="theme-count">${t.count} mentions</span>
+              </div>
+            </div>
+            <p class="theme-summary">${t.summary}</p>
+            <div class="theme-quotes">${quotes}</div>
+          </div>
+        `;
+      }).join("");
+      list.querySelectorAll(".theme").forEach(card => {
+        card.addEventListener("click", () => card.classList.toggle("expanded"));
+      });
+    }
+
+    // Tab switching
+    document.querySelectorAll(".demo-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        const target = tab.dataset.panel;
+        document.querySelectorAll(".demo-tab").forEach(t => t.classList.toggle("active", t === tab));
+        document.querySelectorAll(".demo-panel").forEach(p => p.classList.toggle("active", p.dataset.panel === target));
+      });
+    });
+
+    renderRelTable();
+    renderAi();
+    renderThemes();
+    // Pre-select Q5 so the demo shows interactivity immediately
+    showRelDetail("Q5");
+  </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+respondent_ref,text,role,tenure
+R001,Information flows down to people who are already in the inner circle.,Team Lead,2 to 5 years
+R002,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,More than 10 years
+R003,"There has been progress on facilitation training, and it's still inconsistent in practice. Worth flagging.",Manager,2 to 5 years
+R004,Our 'open door' is open in name only; you learn quickly which doors actually open.,Manager,5 to 10 years
+R005,Our 'open door' is open in name only; you learn quickly which doors actually open. I keep coming back to this.,Team Lead,5 to 10 years
+R006,Our 'open door' is open in name only; you learn quickly which doors actually open.,HR / People Ops,More than 10 years
+R007,Our 'open door' is open in name only; you learn quickly which doors actually open.,Team Lead,2 to 5 years
+R008,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,2 to 5 years
+R009,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",HR / People Ops,5 to 10 years
+R010,Information flows down to people who are already in the inner circle.,Individual Contributor,2 to 5 years
+R011,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Director,2 to 5 years
+R012,Information flows down to people who are already in the inner circle.,VP or above,Less than 2 years
+R013,The same five voices dominate every meeting and the rest of us learn to stay quiet. Not everyone agrees with me on this.,Individual Contributor,2 to 5 years
+R014,"Decisions reach the people they affect, but late and without the context.",Individual Contributor,2 to 5 years
+R015,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,Less than 2 years
+R016,Big decisions happen in side channels and the broader team learns about them after the fact.,Director,5 to 10 years
+R017,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,2 to 5 years
+R018,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Team Lead,Less than 2 years
+R019,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,Less than 2 years
+R020,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Director,Less than 2 years
+R021,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Team Lead,Less than 2 years
+R022,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,5 to 10 years
+R023,"Leadership shares context up front, including the constraints they are working under.",Individual Contributor,2 to 5 years
+R024,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,5 to 10 years
+R025,"Decisions reach the people they affect, but late and without the context.",Manager,2 to 5 years
+R026,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Individual Contributor,2 to 5 years
+R027,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Director,5 to 10 years
+R028,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,More than 10 years
+R029,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",VP or above,Less than 2 years
+R030,Some meetings invite real participation; others are theater for decisions already made.,Manager,More than 10 years
+R031,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,2 to 5 years
+R032,"Async written work has helped quieter voices, but live meetings still favor the loudest ones. I keep coming back to this.",Individual Contributor,2 to 5 years
+R033,Some meetings invite real participation; others are theater for decisions already made.,HR / People Ops,2 to 5 years
+R034,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,More than 10 years
+R035,We have a norm of pausing when someone gets talked over and returning to their point. It works.,Manager,2 to 5 years
+R036,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Individual Contributor,2 to 5 years
+R037,"Decisions reach the people they affect, but late and without the context.",Team Lead,5 to 10 years
+R038,Information about plans and trade-offs reaches the people doing the work in time to influence them. That is my honest read.,HR / People Ops,More than 10 years
+R039,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation. Not everyone agrees with me on this.",Individual Contributor,Less than 2 years
+R040,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,2 to 5 years
+R041,Big decisions happen in side channels and the broader team learns about them after the fact.,Team Lead,2 to 5 years
+R042,"Leadership shares context up front, including the constraints they are working under.",Director,2 to 5 years
+R043,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,Less than 2 years
+R044,Information flows down to people who are already in the inner circle.,Manager,5 to 10 years
+R045,Our 'open door' is open in name only; you learn quickly which doors actually open.,HR / People Ops,5 to 10 years
+R046,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Manager,2 to 5 years
+R047,We have a norm of pausing when someone gets talked over and returning to their point. It works.,VP or above,Less than 2 years
+R048,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,5 to 10 years
+R049,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,Less than 2 years
+R050,"Decisions reach the people they affect, but late and without the context. That is my honest read.",Individual Contributor,5 to 10 years
+R051,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Manager,Less than 2 years
+R052,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,5 to 10 years
+R053,Information flows down to people who are already in the inner circle. For context.,Individual Contributor,5 to 10 years
+R054,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Manager,More than 10 years
+R055,"Decisions reach the people they affect, but late and without the context. That is my honest read.",Individual Contributor,2 to 5 years
+R056,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Manager,More than 10 years
+R057,Big decisions happen in side channels and the broader team learns about them after the fact.,HR / People Ops,5 to 10 years
+R058,Big decisions happen in side channels and the broader team learns about them after the fact.,Manager,2 to 5 years
+R059,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,Less than 2 years
+R060,"Leadership shares context up front, including the constraints they are working under.",Team Lead,5 to 10 years
+R061,Information sharing is uneven; some teams over-share and others hoard.,VP or above,Less than 2 years
+R062,"Leadership shares context up front, including the constraints they are working under.",Manager,2 to 5 years
+R063,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",HR / People Ops,More than 10 years
+R064,"Leadership shares context up front, including the constraints they are working under.",Individual Contributor,5 to 10 years
+R065,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,More than 10 years
+R066,Information sharing is uneven; some teams over-share and others hoard.,Team Lead,Less than 2 years
+R067,Our 'open door' is open in name only; you learn quickly which doors actually open.,VP or above,2 to 5 years
+R068,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Director,5 to 10 years
+R069,Information sharing is uneven; some teams over-share and others hoard.,Director,Less than 2 years
+R070,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation. I keep coming back to this.",VP or above,More than 10 years
+R071,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,5 to 10 years
+R072,Information flows down to people who are already in the inner circle. I keep coming back to this.,Individual Contributor,Less than 2 years
+R073,"Async written work has helped quieter voices, but live meetings still favor the loudest ones. Worth flagging.",Individual Contributor,5 to 10 years
+R074,Some meetings invite real participation; others are theater for decisions already made.,Manager,Less than 2 years
+R075,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Manager,5 to 10 years
+R076,"There has been progress on facilitation training, and it's still inconsistent in practice.",VP or above,Less than 2 years
+R077,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,2 to 5 years
+R078,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Manager,5 to 10 years
+R079,Big decisions happen in side channels and the broader team learns about them after the fact.,Manager,2 to 5 years
+R080,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation. Not everyone agrees with me on this.",Manager,2 to 5 years
+R081,Information flows down to people who are already in the inner circle.,Team Lead,5 to 10 years
+R082,Information flows down to people who are already in the inner circle.,Manager,2 to 5 years
+R083,Our 'open door' is open in name only; you learn quickly which doors actually open.,Manager,2 to 5 years
+R084,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it. Worth flagging.,Individual Contributor,Less than 2 years
+R085,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,2 to 5 years
+R086,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,2 to 5 years
+R087,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Director,2 to 5 years
+R088,Information sharing is uneven; some teams over-share and others hoard.,Team Lead,Less than 2 years
+R089,Some meetings invite real participation; others are theater for decisions already made.,Individual Contributor,5 to 10 years
+R090,Some meetings invite real participation; others are theater for decisions already made.,Individual Contributor,2 to 5 years
+R091,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Team Lead,2 to 5 years
+R092,Some meetings invite real participation; others are theater for decisions already made.,VP or above,More than 10 years
+R093,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,2 to 5 years
+R094,Some meetings invite real participation; others are theater for decisions already made.,VP or above,5 to 10 years
+R095,"Async written work has helped quieter voices, but live meetings still favor the loudest ones. That is my honest read.",Director,More than 10 years
+R096,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,2 to 5 years
+R097,The same five voices dominate every meeting and the rest of us learn to stay quiet.,VP or above,More than 10 years
+R098,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,2 to 5 years
+R099,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,5 to 10 years
+R100,Information flows down to people who are already in the inner circle.,Team Lead,Less than 2 years
+R101,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,More than 10 years
+R102,Information flows down to people who are already in the inner circle.,Team Lead,2 to 5 years
+R103,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Director,5 to 10 years
+R104,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,Less than 2 years
+R105,Information flows down to people who are already in the inner circle.,Manager,More than 10 years
+R106,Information sharing is uneven; some teams over-share and others hoard.,HR / People Ops,2 to 5 years
+R107,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Individual Contributor,5 to 10 years
+R108,Information sharing is uneven; some teams over-share and others hoard.,Team Lead,Less than 2 years
+R109,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Team Lead,More than 10 years
+R110,Information flows down to people who are already in the inner circle.,Individual Contributor,More than 10 years
+R111,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,5 to 10 years
+R112,Information sharing is uneven; some teams over-share and others hoard. Not everyone agrees with me on this.,Team Lead,More than 10 years
+R113,"Leadership shares context up front, including the constraints they are working under.",Manager,More than 10 years
+R114,"Decisions reach the people they affect, but late and without the context.",Individual Contributor,Less than 2 years
+R115,The same five voices dominate every meeting and the rest of us learn to stay quiet.,VP or above,5 to 10 years
+R116,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,More than 10 years
+R117,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,2 to 5 years
+R118,Information flows down to people who are already in the inner circle.,Individual Contributor,2 to 5 years
+R119,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Manager,More than 10 years
+R120,Some meetings invite real participation; others are theater for decisions already made.,Individual Contributor,Less than 2 years
+R121,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,Less than 2 years
+R122,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,Less than 2 years
+R123,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Manager,2 to 5 years
+R124,Information flows down to people who are already in the inner circle.,HR / People Ops,2 to 5 years
+R125,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,2 to 5 years
+R126,Information sharing is uneven; some teams over-share and others hoard.,Manager,5 to 10 years
+R127,Some meetings invite real participation; others are theater for decisions already made.,Team Lead,5 to 10 years
+R128,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,5 to 10 years
+R129,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,5 to 10 years
+R130,Information flows down to people who are already in the inner circle.,Individual Contributor,Less than 2 years
+R131,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Director,2 to 5 years
+R132,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,2 to 5 years
+R133,"Decisions reach the people they affect, but late and without the context.",Individual Contributor,2 to 5 years
+R134,Our 'open door' is open in name only; you learn quickly which doors actually open.,Manager,2 to 5 years
+R135,Big decisions happen in side channels and the broader team learns about them after the fact.,HR / People Ops,5 to 10 years
+R136,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,5 to 10 years
+R137,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,5 to 10 years
+R138,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Individual Contributor,2 to 5 years
+R139,Information sharing is uneven; some teams over-share and others hoard.,VP or above,5 to 10 years
+R140,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Manager,Less than 2 years
+R141,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,Less than 2 years
+R142,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,5 to 10 years
+R143,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,Less than 2 years
+R144,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,5 to 10 years
+R145,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised. For context.",Individual Contributor,More than 10 years
+R146,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Manager,2 to 5 years
+R147,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Manager,5 to 10 years
+R148,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,5 to 10 years
+R149,Our 'open door' is open in name only; you learn quickly which doors actually open. Worth flagging.,Director,5 to 10 years
+R150,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Manager,2 to 5 years
+R151,We have a norm of pausing when someone gets talked over and returning to their point. It works.,Individual Contributor,More than 10 years
+R152,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,2 to 5 years
+R153,Information about plans and trade-offs reaches the people doing the work in time to influence them. That is my honest read.,Team Lead,Less than 2 years
+R154,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",HR / People Ops,5 to 10 years
+R155,Information flows down to people who are already in the inner circle.,Director,2 to 5 years
+R156,We have a norm of pausing when someone gets talked over and returning to their point. It works.,Director,5 to 10 years
+R157,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised. For context.",Manager,Less than 2 years
+R158,Our 'open door' is open in name only; you learn quickly which doors actually open. Not everyone agrees with me on this.,Manager,More than 10 years
+R159,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Director,Less than 2 years
+R160,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Team Lead,5 to 10 years
+R161,"Decisions reach the people they affect, but late and without the context.",HR / People Ops,Less than 2 years
+R162,"Decisions reach the people they affect, but late and without the context.",Individual Contributor,5 to 10 years
+R163,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Manager,Less than 2 years
+R164,"There has been progress on facilitation training, and it's still inconsistent in practice.",Team Lead,5 to 10 years
+R165,"Leadership shares context up front, including the constraints they are working under.",Individual Contributor,Less than 2 years
+R166,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Team Lead,2 to 5 years
+R167,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,5 to 10 years
+R168,Some meetings invite real participation; others are theater for decisions already made.,Director,5 to 10 years
+R169,Information flows down to people who are already in the inner circle.,Individual Contributor,More than 10 years
+R170,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,Less than 2 years
+R171,Information flows down to people who are already in the inner circle.,Director,Less than 2 years
+R172,Some meetings invite real participation; others are theater for decisions already made.,Individual Contributor,2 to 5 years
+R173,Information about plans and trade-offs reaches the people doing the work in time to influence them. That is my honest read.,Manager,Less than 2 years
+R174,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,2 to 5 years
+R175,Our 'open door' is open in name only; you learn quickly which doors actually open.,Manager,5 to 10 years
+R176,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Individual Contributor,Less than 2 years
+R177,Big decisions happen in side channels and the broader team learns about them after the fact.,Team Lead,More than 10 years
+R178,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,More than 10 years
+R179,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Manager,2 to 5 years
+R180,We have a norm of pausing when someone gets talked over and returning to their point. It works.,Director,2 to 5 years
+R181,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Individual Contributor,5 to 10 years
+R182,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,5 to 10 years
+R183,Information flows down to people who are already in the inner circle.,Individual Contributor,More than 10 years
+R184,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,2 to 5 years
+R185,"Leadership shares context up front, including the constraints they are working under. Worth flagging.",HR / People Ops,Less than 2 years
+R186,Big decisions happen in side channels and the broader team learns about them after the fact.,Manager,2 to 5 years
+R187,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,2 to 5 years
+R188,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Manager,5 to 10 years
+R189,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,2 to 5 years
+R190,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Team Lead,2 to 5 years
+R191,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,2 to 5 years
+R192,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,2 to 5 years
+R193,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Manager,2 to 5 years
+R194,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,More than 10 years
+R195,Information sharing is uneven; some teams over-share and others hoard.,Manager,2 to 5 years
+R196,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Individual Contributor,Less than 2 years
+R197,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Manager,Less than 2 years
+R198,"There has been progress on facilitation training, and it's still inconsistent in practice.",Director,Less than 2 years
+R199,"Leadership shares context up front, including the constraints they are working under.",Individual Contributor,2 to 5 years
+R200,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,Less than 2 years
+R201,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,5 to 10 years
+R202,"Leadership shares context up front, including the constraints they are working under.",Team Lead,5 to 10 years
+R203,"Decisions reach the people they affect, but late and without the context.",Individual Contributor,5 to 10 years
+R204,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,More than 10 years
+R205,Some meetings invite real participation; others are theater for decisions already made.,Director,More than 10 years
+R206,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,More than 10 years
+R207,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Director,5 to 10 years
+R208,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,2 to 5 years
+R209,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",HR / People Ops,5 to 10 years
+R210,Our team uses a round-robin for input in meetings and the quality of decisions changed because of it.,Individual Contributor,Less than 2 years
+R211,"There has been progress on facilitation training, and it's still inconsistent in practice.",Manager,2 to 5 years
+R212,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Manager,5 to 10 years
+R213,"Decisions reach the people they affect, but late and without the context.",Team Lead,Less than 2 years
+R214,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Individual Contributor,5 to 10 years
+R215,Big decisions happen in side channels and the broader team learns about them after the fact.,Director,More than 10 years
+R216,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,Less than 2 years
+R217,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,More than 10 years
+R218,"Decisions reach the people they affect, but late and without the context.",VP or above,More than 10 years
+R219,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",Individual Contributor,2 to 5 years
+R220,Our 'open door' is open in name only; you learn quickly which doors actually open.,Individual Contributor,2 to 5 years
+R221,"Leadership shares context up front, including the constraints they are working under.",HR / People Ops,5 to 10 years
+R222,Big decisions happen in side channels and the broader team learns about them after the fact.,Manager,2 to 5 years
+R223,"Decisions reach the people they affect, but late and without the context. Worth flagging.",Individual Contributor,2 to 5 years
+R224,Big decisions happen in side channels and the broader team learns about them after the fact.,Manager,5 to 10 years
+R225,Information flows down to people who are already in the inner circle.,Manager,Less than 2 years
+R226,"There has been progress on facilitation training, and it's still inconsistent in practice.",Team Lead,Less than 2 years
+R227,"There has been progress on facilitation training, and it's still inconsistent in practice.",Individual Contributor,More than 10 years
+R228,Information sharing is uneven; some teams over-share and others hoard.,Individual Contributor,2 to 5 years
+R229,The same five voices dominate every meeting and the rest of us learn to stay quiet.,Individual Contributor,Less than 2 years
+R230,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Team Lead,2 to 5 years
+R231,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",HR / People Ops,More than 10 years
+R232,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised.",Director,Less than 2 years
+R233,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Individual Contributor,2 to 5 years
+R234,Information flows down to people who are already in the inner circle.,VP or above,More than 10 years
+R235,Information about plans and trade-offs reaches the people doing the work in time to influence them.,Individual Contributor,More than 10 years
+R236,Our 'open door' is open in name only; you learn quickly which doors actually open. That is my honest read.,Director,Less than 2 years
+R237,Big decisions happen in side channels and the broader team learns about them after the fact.,Team Lead,Less than 2 years
+R238,"There has been progress on facilitation training, and it's still inconsistent in practice.",HR / People Ops,2 to 5 years
+R239,"Decision memos are written down and circulated before the meeting, so the meeting is for actual deliberation.",VP or above,2 to 5 years
+R240,Information flows down to people who are already in the inner circle.,Team Lead,Less than 2 years
+R241,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,2 to 5 years
+R242,"Leadership shares context up front, including the constraints they are working under. Worth flagging.",HR / People Ops,5 to 10 years
+R243,The same five voices dominate every meeting and the rest of us learn to stay quiet. That is my honest read.,Director,2 to 5 years
+R244,"When I raised an idea in a meeting it was ignored, then repeated by a more senior person and praised. That is my honest read.",Individual Contributor,2 to 5 years
+R245,Our 'open door' is open in name only; you learn quickly which doors actually open. Not everyone agrees with me on this.,Individual Contributor,Less than 2 years
+R246,Information flows down to people who are already in the inner circle.,HR / People Ops,2 to 5 years
+R247,"Async written work has helped quieter voices, but live meetings still favor the loudest ones.",Individual Contributor,Less than 2 years
+R248,We have a norm of pausing when someone gets talked over and returning to their point. It works.,HR / People Ops,5 to 10 years
+R249,Big decisions happen in side channels and the broader team learns about them after the fact.,Individual Contributor,Less than 2 years
+R250,We have a norm of pausing when someone gets talked over and returning to their point. It works.,Individual Contributor,2 to 5 years

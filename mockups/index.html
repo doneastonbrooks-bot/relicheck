@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockups . Launcher</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #0f172a;
+      color: #e5e8ed;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px; line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 60px 40px 80px; }
+
+    header { margin-bottom: 48px; }
+    .logo {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-bottom: 28px;
+    }
+    .logo .mark {
+      width: 32px; height: 32px;
+      border-radius: 8px; background: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif; font-weight: 700;
+      color: #ffffff; font-size: 18px;
+    }
+    .logo .word {
+      font-family: 'Fraunces', serif; font-weight: 600;
+      font-size: 20px; color: #ffffff;
+      letter-spacing: -0.01em;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 42px;
+      margin: 0 0 12px 0;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+    }
+    .sub {
+      font-size: 17px; color: #a3a8b8;
+      max-width: 720px;
+    }
+    .pill {
+      display: inline-block;
+      background: rgba(232, 93, 58, 0.15);
+      color: #e85d3a;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7088;
+      margin: 40px 0 16px 0;
+      font-weight: 700;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    @media (max-width: 900px)  { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .grid { grid-template-columns: 1fr; } }
+    .tile {
+      background: #1e293b;
+      border: 1px solid #283448;
+      border-radius: 14px;
+      padding: 22px;
+      text-decoration: none;
+      color: #e5e8ed;
+      display: flex; flex-direction: column; gap: 8px;
+      transition: border-color 0.12s, transform 0.12s, background 0.12s;
+    }
+    .tile:hover {
+      border-color: #e85d3a;
+      background: #243046;
+      transform: translateY(-2px);
+    }
+    .tile.disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+    .tile.disabled:hover {
+      border-color: #283448;
+      background: #1e293b;
+      transform: none;
+    }
+    .tile .num {
+      font-family: 'Fraunces', serif;
+      font-size: 11px; letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+    }
+    .tile h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 19px;
+      margin: 2px 0 4px 0;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+    .tile p {
+      margin: 0;
+      font-size: 13px;
+      color: #a3a8b8;
+      line-height: 1.5;
+    }
+    .status {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      letter-spacing: 0.06em;
+    }
+    .status.done { background: rgba(22, 101, 52, 0.25); color: #4ade80; }
+    .status.todo { background: rgba(146, 64, 14, 0.25); color: #fbbf24; }
+
+    .legend {
+      margin-top: 32px;
+      padding: 18px 22px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      font-size: 13px;
+      color: #a3a8b8;
+    }
+    .legend strong { color: #ffffff; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <span class="mark">R</span>
+        <span class="word">ReliCheck</span>
+      </div>
+      <span class="pill">App design prototype</span>
+      <h1>The full ReliCheck app, mocked end to end.</h1>
+      <p class="sub">Twelve interface levels, navigable as standalone HTML pages. Hand any one to a tester. Walk all of them to see how the app feels when stitched together.</p>
+    </header>
+
+    <div class="section-title">Daily workspace</div>
+    <div class="grid">
+      <a class="tile" href="home.html">
+        <span class="num">Level 1</span>
+        <h3>Home</h3>
+        <p>Daily landing. Greeting, quick actions, recent projects, attention panel.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="projects.html">
+        <span class="num">Level 2</span>
+        <h3>Projects</h3>
+        <p>All surveys, tests, and datasets. Folders, favorites, filters, bulk actions.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="create-upload.html">
+        <span class="num">Level 3</span>
+        <h3>Create / Upload</h3>
+        <p>Two-column intake: build inside ReliCheck, or upload existing data.</p>
+        <span class="status done">Built</span>
+      </a>
+    </div>
+
+    <div class="section-title">Make something</div>
+    <div class="grid">
+      <a class="tile" href="builder.html">
+        <span class="num">Level 4</span>
+        <h3>Builder</h3>
+        <p>Survey and test editor. Per-item editing, constructs, AI assist, purpose check.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="templates.html">
+        <span class="num">Level 5</span>
+        <h3>Templates</h3>
+        <p>Validated scale gallery. Filter by domain, see citations and recommended N.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="take-survey.html">
+        <span class="num">Level 6</span>
+        <h3>Take view (respondent)</h3>
+        <p>What survey takers see. Clean form, progress, save-and-resume.</p>
+        <span class="status done">Built</span>
+      </a>
+    </div>
+
+    <div class="section-title">Analyze and report</div>
+    <div class="grid">
+      <a class="tile" href="analysis-guided.html">
+        <span class="num">Level 7</span>
+        <h3>Analysis . Guided View</h3>
+        <p>Layered findings, SSI, AI narrator, plain-language insights.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="analysis-technical.html">
+        <span class="num">Level 8</span>
+        <h3>Analysis . Technical View</h3>
+        <p>Same data, dense dashboard. Stat tiles, charts, full matrices.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="reports.html">
+        <span class="num">Level 9</span>
+        <h3>Reports</h3>
+        <p>Saved reports list. Drafts, shared, scheduled, with status.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="report-detail.html">
+        <span class="num">Level 9b</span>
+        <h3>Report detail</h3>
+        <p>A single assembled report. Findings, charts, methods, share controls.</p>
+        <span class="status done">Built</span>
+      </a>
+    </div>
+
+    <div class="section-title">Tools and workspace</div>
+    <div class="grid">
+      <a class="tile" href="ai-tools.html">
+        <span class="num">Level 10</span>
+        <h3>AI Tools hub</h3>
+        <p>All 19+ AI tools in one place. Filter by stage. Run any tool standalone.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="team.html">
+        <span class="num">Level 11</span>
+        <h3>Team / Workspace</h3>
+        <p>Members, roles, project sharing, audit log.</p>
+        <span class="status done">Built</span>
+      </a>
+      <a class="tile" href="account.html">
+        <span class="num">Level 12</span>
+        <h3>Account / Settings</h3>
+        <p>Plan and usage, integrations, notifications, profile, security.</p>
+        <span class="status done">Built</span>
+      </a>
+    </div>
+
+    <div class="legend">
+      <strong>How to use this prototype.</strong> Each tile opens a standalone HTML page with the full app shell. Click any sidebar item or breadcrumb to jump between levels. The Take view is the only page without a sidebar, since respondents never see the app chrome.
+    </div>
+  </div>
+</body>
+</html>

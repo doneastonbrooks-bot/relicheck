@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>About · ReliCheck</title>
+  <meta name="description" content="ReliCheck is a survey platform for teams that have to defend their numbers: researchers, evaluators, instructors, and HR leaders." />
+  <link rel="canonical" href="https://relichecksurvey.com/about.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="About · ReliCheck" />
+  <meta property="og:description" content="ReliCheck is a survey platform for teams that have to defend their numbers: researchers, evaluators, instructors, and HR leaders." />
+  <meta property="og:url" content="https://relichecksurvey.com/about.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="About · ReliCheck" />
+  <meta name="twitter:description" content="ReliCheck is a survey platform for teams that have to defend their numbers: researchers, evaluators, instructors, and HR leaders." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<header class="article-header">
+  <div class="container-content" style="text-align:center;">
+    <span class="kicker">About</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:24ch;">A survey platform built by people who have to defend their numbers.</h1>
+    <p class="lede" style="margin:0 auto;">ReliCheck is for researchers, evaluators, instructors, and HR leaders whose work depends on a survey number being accurate, reliable, and explainable. We built it because the existing tools made that work harder than it needed to be.</p>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container-content">
+    <div class="prose">
+      <h2>Why ReliCheck exists</h2>
+      <p>Most survey tools optimize for speed: how fast can you ship a form, collect responses, and stare at a chart. That works when the audience trusts the result by default.</p>
+      <p>It does not work in research, evaluation, education, or HR contexts where someone will read the methodology, compare your numbers across waves, or ask whether the items actually measure the construct they claim. In those contexts, "we used a tool" is not a defensible answer; "we used a validated scale, here is alpha, here is the methods appendix" is.</p>
+      <p>ReliCheck is the platform for that second kind of work. Reliability statistics, validated templates, transparent methods, and AI summaries that link back to the numbers behind them are all in the box on day one.</p>
+      <h2>What we believe</h2>
+      <p><strong>Reliability is necessary, not sufficient.</strong> A reliable scale is a steady ruler. The ruler can be steady and still be the wrong ruler for the job. We surface reliability so the analyst can do the harder work of judging meaning.</p>
+      <p><strong>AI helps explain, not decide.</strong> Every AI feature is grounded in your data and audited against the underlying statistics. The analyst names the construct, picks the items, and edits the report. The AI just makes the explanation faster and clearer.</p>
+      <p><strong>Methodology should be public.</strong> Every formula we use is documented at <a href="methodology.html">methodology.html</a>. If you can't reproduce our number, we should fix the platform, not the documentation.</p>
+      <h2>Who uses ReliCheck</h2>
+      <p>Education and evaluation teams running course feedback, accreditation, climate, and program evaluation. HR leaders running engagement, onboarding, exit, and climate surveys. Customer experience teams running CSAT, NPS, and product feedback. Researchers running validated scales for publication and grant reporting.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section"><div class="container-content"><div class="cta-band">
+      <h2>Use ReliCheck on your next survey</h2>
+      <p>Free to start, paid plans add unlimited responses and team sharing. Reliability and report-writing are included from day one.</p>
+      <div class="hero-actions"><a href="signup.html" class="btn btn-primary btn-lg">Start free</a><a href="pricing.html" class="btn btn-outline btn-lg">See pricing</a></div>
+    </div></div></section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

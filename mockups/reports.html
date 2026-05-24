@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . Reports</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body { background: #f6f7fb; color: #1a1f33; font-family: 'Inter', sans-serif; font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+    .sidebar { background: #0f172a; color: #d1d5e0; padding: 20px 0; display: flex; flex-direction: column; gap: 4px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+    .sidebar-brand { display: flex; align-items: center; gap: 10px; padding: 0 22px 24px; border-bottom: 1px solid #1e293b; margin-bottom: 16px; }
+    .sidebar-brand .logo { width: 28px; height: 28px; border-radius: 6px; background: #e85d3a; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; color: #ffffff; font-size: 16px; }
+    .sidebar-brand .name { font-family: 'Fraunces', serif; font-weight: 600; font-size: 18px; color: #ffffff; }
+    .sidebar-section { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #6b7088; padding: 14px 22px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 22px; color: #d1d5e0; text-decoration: none; font-size: 14px; font-weight: 500; border-left: 3px solid transparent; }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active { background: #1e293b; color: #ffffff; border-left-color: #e85d3a; }
+    .nav-item .icon { width: 18px; flex: 0 0 18px; opacity: 0.85; }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot { margin-top: auto; padding: 16px 22px; border-top: 1px solid #1e293b; font-size: 12px; color: #6b7088; }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+    .topbar { background: #ffffff; border-bottom: 1px solid #e5e8ed; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+    .crumbs { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #6b7088; }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e5e8ed; background: #ffffff; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #6b7088; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #e85d3a, #d44e2c); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 13px; }
+
+    .btn { background: #1a1f33; color: #ffffff; padding: 9px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost { background: #ffffff; color: #1a1f33; border: 1px solid #e5e8ed; }
+    .btn.primary { background: #e85d3a; }
+    .btn.primary:hover { background: #d44e2c; }
+
+    .main { padding: 32px 40px 80px; max-width: 1280px; }
+    .page-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 14px; }
+    .page-head h1 { font-family: 'Fraunces', serif; font-size: 28px; margin: 0; letter-spacing: -0.01em; }
+    .page-head p { margin: 4px 0 0 0; color: #6b7088; font-size: 14px; }
+
+    /* Type tabs */
+    .ttabs { display: flex; gap: 0; border-bottom: 1px solid #e5e8ed; margin-bottom: 18px; }
+    .ttab { padding: 12px 16px; font-size: 13px; font-weight: 600; color: #6b7088; text-decoration: none; border-bottom: 3px solid transparent; }
+    .ttab.on { color: #1a1f33; border-bottom-color: #e85d3a; }
+    .ttab:hover:not(.on) { color: #1a1f33; }
+    .ttab .ct { background: #f0f2f6; color: #6b7088; padding: 1px 8px; border-radius: 999px; font-size: 11px; margin-left: 6px; }
+    .ttab.on .ct { background: #fde2d7; color: #e85d3a; }
+
+    /* Filter row */
+    .filters { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 18px; }
+    .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #ffffff; border: 1px solid #e5e8ed; border-radius: 999px; font-size: 12px; font-weight: 600; color: #1a1f33; cursor: pointer; }
+    .chip.on { background: #fde2d7; color: #c2410c; border-color: #fde2d7; }
+    .search { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid #e5e8ed; border-radius: 8px; background: #ffffff; }
+    .search input { border: none; flex: 1; font-size: 13px; outline: none; font-family: inherit; }
+
+    /* Report grid */
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 1023px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 640px)  { .grid { grid-template-columns: 1fr; } }
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 12px;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.12s, transform 0.12s, box-shadow 0.12s;
+    }
+    .card:hover {
+      border-color: #e85d3a;
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px rgba(15,23,42,0.06);
+    }
+    .card-thumb {
+      height: 130px;
+      background: linear-gradient(135deg, #fde2d7 0%, #fef3ee 100%);
+      position: relative;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .card-thumb.brand-blue { background: linear-gradient(135deg, #eef1ff 0%, #f7f8ff 100%); }
+    .card-thumb.brand-green { background: linear-gradient(135deg, #ecfdf3 0%, #f5fbf8 100%); }
+    .card-thumb.brand-yellow { background: linear-gradient(135deg, #fff8e6 0%, #fefcf3 100%); }
+    .card-thumb .ic {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 36px;
+      color: #e85d3a;
+      opacity: 0.55;
+    }
+    .card-thumb.brand-blue .ic { color: #3a4dc8; }
+    .card-thumb.brand-green .ic { color: #166534; }
+    .card-thumb.brand-yellow .ic { color: #92400e; }
+    .card-thumb .status {
+      position: absolute; top: 12px; left: 12px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      background: #ffffff; color: #1a1f33;
+      box-shadow: 0 2px 4px rgba(15,23,42,0.10);
+    }
+    .card-thumb .status.shared { color: #166534; }
+    .card-thumb .status.draft  { color: #92400e; }
+    .card-thumb .status.scheduled { color: #3a4dc8; }
+    .card-body { padding: 18px; flex: 1; display: flex; flex-direction: column; }
+    .card-body h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      margin: 0 0 6px 0;
+      line-height: 1.3;
+    }
+    .card-body .src { font-size: 12px; color: #6b7088; }
+    .card-body .meta { margin-top: auto; padding-top: 14px; font-size: 12px; color: #6b7088; display: flex; justify-content: space-between; align-items: center; }
+    .card-body .meta .by { color: #1a1f33; font-weight: 500; }
+    .card-foot {
+      padding: 12px 18px;
+      border-top: 1px solid #f0f2f6;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12px;
+      background: #fafbfd;
+    }
+    .card-foot .actions { display: flex; gap: 6px; }
+    .card-foot .actions a {
+      padding: 4px 8px;
+      border-radius: 5px;
+      color: #6b7088;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .card-foot .actions a:hover { background: #f0f2f6; color: #1a1f33; }
+    .audience {
+      display: inline-flex;
+      gap: -6px;
+      align-items: center;
+    }
+    .audience .av {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #3a4dc8, #5b6cdb);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #ffffff; font-size: 10px; font-weight: 700;
+      border: 2px solid #fafbfd;
+      margin-right: -6px;
+    }
+    .audience .av.b2 { background: linear-gradient(135deg, #166534, #1c8a47); }
+    .audience .av.b3 { background: linear-gradient(135deg, #e85d3a, #d44e2c); }
+    .audience .av.more { background: #e5e8ed; color: #6b7088; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><span class="logo">R</span><span class="name">ReliCheck</span></div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item active" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+    <div class="sidebar-foot"><strong>Professional plan</strong>Renewed May 15</div>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <div class="crumbs"><a href="home.html">Home</a><span class="sep">&rsaquo;</span><strong>Reports</strong></div>
+      <div class="topbar-right">
+        <button class="topbar-btn">&#8981;</button>
+        <button class="topbar-btn">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="page-head">
+        <div>
+          <h1>Reports</h1>
+          <p>Findings, executive summaries, and methods write-ups you've built.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <a class="btn ghost" href="#">Import template</a>
+          <a class="btn primary" href="report-detail.html">+ New report</a>
+        </div>
+      </div>
+
+      <nav class="ttabs">
+        <a class="ttab on" href="#">All<span class="ct">12</span></a>
+        <a class="ttab" href="#">Drafts<span class="ct">3</span></a>
+        <a class="ttab" href="#">Shared<span class="ct">7</span></a>
+        <a class="ttab" href="#">Scheduled<span class="ct">2</span></a>
+      </nav>
+
+      <div class="filters">
+        <div class="search">
+          <span style="color:#6b7088;">&#8981;</span>
+          <input type="text" placeholder="Search report title or project..." />
+        </div>
+        <span class="chip on">All audiences</span>
+        <span class="chip">My reports</span>
+        <span class="chip">Last 30 days</span>
+        <span class="chip">+ Filter</span>
+      </div>
+
+      <div class="grid">
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb">
+            <span class="status shared">SHARED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Employee Engagement 2026 . Executive Summary</h3>
+            <div class="src">From <strong>Employee Engagement 2026</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>updated 2h ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">SK</span>
+              <span class="av b2">MR</span>
+              <span class="av b3">JT</span>
+              <span class="av more">+4</span>
+            </div>
+            <div class="actions">
+              <a href="#">Share</a>
+              <a href="#">Export</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-blue">
+            <span class="status shared">SHARED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Student Satisfaction Spring 2026 . Full Report</h3>
+            <div class="src">From <strong>Student Satisfaction Spring 2026</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>yesterday</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">DC</span>
+              <span class="av b2">RP</span>
+              <span class="av b3">ML</span>
+            </div>
+            <div class="actions">
+              <a href="#">Share</a>
+              <a href="#">Export</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-yellow">
+            <span class="status draft">DRAFT</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Math Achievement . Methods Section</h3>
+            <div class="src">From <strong>Math Achievement Test</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>5 days ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience"></div>
+            <div class="actions">
+              <a href="#">Continue</a>
+              <a href="#">Delete</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-green">
+            <span class="status scheduled">SCHEDULED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Q4 Brand Tracker . Monthly Digest</h3>
+            <div class="src">From <strong>Q4 Brand Tracker</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>sends every Monday 8am</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">RD</span>
+              <span class="av b2">JM</span>
+              <span class="av more">+8</span>
+            </div>
+            <div class="actions">
+              <a href="#">Edit schedule</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-blue">
+            <span class="status shared">SHARED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Wellness Pulse Q1 . Findings Memo</h3>
+            <div class="src">From <strong>Wellness Pulse Q1</strong></div>
+            <div class="meta">
+              <span class="by">L. Park</span>
+              <span>2 weeks ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">JT</span>
+              <span class="av b2">AH</span>
+            </div>
+            <div class="actions">
+              <a href="#">Open</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb">
+            <span class="status draft">DRAFT</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Leadership 360 . Subject Reports (5)</h3>
+            <div class="src">From <strong>Leadership 360 Panel</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>3 days ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience"></div>
+            <div class="actions">
+              <a href="#">Continue</a>
+              <a href="#">Delete</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-green">
+            <span class="status shared">SHARED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Onboarding Pilot . Stakeholder Brief</h3>
+            <div class="src">From <strong>Onboarding Experience Pilot</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>3 weeks ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">KS</span>
+              <span class="av b2">MR</span>
+            </div>
+            <div class="actions">
+              <a href="#">Open</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-yellow">
+            <span class="status scheduled">SCHEDULED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>Engagement 2026 . Quarterly Snapshot</h3>
+            <div class="src">From <strong>Employee Engagement 2026</strong></div>
+            <div class="meta">
+              <span class="by">you</span>
+              <span>sends Apr 1, Jul 1, Oct 1</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">SK</span>
+              <span class="av more">+12</span>
+            </div>
+            <div class="actions">
+              <a href="#">Edit schedule</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="report-detail.html">
+          <div class="card-thumb brand-blue">
+            <span class="status shared">SHARED</span>
+            <span class="ic">R</span>
+          </div>
+          <div class="card-body">
+            <h3>7th Grade Reading . Teacher Report</h3>
+            <div class="src">From <strong>7th Grade Reading Assessment</strong></div>
+            <div class="meta">
+              <span class="by">M. Reyes</span>
+              <span>1 month ago</span>
+            </div>
+          </div>
+          <div class="card-foot">
+            <div class="audience">
+              <span class="av">DG</span>
+              <span class="av b2">RP</span>
+            </div>
+            <div class="actions">
+              <a href="#">Open</a>
+              <a href="#">&hellip;</a>
+            </div>
+          </div>
+        </a>
+
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>

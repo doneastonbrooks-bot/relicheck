@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard · ReliCheck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body style="background: var(--bg-soft);">
+
+<div class="preview-banner">Preview build, not yet live. <a href="index.html">Home</a> · <a href="pricing.html">Pricing</a> · <a href="education.html">Education</a> · <a href="reliability-guide.html">Reliability guide</a> · <a href="compare.html">Compare</a> · <a href="methodology.html">Methodology</a></div>
+
+<div class="app">
+  <aside class="app-side">
+    <a href="index.html" class="brand brand-image"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+
+    <div class="side-section">
+      <h5>Workspace</h5>
+      <nav>
+        <a href="#" class="is-active">📊 Dashboard</a>
+        <a href="#">📝 Surveys</a>
+        <a href="#">📥 Responses</a>
+        <a href="#">📁 Datasets</a>
+        <a href="#">📈 Reports</a>
+      </nav>
+    </div>
+
+    <div class="side-section">
+      <h5>Tools</h5>
+      <nav>
+        <a href="#">⚙️ Templates</a>
+        <a href="#">🤖 AI assistant</a>
+        <a href="#">🔗 Integrations</a>
+      </nav>
+    </div>
+
+    <div class="side-section">
+      <h5>Account</h5>
+      <nav>
+        <a href="#">👥 Team</a>
+        <a href="#">💳 Billing</a>
+        <a href="#">⚡ API access</a>
+      </nav>
+    </div>
+
+    <div class="app-side-foot">
+      <span class="avatar">DE</span>
+      <div>
+        <div style="font-weight:600;color:var(--ink-9);">Dr. Donald Easton-Brooks</div>
+        <div class="text-mute" style="font-size:12px;">Researcher plan</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="app-topbar">
+      <button class="nav-toggle" aria-label="Open menu" style="display:inline-flex;">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="app-search"><span>🔍</span> Search surveys, responses, datasets…</div>
+      <div style="display:flex;gap:var(--s-2);align-items:center;">
+        <button class="btn btn-ghost btn-sm">Help</button>
+        <button class="btn btn-primary btn-sm">+ New survey</button>
+      </div>
+    </div>
+
+    <div class="app-content">
+      <div class="app-greeting">
+        <h1>Good afternoon, Donald.</h1>
+        <p>You have 3 surveys collecting responses and 1 report waiting on review.</p>
+      </div>
+
+      <div class="metric-row">
+        <div class="metric">
+          <label>Active surveys</label>
+          <strong>5</strong>
+          <span class="delta">+2 this month</span>
+        </div>
+        <div class="metric">
+          <label>Responses this week</label>
+          <strong>312</strong>
+          <span class="delta">+18%</span>
+        </div>
+        <div class="metric">
+          <label>Avg. completion</label>
+          <strong>94%</strong>
+          <span class="delta">+3 pts</span>
+        </div>
+        <div class="metric">
+          <label>Reliability flags</label>
+          <strong>2</strong>
+          <span class="delta is-down">Needs review</span>
+        </div>
+      </div>
+
+      <div class="panel-row">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <h3>Recent surveys</h3>
+              <div class="panel-sub">Activity in the last 14 days</div>
+            </div>
+            <a href="#" class="btn btn-ghost btn-sm">View all →</a>
+          </div>
+          <table class="panel-table">
+            <thead>
+              <tr>
+                <th>Survey</th>
+                <th>Status</th>
+                <th>Responses</th>
+                <th>α (Cronbach)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>EDUC 542 · End-of-term</strong><div class="text-mute" style="font-size:12px;">Course evaluation · 24 items</div></td>
+                <td><span class="pill pill-good">Collecting</span></td>
+                <td>87 / 120</td>
+                <td>0.91</td>
+                <td><a href="#" class="text-soft">Open →</a></td>
+              </tr>
+              <tr>
+                <td><strong>Q2 Engagement Pulse</strong><div class="text-mute" style="font-size:12px;">HR · 12 items</div></td>
+                <td><span class="pill pill-good">Collecting</span></td>
+                <td>164 / 200</td>
+                <td>0.84</td>
+                <td><a href="#" class="text-soft">Open →</a></td>
+              </tr>
+              <tr>
+                <td><strong>Onboarding NPS</strong><div class="text-mute" style="font-size:12px;">CX · 8 items</div></td>
+                <td><span class="pill pill-warn">Low α</span></td>
+                <td>61 / 100</td>
+                <td>0.62</td>
+                <td><a href="#" class="text-soft">Open →</a></td>
+              </tr>
+              <tr>
+                <td><strong>Mentor Program Eval (Pre)</strong><div class="text-mute" style="font-size:12px;">Evaluation · 18 items</div></td>
+                <td><span class="pill pill-soft">Closed</span></td>
+                <td>240 / 240</td>
+                <td>0.88</td>
+                <td><a href="#" class="text-soft">Open →</a></td>
+              </tr>
+              <tr>
+                <td><strong>Faculty Climate</strong><div class="text-mute" style="font-size:12px;">Research · 30 items</div></td>
+                <td><span class="pill pill-soft">Draft</span></td>
+                <td>—</td>
+                <td>—</td>
+                <td><a href="#" class="text-soft">Edit →</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <aside style="display:grid;gap:var(--s-4);">
+          <section class="panel">
+            <div class="panel-head">
+              <h3>Reliability snapshot</h3>
+            </div>
+            <div class="panel-body">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--s-3);">
+                <div style="padding:var(--s-4);background:var(--success-soft);border-radius:var(--r-sm);">
+                  <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--success);font-weight:700;">Strong</div>
+                  <div style="font-family:var(--font-display);font-size:1.75rem;color:var(--ink-9);">3</div>
+                  <div class="text-mute" style="font-size:12px;">α ≥ 0.80</div>
+                </div>
+                <div style="padding:var(--s-4);background:var(--gold-soft);border-radius:var(--r-sm);">
+                  <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#8b6a00;font-weight:700;">Watch</div>
+                  <div style="font-family:var(--font-display);font-size:1.75rem;color:var(--ink-9);">2</div>
+                  <div class="text-mute" style="font-size:12px;">α 0.60–0.79</div>
+                </div>
+              </div>
+              <p class="text-soft" style="margin-top:var(--s-4);font-size:13px;">Onboarding NPS dropped below 0.70 after the latest 24 responses. Two items show low corrected item-total correlation.</p>
+              <a href="#" class="btn btn-outline btn-sm" style="width:100%;">Review item flags</a>
+            </div>
+          </section>
+
+          <section class="panel">
+            <div class="panel-head">
+              <h3>AI summary queue</h3>
+            </div>
+            <div class="panel-body">
+              <div style="display:grid;gap:var(--s-3);">
+                <div style="display:flex;align-items:center;gap:var(--s-3);">
+                  <span style="width:32px;height:32px;background:var(--accent-soft);color:var(--accent);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;">1</span>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">Mentor Program Eval (Pre)</div>
+                    <div class="text-mute" style="font-size:12px;">Draft summary ready · 240 responses</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:var(--s-3);">
+                  <span style="width:32px;height:32px;background:var(--bg-soft);color:var(--ink-6);border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:700;">2</span>
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">Q2 Engagement Pulse</div>
+                    <div class="text-mute" style="font-size:12px;">Themes drafted · awaiting review</div>
+                  </div>
+                </div>
+              </div>
+              <a href="#" class="btn btn-primary btn-sm" style="width:100%;margin-top:var(--s-4);">Open queue</a>
+            </div>
+          </section>
+        </aside>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Get more out of ReliCheck</h3>
+            <div class="panel-sub">Quick wins based on your current activity</div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="cards-3">
+            <div class="card" style="border:1px dashed var(--line-strong);">
+              <span class="card-num">TIP</span>
+              <h3 style="font-size:var(--text-lg);">Push reports to Google Sheets</h3>
+              <p>Send your Q2 Engagement results to a Sheets tab in one click.</p>
+            </div>
+            <div class="card" style="border:1px dashed var(--line-strong);">
+              <span class="card-num">AI</span>
+              <h3 style="font-size:var(--text-lg);">Try theme extraction</h3>
+              <p>EDUC 542 has 312 open-ended responses. Group them by theme.</p>
+            </div>
+            <div class="card" style="border:1px dashed var(--line-strong);">
+              <span class="card-num">NEW</span>
+              <h3 style="font-size:var(--text-lg);">Invite a teammate</h3>
+              <p>Researcher includes one workspace; Professional adds team sharing.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

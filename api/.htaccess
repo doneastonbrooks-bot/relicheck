@@ -1,0 +1,28 @@
+# Block direct access to internal helpers and config files.
+<FilesMatch "^_">
+  Require all denied
+</FilesMatch>
+
+# Force the JSON Content-Type for any .php response that doesn't set it.
+# (Each endpoint also sets it explicitly via _helpers.php.)
+DirectoryIndex disabled
+
+# Disallow listing the api/ directory.
+Options -Indexes
+
+# Forward the Authorization header to PHP. IONOS' shared Apache strips
+# Authorization by default for CGI/FastCGI requests, which leaves
+# $_SERVER['HTTP_AUTHORIZATION'] empty even when the client did send it.
+# This rewrite restores it for every /api/* PHP endpoint, so Bearer-token
+# auth (api/v1/me.php, api/v1/surveys.php, etc.) works for real clients.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTP:Authorization} ^(.+)$
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+</IfModule>
+
+# Belt-and-suspenders: SetEnvIf catches Authorization even when mod_rewrite
+# is not loaded. Comparable to the rule above but for non-rewrite paths.
+<IfModule mod_setenvif.c>
+  SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1
+</IfModule>

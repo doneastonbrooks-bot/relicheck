@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Workspace invitation · ReliCheck</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    body {
+      background: var(--bg-soft, #f5f7fb);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line, #e6eaf2);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(11,23,51,0.08), 0 4px 12px rgba(11,23,51,0.04);
+      padding: 36px 40px;
+      max-width: 460px;
+      width: 100%;
+    }
+    .card .logo { height: 30px; margin-bottom: 22px; }
+    .card h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: var(--ink-9, #0b1733); letter-spacing: -0.01em; }
+    .card .lede { color: var(--ink-6, #4a5578); font-size: 14px; margin: 0 0 22px; }
+    .status {
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .status.info    { background: #eaf0ff; color: #2654c6; border: 1px solid #d4dffb; }
+    .status.success { background: #e7f5ec; color: #1f8a4d; border: 1px solid #c8eed4; }
+    .status.error   { background: #fbe9e9; color: #c83333; border: 1px solid #f4cccc; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 9px 16px; font-size: 14px; font-weight: 600;
+      border-radius: 8px; border: 1px solid var(--line-strong, #d3d9e6);
+      background: #fff; color: var(--ink-9, #0b1733);
+      text-decoration: none; cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover { background: var(--bg-soft, #f5f7fb); }
+    .btn.primary { background: var(--accent, #e85d3a); color: #fff; border-color: var(--accent, #e85d3a); }
+    .btn.primary:hover { background: var(--accent-hover, #cc4a2a); border-color: var(--accent-hover, #cc4a2a); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .meta { font-size: 12px; color: var(--ink-5, #6b7691); margin-top: 18px; }
+    code { background: var(--bg-soft, #f5f7fb); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+  <h1 id="title">Workspace invitation</h1>
+  <p class="lede" id="lede">Confirming your invitation, one moment…</p>
+  <div class="status info" id="statusBox" style="display:none;"></div>
+  <div class="actions" id="actionsBox" style="display:none;"></div>
+  <p class="meta">If you weren't expecting this invitation, you can decline it or just close this page.</p>
+</div>
+
+<script>
+(async () => {
+  const titleEl   = document.getElementById('title');
+  const ledeEl    = document.getElementById('lede');
+  const statusEl  = document.getElementById('statusBox');
+  const actionsEl = document.getElementById('actionsBox');
+
+  const setStatus = (kind, text) => {
+    statusEl.className = 'status ' + kind;
+    statusEl.style.display = 'block';
+    statusEl.textContent = text;
+  };
+  const setActions = html => {
+    actionsEl.style.display = 'flex';
+    actionsEl.innerHTML = html;
+  };
+
+  // 1. Pull the token from the URL.
+  const params = new URLSearchParams(window.location.search);
+  const token = (params.get('token') || '').trim();
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    titleEl.textContent = 'Invalid invitation link';
+    ledeEl.textContent  = 'The token in this URL is missing or malformed.';
+    setStatus('error', 'No valid invitation token found in this URL. Open the link directly from your invitation email.');
+    setActions('<a class="btn" href="/index.html">Go home</a>');
+    return;
+  }
+
+  // 2. Check sign-in. Must be customer-side, not admin.
+  let me;
+  try {
+    const r = await fetch('/api/auth/me.php', { credentials: 'same-origin' });
+    me = await r.json();
+  } catch (_) { me = { authenticated: false }; }
+
+  if (!me || !me.authenticated) {
+    titleEl.textContent = 'Sign in to accept';
+    ledeEl.textContent  = 'You need to be signed in to your ReliCheck account before accepting this invitation.';
+    const next = '/accept-org-invite.html?token=' + encodeURIComponent(token);
+    setStatus('info', 'Sign in (or create) the ReliCheck account that matches the email this invitation was sent to. Then come back to this page.');
+    setActions(
+      '<a class="btn primary" href="/login.html?next=' + encodeURIComponent(next) + '">Sign in</a>' +
+      '<a class="btn" href="/signup.html?next=' + encodeURIComponent(next) + '">Create account</a>'
+    );
+    return;
+  }
+
+  // 3. Signed in. Show accept/decline buttons.
+  titleEl.textContent = 'Workspace invitation';
+  ledeEl.textContent  = 'Signed in as ' + (me.user && me.user.email ? me.user.email : 'you') + '. Accept the invitation to join the workspace, or decline.';
+  setActions(
+    '<button class="btn primary" id="acceptBtn">Accept invitation</button>' +
+    '<button class="btn" id="declineBtn">Decline</button>'
+  );
+
+  const submit = async (action) => {
+    titleEl.textContent = action === 'accept' ? 'Joining workspace…' : 'Declining invitation…';
+    setActions('');
+    let res, data;
+    try {
+      res = await fetch('/api/admin/customers/org/accept.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, action: action }),
+      });
+      data = await res.json();
+    } catch (e) {
+      titleEl.textContent = 'Network error';
+      setStatus('error', 'Could not reach the server. Refresh and try again.');
+      setActions('<button class="btn" onclick="location.reload()">Retry</button>');
+      return;
+    }
+
+    if (res.ok && data.ok) {
+      titleEl.textContent = action === 'accept' ? 'You\'re in.' : 'Invitation declined';
+      ledeEl.textContent  = '';
+      setStatus('success', data.message || (action === 'accept' ? 'Joined.' : 'Declined.'));
+      setActions(
+        action === 'accept'
+          ? '<a class="btn primary" href="/app.html">Open ReliCheck</a>'
+          : '<a class="btn" href="/index.html">Go home</a>'
+      );
+      return;
+    }
+
+    titleEl.textContent = 'Could not ' + action + ' invitation';
+    setStatus('error', data && data.message ? data.message : 'Failed (HTTP ' + res.status + ').');
+    if (data && data.error === 'email_mismatch') {
+      setActions(
+        '<a class="btn" href="/api/auth/logout.php">Sign out and try again</a>' +
+        '<a class="btn ghost" href="/index.html">Go home</a>'
+      );
+    } else {
+      setActions(
+        '<button class="btn" onclick="location.reload()">Retry</button>' +
+        '<a class="btn ghost" href="/index.html">Go home</a>'
+      );
+    }
+  };
+
+  document.getElementById('acceptBtn').onclick  = () => submit('accept');
+  document.getElementById('declineBtn').onclick = () => submit('decline');
+})();
+</script>
+</body>
+</html>

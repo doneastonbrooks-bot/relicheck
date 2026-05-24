@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data analysis dashboards · ReliCheck</title>
+  <meta name="description" content="The data-outcome dashboards in ReliCheck: Description, Open-Ended, Compare, Pre/Post, Subgroups, Equity Gaps, Predictors, Key Drivers, IRT, MLM, Trends. Faithful previews of every dashboard with the live app's chrome." />
+  <link rel="canonical" href="https://relichecksurvey.com/dashboards/data-analysis.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Data analysis dashboards · ReliCheck" />
+  <meta property="og:description" content="The eleven data-outcome dashboards in ReliCheck with faithful previews of each." />
+  <meta property="og:url" content="https://relichecksurvey.com/dashboards/data-analysis.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Data analysis dashboards · ReliCheck" />
+  <meta name="twitter:description" content="The eleven data-outcome dashboards in ReliCheck." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles-2026.css?v=20260516-style" />
+  <style>
+    .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 18px; }
+    @media (min-width: 1100px) { .dash-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .dash-card { background: #fff; border: 1px solid #e3e6ee; border-radius: 14px; padding: 20px 22px 22px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 1px 3px rgba(11, 23, 51, 0.04); }
+    .dash-card-head { display: flex; align-items: center; gap: 12px; }
+    .dash-card-head .pill { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #f0e9fd; color: #6939c7; }
+    .dash-card-head .pill.surfaced { background: #fde9e2; color: #c75617; }
+    .dash-card h3 { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 19px; letter-spacing: -0.01em; color: #0b1733; margin: 0; line-height: 1.25; }
+    .dash-card .question { font-size: 14px; color: #6b7088; margin: 0 0 4px; line-height: 1.4; }
+    .dash-card .body { font-size: 14px; color: #454a63; margin: 4px 0 0; line-height: 1.55; }
+    .dash-frame { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 8px; overflow: hidden; }
+    .dash-frame .ctx { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #6b7088; padding: 4px 6px; border-bottom: 1px solid #e3e6ee; margin: -2px -2px 6px; }
+    .dash-frame .ctx .left { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+    .dash-frame .ctx .dot { width: 7px; height: 7px; border-radius: 999px; background: #1f9d55; flex: 0 0 auto; }
+    .dash-frame .tabs { display: flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; padding-bottom: 6px; border-bottom: 1px solid #e3e6ee; margin-bottom: 4px; }
+    .dash-frame .tab { font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: #fff; border: 1px solid #e3e6ee; color: #6b7088; white-space: nowrap; }
+    .dash-frame .tab.is-active { background: #fff3eb; color: #e85d3a; border-color: #f3c2cd; }
+    .dash-frame .panel { background: #fff; border: 1px solid #e3e6ee; border-radius: 8px; padding: 12px 14px; }
+    .dash-frame .panel-row { display: flex; align-items: center; gap: 14px; }
+    .dash-frame .ring { position: relative; width: 78px; height: 78px; flex: 0 0 auto; }
+    .dash-frame .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .dash-frame .ring .num { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1; }
+    .dash-frame .ring .num .n { font-family: Fraunces, Georgia, serif; font-size: 22px; font-weight: 700; letter-spacing: -0.015em; color: #0b1733; }
+    .dash-frame .ring .num .of { font-size: 9px; color: #6b7088; margin-top: 2px; }
+    .dash-frame .panel-body h5 { font-family: Fraunces, Georgia, serif; font-size: 14px; font-weight: 600; color: #0b1733; margin: 0 0 4px; }
+    .dash-frame .panel-body .pill { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+    .dash-frame .panel-body .pill.good { background: #ecfdf3; color: #1f9d55; }
+    .dash-frame .panel-body .pill.warn { background: #fff8e6; color: #8a5b00; }
+    .dash-frame .panel-body .pill.bad  { background: #fdeff2; color: #c8334b; }
+    .dash-frame .panel-body .pill.brand { background: #eef1ff; color: #2940c9; }
+    .dash-frame .panel-body .read { font-size: 11px; color: #454a63; margin-top: 6px; line-height: 1.4; }
+    .dash-frame .narrator { font-size: 11px; color: #454a63; line-height: 1.45; }
+    .dash-frame .narrator .eyebrow { font-size: 9px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; margin-bottom: 4px; }
+    .dash-frame .narrator .pill { font-size: 10px; padding: 2px 7px; margin-right: 6px; }
+    .dash-frame .narrator .pill.good { background: #ecfdf3; color: #1f9d55; }
+    .dash-frame .narrator .pill.warn { background: #fff8e6; color: #8a5b00; }
+    .dash-frame .narrator .pill.bad  { background: #fdeff2; color: #c8334b; }
+    .dash-frame .kpi-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .dash-frame .kpi { background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 6px; padding: 8px 10px; text-align: left; }
+    .dash-frame .kpi .l { font-size: 9px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #6b7088; }
+    .dash-frame .kpi .v { font-family: Fraunces, Georgia, serif; font-size: 16px; font-weight: 700; color: #0b1733; }
+    .dash-frame .kpi .v.warn { color: #c75617; }
+    .dash-frame .kpi .v.bad  { color: #c8334b; }
+    .dash-frame .kpi .v.good { color: #1f9d55; }
+    .dash-frame .kpi .s { font-size: 9px; color: #6b7088; margin-top: 1px; }
+    .dash-frame .bar-row { display: grid; grid-template-columns: 80px 1fr auto; gap: 8px; align-items: center; font-size: 10px; color: #454a63; margin-top: 4px; }
+    .dash-frame .bar-row .lab { color: #0b1733; }
+    .dash-frame .bar-row .track { height: 8px; background: #eef1f5; border-radius: 999px; overflow: hidden; }
+    .dash-frame .bar-row .track > span { display: block; height: 100%; border-radius: 999px; }
+    .dash-frame .mini-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .dash-frame .mini-table th, .dash-frame .mini-table td { padding: 4px 6px; text-align: left; border-bottom: 1px solid #e3e6ee; }
+    .dash-frame .mini-table th { color: #6b7088; font-weight: 700; font-size: 9px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .dash-frame .mini-table td.r { text-align: right; font-variant-numeric: tabular-nums; }
+    .level-cross-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 28px; }
+    .level-cross-links a { display: flex; flex-direction: column; gap: 6px; padding: 18px 20px; background: #f6f7fb; border: 1px solid #e3e6ee; border-radius: 12px; text-decoration: none; color: #0b1733; transition: border-color 0.15s, background 0.15s; }
+    .level-cross-links a:hover { border-color: #e85d3a; background: #fff; }
+    .level-cross-links .kicker { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; }
+    .level-cross-links .title { font-family: Fraunces, Georgia, serif; font-size: 18px; font-weight: 600; color: #0b1733; }
+    .level-cross-links .desc { font-size: 13px; color: #454a63; line-height: 1.5; }
+    .level-cross-links .arrow { font-size: 13px; color: #e85d3a; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+
+<header class="article-header is-centered">
+  <div class="container-content">
+    <div class="crumb"><a href="/index.html">Home</a> / <a href="/dashboards/survey-assessment.html">Dashboards</a> / Data analysis</div>
+    <span class="kicker">Dashboards · Level 2 of 3</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:30ch;">Data analysis dashboards</h1>
+    <p class="lede" style="margin:0 auto;">Eleven dashboards on the data-outcome side: <strong>what is the data showing across descriptive, comparative, regression, longitudinal, and equity views?</strong> Two surfaced (Description, Open-Ended); the rest live in the More analyses dropdown so the surfaced row stays focused on credibility-first reads.</p>
+  </div>
+</header>
+
+
+<section class="section">
+  <div class="container-content">
+
+    <div class="dash-grid">
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill surfaced">Surfaced tab</span></div>
+        <h3>Description</h3>
+        <p class="question">What do people's answers show?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>22 items · n=312</span></div>
+          <div class="tabs"><span class="tab">Strength Index</span><span class="tab is-active">Description</span><span class="tab">Reliability</span><span class="tab">Validity</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="kpi-strip">
+              <div class="kpi"><div class="l">Composite mean</div><div class="v">4.07</div><div class="s">on 1-5 scale</div></div>
+              <div class="kpi"><div class="l">SD</div><div class="v">0.71</div><div class="s">tight spread</div></div>
+              <div class="kpi"><div class="l">Lowest item</div><div class="v warn">3.4</div><div class="s">Q12 Recognition</div></div>
+              <div class="kpi"><div class="l">Highest item</div><div class="v good">4.5</div><div class="s">Q22 Pride</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Composite distribution</div>
+            <svg viewBox="0 0 220 60" style="width:100%;height:60px;">
+              <line x1="10" y1="56" x2="210" y2="56" stroke="#cfd2dc"/>
+              <rect x="14" y="48" width="14" height="8" fill="#1F3A8A"/>
+              <rect x="30" y="44" width="14" height="12" fill="#1F3A8A"/>
+              <rect x="46" y="38" width="14" height="18" fill="#1F3A8A"/>
+              <rect x="62" y="30" width="14" height="26" fill="#1F3A8A"/>
+              <rect x="78" y="22" width="14" height="34" fill="#1F3A8A"/>
+              <rect x="94" y="14" width="14" height="42" fill="#1F3A8A"/>
+              <rect x="110" y="8" width="14" height="48" fill="#1F3A8A"/>
+              <rect x="126" y="14" width="14" height="42" fill="#1F3A8A"/>
+              <rect x="142" y="22" width="14" height="34" fill="#1F3A8A"/>
+              <rect x="158" y="34" width="14" height="22" fill="#1F3A8A"/>
+              <rect x="174" y="44" width="14" height="12" fill="#1F3A8A"/>
+              <line x1="123" y1="4" x2="123" y2="56" stroke="#e85d3a" stroke-width="1.5" stroke-dasharray="3 3"/>
+              <text x="125" y="10" font-size="9" fill="#e85d3a">mean 4.07</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Per-item mean, SD, distribution shape, response-over-time chart, and distribution histogram. Per-group rollups when a grouping variable is available.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill surfaced">Surfaced tab</span></div>
+        <h3>Open-Ended</h3>
+        <p class="question">What themes appear in written responses?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>47 written answers</span></div>
+          <div class="tabs"><span class="tab">Validity</span><span class="tab is-active">Open-Ended</span><span class="tab">Response Quality</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Theme overview</div>
+            <div class="bar-row"><span class="lab">Workload</span><span class="track"><span style="width:80%;background:#c83333;"></span></span><span>n=18</span></div>
+            <div class="bar-row"><span class="lab">Recognition</span><span class="track"><span style="width:55%;background:#b07d18;"></span></span><span>n=12</span></div>
+            <div class="bar-row"><span class="lab">Career path</span><span class="track"><span style="width:42%;background:#1F3A8A;"></span></span><span>n=9</span></div>
+            <div class="bar-row"><span class="lab">Tooling</span><span class="track"><span style="width:36%;background:#1F3A8A;"></span></span><span>n=8</span></div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;color:#0b1733;font-weight:700;margin-bottom:4px;">Q3 What gets in the way?</div>
+            <div style="font-size:10px;color:#454a63;line-height:1.45;">"Workload feels uneven across the team."<br>"More handoffs between teams than I expected."<br>"Tooling could be tighter; we lose time on context switches."</div>
+          </div>
+        </div>
+        <p class="body">Aggregate open-text responses across every open question. Theme overview, theme explorer, response review table. AI work gated behind a Generate button so you control the spend.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 61</span></div>
+        <h3>Compare</h3>
+        <p class="question">How do groups differ?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>4 departments · ANOVA p=.001</span></div>
+          <div class="tabs"><span class="tab is-active">Compare</span><span class="tab">Pre/Post</span><span class="tab">Subgroups</span><span class="tab">Equity</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Group means with 95% CI</div>
+            <div class="bar-row"><span class="lab">Engineering</span><span class="track"><span style="width:84%;background:#1f9d55;"></span></span><span>4.21</span></div>
+            <div class="bar-row"><span class="lab">Sales</span><span class="track"><span style="width:72%;background:#65a30d;"></span></span><span>4.05</span></div>
+            <div class="bar-row"><span class="lab">Support</span><span class="track"><span style="width:64%;background:#b07d18;"></span></span><span>3.95</span></div>
+            <div class="bar-row"><span class="lab">Operations</span><span class="track"><span style="width:50%;background:#c83333;"></span></span><span>3.78</span></div>
+          </div>
+          <div class="panel">
+            <div class="narrator">
+              <div class="eyebrow">Verdict</div>
+              <span class="pill warn">Meaningful difference</span>
+              <div style="margin-top:6px;">Engineering vs Operations: Welch t = 3.84, d = 0.51 [0.21, 0.81]. The gap is in the meaningful tier.</div>
+            </div>
+          </div>
+        </div>
+        <p class="body">Welch's t-test, Mann-Whitney U, one-way ANOVA, Kruskal-Wallis. Cohen's d with 95% CI and eta-squared. AI verdict card translates the test into HR language.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 62</span></div>
+        <h3>Pre/Post</h3>
+        <p class="question">How did people change?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Leadership Program 2026</span><span>Paired n=78 · d_z=0.42</span></div>
+          <div class="tabs"><span class="tab">Compare</span><span class="tab is-active">Pre/Post</span><span class="tab">Subgroups</span><span class="tab">+6</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">Paired t</div><div class="v">3.71</div><div class="s">df=77, p&lt;.001</div></div>
+              <div class="kpi"><div class="l">Cohen's d_z</div><div class="v warn">0.42</div><div class="s">small-meaningful</div></div>
+              <div class="kpi"><div class="l">RCI 95%</div><div class="v good">32</div><div class="s">improved</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Reliable Change Index, 95% confidence</div>
+            <div class="bar-row"><span class="lab">Improved</span><span class="track"><span style="width:75%;background:#1f9d55;"></span></span><span>32 (41%)</span></div>
+            <div class="bar-row"><span class="lab">Unchanged</span><span class="track"><span style="width:48%;background:#6b7088;"></span></span><span>38 (49%)</span></div>
+            <div class="bar-row"><span class="lab">Declined</span><span class="track"><span style="width:14%;background:#c83333;"></span></span><span>8 (10%)</span></div>
+          </div>
+        </div>
+        <p class="body">Paired t-test or Wilcoxon signed-rank, Cohen's d_z, Jacobson-Truax Reliable Change Index at 90, 95, 99% confidence with per-respondent improved / unchanged / declined counts.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 65</span></div>
+        <h3>Subgroups</h3>
+        <p class="question">How do outcomes split across groups?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>Group: Department</span></div>
+          <div class="tabs"><span class="tab">Compare</span><span class="tab">Pre/Post</span><span class="tab is-active">Subgroups</span><span class="tab">+6</span></div>
+          <div class="panel">
+            <table class="mini-table">
+              <thead><tr><th>Subgroup</th><th class="r">n</th><th class="r">Mean</th><th class="r">d vs all</th></tr></thead>
+              <tbody>
+                <tr><td>Engineering</td><td class="r">84</td><td class="r" style="color:#1f9d55;">4.21</td><td class="r" style="color:#1f9d55;">+0.18</td></tr>
+                <tr><td>Sales</td><td class="r">66</td><td class="r">4.05</td><td class="r">+0.02</td></tr>
+                <tr><td>Support</td><td class="r">58</td><td class="r" style="color:#b07d18;">3.95</td><td class="r" style="color:#b07d18;">-0.13</td></tr>
+                <tr><td>Operations</td><td class="r">104</td><td class="r" style="color:#c83333;">3.78</td><td class="r" style="color:#c83333;">-0.34</td></tr>
+                <tr><td colspan="4" style="color:#6b7088;font-style:italic;">Hidden for k-anonymity (n &lt; 5): 1 group</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="body">Per-subgroup mean, SD, 95% CI, and Cohen's d versus everyone else, ranked by absolute gap. K-anonymity hides rows below the privacy threshold so a department of three never appears.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 145</span></div>
+        <h3>Equity Gaps</h3>
+        <p class="question">Where are the equity gaps across the org?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot" style="background:#c8334b;"></span>Workplace Engagement Pulse</span><span>Score 43 / Large gaps</span></div>
+          <div class="tabs"><span class="tab">Subgroups</span><span class="tab is-active">Equity</span><span class="tab">Predictors</span><span class="tab">Key Drivers</span><span class="tab">+5</span></div>
+          <div class="panel">
+            <div class="panel-row">
+              <div class="ring">
+                <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#c8334b" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="143"/></svg>
+                <div class="num"><span class="n">43</span><span class="of">/ 100</span></div>
+              </div>
+              <div class="panel-body">
+                <h5>Equity Gap Score</h5>
+                <span class="pill bad">Large gaps</span>
+                <div class="read">Largest gap: tenure-band axis with Cohen's d 0.82. 5 axes analyzed; 2 subgroups hidden for privacy.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <table class="mini-table">
+              <thead><tr><th>Axis</th><th class="r">Max |d|</th><th>Verdict</th></tr></thead>
+              <tbody>
+                <tr><td>Tenure band</td><td class="r" style="color:#c8334b;">0.82</td><td><span class="pill bad" style="font-size:9px;">Large</span></td></tr>
+                <tr><td>Race / ethnicity</td><td class="r" style="color:#b07d18;">0.55</td><td><span class="pill warn" style="font-size:9px;">Meaningful</span></td></tr>
+                <tr><td>Role / level</td><td class="r" style="color:#65a30d;">0.28</td><td><span class="pill" style="font-size:9px;background:#f1f7e7;color:#3f7000;">Small</span></td></tr>
+                <tr><td>Age band</td><td class="r" style="color:#1f9d55;">0.14</td><td><span class="pill good" style="font-size:9px;">Parity</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <p class="body">Per-grouping-axis means, omnibus ANOVA, pairwise Cohen's d, and a 0-100 Equity Gap Score where 100 = parity. K-anonymity floor of 5 hides small subgroups entirely.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 68/69</span></div>
+        <h3>Predictors</h3>
+        <p class="question">What predicts this outcome?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>Outcome: Engagement</span></div>
+          <div class="tabs"><span class="tab">Equity</span><span class="tab is-active">Predictors</span><span class="tab">Key Drivers</span><span class="tab">IRT</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">Mode</div><div class="v" style="font-size:13px;">Mediation</div><div class="s">X to M to Y</div></div>
+              <div class="kpi"><div class="l">Indirect</div><div class="v warn">0.18</div><div class="s">95% CI [.07, .29]</div></div>
+              <div class="kpi"><div class="l">R²</div><div class="v">0.42</div><div class="s">OLS</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Mediation path</div>
+            <svg viewBox="0 0 220 60" style="width:100%;height:60px;">
+              <rect x="14" y="20" width="40" height="20" rx="3" fill="#eef1ff" stroke="#1F3A8A"/><text x="34" y="34" text-anchor="middle" font-size="10" fill="#1F3A8A">X</text>
+              <rect x="90" y="20" width="40" height="20" rx="3" fill="#fff3eb" stroke="#e85d3a"/><text x="110" y="34" text-anchor="middle" font-size="10" fill="#e85d3a">Manager</text>
+              <rect x="166" y="20" width="40" height="20" rx="3" fill="#ecfdf3" stroke="#1f9d55"/><text x="186" y="34" text-anchor="middle" font-size="10" fill="#1f9d55">Y</text>
+              <line x1="54" y1="30" x2="90" y2="30" stroke="#454a63" stroke-width="1.5" marker-end="url(#arr2)"/>
+              <line x1="130" y1="30" x2="166" y2="30" stroke="#454a63" stroke-width="1.5" marker-end="url(#arr2)"/>
+              <defs><marker id="arr2" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#454a63"/></marker></defs>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Three modes: Simple (OLS or logistic regression), Mediation (X to M to Y; bootstrap percentile or BCa CI on the indirect effect), Moderation (Johnson-Neyman plot). VIF flagged for multicollinearity.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 86/143</span></div>
+        <h3>Key Drivers</h3>
+        <p class="question">Which factors matter most?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>5 drivers · R² 0.48</span></div>
+          <div class="tabs"><span class="tab">Predictors</span><span class="tab is-active">Key Drivers</span><span class="tab">IRT</span><span class="tab">MLM</span><span class="tab">+4</span></div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Importance · Johnson Relative Weights</div>
+            <div class="bar-row"><span class="lab">Workload</span><span class="track"><span style="width:90%;background:#c8334b;"></span></span><span>28%</span></div>
+            <div class="bar-row"><span class="lab">Recognition</span><span class="track"><span style="width:60%;background:#b07d18;"></span></span><span>18%</span></div>
+            <div class="bar-row"><span class="lab">Manager support</span><span class="track"><span style="width:53%;background:#1F3A8A;"></span></span><span>16%</span></div>
+            <div class="bar-row"><span class="lab">Career path</span><span class="track"><span style="width:27%;background:#1F3A8A;"></span></span><span>8%</span></div>
+            <div class="bar-row"><span class="lab">Compensation</span><span class="track"><span style="width:14%;background:#cfd2dc;"></span></span><span>4%</span></div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Action Priority Map</div>
+            <svg viewBox="0 0 220 100" style="width:100%;height:100px;">
+              <rect x="10" y="8" width="200" height="84" fill="#fff" stroke="#cfd2dc"/>
+              <line x1="110" y1="8" x2="110" y2="92" stroke="#cfd2dc" stroke-dasharray="3 3"/>
+              <line x1="10" y1="50" x2="210" y2="50" stroke="#cfd2dc" stroke-dasharray="3 3"/>
+              <text x="14" y="20" font-size="8" fill="#1f9d55">Protect</text>
+              <text x="116" y="20" font-size="8" fill="#6b7088">Monitor</text>
+              <text x="14" y="88" font-size="8" fill="#c8334b">Fix First</text>
+              <text x="116" y="88" font-size="8" fill="#b07d18">Do Not Overinvest</text>
+              <circle cx="160" cy="76" r="6" fill="#c8334b"/><text x="170" y="80" font-size="9">Workload</text>
+              <circle cx="130" cy="62" r="6" fill="#c8334b"/><text x="140" y="66" font-size="9">Recog</text>
+              <circle cx="60" cy="34" r="6" fill="#1f9d55"/><text x="70" y="38" font-size="9">Manager</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Pearson r per driver, standardized regression betas, and Johnson's Relative Weights for continuous outcomes. Plus the Action Priority Map 2x2 with Fix First / Protect / Do Not Overinvest / Monitor labels.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 70/84/85</span></div>
+        <h3>Item Response Theory</h3>
+        <p class="question">How do items behave across trait levels?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Workplace Engagement Pulse</span><span>Model: Graded Response</span></div>
+          <div class="tabs"><span class="tab">Key Drivers</span><span class="tab is-active">IRT</span><span class="tab">MLM</span><span class="tab">Trends</span></div>
+          <div class="panel">
+            <div class="kpi-strip" style="grid-template-columns:repeat(3,1fr);">
+              <div class="kpi"><div class="l">Items</div><div class="v">22</div><div class="s">Likert · GRM</div></div>
+              <div class="kpi"><div class="l">Mean a</div><div class="v good">1.62</div><div class="s">discrimination</div></div>
+              <div class="kpi"><div class="l">Marginal rel</div><div class="v good">0.88</div><div class="s">at theta=0</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Item characteristic curves</div>
+            <svg viewBox="0 0 220 80" style="width:100%;height:80px;">
+              <line x1="10" y1="70" x2="210" y2="70" stroke="#cfd2dc"/>
+              <line x1="10" y1="10" x2="10" y2="70" stroke="#cfd2dc"/>
+              <path d="M10,68 Q50,56 70,40 T130,16 T210,8" fill="none" stroke="#1F3A8A" stroke-width="1.5"/>
+              <path d="M10,66 Q60,58 90,40 T140,18 T210,10" fill="none" stroke="#65a30d" stroke-width="1.5"/>
+              <path d="M10,64 Q70,60 110,44 T170,22 T210,14" fill="none" stroke="#b07d18" stroke-width="1.5"/>
+              <text x="180" y="22" font-size="8" fill="#1F3A8A">Q07</text>
+              <text x="180" y="32" font-size="8" fill="#65a30d">Q14</text>
+              <text x="180" y="42" font-size="8" fill="#b07d18">Q12</text>
+              <text x="80" y="78" font-size="8" fill="#6b7088">theta (latent trait)</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Four models from one dropdown: Graded Response (default for Likert), 2PL and 3PL for dichotomous items, two-dimensional MIRT with closed-form Varimax rotation. Test information function plus item characteristic curves.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 81/83</span></div>
+        <h3>Multilevel Model</h3>
+        <p class="question">Do nested groups change the effect?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot"></span>Belonging study, n=824</span><span>3-level · L2 ICC 0.18</span></div>
+          <div class="tabs"><span class="tab">IRT</span><span class="tab is-active">MLM</span><span class="tab">Trends</span></div>
+          <div class="panel">
+            <div class="kpi-strip">
+              <div class="kpi"><div class="l">L1 var</div><div class="v">0.62</div><div class="s">student</div></div>
+              <div class="kpi"><div class="l">L2 ICC</div><div class="v warn">0.18</div><div class="s">classroom</div></div>
+              <div class="kpi"><div class="l">L3 ICC</div><div class="v">0.09</div><div class="s">school</div></div>
+              <div class="kpi"><div class="l">LR vs OLS</div><div class="v good">p&lt;.001</div><div class="s">3-level wins</div></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:6px;">Variance decomposition</div>
+            <div class="bar-row"><span class="lab">L1: student</span><span class="track"><span style="width:73%;background:#1F3A8A;"></span></span><span>73%</span></div>
+            <div class="bar-row"><span class="lab">L2: classroom</span><span class="track"><span style="width:18%;background:#b07d18;"></span></span><span>18%</span></div>
+            <div class="bar-row"><span class="lab">L3: school</span><span class="track"><span style="width:9%;background:#6b7088;"></span></span><span>9%</span></div>
+          </div>
+        </div>
+        <p class="body">Two-level linear mixed-effects (REML / EM), two-level logistic GLMM (PQL), three-level linear. ICC at every level, Satterthwaite or Kenward-Roger df corrections, LR test against the simpler model.</p>
+      </article>
+
+      <article class="dash-card">
+        <div class="dash-card-head"><span class="pill">More analyses · Phase 142</span></div>
+        <h3>Trends</h3>
+        <p class="question">What is changing over time?</p>
+        <div class="dash-frame">
+          <div class="ctx"><span class="left"><span class="dot" style="background:#c8334b;"></span>Quarterly engagement pulse</span><span>4 waves · slipping</span></div>
+          <div class="tabs"><span class="tab">MLM</span><span class="tab is-active">Trends</span></div>
+          <div class="panel">
+            <div class="panel-row">
+              <div class="ring">
+                <svg viewBox="0 0 96 96"><circle cx="48" cy="48" r="40" fill="none" stroke="#e7e9f0" stroke-width="9"/><circle cx="48" cy="48" r="40" fill="none" stroke="#c8334b" stroke-width="9" stroke-linecap="round" stroke-dasharray="251" stroke-dashoffset="180"/></svg>
+                <div class="num"><span class="n">28</span><span class="of">/ 100</span></div>
+              </div>
+              <div class="panel-body">
+                <h5>Trend Score</h5>
+                <span class="pill bad">Trending down</span>
+                <div class="read">Composite Likert mean dropped 0.32 from Q1 to Q2 2026. Significant at p=.012.</div>
+              </div>
+            </div>
+          </div>
+          <div class="panel">
+            <div style="font-size:10px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#6b7088;margin-bottom:4px;">Composite mean by wave</div>
+            <svg viewBox="0 0 220 70" style="width:100%;height:70px;">
+              <line x1="10" y1="60" x2="210" y2="60" stroke="#cfd2dc"/>
+              <polyline fill="none" stroke="#c8334b" stroke-width="2" points="20,18 80,28 140,42 200,54"/>
+              <circle cx="20" cy="18" r="3" fill="#c8334b"/>
+              <circle cx="80" cy="28" r="3" fill="#c8334b"/>
+              <circle cx="140" cy="42" r="3" fill="#c8334b"/>
+              <circle cx="200" cy="54" r="3" fill="#c8334b"/>
+              <text x="20" y="68" text-anchor="middle" font-size="9" fill="#6b7088">Q3-25</text>
+              <text x="80" y="68" text-anchor="middle" font-size="9" fill="#6b7088">Q4-25</text>
+              <text x="140" y="68" text-anchor="middle" font-size="9" fill="#6b7088">Q1-26</text>
+              <text x="200" y="68" text-anchor="middle" font-size="9" fill="#6b7088">Q2-26</text>
+            </svg>
+          </div>
+        </div>
+        <p class="body">Wave detection from channel tags or quarterly bins. Trend Score 0-100, per-wave composite mean line, per-construct sparklines, Welch's t-test current vs prior wave.</p>
+      </article>
+
+    </div>
+
+    <div class="level-cross-links">
+      <a href="/dashboards/survey-assessment.html">
+        <span class="kicker">Previous level</span>
+        <span class="title">Survey assessment</span>
+        <span class="desc">Strength Index, Readiness, Reliability, Validity, Response Quality, Completion. The credibility-first reads.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+      <a href="/dashboards/test-analytics.html">
+        <span class="kicker">Next level</span>
+        <span class="title">Test analytics</span>
+        <span class="desc">The eight-tab classroom-test dashboard: difficulty, distractor analysis, skill rollups, item health.</span>
+        <span class="arrow">View &rarr;</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+
+
+</main>
+
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+
+</body>
+</html>

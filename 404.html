@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Page not found · ReliCheck</title>
+  <meta name="description" content="The page you're looking for couldn't be found." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<section class="hero" style="text-align:center;">
+  <div class="container-content">
+    <span class="kicker hero-eyebrow">404</span>
+    <h1 style="margin-top:var(--s-3);max-width:18ch;margin-left:auto;margin-right:auto;">This page wandered off.</h1>
+    <p class="lede" style="margin:var(--s-6) auto var(--s-8);">The link you followed may be broken, or the page may have been moved. Try the homepage, the help center, or jump to one of the highlights below.</p>
+    <div class="hero-actions" style="justify-content:center;">
+      <a href="index.html" class="btn btn-primary btn-lg">Back to home</a>
+      <a href="help.html" class="btn btn-outline btn-lg">Visit help center</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head"><span class="kicker">Popular pages</span><h2>Where you might be headed</h2></div>
+    <div class="cards-3">
+      <a class="intent" href="overview.html"><h3>Product overview</h3><p>How ReliCheck works end to end.</p><span class="arrow">Read overview →</span></a>
+      <a class="intent" href="pricing.html"><h3>Pricing</h3><p>Plans built for research teams.</p><span class="arrow">See pricing →</span></a>
+      <a class="intent" href="methodology.html"><h3>Methodology</h3><p>How we compute every reliability number.</p><span class="arrow">Read methods →</span></a>
+    </div>
+  </div>
+</section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

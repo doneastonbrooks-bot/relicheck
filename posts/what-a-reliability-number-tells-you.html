@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>What a reliability number actually tells you · ReliCheck Blog</title>
+  <meta name="description" content="An alpha of 0.85 is a useful signal, not a verdict. A short, plain-language explanation of what reliability statistics measure, what they miss, and how to read them without overclaiming." />
+  <link rel="canonical" href="https://relichecksurvey.com/posts/what-a-reliability-number-tells-you.html" />
+  <meta property="og:type" content="article" />
+  <meta property="og:title" content="What a reliability number actually tells you · ReliCheck Blog" />
+  <meta property="og:description" content="An alpha of 0.85 is a useful signal, not a verdict. A short, plain-language explanation of what reliability statistics measure, what they miss, and how to read them without overclaiming." />
+  <meta property="og:url" content="https://relichecksurvey.com/posts/what-a-reliability-number-tells-you.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="What a reliability number actually tells you · ReliCheck Blog" />
+  <meta name="twitter:description" content="An alpha of 0.85 is a useful signal, not a verdict. A short, plain-language explanation of what reliability statistics measure, what they miss, and how to read them without overclaiming." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles-2026.css?v=20260516-style" />
+  <style>
+
+    .post-hero {
+      padding: 56px 0 28px;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
+    }
+    .post-hero .container {
+      max-width: 780px;
+      text-align: left;
+    }
+    .post-hero .post-tag {
+      display: inline-block;
+      font-size:14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: #fbe7df;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .post-hero h1 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: clamp(30px, 4vw, 44px);
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      color: var(--navy);
+      margin: 0 0 18px;
+    }
+    .post-meta {
+      font-size: 13.5px;
+      color: var(--ink-3);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+    .post-meta strong { color: var(--ink); font-weight: 600; }
+
+    .post-body {
+      max-width: 720px;
+      margin: 36px auto 56px;
+      padding: 0 24px;
+    }
+    .post-body p {
+      font-size: 16.5px;
+      line-height: 1.75;
+      color: var(--ink-2);
+      margin: 0 0 18px;
+    }
+    .post-body h2 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: -0.012em;
+      color: var(--navy);
+      margin: 36px 0 10px;
+    }
+    .post-body h3 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--navy);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 26px 0 6px;
+    }
+    .post-body ul, .post-body ol {
+      font-size: 16.5px;
+      line-height: 1.7;
+      color: var(--ink-2);
+      padding-left: 24px;
+      margin: 6px 0 18px;
+    }
+    .post-body ul li, .post-body ol li { margin-bottom: 6px; }
+    .post-body blockquote {
+      margin: 18px 0;
+      padding: 12px 20px;
+      border-left: 3px solid var(--accent);
+      background: #fafbfd;
+      font-size: 16px;
+      color: var(--ink-2);
+      font-style: italic;
+    }
+    .post-body a { color: var(--accent); }
+
+    .related {
+      max-width: 1100px;
+      margin: 0 auto 80px;
+      padding: 0 24px;
+    }
+    .related h3 {
+      font-size:14px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-3);
+      margin: 0 0 16px;
+    }
+    .related-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media (max-width: 720px) { .related-grid { grid-template-columns: 1fr; } }
+    .related-card {
+      display: block;
+      background: #ffffff;
+      border: 1px solid #e3e6ee;
+      border-radius: 10px;
+      padding: 18px 20px;
+      text-decoration: none;
+      color: var(--ink);
+      transition: border-color 0.2s ease;
+    }
+    .related-card:hover { border-color: var(--accent); text-decoration: none; }
+    .related-card h4 {
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 17px;
+      color: var(--navy);
+      margin: 0 0 6px;
+    }
+    .related-card p {
+      font-size: 13.5px;
+      color: var(--ink-2);
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    .back-link {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 16px 24px 0;
+      font-size: 13.5px;
+    }
+    .back-link a {
+      color: var(--ink-3);
+      text-decoration: none;
+    }
+    .back-link a:hover { color: var(--accent); }
+  
+</style>
+</head>
+<body>
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="../index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Check a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>The results</h5>
+            <a href="../overview.html#analyze"><strong>Survey Results overview</strong><span>How the Strength Score works.</span></a>
+            <a href="../overview.html#analyze"><strong>Survey Strength Score</strong><span>One score, five checks, clear next steps.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>What ReliCheck checks</h5>
+            <a href="../reliability-guide.html"><strong>Do your questions work together?</strong><span>Reliability and item-total checks.</span></a>
+            <a href="../validity-guide.html"><strong>What is your survey really measuring?</strong><span>Factor analysis, KMO, rotation.</span></a>
+            <a href="../reliability-guide.html"><strong>Are your results strong enough?</strong><span>Response quality and missing data.</span></a>
+            <a href="../ai-features.html"><strong>What are people saying?</strong><span>Open-ended themes and quotes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>See it</h5>
+            <a class="mega-link" href="../samples.html">Sample reports</a>
+            <a class="mega-link" href="../methodology.html">Methodology</a>
+            <a class="mega-link" href="../reliability-guide.html">Reliability guide</a>
+            <a class="mega-link" href="../validity-guide.html">Validity guide</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../import-data.html" class="nav-dd-trigger ">Import Data</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Build a Survey <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>Build</h5>
+            <a href="../overview.html#build"><strong>Question types</strong><span>Likert, choice, open-ended, matrix, ranking.</span></a>
+            <a href="../ai-features.html"><strong>AI question review</strong><span>Catch double-barreled, leading, vague items.</span></a>
+            <a href="../overview.html#collect"><strong>Collect responses</strong><span>Links, email, QR, embed.</span></a>
+            <a href="../import-survey.html"><strong>Upload your survey</strong><span>Bring a survey from SurveyMonkey or Qualtrics.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Templates</h5>
+            <a href="../app.html?template=course_evaluation"><strong>Course Evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../app.html?template=student_belonging"><strong>Student Belonging</strong><span>Validated belonging and connectedness scales.</span></a>
+            <a href="../app.html?template=workplace_engagement"><strong>Employee Engagement</strong><span>Quarterly pulse and annual engagement.</span></a>
+            <a href="../app.html?template=program_evaluation"><strong>Program Evaluation</strong><span>Pre/post outcome scales for grant reporting.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Popular templates</h5>
+            <a class="mega-link" href="../app.html?template=customer_satisfaction">Customer Satisfaction</a>
+            <a class="mega-link" href="../app.html?template=climate_survey">Climate Survey</a>
+            <a class="mega-link" href="../app.html?template=training_feedback">Training Feedback</a>
+            <a class="mega-link" href="../app.html?template=community_needs">Community Needs</a>
+            <a class="mega-see-all" href="../samples.html">View all templates →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../samples.html" class="nav-dd-trigger ">Sample Reports</a>
+
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger ">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel"><div class="nav-dd-panel-inner">
+          <div class="mega-section">
+            <h5>By team</h5>
+            <a href="../education.html"><strong>Education</strong><span>Course evaluation, belonging, school climate.</span></a>
+            <a href="../hr-teams.html"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a href="../customer-feedback.html"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service feedback.</span></a>
+            <a href="../research.html"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>By use case</h5>
+            <a href="../education.html"><strong>Course evaluation</strong><span>End-of-term and mid-course feedback.</span></a>
+            <a href="../hr-teams.html"><strong>Engagement &amp; pulse</strong><span>Recurring employee surveys with k-anonymity.</span></a>
+            <a href="../program-evaluation.html"><strong>Program evaluation &amp; accreditation</strong><span>Same category, different scopes.</span></a>
+            <a href="../mixed-methods.html"><strong>Mixed-methods research</strong><span>Quantitative scales and qualitative themes.</span></a>
+          </div>
+          <div class="mega-section">
+            <h5>Other resources</h5>
+            <a class="mega-link" href="../case-studies.html">Customer stories</a>
+            <a class="mega-link" href="../compare.html">Compare</a>
+            <a class="mega-link" href="../help.html">Help center</a>
+            <a class="mega-link" href="../blog.html">Blog</a>
+            <a class="mega-see-all" href="../help.html">View all resources →</a>
+          </div>
+        </div></div>
+      </div>
+
+      <a href="../pricing.html" class="nav-dd-trigger ">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="../login.html" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="../signup.html" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Check a Survey</h5><a href="../overview.html#analyze">Survey Results overview</a><a href="../reliability-guide.html">Reliability guide</a><a href="../validity-guide.html">Validity guide</a><a href="../methodology.html">Methodology</a><a href="../samples.html">Sample reports</a></div>
+    <div class="drawer-group"><h5>Import Data</h5><a href="../import-data.html">Import results</a><a href="../import-survey.html">Upload your survey</a></div>
+    <div class="drawer-group"><h5>Build a Survey</h5><a href="../overview.html#build">Build</a><a href="../ai-features.html">AI features</a><a href="../app.html?template=course_evaluation">Course Evaluation</a><a href="../app.html?template=workplace_engagement">Employee Engagement</a><a href="../app.html?template=program_evaluation">Program Evaluation</a></div>
+    <div class="drawer-group"><h5>Sample Reports</h5><a href="../samples.html">Sample reports</a><a href="../samples/interactive-course-evaluation.html">Interactive demo</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="../education.html">Education &amp; Evaluation</a><a href="../hr-teams.html">HR &amp; Teams</a><a href="../customer-feedback.html">Customer Feedback</a><a href="../research.html">Research</a><a href="../mixed-methods.html">Mixed-Methods</a><a href="../compare.html">Compare</a><a href="../case-studies.html">Customer stories</a><a href="../help.html">Help center</a><a href="../blog.html">Blog</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="../pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="../login.html" class="btn btn-outline">Sign in</a><a href="../signup.html" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+<main>
+    <div class="back-link"><a href="../blog.html">&larr; Back to blog</a></div>
+
+    <section class="post-hero">
+      <div class="container">
+        <span class="post-tag">Reliability</span>
+        <h1>What a reliability number actually tells you (and what it doesn't)</h1>
+        <div class="post-meta">
+          <span><strong>ReliCheck C.E.O.</strong></span>
+          <span>April 15, 2026</span>
+          <span>5 min read</span>
+        </div>
+      </div>
+    </section>
+
+    <article class="post-body">
+      <p>A new survey lands in front of you. The reliability tile reads <strong>α = 0.85</strong>, color-coded green. The instinct is to relax. Reliability is "good," so the scale is fine, the data is fine, and the analysis can move on to the interesting parts.</p>
+      <p>It is the right instinct, partly. An alpha of 0.85 is a useful signal. It is not a verdict. The number answers a specific, narrow question, and a lot of decisions depend on understanding which question that is.</p>
+
+      <h2>The narrow question alpha answers</h2>
+      <p>Cronbach's alpha (and split-half reliability, and most of the close cousins ReliCheck reports) measures one thing: how consistently the items in a scale move together within a single administration. When all six items on a "team trust" scale tend to be answered similarly by the same respondent, the scale is internally consistent. When responses to those six items look unrelated, the scale is not.</p>
+      <p>That property matters. A scale that is not internally consistent cannot be averaged into a meaningful composite, because there is no underlying signal for the average to be averaging. So a low alpha is a real warning. A high alpha says you have cleared that bar.</p>
+
+      <h2>Three things alpha does not tell you</h2>
+
+      <h3>1. Whether the scale measures the right construct</h3>
+      <p>A high alpha says items hang together. It does not say what they hang together <em>around</em>. A six-item scale labeled "engagement" can produce alpha = 0.91 while actually measuring "how much I like my manager." The label on the scale is a hypothesis. The reliability statistic does not test that hypothesis.</p>
+      <p>Construct validity, the question of whether a score reflects what the name claims, is built up from separate evidence: correlations with related and unrelated measures, expert review, and predictive checks against outcomes. Reliability sits underneath those tests. It does not replace them.</p>
+
+      <h3>2. Whether the scale is unidimensional</h3>
+      <p>Alpha can stay respectable even when a scale is measuring two correlated things at once. A "wellbeing" scale that mixes physical and emotional items can produce alpha = 0.82 simply because the two facets are positively related. Summing them into one score then loses information that mattered.</p>
+      <p>The fix is to look at the inter-item correlation matrix and the KMO statistic alongside alpha. When unidimensionality matters (it usually does for a single composite score), no single number tells you the answer.</p>
+
+      <h3>3. Whether the score will replicate</h3>
+      <p>An alpha computed on 25 respondents is a reliability <em>estimate</em>, not a reliability <em>fact</em>. The same scale could plausibly come back at 0.62 or 0.91 in the next sample of 25. Below about 100 respondents, treat reliability numbers as preliminary and report them with the sample size attached. Above 100, the estimate stabilizes. Above 300, it is roughly trustworthy as a property of the scale in that population.</p>
+      <p>Treat reliability as transferable, never as portable. An instrument that produced alpha = 0.88 with full-time employees may produce 0.65 with contract workers or 0.71 with a translated version. Reliability is a property of scores in a sample, not a property of the instrument in the abstract.</p>
+
+      <h2>How to read a reliability number well</h2>
+      <ol>
+        <li><strong>Note the value and the sample size in the same breath.</strong> "Alpha = 0.85, n = 142" reads differently than "Alpha = 0.85, n = 22."</li>
+        <li><strong>Check item-total correlations next.</strong> A high alpha with one weak or negatively correlated item often means the alpha is being held up by everything except that item, which is worth knowing.</li>
+        <li><strong>Look at the inter-item correlation matrix.</strong> Healthy single-construct scales show correlations roughly in the 0.30 to 0.70 range. Anything tightly above 0.85 across the matrix suggests redundancy, not consistency.</li>
+        <li><strong>Pair reliability with at least one validity check before claiming the scale measures what its name says.</strong> Convergent or criterion correlations from a pilot are usually enough.</li>
+      </ol>
+
+      <h2>The bottom line</h2>
+      <p>Reliability is a useful, narrow check. A high reliability number rules out one specific kind of bad scale (one that is not measuring anything consistently). It does not rule out the other kinds: scales measuring the wrong construct, scales secretly measuring two things at once, or scales whose nice numbers came from a sample too small to generalize from.</p>
+      <p>For the longer treatment of every flavor of reliability and validity, see the <a href="../reliability-guide.html">Reliability guide</a>. For the formulas behind the numbers, the <a href="../methodology.html">Methodology page</a>.</p>
+    </article>
+
+    <section class="related">
+      <h3>Related posts</h3>
+      <div class="related-grid">
+        <a class="related-card" href="five-survey-design-mistakes.html">
+          <h4>Five survey design mistakes that quietly distort your results</h4>
+          <p>The patterns that look harmless on the page but reliably skew the numbers.</p>
+        </a>
+        <a class="related-card" href="reading-your-first-relicheck-report.html">
+          <h4>Reading your first ReliCheck report</h4>
+          <p>A guided tour through the alpha tile, the heatmap, and the item-total table.</p>
+        </a>
+      </div>
+    </section>
+  </main>
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="../index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="../overview.html">Overview</a></li><li><a href="../ai-features.html">AI features</a></li><li><a href="../pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="../education.html">Education</a></li><li><a href="../hr-teams.html">HR &amp; Teams</a></li><li><a href="../customer-feedback.html">Customer feedback</a></li><li><a href="../research.html">Research</a></li></ul></div>
+      <div><h4>Learn</h4><ul><li><a href="../methodology.html">Methodology</a></li><li><a href="../reliability-guide.html">Reliability guide</a></li><li><a href="../validity-guide.html">Validity guide</a></li><li><a href="../compare.html">Compare</a></li><li><a href="../help.html">Help center</a></li><li><a href="../blog.html">Blog</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="../about.html">About</a></li><li><a href="../privacy.html">Privacy</a></li><li><a href="../terms.html">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+        header.classList.add('is-mega-open');
+      } else {
+        timer = setTimeout(() => {
+          dd.removeAttribute('data-open');
+          if (!document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+        }, 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  if (toggle) toggle.addEventListener('click', () => { const open = drawer.classList.toggle('is-open'); drawer.setAttribute('aria-hidden', String(!open)); document.body.style.overflow = open ? 'hidden' : ''; });
+</script>
+
+</body>
+</html>

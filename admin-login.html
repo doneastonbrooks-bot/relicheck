@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Admin sign in · ReliCheck</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #0b1733, #1c2f5e);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #fff;
+    }
+    .card {
+      background: #fff;
+      color: #0b1733;
+      border-radius: 14px;
+      box-shadow: 0 24px 56px rgba(11,23,51,0.30), 0 8px 20px rgba(11,23,51,0.18);
+      padding: 36px 40px;
+      max-width: 400px;
+      width: 100%;
+    }
+    .logo { height: 30px; margin-bottom: 18px; }
+    .tag {
+      display: inline-block;
+      background: #fff1ec; color: #cc4a2a;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+    .lede { color: #4a5578; font-size: 14px; margin: 0 0 22px; }
+    label.field { display: block; margin-bottom: 14px; }
+    label.field .lab {
+      display: block; font-size: 12px; font-weight: 600;
+      color: #6b7691; letter-spacing: 0.04em;
+      text-transform: uppercase; margin-bottom: 5px;
+    }
+    label.field input {
+      width: 100%; padding: 10px 12px; border: 1px solid #d3d9e6;
+      border-radius: 7px; font-size: 14px; color: #0b1733; background: #fff;
+    }
+    label.field input:focus { outline: 0; border-color: #e85d3a; box-shadow: 0 0 0 3px rgba(232,93,58,0.12); }
+    .btn {
+      width: 100%; padding: 11px; font-size: 14px; font-weight: 600;
+      border-radius: 8px; border: 0;
+      background: #e85d3a; color: #fff;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .btn:hover { background: #cc4a2a; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .status {
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      margin-bottom: 16px;
+      line-height: 1.5;
+      display: none;
+    }
+    .status.error { background: #fbe9e9; color: #c83333; border: 1px solid #f4cccc; }
+    .meta {
+      font-size: 12px; color: #6b7691; margin-top: 18px;
+    }
+    .meta a { color: #e85d3a; text-decoration: none; }
+    .meta a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card" id="step1">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Admin sign in</div>
+    <h1>Sign in to admin</h1>
+    <p class="lede">This is the staff/admin panel. For your customer account, use <a href="/login.html" style="color:#e85d3a;">/login.html</a> instead.</p>
+    <div class="status error" id="errBox"></div>
+    <form id="loginForm">
+      <label class="field"><span class="lab">Admin email</span><input type="email" id="email" autocomplete="username" required></label>
+      <label class="field"><span class="lab">Admin password</span><input type="password" id="password" autocomplete="current-password" required></label>
+      <button class="btn" id="submitBtn" type="submit">Sign in to admin</button>
+    </form>
+    <p class="meta">
+      <a href="#" id="forgotLink" style="color:#e85d3a;">Forgot your admin password?</a> · Customer-side password reset doesn't apply here.
+    </p>
+  </div>
+
+  <!-- Forgot password panel — opens in place when the link is clicked. -->
+  <div class="card" id="forgotCard" style="display:none;">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Reset admin password</div>
+    <h1>Reset your admin password</h1>
+    <p class="lede">Enter your admin email. We'll send a reset link from <strong>hr@relichecksurvey.com</strong> if that email is registered as admin staff.</p>
+    <div class="status error"   id="forgotErr" style="display:none;"></div>
+    <div class="status success" id="forgotOk"  style="display:none;"></div>
+    <form id="forgotForm">
+      <label class="field"><span class="lab">Admin email</span><input type="email" id="forgotEmail" autocomplete="username" required></label>
+      <button class="btn" id="forgotBtn" type="submit">Send reset link</button>
+    </form>
+    <p class="meta">
+      <a href="#" id="backToLoginLink" style="color:#e85d3a;">← Back to sign in</a>
+      · If you have 2FA enabled, you'll still need your authenticator code on the next sign-in. Resetting the password does NOT disable 2FA.
+    </p>
+  </div>
+
+  <!-- Step 2: 2FA code prompt (already enrolled). Shown by JS when login.php returns next='verify_2fa'. -->
+  <div class="card" id="step2_verify" style="display:none;">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Two-factor verification</div>
+    <h1>Enter your code</h1>
+    <p class="lede">Open your authenticator app (Google Authenticator, Authy, 1Password, etc.) and enter the current 6-digit code for ReliCheck Admin.</p>
+    <div class="status error" id="verifyErr" style="display:none;"></div>
+    <form id="verifyForm">
+      <label class="field"><span class="lab">6-digit code</span><input type="text" id="verifyCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;letter-spacing:0.2em;text-align:center;"></label>
+      <button class="btn" id="verifyBtn" type="submit">Verify and sign in</button>
+    </form>
+    <p class="meta">Lost access to your authenticator? Contact the owner to reset your 2FA enrollment.</p>
+  </div>
+
+  <!-- Step 2: First-time 2FA setup. Shown when login.php returns next='setup_2fa'. -->
+  <div class="card" id="step2_setup" style="display:none;max-width:500px;">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Set up two-factor</div>
+    <h1>Enable two-factor authentication</h1>
+    <p class="lede">Your account requires 2FA. Scan the QR code below with your authenticator app, then enter the first code it shows.</p>
+    <div class="status error" id="setupErr" style="display:none;"></div>
+    <div id="qrBox" style="display:flex;justify-content:center;margin:14px 0 6px;"></div>
+    <p style="text-align:center;font-size:12px;color:#6b7691;margin:0 0 14px;">Or enter this secret manually: <code id="secretText" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;background:#f5f7fb;padding:3px 8px;border-radius:4px;"></code></p>
+    <form id="setupForm">
+      <label class="field"><span class="lab">First 6-digit code from your app</span><input type="text" id="setupCode" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:18px;letter-spacing:0.2em;text-align:center;"></label>
+      <button class="btn" id="setupBtn" type="submit">Enable 2FA and sign in</button>
+    </form>
+    <p class="meta">Recommended apps: Google Authenticator, Authy, 1Password, Microsoft Authenticator.</p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const errBox    = document.getElementById('errBox');
+    const submitBtn = document.getElementById('submitBtn');
+    const showErr   = (msg) => { errBox.textContent = msg; errBox.style.display = 'block'; };
+    const showStep  = (id) => {
+      ['step1','step2_verify','step2_setup','forgotCard'].forEach(s => {
+        document.getElementById(s).style.display = (s === id) ? '' : 'none';
+      });
+    };
+
+    document.getElementById('forgotLink').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      showStep('forgotCard');
+      // Pre-fill from the sign-in form if there's a value there.
+      const seed = document.getElementById('email').value.trim();
+      if (seed) document.getElementById('forgotEmail').value = seed;
+      setTimeout(() => document.getElementById('forgotEmail').focus(), 30);
+    });
+
+    document.getElementById('backToLoginLink').addEventListener('click', (ev) => {
+      ev.preventDefault();
+      showStep('step1');
+    });
+
+    document.getElementById('forgotForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const errEl = document.getElementById('forgotErr');
+      const okEl  = document.getElementById('forgotOk');
+      errEl.style.display = 'none';
+      okEl.style.display  = 'none';
+      const btn = document.getElementById('forgotBtn');
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const email = document.getElementById('forgotEmail').value.trim().toLowerCase();
+        const res = await fetch('/api/admin/auth/forgot.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) {
+          okEl.textContent = data.message || 'If an admin account exists for that email, a reset link has been sent.';
+          okEl.style.display = 'block';
+        } else {
+          errEl.textContent = data.message || ('Could not send reset (HTTP ' + res.status + ').');
+          errEl.style.display = 'block';
+        }
+      } catch (_) {
+        errEl.textContent = 'Could not reach the server. Try again.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Send reset link';
+      }
+    });
+
+    function safeNext() {
+      const params = new URLSearchParams(window.location.search);
+      const n = params.get('next') || '/admin.html';
+      return /^\/[A-Za-z0-9_\-./?=&%]*$/.test(n) ? n : '/admin.html';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      errBox.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Signing in…';
+      const email    = document.getElementById('email').value.trim().toLowerCase();
+      const password = document.getElementById('password').value;
+      try {
+        const res = await fetch('/api/admin/auth/login.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password }),
+        });
+        let data = {};
+        try { data = await res.json(); } catch (_) {}
+        if (!res.ok || !data.ok) {
+          showErr(data.message || ('Sign-in failed (HTTP ' + res.status + ').'));
+          return;
+        }
+        if (data.next === 'panel') {
+          window.location.href = safeNext();
+          return;
+        }
+        if (data.next === 'verify_2fa') {
+          showStep('step2_verify');
+          setTimeout(() => document.getElementById('verifyCode').focus(), 30);
+          return;
+        }
+        if (data.next === 'setup_2fa') {
+          document.getElementById('secretText').textContent = data.secret || '';
+          // Render the otpauth URL as a QR code with qrcodejs.
+          try {
+            new QRCode(document.getElementById('qrBox'), {
+              text: data.otpauth_url,
+              width: 180, height: 180,
+              correctLevel: QRCode.CorrectLevel.M,
+            });
+          } catch (e) {
+            // QR lib didn't load — secret text below is the fallback.
+            document.getElementById('qrBox').textContent = '(QR could not be rendered; enter the secret manually)';
+          }
+          showStep('step2_setup');
+          setTimeout(() => document.getElementById('setupCode').focus(), 30);
+          return;
+        }
+        // Unknown next; just send them on.
+        window.location.href = safeNext();
+      } catch (e) {
+        showErr('Could not reach the server. Try again.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Sign in to admin';
+      }
+    });
+
+    document.getElementById('verifyForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const errEl = document.getElementById('verifyErr');
+      errEl.style.display = 'none';
+      const btn = document.getElementById('verifyBtn');
+      btn.disabled = true; btn.textContent = 'Verifying…';
+      try {
+        const code = document.getElementById('verifyCode').value.trim();
+        const res = await fetch('/api/admin/auth/2fa/verify.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) { window.location.href = safeNext(); return; }
+        errEl.textContent = data.message || ('Verification failed (HTTP ' + res.status + ').');
+        errEl.style.display = 'block';
+      } catch (_) {
+        errEl.textContent = 'Could not reach the server. Try again.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Verify and sign in';
+      }
+    });
+
+    document.getElementById('setupForm').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const errEl = document.getElementById('setupErr');
+      errEl.style.display = 'none';
+      const btn = document.getElementById('setupBtn');
+      btn.disabled = true; btn.textContent = 'Confirming…';
+      try {
+        const code = document.getElementById('setupCode').value.trim();
+        const res = await fetch('/api/admin/auth/2fa/setup_confirm.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code }),
+        });
+        const data = await res.json();
+        if (res.ok && data.ok) { window.location.href = safeNext(); return; }
+        errEl.textContent = data.message || ('Setup failed (HTTP ' + res.status + ').');
+        errEl.style.display = 'block';
+      } catch (_) {
+        errEl.textContent = 'Could not reach the server. Try again.';
+        errEl.style.display = 'block';
+      } finally {
+        btn.disabled = false; btn.textContent = 'Enable 2FA and sign in';
+      }
+    });
+  </script>
+</body>
+</html>

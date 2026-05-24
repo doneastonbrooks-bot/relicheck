@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pricing · ReliCheck</title>
+  <meta name="description" content="Plans built for research teams: Free, Researcher, Professional, Business. All include reliability statistics and exports." />
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="preview-banner">Preview build, not yet live. <a href="index.html">Home</a> · <a href="education.html">Education</a> · <a href="reliability-guide.html">Reliability guide</a> · <a href="compare.html">Compare</a> · <a href="methodology.html">Methodology</a> · <a href="app.html">App</a></div>
+
+<header class="site-header" id="siteHeader">
+  <div class="container-app site-header-inner">
+    <a href="index.html" class="brand brand-image" aria-label="ReliCheck home"><img src="../logo-brand.svg" alt="ReliCheck" /></a>
+    <nav class="nav-primary" aria-label="Primary">
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Product <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide" role="menu">
+          <div class="nav-dd-grid">
+            <a class="nav-dd-item" href="#"><strong>Build</strong><span>Question types, logic, branding, templates.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Collect</strong><span>Public links, email, QR, embeds.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Analyze</strong><span>Reliability and item flags.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Report</strong><span>PDF, Excel, SPSS, Sheets, Drive.</span></a>
+            <a class="nav-dd-item" href="#"><strong>AI features</strong><span>Question review, themes, summaries.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Why reliability matters</strong><span>The case for evidence-driven surveys.</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Solutions <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel is-wide" role="menu">
+          <div class="nav-dd-grid">
+            <a class="nav-dd-item" href="education.html"><strong>Education &amp; Evaluation</strong><span>Course feedback, accreditation, climate.</span></a>
+            <a class="nav-dd-item" href="#"><strong>HR &amp; Teams</strong><span>Engagement, onboarding, exit, climate.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Customer Feedback</strong><span>CSAT, NPS, product, service.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Research</strong><span>Validated scales, manuscript exports.</span></a>
+            <a class="nav-dd-item" href="#"><strong>Mixed-Methods</strong><span>Quant scales and qual themes.</span></a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Templates <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel" role="menu"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="#">Course Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Student Belonging</a>
+          <a class="nav-dd-item compact" href="#">Employee Engagement</a>
+          <a class="nav-dd-item compact" href="#">Program Evaluation</a>
+          <a class="nav-dd-item compact" href="#">Customer Satisfaction</a>
+          <a class="nav-dd-item compact" href="#">Climate Survey</a>
+        </div></div>
+      </div>
+      <div class="nav-dd" data-dd>
+        <button class="nav-dd-trigger" aria-haspopup="true" aria-expanded="false">Resources <span class="nav-caret">▾</span></button>
+        <div class="nav-dd-panel" role="menu"><div class="nav-dd-list">
+          <a class="nav-dd-item compact" href="compare.html">Compare</a>
+          <a class="nav-dd-item compact" href="methodology.html">Methodology</a>
+          <a class="nav-dd-item compact" href="reliability-guide.html">Reliability guide</a>
+          <a class="nav-dd-item compact" href="#">Help center</a>
+          <a class="nav-dd-item compact" href="#">Blog</a>
+        </div></div>
+      </div>
+      <a href="pricing.html" class="nav-dd-trigger" style="color:var(--ink-9);background:var(--bg-soft);">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="#login" class="btn btn-ghost btn-sm">Sign in</a>
+      <a href="#signup" class="btn btn-primary btn-sm">Get started</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="nav-drawer" id="navDrawer" aria-hidden="true">
+    <div class="drawer-group"><h5>Product</h5><a href="#">Build</a><a href="#">Collect</a><a href="#">Analyze</a><a href="#">Report</a><a href="#">AI features</a></div>
+    <div class="drawer-group"><h5>Solutions</h5><a href="education.html">Education</a><a href="#">HR &amp; Teams</a><a href="#">Customer Feedback</a><a href="#">Research</a></div>
+    <div class="drawer-group"><h5>Resources</h5><a href="compare.html">Compare</a><a href="methodology.html">Methodology</a><a href="reliability-guide.html">Reliability guide</a></div>
+    <div class="drawer-group"><h5>Plans</h5><a href="pricing.html">Pricing</a></div>
+    <div class="drawer-cta"><a href="#login" class="btn btn-outline">Sign in</a><a href="#signup" class="btn btn-primary">Get started</a></div>
+  </div>
+</header>
+
+<header class="article-header">
+  <div class="container-content" style="text-align:center;">
+    <span class="kicker">Pricing</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:18ch;">Plans built for research teams</h1>
+    <p class="lede" style="margin:0 auto;">Start free. Upgrade when you need more responses, more team seats, or features like API access. Reliability checks and all exports are included from day one.</p>
+    <div style="margin-top:var(--s-8);display:flex;justify-content:center;">
+      <div class="price-toggle" role="tablist">
+        <button class="is-active" data-billing="monthly" type="button">Monthly</button>
+        <button data-billing="annual" type="button">Annual <span style="color:var(--accent);font-weight:700;margin-left:4px;">-17%</span></button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="container-content">
+    <div class="price-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount"><span class="num">$0</span><span class="per">forever</span></div>
+        <p class="price-blurb">For getting a feel of the platform and small classroom use.</p>
+        <ul class="price-list">
+          <li>1 active survey</li>
+          <li>50 responses per survey</li>
+          <li>1 dataset upload, 200 rows</li>
+          <li>All reliability statistics</li>
+          <li>CSV / Excel / SPSS / PDF exports</li>
+          <li class="dim">Watermark on PDF / Word reports</li>
+        </ul>
+        <a href="#signup" class="btn btn-outline">Start free</a>
+      </div>
+
+      <div class="price-card is-featured">
+        <div class="price-tier">Researcher</div>
+        <div class="price-amount"><span class="num" data-monthly="$19" data-annual="$15.83">$19</span><span class="per" data-monthly="/month" data-annual="/mo, billed annually">/month</span></div>
+        <p class="price-blurb">Individual academics, grad students, solo consultants.</p>
+        <ul class="price-list">
+          <li>Unlimited surveys</li>
+          <li>5,000 responses per survey</li>
+          <li>Unlimited datasets, 5,000 rows each</li>
+          <li>All exports unwatermarked</li>
+          <li>Skip logic / branching</li>
+          <li>Custom thank-you message</li>
+          <li>Priority email support</li>
+        </ul>
+        <a href="#" class="btn btn-primary">Choose Researcher</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Professional</div>
+        <div class="price-amount"><span class="num" data-monthly="$49" data-annual="$40.83">$49</span><span class="per" data-monthly="/month" data-annual="/mo, billed annually">/month</span></div>
+        <p class="price-blurb">Practitioners and small consultancies running multiple studies.</p>
+        <ul class="price-list">
+          <li>Everything in Researcher</li>
+          <li>25,000 responses per survey</li>
+          <li>25,000 rows per dataset</li>
+          <li>3-seat team sharing</li>
+          <li>ReliCheck branding removed</li>
+        </ul>
+        <a href="#" class="btn btn-outline">Choose Professional</a>
+      </div>
+
+      <div class="price-card">
+        <div class="price-tier">Business</div>
+        <div class="price-amount"><span class="num" data-monthly="$99" data-annual="$82.50">$99</span><span class="per" data-monthly="/month" data-annual="/mo, billed annually">/month</span></div>
+        <p class="price-blurb">Departments, agencies, and institutions running large studies.</p>
+        <ul class="price-list">
+          <li>Everything in Professional</li>
+          <li>100,000 responses per survey</li>
+          <li>10-seat team sharing</li>
+          <li>API access</li>
+          <li>Custom domain support</li>
+          <li>Video-call onboarding</li>
+        </ul>
+        <a href="#" class="btn btn-outline">Choose Business</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Detailed comparison -->
+<section class="section section-soft">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">Side by side</span>
+      <h2>Detailed comparison</h2>
+      <p>What's included in each plan, line by line.</p>
+    </div>
+    <table class="compare-table">
+      <thead>
+        <tr><th></th><th class="tier-cell">Free</th><th class="tier-cell">Researcher</th><th class="tier-cell">Professional</th><th class="tier-cell">Business</th></tr>
+      </thead>
+      <tbody>
+        <tr class="group-row"><td colspan="5">Limits</td></tr>
+        <tr><td>Active surveys</td><td class="tier-cell">1</td><td class="tier-cell">Unlimited</td><td class="tier-cell">Unlimited</td><td class="tier-cell">Unlimited</td></tr>
+        <tr><td>Responses per survey</td><td class="tier-cell">50</td><td class="tier-cell">5,000</td><td class="tier-cell">25,000</td><td class="tier-cell">100,000</td></tr>
+        <tr><td>Dataset uploads</td><td class="tier-cell">1</td><td class="tier-cell">Unlimited</td><td class="tier-cell">Unlimited</td><td class="tier-cell">Unlimited</td></tr>
+        <tr><td>Rows per dataset</td><td class="tier-cell">200</td><td class="tier-cell">5,000</td><td class="tier-cell">25,000</td><td class="tier-cell">50,000</td></tr>
+        <tr><td>Questions per survey</td><td class="tier-cell">25</td><td class="tier-cell">100</td><td class="tier-cell">200</td><td class="tier-cell">500</td></tr>
+
+        <tr class="group-row"><td colspan="5">Analysis</td></tr>
+        <tr><td>Reliability &amp; quality checks</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+        <tr><td>CSV / Excel / SPSS exports</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+        <tr><td>PDF / Word reports</td><td class="tier-cell">Watermarked</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+
+        <tr class="group-row"><td colspan="5">Survey building</td></tr>
+        <tr><td>Custom thank-you message</td><td class="tier-cell">—</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+        <tr><td>Skip logic / branching</td><td class="tier-cell">—</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+        <tr><td>ReliCheck branding removed</td><td class="tier-cell">—</td><td class="tier-cell">—</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+
+        <tr class="group-row"><td colspan="5">Collaboration &amp; integrations</td></tr>
+        <tr><td>Team seats</td><td class="tier-cell">1</td><td class="tier-cell">1</td><td class="tier-cell">3</td><td class="tier-cell">10</td></tr>
+        <tr><td>Google Sheets export &amp; Drive upload</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td><td class="tier-cell">✓</td></tr>
+        <tr><td>API access</td><td class="tier-cell">—</td><td class="tier-cell">—</td><td class="tier-cell">—</td><td class="tier-cell">✓</td></tr>
+        <tr><td>Custom domain</td><td class="tier-cell">—</td><td class="tier-cell">—</td><td class="tier-cell">—</td><td class="tier-cell">✓</td></tr>
+        <tr><td>Support</td><td class="tier-cell">Community</td><td class="tier-cell">Priority email</td><td class="tier-cell">Priority email</td><td class="tier-cell">Email + onboarding</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">FAQ</span>
+      <h2>Common questions</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary>Can I change plans later?</summary>
+        <p>Yes. Upgrades take effect immediately and you're prorated for the rest of the billing period. Downgrades take effect at the end of your current period.</p>
+      </details>
+      <details>
+        <summary>Is there an academic or nonprofit discount?</summary>
+        <p>Researcher pricing already reflects an academic-friendly rate. For department-wide or nonprofit licensing, contact us and we'll work out a fit.</p>
+      </details>
+      <details>
+        <summary>What happens to my surveys if I downgrade?</summary>
+        <p>Your data stays. Surveys above your new plan's limits move to read-only until you upgrade or remove them. Reports remain accessible at all times.</p>
+      </details>
+      <details>
+        <summary>Do you offer a free trial of paid features?</summary>
+        <p>Sign up free and try the Researcher tier with a promo code. We give every new account 30 days of Researcher-tier access on request, no credit card required.</p>
+      </details>
+      <details>
+        <summary>Can I pay annually?</summary>
+        <p>Yes. Annual billing saves about 17% across all paid plans. Toggle the switch above the price grid to see annual rates.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cta-band">
+      <h2>Start free. Upgrade when your numbers need to defend themselves.</h2>
+      <p>Every plan includes the reliability checks, exports, and AI features your reports rely on. Pick a plan that matches the size of your work.</p>
+      <div class="hero-actions">
+        <a href="#signup" class="btn btn-primary btn-lg">Create a free account</a>
+        <a href="compare.html" class="btn btn-outline btn-lg">Compare with SurveyMonkey &amp; Qualtrics</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container-content">
+    <div class="footer-grid">
+      <div>
+        <a href="index.html" class="brand brand-image" style="color:#fff;"><img src="../logo-brand-white.svg" alt="ReliCheck" /></a>
+        <p style="color:rgba(255,255,255,0.65);font-size:14px;margin-top:16px;max-width:280px;">Evidence-driven survey software for research, education, HR, and customer experience teams.</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="#">Overview</a></li><li><a href="#">AI features</a></li><li><a href="pricing.html">Pricing</a></li></ul></div>
+      <div><h4>Solutions</h4><ul><li><a href="education.html">Education</a></li><li><a href="#">HR &amp; Teams</a></li><li><a href="#">Customer feedback</a></li></ul></div>
+      <div><h4>Resources</h4><ul><li><a href="methodology.html">Methodology</a></li><li><a href="reliability-guide.html">Reliability guide</a></li><li><a href="compare.html">Compare</a></li></ul></div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Privacy</a></li><li><a href="#">Terms</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><span>© 2026 ReliCheck Survey. All rights reserved.</span><span>Made for teams that need to explain their numbers.</span></div>
+  </div>
+</footer>
+
+<script>
+  const header = document.getElementById('siteHeader');
+  document.addEventListener('scroll', () => header.classList.toggle('is-scrolled', window.scrollY > 6), { passive: true });
+  document.querySelectorAll('.nav-dd').forEach(dd => {
+    const trigger = dd.querySelector('.nav-dd-trigger');
+    let timer;
+    const open = (s) => {
+      clearTimeout(timer);
+      if (s) {
+        document.querySelectorAll('.nav-dd[data-open="true"]').forEach(o => { if (o !== dd) o.removeAttribute('data-open'); });
+        dd.setAttribute('data-open', 'true');
+      } else {
+        timer = setTimeout(() => dd.removeAttribute('data-open'), 120);
+      }
+    };
+    dd.addEventListener('mouseenter', () => open(true));
+    dd.addEventListener('mouseleave', () => open(false));
+    trigger.addEventListener('click', (e) => { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+  });
+  const toggle = document.getElementById('navToggle');
+  const drawer = document.getElementById('navDrawer');
+  toggle.addEventListener('click', () => {
+    const open = drawer.classList.toggle('is-open');
+    drawer.setAttribute('aria-hidden', String(!open));
+    document.body.style.overflow = open ? 'hidden' : '';
+  });
+
+  // Annual / monthly toggle
+  document.querySelectorAll('.price-toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.price-toggle button').forEach(b => b.classList.toggle('is-active', b === btn));
+      const mode = btn.dataset.billing;
+      document.querySelectorAll('.price-amount [data-' + mode + ']').forEach(el => {
+        el.textContent = el.dataset[mode];
+      });
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+# Secrets — NEVER commit
+# Convention: underscore-prefixed _config.php contains credentials.
+# Non-underscored config.php files (like api/reminders/config.php) are
+# application code and ARE tracked.
+api/_config.php
+**/_config.php
+**/*.env
+**/*.env.*
+
+# macOS
+.DS_Store
+._*
+
+# Microsoft Office lock files
+~$*
+
+# Editor backups / temp files
+.bak-*
+.tmp-*
+*.bak
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# PHP opcache
+.opcache/
+
+# Node (if ever added)
+node_modules/
+
+# OS junk
+Thumbs.db
+
+# Built artifacts
+*.zip
+*.tar.gz
+
+# Ionos automatic upload metadata
+.ftpquota

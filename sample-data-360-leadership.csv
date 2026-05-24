@@ -1,0 +1,51 @@
+subject_id,subject_name,subject_role,rater_id,rater_name,rater_relationship,COMM1,COMM2,COMM3,COACH1,COACH2,COACH3,DEC1,DEC2,DEC3,INC1,INC2,INC3,STRENGTHS,DEVELOPMENT
+S001,Alex Rivera,Director of Operations,R000,Alex Rivera,self,4,4,4,3,3,2,4,4,4,4,4,5,,
+S001,Alex Rivera,Director of Operations,R001,Riley Brown,peer,5,5,4,3,3,3,4,3,5,5,4,4,Decisive when the situation calls for it.,Could be more transparent about strategic uncertainty.
+S001,Alex Rivera,Director of Operations,R002,Devon Carter,peer,5,4,5,4,3,4,4,4,5,4,5,4,Quickly aligns the team on priorities.,Meeting cadence sometimes overwhelms the calendar.
+S001,Alex Rivera,Director of Operations,R003,Quinn Davis,peer,4,4,4,3,4,3,4,5,4,5,4,4,Calm in moments where the team needs steadiness.,Could push back on leadership more visibly when warranted.
+S001,Alex Rivera,Director of Operations,R004,Avery Edwards,peer,5,4,5,3,3,4,4,5,3,5,4,4,Resilient under organizational change.,Leans on a few trusted voices; others can feel less heard.
+S001,Alex Rivera,Director of Operations,R005,Reese Foster,direct_report,3,4,4,3,3,3,4,4,4,3,3,5,Resilient under organizational change.,Hard on themselves when things slip; can pull back from the team.
+S001,Alex Rivera,Director of Operations,R006,Cameron Garcia,direct_report,4,4,4,2,3,4,3,4,5,4,4,4,Quickly aligns the team on priorities.,Coaching time has gotten thinner as the team grew.
+S001,Alex Rivera,Director of Operations,R007,Skyler Hall,direct_report,4,4,5,4,3,2,4,4,5,4,4,4,Models the behavior they expect from others.,Sometimes moves faster than the team can absorb.
+S001,Alex Rivera,Director of Operations,R008,Hayden Iyer,direct_report,4,4,4,2,2,3,4,3,4,5,4,4,Calm in moments where the team needs steadiness.,Coaching time has gotten thinner as the team grew.
+S001,Alex Rivera,Director of Operations,R009,Logan Jones,manager,5,4,4,3,2,3,4,3,4,4,3,4,"Coaches by asking questions, not by directing.",Feedback is too gentle. Hard to know where you stand.
+S002,Jordan Kim,"Senior Manager, Engineering",R010,Jordan Kim,self,3,4,5,3,4,4,5,5,5,3,2,4,,
+S002,Jordan Kim,"Senior Manager, Engineering",R011,Bailey Lopez,peer,3,3,5,4,4,4,5,5,3,3,3,2,Quickly aligns the team on priorities.,Could delegate more rather than holding everything personally.
+S002,Jordan Kim,"Senior Manager, Engineering",R012,Charlie Martinez,peer,4,4,5,4,3,4,5,4,5,3,3,3,Holds high standards without making people defensive.,
+S002,Jordan Kim,"Senior Manager, Engineering",R013,Jamie Nguyen,peer,3,4,4,4,3,3,5,5,3,3,3,3,"Deeply caring leader, always available when it matters.",Sometimes moves faster than the team can absorb.
+S002,Jordan Kim,"Senior Manager, Engineering",R014,Sage Olsen,peer,4,4,5,4,3,3,4,4,5,3,3,4,Calm in moments where the team needs steadiness.,Coaching time has gotten thinner as the team grew.
+S002,Jordan Kim,"Senior Manager, Engineering",R015,Rowan Patel,direct_report,3,5,4,4,4,3,4,5,5,2,4,4,Holds high standards without making people defensive.,Hard on themselves when things slip; can pull back from the team.
+S002,Jordan Kim,"Senior Manager, Engineering",R016,Emerson Quinn,direct_report,5,4,5,3,3,2,5,5,4,3,3,3,Calm in moments where the team needs steadiness.,Hard on themselves when things slip; can pull back from the team.
+S002,Jordan Kim,"Senior Manager, Engineering",R017,Phoenix Rivera,direct_report,4,5,5,4,4,4,5,4,4,3,4,4,Holds high standards without making people defensive.,Decision-making could include more frontline perspectives.
+S002,Jordan Kim,"Senior Manager, Engineering",R018,Sawyer Smith,direct_report,4,3,4,4,4,3,5,4,5,3,3,3,Models the behavior they expect from others.,
+S002,Jordan Kim,"Senior Manager, Engineering",R019,Parker Thomas,manager,5,3,5,3,4,4,5,4,5,2,3,3,Clear communicator under pressure.,Recognition could be more consistent across the team.
+S003,Sam Patel,Director of Customer Experience,R020,Sam Patel,self,4,5,4,4,4,4,3,3,2,5,5,5,,
+S003,Sam Patel,Director of Customer Experience,R021,Dakota Vargas,peer,3,5,3,4,4,4,3,3,2,5,4,4,Strong product judgment and customer instincts.,Could be more transparent about strategic uncertainty.
+S003,Sam Patel,Director of Customer Experience,R022,Eden Walsh,peer,5,4,3,4,5,4,2,3,4,4,5,5,Resilient under organizational change.,Hard on themselves when things slip; can pull back from the team.
+S003,Sam Patel,Director of Customer Experience,R023,Finley Xiao,peer,4,5,4,4,4,5,2,3,3,4,5,4,Decisive when the situation calls for it.,Recognition could be more consistent across the team.
+S003,Sam Patel,Director of Customer Experience,R024,Gray Young,peer,4,3,4,3,4,4,3,3,3,4,5,4,Clear communicator under pressure.,Feedback is too gentle. Hard to know where you stand.
+S003,Sam Patel,Director of Customer Experience,R025,Hollis Zhang,direct_report,3,4,3,5,4,4,3,4,4,4,5,4,,
+S003,Sam Patel,Director of Customer Experience,R026,Indigo Adams,direct_report,4,4,4,4,3,3,4,3,2,4,5,4,"Deeply caring leader, always available when it matters.",
+S003,Sam Patel,Director of Customer Experience,R027,Justice Bennett,direct_report,3,4,4,4,4,4,3,3,2,5,5,5,"Deeply caring leader, always available when it matters.",
+S003,Sam Patel,Director of Customer Experience,R028,Kendall Chen,direct_report,4,4,4,4,4,5,4,3,2,4,4,5,Strong product judgment and customer instincts.,Leans on a few trusted voices; others can feel less heard.
+S003,Sam Patel,Director of Customer Experience,R029,Lane Diaz,manager,3,4,4,5,5,4,3,3,3,5,5,5,Models the behavior they expect from others.,Coaching time has gotten thinner as the team grew.
+S004,Morgan Lee,VP of Product,R030,Morgan Lee,self,5,4,4,5,5,5,5,5,4,4,4,3,,
+S004,Morgan Lee,VP of Product,R031,Noel Fischer,peer,4,4,1,4,4,3,4,3,4,4,5,5,Models the behavior they expect from others.,Feedback is too gentle. Hard to know where you stand.
+S004,Morgan Lee,VP of Product,R032,Oakley Grant,peer,4,4,3,3,4,4,3,4,3,3,4,4,Models the behavior they expect from others.,
+S004,Morgan Lee,VP of Product,R033,Peyton Hayes,peer,4,5,4,5,4,4,3,4,5,4,3,4,Strong product judgment and customer instincts.,Could push back on leadership more visibly when warranted.
+S004,Morgan Lee,VP of Product,R034,Remy Ingram,peer,4,3,3,5,4,5,4,4,4,4,4,4,"Coaches by asking questions, not by directing.",Feedback is too gentle. Hard to know where you stand.
+S004,Morgan Lee,VP of Product,R035,Shiloh Jackson,direct_report,3,3,3,5,4,4,4,5,5,4,4,4,Strong product judgment and customer instincts.,Recognition could be more consistent across the team.
+S004,Morgan Lee,VP of Product,R036,Tatum King,direct_report,4,4,4,4,4,5,4,4,4,4,4,4,"Coaches by asking questions, not by directing.",Hard on themselves when things slip; can pull back from the team.
+S004,Morgan Lee,VP of Product,R037,Umi Lee,direct_report,4,5,3,5,4,4,4,5,4,3,4,4,Decisive when the situation calls for it.,Decision-making could include more frontline perspectives.
+S004,Morgan Lee,VP of Product,R038,Vesper Morris,direct_report,4,3,4,4,5,4,4,4,4,5,4,4,"Coaches by asking questions, not by directing.",Sometimes moves faster than the team can absorb.
+S004,Morgan Lee,VP of Product,R039,Winter Nakamura,manager,4,4,4,4,4,4,5,5,4,3,3,4,"Coaches by asking questions, not by directing.",Hard on themselves when things slip; can pull back from the team.
+S005,Casey Chen,"Senior Manager, Marketing",R040,Casey Chen,self,5,3,4,5,4,4,5,4,5,5,5,5,,
+S005,Casey Chen,"Senior Manager, Marketing",R041,Briar Park,peer,4,4,3,3,3,3,3,2,4,3,4,3,Resilient under organizational change.,Feedback is too gentle. Hard to know where you stand.
+S005,Casey Chen,"Senior Manager, Marketing",R042,Channing Reyes,peer,5,3,4,4,3,3,4,4,3,2,3,4,Clear communicator under pressure.,Meeting cadence sometimes overwhelms the calendar.
+S005,Casey Chen,"Senior Manager, Marketing",R043,Darby Sato,peer,4,4,4,4,3,4,4,3,4,3,3,4,Models the behavior they expect from others.,Meeting cadence sometimes overwhelms the calendar.
+S005,Casey Chen,"Senior Manager, Marketing",R044,Ellis Tan,peer,3,4,3,4,4,3,3,5,4,3,3,4,,Meeting cadence sometimes overwhelms the calendar.
+S005,Casey Chen,"Senior Manager, Marketing",R045,Fallon Ueda,direct_report,4,4,4,3,3,3,3,4,4,4,4,3,Clear communicator under pressure.,Coaching time has gotten thinner as the team grew.
+S005,Casey Chen,"Senior Manager, Marketing",R046,Greer Vega,direct_report,4,4,3,3,5,3,4,4,3,4,4,5,"Coaches by asking questions, not by directing.",Feedback is too gentle. Hard to know where you stand.
+S005,Casey Chen,"Senior Manager, Marketing",R047,Harper Wilson,direct_report,4,4,3,3,4,4,3,4,4,4,4,3,Calm in moments where the team needs steadiness.,Recognition could be more consistent across the team.
+S005,Casey Chen,"Senior Manager, Marketing",R048,Ira Yamada,direct_report,3,4,3,4,4,3,4,4,4,3,2,4,Strong product judgment and customer instincts.,Meeting cadence sometimes overwhelms the calendar.
+S005,Casey Chen,"Senior Manager, Marketing",R049,Joss Zhou,manager,4,3,5,5,4,3,4,3,4,3,5,2,Quickly aligns the team on priorities.,Recognition could be more consistent across the team.

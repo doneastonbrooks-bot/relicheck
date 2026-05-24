@@ -1,0 +1,76 @@
+respondent_ref,race,gender,age,role,lean
+R001,Native American or Alaska Native,Man,55 to 64,Individual Contributor,mostly_positive
+R002,White,Woman,45 to 54,Director,mostly_critical
+R003,White,Man,25 to 34,Manager,mostly_critical
+R004,Hispanic or Latino,Non-binary,35 to 44,Individual Contributor,mixed
+R005,Black or African American,Non-binary,25 to 34,Team Lead,mostly_critical
+R006,White,Woman,35 to 44,Manager,mixed
+R007,Hispanic or Latino,Woman,35 to 44,Individual Contributor,mostly_critical
+R008,Black or African American,Woman,65 plus,Team Lead,mostly_critical
+R009,Native Hawaiian or Pacific Islander,Man,45 to 54,Individual Contributor,mixed
+R010,Hispanic or Latino,Woman,35 to 44,Individual Contributor,mostly_positive
+R011,White,Woman,25 to 34,Manager,mostly_critical
+R012,Asian,Man,55 to 64,Director,mostly_critical
+R013,White,Woman,35 to 44,Manager,mixed
+R014,White,Woman,45 to 54,Manager,mixed
+R015,Black or African American,Man,25 to 34,Director,mixed
+R016,Asian,Man,55 to 64,Individual Contributor,mostly_positive
+R017,White,Man,45 to 54,Individual Contributor,mixed
+R018,Hispanic or Latino,Woman,25 to 34,Manager,mixed
+R019,Black or African American,Non-binary,Under 25,Individual Contributor,mixed
+R020,Black or African American,Man,25 to 34,Individual Contributor,mixed
+R021,White,Man,45 to 54,Individual Contributor,mostly_positive
+R022,Hispanic or Latino,Woman,25 to 34,Individual Contributor,mixed
+R023,Two or more races,Man,Under 25,HR / People Ops,mixed
+R024,Asian,Woman,35 to 44,VP or above,mostly_critical
+R025,Black or African American,Man,45 to 54,Manager,mostly_critical
+R026,Hispanic or Latino,Woman,35 to 44,Team Lead,mixed
+R027,Prefer not to say,Man,25 to 34,Individual Contributor,mixed
+R028,Black or African American,Woman,35 to 44,Manager,mixed
+R029,White,Prefer not to say,35 to 44,Team Lead,mixed
+R030,Native Hawaiian or Pacific Islander,Man,25 to 34,Team Lead,mostly_critical
+R031,White,Man,25 to 34,Manager,mixed
+R032,Asian,Man,35 to 44,Individual Contributor,mixed
+R033,Native American or Alaska Native,Man,25 to 34,HR / People Ops,mostly_critical
+R034,Asian,Man,Under 25,Director,mixed
+R035,Hispanic or Latino,Woman,55 to 64,Director,mixed
+R036,Prefer not to say,Woman,45 to 54,Individual Contributor,mixed
+R037,White,Woman,45 to 54,Manager,mixed
+R038,Two or more races,Man,45 to 54,Individual Contributor,mostly_critical
+R039,Asian,Non-binary,65 plus,VP or above,mostly_critical
+R040,White,Woman,25 to 34,Team Lead,mostly_positive
+R041,White,Man,35 to 44,Manager,mostly_positive
+R042,Asian,Woman,Under 25,VP or above,mostly_critical
+R043,White,Woman,25 to 34,Team Lead,mostly_positive
+R044,White,Prefer to self-describe,35 to 44,Individual Contributor,mixed
+R045,Two or more races,Man,45 to 54,Individual Contributor,mixed
+R046,White,Man,25 to 34,Individual Contributor,mostly_critical
+R047,Black or African American,Woman,Under 25,Individual Contributor,mixed
+R048,Hispanic or Latino,Man,35 to 44,HR / People Ops,mostly_critical
+R049,Asian,Woman,25 to 34,Team Lead,mostly_critical
+R050,Two or more races,Man,25 to 34,Director,mixed
+R051,Hispanic or Latino,Woman,Under 25,Individual Contributor,mixed
+R052,Black or African American,Woman,35 to 44,VP or above,mostly_positive
+R053,Native American or Alaska Native,Woman,45 to 54,Individual Contributor,mostly_critical
+R054,Hispanic or Latino,Woman,Under 25,Team Lead,mostly_critical
+R055,Asian,Prefer to self-describe,35 to 44,HR / People Ops,mostly_critical
+R056,Asian,Man,35 to 44,Individual Contributor,mostly_critical
+R057,White,Woman,35 to 44,Team Lead,mostly_critical
+R058,Hispanic or Latino,Woman,35 to 44,Individual Contributor,mixed
+R059,Black or African American,Man,25 to 34,Individual Contributor,mostly_positive
+R060,White,Woman,25 to 34,Team Lead,mixed
+R061,Black or African American,Woman,45 to 54,HR / People Ops,mostly_critical
+R062,Two or more races,Woman,25 to 34,Individual Contributor,mixed
+R063,Black or African American,Woman,65 plus,Manager,mixed
+R064,Two or more races,Man,55 to 64,Manager,mixed
+R065,Black or African American,Man,55 to 64,Manager,mostly_critical
+R066,Hispanic or Latino,Woman,45 to 54,HR / People Ops,mostly_critical
+R067,Hispanic or Latino,Woman,25 to 34,Individual Contributor,mostly_critical
+R068,White,Woman,35 to 44,Team Lead,mostly_critical
+R069,White,Man,55 to 64,Individual Contributor,mostly_positive
+R070,White,Man,25 to 34,HR / People Ops,mostly_positive
+R071,Asian,Man,45 to 54,Director,mostly_positive
+R072,Black or African American,Man,35 to 44,Individual Contributor,mixed
+R073,White,Man,Under 25,Individual Contributor,mostly_positive
+R074,Asian,Non-binary,55 to 64,Director,mostly_critical
+R075,Hispanic or Latino,Man,25 to 34,Individual Contributor,mixed

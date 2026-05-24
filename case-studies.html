@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Customer stories · ReliCheck</title>
+  <meta name="description" content="How research, education, and HR teams use ReliCheck for course evaluation, engagement, and program evaluation." />
+  <link rel="canonical" href="https://relichecksurvey.com/case-studies.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Customer stories · ReliCheck" />
+  <meta property="og:description" content="How research, education, and HR teams use ReliCheck for course evaluation, engagement, and program evaluation." />
+  <meta property="og:url" content="https://relichecksurvey.com/case-studies.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Customer stories · ReliCheck" />
+  <meta name="twitter:description" content="How research, education, and HR teams use ReliCheck for course evaluation, engagement, and program evaluation." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+<header class="article-header is-centered">
+  <div class="container-content">
+    <span class="kicker">Customer stories</span>
+    <h1 style="margin:var(--s-3) auto var(--s-5);max-width:24ch;">How research, education, HR, customer, and community teams use ReliCheck.</h1>
+    <p class="lede" style="margin:0 auto;max-width:64ch;">Five stories across the five audiences ReliCheck serves. Every story names what was measured, the design choices the team made, and what they did with the result. The numbers below are realistic; pilot details are anonymized while we collect named-customer permission.</p>
+    <div id="csFilter" style="margin-top:var(--s-6);display:flex;gap:8px;justify-content:center;flex-wrap:wrap;font-size:14px;">
+      <button type="button" data-cs-tag="all" class="cs-chip is-active">All</button>
+      <button type="button" data-cs-tag="education" class="cs-chip">Education</button>
+      <button type="button" data-cs-tag="hr" class="cs-chip">HR &amp; Teams</button>
+      <button type="button" data-cs-tag="customer" class="cs-chip">Customer feedback</button>
+      <button type="button" data-cs-tag="research" class="cs-chip">Research</button>
+      <button type="button" data-cs-tag="mixed" class="cs-chip">Mixed-methods</button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .cs-chip { background: var(--bg-soft); color: var(--ink-7); border: 1px solid transparent; padding: 6px 14px; border-radius: 999px; font-weight: 600; cursor: pointer; font-family: inherit; font-size: 14px; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; }
+  .cs-chip:hover { background: var(--bg-muted); }
+  .cs-chip.is-active { background: var(--accent-soft); color: var(--accent-active); }
+  .cs-card-tag { display:inline-block; font-size: 14px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-6); background:var(--bg-soft); padding:3px 9px; border-radius:999px; margin-bottom:10px; }
+  .cs-card.is-hidden { display:none; }
+</style>
+
+<section class="section">
+  <div class="container-content">
+    <div class="cards-3" id="csGrid">
+      <a class="intent cs-card" data-cs-tag="education" href="case-studies/education-mba-program.html"><span class="cs-card-tag">Education</span><h3>An MBA program adopts ReliCheck for course evaluation</h3><p>Validated course evaluation items, reliability scoring per dimension, and a methodology appendix that drops straight into the accreditation packet.</p><span class="arrow">Read story →</span></a>
+      <a class="intent cs-card" data-cs-tag="hr" href="case-studies/hr.html"><span class="cs-card-tag">HR &amp; Teams</span><h3>An HR team turns engagement results into action items</h3><p>Quarterly engagement pulse with k-anonymity protections, AI summaries grounded in alpha, and a board-ready report leadership actually reads.</p><span class="arrow">Read story →</span></a>
+      <a class="intent cs-card" data-cs-tag="customer" href="case-studies/customer-feedback.html"><span class="cs-card-tag">Customer feedback</span><h3>A consumer brand ships product changes from 1,200 NPS responses</h3><p>NPS plus 8 satisfaction items, composite α 0.86, AI theme extraction. Three product changes shipped within 60 days.</p><span class="arrow">Read story →</span></a>
+      <a class="intent cs-card" data-cs-tag="research" href="case-studies/research.html"><span class="cs-card-tag">Research</span><h3>A research center cuts methods write-up time in half</h3><p>Two studies, three validated scales, automatic methodology appendix. Average methods-section turnaround fell from 9 days to 4.</p><span class="arrow">Read story →</span></a>
+      <a class="intent cs-card" data-cs-tag="mixed" href="case-studies/mixed-methods.html"><span class="cs-card-tag">Mixed-methods</span><h3>A community organization combines a needs survey with focus group themes</h3><p>1,612 households plus three focus groups. Four of five top survey priorities also surfaced as top focus group themes.</p><span class="arrow">Read story →</span></a>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var chips = document.querySelectorAll('.cs-chip');
+    var cards = document.querySelectorAll('.cs-card');
+    chips.forEach(function (chip) {
+      chip.addEventListener('click', function () {
+        var tag = chip.getAttribute('data-cs-tag');
+        chips.forEach(function (c) { c.classList.toggle('is-active', c === chip); });
+        cards.forEach(function (card) {
+          var match = (tag === 'all') || (card.getAttribute('data-cs-tag') === tag);
+          card.classList.toggle('is-hidden', !match);
+        });
+      });
+    });
+  })();
+</script>
+
+<section class="section"><div class="container-content"><div class="cta-band">
+      <h2>Tell us how you'd use ReliCheck</h2>
+      <p>Free to start. We'd love to hear what you're trying to measure and how the platform helps or where it falls short.</p>
+      <div class="hero-actions"><a href="signup.html" class="btn btn-primary btn-lg">Start free</a><a href="mailto:hello@relichecksurvey.com" class="btn btn-outline btn-lg">Get in touch</a></div>
+    </div></div></section>
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+<script>
+  (function () {
+    var header = document.getElementById('siteHeader');
+    if (header) {
+      var onScroll = function () { header.classList.toggle('is-scrolled', window.scrollY > 6); };
+      document.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+    }
+    document.querySelectorAll('.nav-dd').forEach(function (dd) {
+      var trigger = dd.querySelector('.nav-dd-trigger');
+      var timer;
+      var open = function (s) {
+        clearTimeout(timer);
+        if (s) {
+          document.querySelectorAll('.nav-dd[data-open="true"]').forEach(function (o) { if (o !== dd) o.removeAttribute('data-open'); });
+          dd.setAttribute('data-open', 'true');
+          if (header) header.classList.add('is-mega-open');
+        } else {
+          timer = setTimeout(function () {
+            dd.removeAttribute('data-open');
+            if (header && !document.querySelector('.nav-dd[data-open="true"]')) header.classList.remove('is-mega-open');
+          }, 120);
+        }
+      };
+      dd.addEventListener('mouseenter', function () { open(true); });
+      dd.addEventListener('mouseleave', function () { open(false); });
+      if (trigger) trigger.addEventListener('click', function (e) { e.preventDefault(); open(dd.getAttribute('data-open') !== 'true'); });
+    });
+    var toggle = document.getElementById('navToggle');
+    var drawer = document.getElementById('navDrawer');
+    if (toggle && drawer) {
+      toggle.addEventListener('click', function () {
+        var openState = drawer.classList.toggle('is-open');
+        drawer.setAttribute('aria-hidden', String(!openState));
+        document.body.style.overflow = openState ? 'hidden' : '';
+      });
+    }
+  })();
+</script>
+
+</body>
+</html>

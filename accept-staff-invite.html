@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Accept admin invitation · ReliCheck</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    body {
+      background: var(--bg-soft, #f5f7fb);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--line, #e6eaf2);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(11,23,51,0.08), 0 4px 12px rgba(11,23,51,0.04);
+      padding: 36px 40px;
+      max-width: 460px;
+      width: 100%;
+    }
+    .card .logo { height: 30px; margin-bottom: 22px; }
+    .card h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; color: var(--ink-9, #0b1733); letter-spacing: -0.01em; }
+    .card .lede { color: var(--ink-6, #4a5578); font-size: 14px; margin: 0 0 22px; }
+    .status {
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .status.info    { background: #eaf0ff; color: #2654c6; border: 1px solid #d4dffb; }
+    .status.success { background: #e7f5ec; color: #1f8a4d; border: 1px solid #c8eed4; }
+    .status.error   { background: #fbe9e9; color: #c83333; border: 1px solid #f4cccc; }
+    label.field { display: block; margin-bottom: 14px; }
+    label.field .lab {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--ink-5, #6b7691); letter-spacing: 0.04em;
+      text-transform: uppercase; margin-bottom: 5px;
+    }
+    label.field input {
+      width: 100%; padding: 9px 12px; border: 1px solid var(--line-strong, #d3d9e6);
+      border-radius: 7px; font-size: 14px; color: var(--ink-9, #0b1733);
+      background: #fff;
+    }
+    label.field input:focus { outline: 0; border-color: var(--accent, #e85d3a); box-shadow: 0 0 0 3px rgba(232,93,58,0.12); }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 9px 16px; font-size: 14px; font-weight: 600;
+      border-radius: 8px; border: 1px solid var(--line-strong, #d3d9e6);
+      background: #fff; color: var(--ink-9, #0b1733);
+      text-decoration: none; cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease;
+    }
+    .btn:hover { background: var(--bg-soft, #f5f7fb); }
+    .btn.primary { background: var(--accent, #e85d3a); color: #fff; border-color: var(--accent, #e85d3a); }
+    .btn.primary:hover { background: var(--accent-hover, #cc4a2a); border-color: var(--accent-hover, #cc4a2a); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .meta { font-size: 12px; color: var(--ink-5, #6b7691); margin-top: 18px; }
+    .ident { background: var(--bg-soft, #f5f7fb); padding: 10px 12px; border-radius: 8px; font-size: 13px; color: var(--ink-7, #2d3a5c); margin-bottom: 14px; }
+    .ident .label { color: var(--ink-5, #6b7691); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+  <h1 id="title">Accept admin invitation</h1>
+  <p class="lede" id="lede">Set a password for your admin account.</p>
+  <div class="status info" id="statusBox" style="display:none;"></div>
+
+  <div id="formBox" style="display:none;">
+    <div class="ident">
+      <div class="label">Inviting you as</div>
+      <div><strong id="identRole"></strong></div>
+      <div class="label" style="margin-top:8px;">Email</div>
+      <div id="identEmail"></div>
+    </div>
+    <p class="meta" style="margin-top:0;margin-bottom:18px;">
+      Your admin account is separate from any customer-side ReliCheck account you may have.
+      It uses its own password and is only for the staff/admin panel.
+    </p>
+    <form id="acceptForm">
+      <label class="field"><span class="lab">Display name (optional)</span><input type="text" id="acceptName" placeholder="Your name as it should appear in the audit log"></label>
+      <label class="field"><span class="lab">New admin password</span><input type="password" id="acceptPassword" placeholder="At least 8 characters, including a number" autocomplete="new-password"></label>
+      <label class="field"><span class="lab">Confirm password</span><input type="password" id="acceptPassword2" autocomplete="new-password"></label>
+      <button type="submit" class="btn primary" id="acceptBtn" style="width:100%;padding:11px;">Create admin account</button>
+    </form>
+  </div>
+
+  <div class="actions" id="actionsBox" style="display:none;"></div>
+  <p class="meta">If you weren't expecting this invitation, you can close this page.</p>
+</div>
+
+<script>
+(async () => {
+  const titleEl   = document.getElementById('title');
+  const ledeEl    = document.getElementById('lede');
+  const statusEl  = document.getElementById('statusBox');
+  const formBox   = document.getElementById('formBox');
+  const actionsEl = document.getElementById('actionsBox');
+
+  const setStatus = (kind, text) => {
+    statusEl.className = 'status ' + kind;
+    statusEl.style.display = 'block';
+    statusEl.textContent = text;
+  };
+  const setActions = html => {
+    actionsEl.style.display = 'flex';
+    actionsEl.innerHTML = html;
+  };
+
+  // Pull token from URL.
+  const params = new URLSearchParams(window.location.search);
+  const token = (params.get('token') || '').trim();
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    titleEl.textContent = 'Invalid invitation link';
+    ledeEl.textContent  = 'The token in this URL is missing or malformed.';
+    setStatus('error', 'No valid invitation token found in this URL. Open the link directly from your invitation email.');
+    setActions('<a class="btn" href="/index.html">Go home</a>');
+    return;
+  }
+
+  // Look up invite metadata so we can show who/what we're inviting them as.
+  // We can use a small helper: hit accept with a "preview" mode? Simpler:
+  // surface the form immediately and let the server tell us if the token
+  // is invalid only when they submit. To avoid a guess attack disclosing
+  // the email, we don't show the address until they POST. (No preview
+  // endpoint for now.)
+  formBox.style.display = 'block';
+  // Hide the role/email block until we have a server response.
+  document.getElementById('identRole').textContent = 'Admin staff';
+  document.getElementById('identEmail').textContent = 'shown after you set your password';
+
+  document.getElementById('acceptForm').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const name = document.getElementById('acceptName').value.trim();
+    const p1   = document.getElementById('acceptPassword').value;
+    const p2   = document.getElementById('acceptPassword2').value;
+    const btn  = document.getElementById('acceptBtn');
+
+    if (p1.length < 8 || !/\d/.test(p1)) {
+      setStatus('error', 'Password must be at least 8 characters and include at least one number.');
+      return;
+    }
+    if (p1 !== p2) {
+      setStatus('error', 'Passwords do not match.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Creating account…';
+
+    let res, data;
+    try {
+      res = await fetch('/api/admin/staff/accept.php', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: token, name: name, password: p1 }),
+      });
+      data = await res.json();
+    } catch (e) {
+      setStatus('error', 'Could not reach the server. Refresh and try again.');
+      btn.disabled = false;
+      btn.textContent = 'Create admin account';
+      return;
+    }
+
+    if (res.ok && data.ok) {
+      formBox.style.display = 'none';
+      titleEl.textContent = 'Welcome to the team.';
+      ledeEl.textContent  = 'Your admin account is ready.';
+      setStatus('success', (data.message || '') + ' Role: ' + (data.role || 'staff') + '.');
+      setActions('<a class="btn primary" href="/admin.html">Open admin panel</a>');
+      return;
+    }
+
+    // Failure path. Show clearly with a sensible next step.
+    setStatus('error', data && data.message ? data.message : 'The invitation could not be accepted (HTTP ' + res.status + ').');
+    btn.disabled = false;
+    btn.textContent = 'Create admin account';
+    if (data && (data.error === 'expired_token' || data.error === 'bad_token')) {
+      formBox.style.display = 'none';
+      setActions('<a class="btn" href="/index.html">Go home</a>');
+    }
+  });
+})();
+</script>
+</body>
+</html>

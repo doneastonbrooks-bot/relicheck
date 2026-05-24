@@ -1,0 +1,11 @@
+id	score_pre	score_post	arm	completed
+1	3.2	4.1	A	True
+2	4.1	4.8	B	True
+3	2.8	3.5	A	False
+4	4.5	5.0	B	True
+5	3.9	4.7	A	True
+6	4.0	4.6	B	False
+7	3.5	4.2	A	True
+8	4.2	4.9	B	True
+9	3.7	4.3	A	True
+10	4.8	5.1	B	False

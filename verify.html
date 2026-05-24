@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Verify your email · ReliCheck</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<link rel="icon" href="favicon.svg">
+<style>
+  :root {
+    --bg: #f6f7fb; --panel: #ffffff; --border: #e2e6ea; --text: #1a1f25;
+    --text-mute: #5a6470; --primary: #e85d3a; --good: #1f7a3a; --bad: #c14545;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--bg); line-height: 1.55; }
+  .wrap { max-width: 480px; margin: 80px auto; padding: 0 24px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 32px; box-shadow: 0 8px 24px rgba(20, 28, 40, 0.06); }
+  h1 { font-size: 22px; margin: 0 0 8px; font-family: Fraunces, Georgia, serif; }
+  p { margin: 0 0 12px; color: var(--text-mute); font-size: 14px; }
+  .state { margin-top: 18px; padding: 14px 16px; border-radius: 8px; font-size: 14px; }
+  .state.ok    { background: #e6f4ea; color: var(--good); border: 1px solid var(--good); }
+  .state.err   { background: #fae3e3; color: var(--bad);  border: 1px solid var(--bad); }
+  .state.busy  { background: #f0f7ff; color: #1f4a8a;     border: 1px solid #b8d4ff; }
+  .btn { display: inline-block; padding: 10px 18px; border-radius: 8px; background: var(--primary); color: #fff; text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 14px; border: 0; cursor: pointer; }
+  .btn.ghost { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .muted { font-size: 13px; color: var(--text-mute); margin-top: 18px; }
+  .brand { display: flex; align-items: center; gap: 8px; margin-bottom: 22px; }
+  .brand img { width: 28px; height: 28px; }
+  .brand-name { font-weight: 700; font-size: 18px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <img src="logo-brand.svg" alt="ReliCheck">
+      <span class="brand-name">ReliCheck</span>
+    </div>
+    <div class="card">
+      <h1>Verify your email</h1>
+      <p>One quick step to finish setting up your account.</p>
+      <div id="state" class="state busy">Verifying...</div>
+      <div id="actions" style="margin-top:14px;display:none;">
+        <a class="btn" href="login.html">Continue to sign in</a>
+        <a class="btn ghost" href="index.html">Back to home</a>
+      </div>
+      <div class="muted">If this link expired or you need a new one, sign in first and request a new verification email from your Account settings.</div>
+    </div>
+  </div>
+<script>
+(function () {
+  const stateEl   = document.getElementById('state');
+  const actionsEl = document.getElementById('actions');
+  function show(cls, html) {
+    stateEl.className = 'state ' + cls;
+    stateEl.innerHTML = html;
+    actionsEl.style.display = '';
+  }
+  const params = new URLSearchParams(window.location.search);
+  const token  = (params.get('token') || '').trim();
+  if (!token) {
+    show('err', '<strong>No verification token in the link.</strong> Open the email and click the verify link again.');
+    return;
+  }
+  fetch('/api/auth/verify_email.php', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token }),
+    credentials: 'same-origin',
+  })
+  .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+  .then(function (res) {
+    if (res.ok && res.body && res.body.ok) {
+      const e = res.body.email ? ' (' + res.body.email + ')' : '';
+      show('ok', '<strong>Email verified.</strong> Your account' + e + ' is fully active.');
+    } else {
+      const msg = (res.body && res.body.message) ? res.body.message : 'Verification failed.';
+      show('err', '<strong>Could not verify.</strong> ' + msg);
+    }
+  })
+  .catch(function () {
+    show('err', '<strong>Network error.</strong> Try the link again in a moment.');
+  });
+})();
+</script>
+</body>
+</html>

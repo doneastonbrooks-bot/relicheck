@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex,nofollow" />
+  <title>Set up admin password · ReliCheck</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #0b1733, #1c2f5e);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: #fff;
+    }
+    .card {
+      background: #fff; color: #0b1733;
+      border-radius: 14px;
+      box-shadow: 0 24px 56px rgba(11,23,51,0.30), 0 8px 20px rgba(11,23,51,0.18);
+      padding: 36px 40px;
+      max-width: 460px; width: 100%;
+    }
+    .logo { height: 30px; margin-bottom: 18px; }
+    .tag {
+      display: inline-block;
+      background: #fff1ec; color: #cc4a2a;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; padding: 3px 8px; border-radius: 999px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+    .lede { color: #4a5578; font-size: 14px; margin: 0 0 22px; line-height: 1.5; }
+    .ident { background: #f5f7fb; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; color: #2d3a5c; }
+    .ident .label { color: #6b7691; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+    label.field { display: block; margin-bottom: 14px; }
+    label.field .lab {
+      display: block; font-size: 12px; font-weight: 600; color: #6b7691;
+      letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px;
+    }
+    label.field input {
+      width: 100%; padding: 10px 12px; border: 1px solid #d3d9e6;
+      border-radius: 7px; font-size: 14px; color: #0b1733; background: #fff;
+    }
+    label.field input:focus { outline: 0; border-color: #e85d3a; box-shadow: 0 0 0 3px rgba(232,93,58,0.12); }
+    .btn {
+      width: 100%; padding: 11px; font-size: 14px; font-weight: 600;
+      border-radius: 8px; border: 0;
+      background: #e85d3a; color: #fff; cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .btn:hover { background: #cc4a2a; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .status {
+      padding: 12px 14px; border-radius: 8px;
+      font-size: 13.5px; margin-bottom: 16px; line-height: 1.5;
+      display: none;
+    }
+    .status.error   { background: #fbe9e9; color: #c83333; border: 1px solid #f4cccc; }
+    .status.success { background: #e7f5ec; color: #1f8a4d; border: 1px solid #c8eed4; }
+    .status.info    { background: #eaf0ff; color: #2654c6; border: 1px solid #d4dffb; }
+    .meta { font-size: 12px; color: #6b7691; margin-top: 18px; }
+    .meta a { color: #e85d3a; text-decoration: none; }
+    .meta a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <img src="logo-brand.png" alt="ReliCheck" class="logo" onerror="this.src='logo-brand.svg'">
+    <div class="tag">Owner setup</div>
+    <h1>Set up your admin password</h1>
+    <p class="lede">This is for your <strong>permanent owner</strong> account. Your customer-side ReliCheck password is separate and unaffected. After setup, sign in to <code>/admin-login.html</code> with this admin password going forward.</p>
+    <div class="status info"    id="info"></div>
+    <div class="status error"   id="errBox"></div>
+    <div class="status success" id="okBox"></div>
+    <div id="formArea"></div>
+    <p class="meta">
+      Already set up? Use the <a href="/admin-login.html">admin sign in</a> page. Lost your admin password? Use the Forgot password link there.
+    </p>
+  </div>
+
+  <script>
+    const infoEl = document.getElementById('info');
+    const errEl  = document.getElementById('errBox');
+    const okEl   = document.getElementById('okBox');
+    const formArea = document.getElementById('formArea');
+    const showInfo = (m) => { infoEl.textContent = m; infoEl.style.display = 'block'; };
+    const showErr  = (m) => { errEl.textContent  = m; errEl.style.display  = 'block'; };
+    const showOk   = (m) => { okEl.textContent   = m; okEl.style.display   = 'block'; };
+
+    (async () => {
+      // Verify the customer session is signed in AND on the allowlist.
+      // We only call setup_owner.php on submit; this initial check just
+      // gives the user a clear message about which account to sign in as.
+      let me;
+      try {
+        const r = await fetch('/api/auth/me.php', { credentials: 'same-origin' });
+        me = await r.json();
+      } catch (_) { me = { authenticated: false }; }
+
+      if (!me || !me.authenticated) {
+        showInfo('Sign in to your customer ReliCheck account first (the one whose email is on the admin allowlist), then refresh this page.');
+        formArea.innerHTML =
+          '<a class="btn" href="/login.html?next=/admin-setup-owner.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Sign in to customer account</a>';
+        return;
+      }
+
+      // Show the form.
+      const ident = document.createElement('div');
+      ident.className = 'ident';
+      ident.innerHTML = '<div class="label">Setting up admin password for</div><div><strong>' + (me.user && me.user.email ? me.user.email : '?') + '</strong></div>';
+      formArea.appendChild(ident);
+
+      const form = document.createElement('form');
+      form.id = 'setupForm';
+      form.innerHTML =
+        '<label class="field"><span class="lab">New admin password</span><input type="password" id="pw1" autocomplete="new-password" required placeholder="At least 8 characters, including a number"></label>' +
+        '<label class="field"><span class="lab">Confirm password</span><input type="password" id="pw2" autocomplete="new-password" required></label>' +
+        '<button class="btn" id="submitBtn" type="submit">Set admin password</button>';
+      formArea.appendChild(form);
+
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        errEl.style.display = 'none';
+        okEl.style.display  = 'none';
+        const p1 = document.getElementById('pw1').value;
+        const p2 = document.getElementById('pw2').value;
+        if (p1.length < 8 || !/\d/.test(p1)) { showErr('Password must be at least 8 characters and include a number.'); return; }
+        if (p1 !== p2) { showErr('Passwords do not match.'); return; }
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        try {
+          const res = await fetch('/api/admin/auth/setup_owner.php', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: p1 }),
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            formArea.innerHTML = '<a class="btn" href="/admin-login.html" style="display:flex;align-items:center;justify-content:center;text-decoration:none;">Continue to admin sign in</a>';
+            showOk(data.message || 'Admin password set. Sign in to continue.');
+            return;
+          }
+          showErr(data.message || ('Setup failed (HTTP ' + res.status + ').'));
+        } catch (e) {
+          showErr('Could not reach the server. Try again.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Set admin password';
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

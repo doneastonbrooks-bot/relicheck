@@ -1,0 +1,1108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck · Can You Reli on the Answers to the Questions You Are Asking?</title>
+  <meta name="description" content="ReliCheck is a survey credibility platform. Build, check, analyze, and explain surveys with a Survey Strength Index, statistical transparency, and plain-language reports your audience can defend." />
+  <link rel="canonical" href="https://relichecksurvey.com/index.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="ReliCheck · Can You Reli on the Answers to the Questions You Are Asking?" />
+  <meta property="og:description" content="A survey credibility platform that helps you build, check, analyze, and explain surveys with evidence you can review, explain, and defend." />
+  <meta property="og:url" content="https://relichecksurvey.com/index.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product-main.jpg" />
+  <meta property="og:image:width" content="1376" />
+  <meta property="og:image:height" content="768" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ReliCheck · Can You Reli on the Answers to the Questions You Are Asking?" />
+  <meta name="twitter:description" content="When your numbers get questioned, ReliCheck helps you answer." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product-main.jpg" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles-2026.css?v=20260516-style" />
+
+  <style>
+    /* Tagline beneath H1, above the lede */
+    .hero-tagline {
+      margin: 8px 0 18px 0;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.4;
+      color: var(--ink-8);
+    }
+    .hero-tagline strong { color: var(--ink-9); }
+
+    /* Three-card row, used in sections 2 and 3 */
+    .cards3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+    }
+    @media (max-width: 900px) { .cards3 { grid-template-columns: 1fr; } }
+    .v-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .v-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 20px;
+      margin: 0; line-height: 1.25;
+    }
+    .v-card p { margin: 0; color: var(--ink-7); }
+    .v-card .v-link {
+      margin-top: auto;
+      padding-top: 8px;
+      font-size: 14px;
+      color: var(--ink-9);
+      text-decoration: underline;
+      align-self: flex-start;
+    }
+
+    /* Five persona cards under Section 2 (Why this matters) */
+    .persona-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    @media (max-width: 1100px) { .persona-grid { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 720px)  { .persona-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 480px)  { .persona-grid { grid-template-columns: 1fr; } }
+    .persona-card {
+      background: var(--surface, #ffffff);
+      border: 1px solid var(--border, #e5e7eb);
+      border-radius: 16px;
+      padding: 20px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+    }
+    a.persona-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10);
+      border-color: #cbd5e1;
+    }
+    a.persona-card:focus-visible {
+      outline: 2px solid var(--accent, #e85d3a);
+      outline-offset: 3px;
+    }
+    a.persona-card:hover .persona-role { color: var(--accent, #e85d3a); }
+    /* Success-state variant . teal role labels */
+    .persona-grid-success .persona-role { color: #0f6b5a; }
+    .persona-grid-success a.persona-card:hover .persona-role { color: #0a5443; }
+    .persona-role {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-9);
+      transition: color .15s ease;
+    }
+    .persona-card p {
+      margin: 0;
+      color: var(--ink-7);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    .persona-closer {
+      margin: 32px auto 0;
+      max-width: 760px;
+      text-align: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.55;
+      color: var(--ink-8);
+    }
+
+    /* Four-card row for the "next step" section */
+    .cards4 {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    @media (max-width: 1100px) { .cards4 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 540px)  { .cards4 { grid-template-columns: 1fr; } }
+    .path-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      display: flex; flex-direction: column; gap: 10px;
+      text-decoration: none; color: inherit;
+      transition: border-color .12s, box-shadow .12s, transform .12s;
+    }
+    .path-card:hover {
+      border-color: var(--accent, #4f46e5);
+      box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+      transform: translateY(-2px);
+    }
+    .path-card .path-num {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 13px;
+      color: var(--ink-6);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .path-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      margin: 0; line-height: 1.25;
+    }
+    .path-card p { margin: 0; color: var(--ink-7); font-size: 15px; }
+
+    /* Trust compression tagline in Section 3 */
+    .trust-tagline {
+      text-align: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-weight: 600;
+      font-size: 22px;
+      line-height: 1.4;
+      color: var(--ink-9);
+      margin: 4px auto 28px auto;
+      max-width: 720px;
+    }
+
+    /* The Stakes . dark section, four cost-of-bad-data cards */
+    .stakes-section {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 72px 0;
+    }
+    .stakes-section .container-content {
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+    .stakes-head {
+      max-width: 760px;
+      margin: 0 auto 36px auto;
+      text-align: center;
+    }
+    .stakes-kicker {
+      display: inline-block;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: #d4a04a;
+      margin-bottom: 14px;
+    }
+    .stakes-head h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(28px, 3.4vw, 38px);
+      line-height: 1.2;
+      color: #ffffff;
+      margin: 0 0 12px 0;
+      letter-spacing: -0.01em;
+    }
+    .stakes-head p {
+      font-size: 17px;
+      line-height: 1.6;
+      color: #cbd5e1;
+      margin: 0;
+    }
+    .stakes-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 8px;
+    }
+    @media (max-width: 1100px) { .stakes-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .stakes-grid { grid-template-columns: 1fr; } }
+    .stakes-card {
+      background: #1e293b;
+      border: 1px solid #2a3a55;
+      border-radius: 14px;
+      padding: 22px 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .stakes-pill {
+      align-self: flex-start;
+      background: #a98038;
+      color: #1a1206;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 5px 11px;
+      border-radius: 999px;
+      margin-bottom: 2px;
+    }
+    .stakes-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 20px;
+      color: #ffffff;
+      margin: 0;
+      line-height: 1.25;
+    }
+    .stakes-card p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+    .stakes-closer {
+      max-width: 820px;
+      margin: 36px auto 0;
+      text-align: center;
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.55;
+      color: #e2e8f0;
+    }
+
+    /* "Why ReliCheck is different" . two-column split with sample report */
+    .diff-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(40px, 6vw, 80px);
+      align-items: center;
+    }
+    @media (max-width: 980px) { .diff-split { grid-template-columns: 1fr; gap: 40px; } }
+    .diff-copy .kicker { margin-bottom: 16px; }
+    .diff-copy h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      color: var(--ink-9);
+      margin: 0 0 20px 0;
+      font-weight: 700;
+    }
+    .diff-copy p {
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--ink-7);
+      margin: 0 0 14px 0;
+      max-width: 52ch;
+    }
+
+    .report-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 28px 32px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .report-eyebrow {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-6, #64748b);
+      margin-bottom: 6px;
+    }
+    .report-title {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--ink-9, #0b1220);
+      margin-bottom: 22px;
+    }
+    .report-rows {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .report-row-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 6px;
+    }
+    .report-row-name {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-9, #0b1220);
+    }
+    .report-row-num {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-7, #475569);
+      font-variant-numeric: tabular-nums;
+    }
+    .report-bar {
+      height: 6px;
+      background: #eef2f6;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .report-bar span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, #14a085 0%, #1cb89a 100%);
+      border-radius: 999px;
+    }
+    .report-footnote {
+      margin: 22px 0 0 0;
+      font-size: 13px;
+      line-height: 1.55;
+      color: var(--ink-6, #64748b);
+    }
+
+    /* "Built to fit how you already work" . source-agnostic positioning */
+    .fit-block {
+      max-width: 920px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .fit-block .kicker { margin-bottom: 16px; }
+    .fit-h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: clamp(30px, 3.6vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      font-weight: 700;
+      color: var(--ink-9);
+      margin: 0 0 20px 0;
+    }
+    .fit-block p {
+      font-size: 17px;
+      line-height: 1.6;
+      color: var(--ink-7);
+      margin: 0 auto 16px auto;
+      max-width: 76ch;
+    }
+    .source-pills {
+      list-style: none;
+      margin: 22px auto 24px auto;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    .source-pill {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 999px;
+      padding: 8px 16px;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-9, #0b1220);
+    }
+    .fit-closer {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--ink-9, #0b1220);
+      margin: 8px auto 0 auto;
+      max-width: 76ch;
+    }
+    .fit-actions {
+      margin-top: 28px;
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    /* "The ReliCheck ecosystem" . four studio cards */
+    .studio-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+      margin-top: 28px;
+    }
+    @media (max-width: 1100px) { .studio-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px)  { .studio-grid { grid-template-columns: 1fr; } }
+    .studio-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .studio-badge {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      background: #d8f0ea;
+      color: #0f6b5a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+    .studio-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 19px;
+      line-height: 1.25;
+      font-weight: 700;
+      color: var(--ink-9, #0b1220);
+      margin: 0;
+      letter-spacing: -0.005em;
+    }
+    .studio-card p {
+      margin: 0;
+      font-size: 14.5px;
+      line-height: 1.55;
+      color: var(--ink-7, #475569);
+    }
+    .studio-cta {
+      text-align: center;
+      margin-top: 32px;
+    }
+    .studio-cta-link {
+      display: inline-block;
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-9, #0b1220);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+      transition: color .12s ease;
+    }
+    .studio-cta-link::after {
+      content: " \2192";
+      margin-left: 4px;
+      text-decoration: none;
+      display: inline-block;
+      transition: transform .12s ease;
+    }
+    .studio-cta-link:hover { color: var(--accent, #e85d3a); }
+    .studio-cta-link:hover::after { transform: translateX(3px); }
+
+    /* Three numbered cards below the split */
+    .diff-numbered {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 20px;
+      margin-top: 56px;
+    }
+    @media (max-width: 980px) { .diff-numbered { grid-template-columns: 1fr; gap: 16px; margin-top: 40px; } }
+    .diff-num-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 28px 28px 26px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .diff-num {
+      font-family: 'Inter', system-ui, sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      color: var(--ink-6, #94a3b8);
+      margin-bottom: 18px;
+    }
+    .diff-num-card h3 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 700;
+      color: var(--ink-9, #0b1220);
+      margin: 0 0 12px 0;
+      letter-spacing: -0.005em;
+    }
+    .diff-num-card p {
+      margin: 0;
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-7, #475569);
+    }
+    .diff-num-card { display: flex; flex-direction: column; gap: 12px; }
+    .diff-num-link {
+      margin-top: auto;
+      padding-top: 4px;
+      font-size: 14px;
+      color: var(--ink-9, #0b1220);
+      text-decoration: underline;
+      align-self: flex-start;
+    }
+    .diff-num-link:hover { color: var(--accent, #e85d3a); }
+
+    /* Per-section footer . back-to-top arrow + Get started CTA */
+    .section-foot {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #eef1f5;
+    }
+    .back-to-top {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 999px;
+      border: 1px solid #e2e8f0;
+      background: #ffffff;
+      color: var(--ink-9, #0b1220);
+      text-decoration: none;
+      font-size: 18px;
+      line-height: 1;
+      transition: transform .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+    }
+    .back-to-top:hover {
+      transform: translateY(-2px);
+      color: var(--accent, #e85d3a);
+      border-color: var(--accent, #e85d3a);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.08);
+    }
+    /* Dark-section variant for The Stakes */
+    .section-foot-on-dark { border-top-color: #1e293b; }
+    .section-foot-on-dark .back-to-top {
+      background: transparent;
+      border-color: rgba(255,255,255,0.25);
+      color: #ffffff;
+    }
+    .section-foot-on-dark .back-to-top:hover {
+      border-color: rgba(255,255,255,0.55);
+      color: #ffffff;
+    }
+
+    html { scroll-behavior: smooth; }
+    /* Account for any sticky/fixed top chrome on anchor jumps */
+    section[id] { scroll-margin-top: 24px; }
+
+    /* Final dark CTA */
+    .final-strip {
+      background: #0f172a;
+      color: #f6f8fc;
+      padding: 56px 24px;
+      border-radius: 22px;
+      text-align: center;
+    }
+    .final-strip h2 {
+      font-family: 'Fraunces', Georgia, serif;
+      font-size: 30px;
+      margin: 0 0 10px 0;
+      color: #ffffff;
+    }
+    .final-strip p {
+      color: #cbd5e1;
+      max-width: 640px;
+      margin: 0 auto 22px auto;
+    }
+    .final-strip .hero-actions { justify-content: center; }
+    .final-strip .btn-outline {
+      background: transparent;
+      color: #ffffff;
+      border-color: rgba(255,255,255,0.4);
+    }
+    .final-strip .btn-outline:hover {
+      background: rgba(255,255,255,0.08);
+      color: #ffffff;
+      border-color: rgba(255,255,255,0.6);
+    }
+
+    /* Hero: image cell spans only the title-block row */
+    .hero-grid.hero-grid-rows {
+      grid-template-rows: auto auto auto;
+      align-items: start;
+      row-gap: 0;
+    }
+    .hero-grid.hero-grid-rows > .hero-cell-eyebrow { grid-column: 1; grid-row: 1; }
+    .hero-grid.hero-grid-rows > .hero-cell-title   { grid-column: 1; grid-row: 2; }
+    .hero-grid.hero-grid-rows > .hero-cell-actions { grid-column: 1; grid-row: 3; }
+    .hero-grid.hero-grid-rows > .hero-image-col    {
+      grid-column: 2;
+      grid-row: 2;
+      align-self: stretch;
+      min-height: 0;
+    }
+    .hero-grid.hero-grid-rows .hero-title-block .lede { margin-bottom: 0; }
+    .hero-grid.hero-grid-rows .hero-cell-actions { margin-top: var(--s-8); }
+    .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame { height: 100%; }
+    .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    @media (max-width: 1023px) {
+      .hero-grid.hero-grid-rows > .hero-cell-eyebrow,
+      .hero-grid.hero-grid-rows > .hero-cell-title,
+      .hero-grid.hero-grid-rows > .hero-cell-actions,
+      .hero-grid.hero-grid-rows > .hero-image-col {
+        grid-column: 1;
+      }
+      .hero-grid.hero-grid-rows > .hero-image-col { grid-row: auto; }
+      .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame { height: auto; }
+      .hero-grid.hero-grid-rows .hero-image-col .hero-image-frame img { height: auto; }
+      .hero-grid.hero-grid-rows .hero-title-block .lede { margin-bottom: var(--s-8); }
+    }
+
+    /* ============================================================
+       Pacing pass (local-only).
+       These rules override the inline defaults above and the
+       relevant rules in styles-2026.css for this page only.
+       Once the values prove out, promote to styles-2026.css so the
+       rest of the marketing site gets the same breathing room.
+       ============================================================ */
+    .section-head h2 { margin-bottom: var(--s-5); }
+    .section-head p { margin-top: var(--s-2); line-height: 1.6; }
+    .ssi2-card { margin-bottom: 40px; }
+    .cards3 { gap: 24px; margin-top: 40px; }
+    .cards4 { gap: 22px; margin-top: 40px; }
+    .v-card { padding: 28px; gap: 12px; }
+    .path-card { padding: 26px; gap: 12px; }
+    .v-card h3 { font-size: 22px; }
+    .path-card h3 { font-size: 21px; }
+    .trust-tagline { font-size: 24px; margin: 12px auto 40px auto; }
+    .final-strip { padding: 72px 32px; }
+    .final-strip h2 { font-size: 34px; margin-bottom: 14px; }
+    .final-strip p { margin-bottom: 28px; line-height: 1.6; }
+    @media (max-width: 720px) {
+      .final-strip { padding: 56px 22px; }
+      .final-strip h2 { font-size: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+
+<main>
+
+  <!-- ============================================================
+       SECTION 1 . WHAT IS RELICHECK?
+       ============================================================ -->
+  <section class="hero" id="top">
+    <div class="container-content hero-grid hero-grid-rows">
+      <span class="eyebrow hero-eyebrow hero-cell-eyebrow">Survey credibility platform</span>
+      <div class="hero-title-block hero-cell-title">
+        <h1>Can You <span style="color: var(--accent); font-weight: 700;">Reli</span> on the Answers to the Questions You Are Asking?</h1>
+        <p class="lede" style="margin-bottom: 2em;">ReliCheck helps researchers, HR staff, leaders, educators, marketers, and business owners build stronger surveys, design defensible assessments, and turn responses into decisions they can explain, stand behind, and act on.</p>
+        <p class="lede">When the question matters, you need answers you can trust. ReliCheck shows you whether your data is one of them.</p>
+      </div>
+      <div class="hero-actions hero-cell-actions">
+        <a href="import-data.html" class="btn btn-primary btn-lg">Check my survey</a>
+        <a href="signup.html" class="btn btn-outline btn-lg">Build a survey</a>
+      </div>
+      <div class="hero-image-col">
+        <div class="hero-image-frame">
+          <img src="hero-product-main.jpg" alt="A researcher reviewing a ReliCheck survey strength report on a desktop monitor and laptop" width="1376" height="768" />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2 . WHY THIS MATTERS
+       The human stakes behind the data. Five persona cards follow.
+       ============================================================ -->
+  <section class="section section-soft" id="why-this-matters">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Why this matters</span>
+        <h2>People do not collect data for the sake of data.</h2>
+        <p>They collect it to answer the questions that matter. To improve a life. To build a system that works. To make a workplace people want to stay in. To find out whether the teaching actually reached the student. To prove an idea worth fighting for.</p>
+        <p>Think about the people on the other side of the screen.</p>
+      </div>
+
+      <div class="persona-grid">
+        <a class="persona-card" href="research-evaluation.html">
+          <span class="persona-role">Researcher</span>
+          <p>Staying late to finish a study that could shape a policy.</p>
+        </a>
+        <a class="persona-card" href="hr-teams.html">
+          <span class="persona-role">HR Director</span>
+          <p>Trying to understand why good people keep leaving.</p>
+        </a>
+        <a class="persona-card" href="marketing.html">
+          <span class="persona-role">Marketer</span>
+          <p>With a hunch that could become a movement.</p>
+        </a>
+        <a class="persona-card" href="tests-overview.html">
+          <span class="persona-role">Teacher</span>
+          <p>Wondering if the assessment actually measured what students learned.</p>
+        </a>
+        <a class="persona-card" href="program-evaluation.html">
+          <span class="persona-role">Program Evaluator</span>
+          <p>Building a case from data that has to convince a funder.</p>
+        </a>
+      </div>
+
+      <p class="persona-closer">These are the people who use surveys and assessment tools. ReliCheck was built for those moments, when the question matters too much for weak evidence, unclear analysis, or a chart no one can stand behind.</p>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2.5 . THE STAKES
+       Dark-background block. Four cost-of-bad-data cards with
+       gold pill labels.
+       ============================================================ -->
+  <section class="stakes-section" id="the-stakes">
+    <div class="container-content">
+      <div class="stakes-head">
+        <span class="stakes-kicker">The Stakes</span>
+        <h2>Weak data is not harmless.</h2>
+        <p>Bad data does not just create bad reports. It creates bad decisions.</p>
+      </div>
+
+      <div class="stakes-grid">
+        <article class="stakes-card">
+          <span class="stakes-pill">Business</span>
+          <h3>Money lost</h3>
+          <p>A decision built on a number that did not hold quietly moves a quarter in the wrong direction.</p>
+        </article>
+        <article class="stakes-card">
+          <span class="stakes-pill">Workplace</span>
+          <h3>People lost</h3>
+          <p>The study missed what mattered, so the workplace lost the people it most needed to keep.</p>
+        </article>
+        <article class="stakes-card">
+          <span class="stakes-pill">Research</span>
+          <h3>Findings undone</h3>
+          <p>A result looks publishable today and unravels a year from now.</p>
+        </article>
+        <article class="stakes-card">
+          <span class="stakes-pill">Classroom</span>
+          <h3>Wrong measure</h3>
+          <p>A classroom looks like it is succeeding or failing because the assessment measured the wrong thing.</p>
+        </article>
+      </div>
+
+      <p class="stakes-closer">The cost is not just methodological. The cost is people, money, trust, classrooms, careers, and decisions. ReliCheck checks the strength of the evidence before you act on it.</p>
+
+      <div class="section-foot section-foot-on-dark">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2.75 . WHO THIS IS BUILT FOR
+       Success-state inversion of Section 2's persona cards.
+       ============================================================ -->
+  <section class="section" id="who-this-is-built-for">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Who this is built for</span>
+        <h2>For the ones who refuse to settle for almost.</h2>
+        <p>ReliCheck was built for the people whose ideas deserve a system worthy of carrying them.</p>
+      </div>
+
+      <div class="persona-grid persona-grid-success">
+        <a class="persona-card" href="program-evaluation.html">
+          <span class="persona-role">Program Evaluator</span>
+          <p>Delivers an evaluation funders want to fund again.</p>
+        </a>
+        <a class="persona-card" href="hr-teams.html">
+          <span class="persona-role">Leader</span>
+          <p>Builds the workplace people want to be part of.</p>
+        </a>
+        <a class="persona-card" href="marketing.html">
+          <span class="persona-role">Marketer</span>
+          <p>Sets the trend instead of chasing it.</p>
+        </a>
+        <a class="persona-card" href="tests-overview.html">
+          <span class="persona-role">Teacher</span>
+          <p>Teaches lessons that stay with students long after the bell rings.</p>
+        </a>
+        <a class="persona-card" href="research-evaluation.html">
+          <span class="persona-role">Researcher</span>
+          <p>Does work that does not just publish. It changes the world.</p>
+        </a>
+      </div>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2.9 . WHY RELICHECK IS DIFFERENT
+       Two-column split: copy left, sample report excerpt right
+       with six teal progress bars.
+       ============================================================ -->
+  <section class="section section-soft" id="why-relicheck-is-different">
+    <div class="container-content">
+      <div class="diff-split">
+        <div class="diff-copy">
+          <span class="kicker">Why ReliCheck is different</span>
+          <h2>Most survey platforms end where ReliCheck begins.</h2>
+          <p>Most tools stop at storage and charts. ReliCheck checks whether the survey itself can carry the conclusions you want to draw.</p>
+          <p>The ReliCheck Survey Strength Index&trade; scores your survey across six weighted domains and translates the result into language anyone in the room can understand. No guessing. No hoping. A clear answer.</p>
+        </div>
+
+        <aside class="report-card" aria-label="Sample report excerpt">
+          <div class="report-eyebrow">Sample Report Excerpt</div>
+          <div class="report-title">Employee Engagement 2025 &middot; Q2</div>
+
+          <ul class="report-rows">
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Reliability Strength</span><span class="report-row-num">0.89</span></div>
+              <div class="report-bar"><span style="width: 89%;"></span></div>
+            </li>
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Factor Structure</span><span class="report-row-num">0.81</span></div>
+              <div class="report-bar"><span style="width: 81%;"></span></div>
+            </li>
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Item Quality</span><span class="report-row-num">0.74</span></div>
+              <div class="report-bar"><span style="width: 74%;"></span></div>
+            </li>
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Response Quality</span><span class="report-row-num">0.88</span></div>
+              <div class="report-bar"><span style="width: 88%;"></span></div>
+            </li>
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Open-Ended Alignment</span><span class="report-row-num">0.69</span></div>
+              <div class="report-bar"><span style="width: 69%;"></span></div>
+            </li>
+            <li class="report-row">
+              <div class="report-row-head"><span class="report-row-name">Actionability</span><span class="report-row-num">0.83</span></div>
+              <div class="report-bar"><span style="width: 83%;"></span></div>
+            </li>
+          </ul>
+
+          <p class="report-footnote">Plain-language interpretation: This survey is strong enough to act on at the company level, with one item recommended for revision in the Open-Ended block.</p>
+        </aside>
+      </div>
+
+      <div class="diff-numbered">
+        <article class="diff-num-card">
+          <div class="diff-num">01</div>
+          <h3>Survey Strength Index&trade;</h3>
+          <p>One composite score across six weighted domains. The result tells you whether your survey is strong, limited, or not ready for the decision in front of you.</p>
+          <a href="survey-strength-index.html" class="diff-num-link">See how the score is calculated</a>
+        </article>
+        <article class="diff-num-card">
+          <div class="diff-num">02</div>
+          <h3>Built-in reliability and validity checks</h3>
+          <p>ReliCheck looks past whether the responses came back. Reliability, factor structure, response quality, and reporting readiness all sit underneath the score.</p>
+          <a href="methodology.html" class="diff-num-link">Read the methodology</a>
+        </article>
+        <article class="diff-num-card">
+          <div class="diff-num">03</div>
+          <h3>Plain-language interpretation</h3>
+          <p>Statistical results get translated into language a leadership team, an accreditor, or a funder can read without a stats degree. Every claim ties back to the number underneath it.</p>
+          <a href="ai-features.html" class="diff-num-link">See how interpretation works</a>
+        </article>
+      </div>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2.95 . BUILT TO FIT HOW YOU ALREADY WORK
+       Source-agnostic positioning. Source pills below the copy.
+       ============================================================ -->
+  <section class="section" id="built-to-fit">
+    <div class="container-content">
+      <div class="fit-block">
+        <span class="kicker">Built to fit how you already work</span>
+        <h2 class="fit-h2">Build here. Bring your survey here. Take the insight anywhere.</h2>
+        <p>Start from scratch and let ReliCheck Intelligence guide you, so the questions that matter get asked before you write a single item.</p>
+        <p>Pull from a validated scale. Upload an existing survey. Bring in data from Qualtrics, SurveyMonkey, Google Forms, Excel, or any CSV. Run the evidence through ReliCheck, strengthen what needs strengthening, and use the results wherever your work lives.</p>
+
+        <ul class="source-pills">
+          <li class="source-pill">Qualtrics</li>
+          <li class="source-pill">SurveyMonkey</li>
+          <li class="source-pill">Google Forms</li>
+          <li class="source-pill">Excel / CSV</li>
+          <li class="source-pill">Validated scales</li>
+          <li class="source-pill">Custom builder</li>
+        </ul>
+
+        <p class="fit-closer"><strong>ReliCheck is not asking you to abandon your current system. It is the quality layer your current system is missing.</strong></p>
+
+        <div class="fit-actions">
+          <a href="signup.html" class="btn btn-primary btn-lg">Get started free</a>
+          <a href="compare.html" class="btn btn-outline btn-lg">Compare ReliCheck</a>
+          <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 2.97 . THE RELICHECK ECOSYSTEM
+       Four studio cards with circular letter badges.
+       ============================================================ -->
+  <section class="section section-soft" id="ecosystem">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">The ReliCheck ecosystem</span>
+        <h2>A studio for every kind of evidence.</h2>
+        <p>Qualitative. Quantitative. Both. The studios are built to be a thought partner with you, not a black box working behind you.</p>
+      </div>
+
+      <div class="studio-grid">
+        <article class="studio-card">
+          <div class="studio-badge">S</div>
+          <h3>Survey Strength Studio</h3>
+          <p>Check reliability, item quality, factor structure, response quality, open-ended alignment, and actionability of your survey.</p>
+        </article>
+        <article class="studio-card">
+          <div class="studio-badge">M</div>
+          <h3>Mixed-Methods Studio</h3>
+          <p>Bring qualitative and quantitative data together. Discover themes. Build variables. Compare groups. Produce integrated findings.</p>
+        </article>
+        <article class="studio-card">
+          <div class="studio-badge">T</div>
+          <h3>Test &amp; Item Assessment Studio</h3>
+          <p>Analyze assessments, item performance, pre/post change, reliability, difficulty, discrimination, and learning evidence.</p>
+        </article>
+        <article class="studio-card">
+          <div class="studio-badge">+</div>
+          <h3>Team Suites</h3>
+          <p>Guided workflows for HR, education, marketing, research, business, program evaluation, and customer experience.</p>
+        </article>
+      </div>
+
+      <div class="studio-cta">
+        <a href="suites.html" class="studio-cta-link">Visit Our Suite Templates</a>
+      </div>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 3 . WHY SHOULD I TRUST IT?
+       External validation tiles: founder credential, auditable
+       methodology, real case studies. Replaces the prior
+       feature-claims-dressed-as-trust block.
+       ============================================================ -->
+  <section class="section" id="why-trust-it">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Why you can trust it</span>
+        <h2>Built by people who have stood in the rooms where the number was questioned.</h2>
+        <p>The team behind ReliCheck has spent more than 30 years in research, consulting, survey development, leadership, personnel, evaluation, and solutions-driven decision-making. We have walked the road you are walking. We have stood in the rooms where the data is questioned, and we have seen what happens when a survey is too weak to support the claim being made.</p>
+      </div>
+
+      <p class="trust-tagline">ReliCheck was built for the people who need more than a chart. They need evidence they can trust, explain, and stand behind.</p>
+
+      <div class="cards3">
+        <article class="v-card">
+          <h3>Built by a researcher who needed it</h3>
+          <p>ReliCheck was built after years of defending survey evidence in accreditation reviews, program evaluations, leadership reporting, and organizational decision-making. The platform exists because most survey tools stop at the chart instead of helping teams defend what the results actually mean.</p>
+          <a href="about.html" class="v-link">Read the story behind ReliCheck</a>
+        </article>
+        <article class="v-card">
+          <h3>Methodology you can audit</h3>
+          <p>Every reliability number, factor structure, and group comparison matches what a statistician computes in R, SPSS, or SAS. The math is exposed underneath every plain-language summary, and the full methodology is published.</p>
+          <a href="methodology.html" class="v-link">Read the published methodology</a>
+        </article>
+        <article class="v-card">
+          <h3>Real surveys, real scores</h3>
+          <p>See how teams in education, HR, marketing, and research have used ReliCheck to defend their numbers in accreditation reviews, leadership presentations, and funder reports.</p>
+          <a href="case-studies.html" class="v-link">Browse the case studies</a>
+        </article>
+      </div>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       SECTION 4 . WHAT DO I DO NEXT?
+       Four paths matching the rest of the site's "Four ways to
+       start" framing: check, build, upload, sample.
+       ============================================================ -->
+  <section class="section section-soft" id="four-ways-to-start">
+    <div class="container-content">
+      <div class="section-head">
+        <span class="kicker">Four ways to start</span>
+        <h2>Start with the path that fits you.</h2>
+        <p>Whether you already have data, want to build something new, want to bring an existing survey in, or just want to see what a credibility report looks like, there is a door for that.</p>
+      </div>
+
+      <div class="cards4">
+        <a class="path-card" href="import-data.html">
+          <span class="path-num">Path 01</span>
+          <h3>Check a survey I already have</h3>
+          <p>Upload results from Qualtrics, SurveyMonkey, Google Forms, or any CSV. See whether the evidence is strong enough to use.</p>
+        </a>
+        <a class="path-card" href="signup.html">
+          <span class="path-num">Path 02</span>
+          <h3>Build a stronger survey</h3>
+          <p>Create a new survey from scratch, from a validated scale, or with AI support. Every draft gets a pre-publish readiness check.</p>
+        </a>
+        <a class="path-card" href="import-survey.html">
+          <span class="path-num">Path 03</span>
+          <h3>Upload an existing survey</h3>
+          <p>Paste survey text or upload a Qualtrics .qsf file. ReliCheck extracts the questions and opens them in the builder.</p>
+        </a>
+        <a class="path-card" href="samples/course-evaluation.html">
+          <span class="path-num">Path 04</span>
+          <h3>See a sample report</h3>
+          <p>Preview the kind of analysis and recommendations ReliCheck produces, end to end, on a real course evaluation.</p>
+        </a>
+      </div>
+
+      <div class="section-foot">
+        <a href="#top" class="back-to-top" aria-label="Back to top">&#8593;</a>
+        <a href="signup.html" class="btn btn-primary">Get started</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================
+       FINAL CTA
+       ============================================================ -->
+  <section class="section">
+    <div class="container-content">
+      <div class="final-strip">
+        <h2>Make your next survey easier to trust, explain, and defend.</h2>
+        <p>Start free, upload a result you already have, or open a sample report and see the deliverable first.</p>
+        <div class="hero-actions">
+          <a href="signup.html" class="btn btn-primary btn-lg">Get started</a>
+          <a href="samples/course-evaluation.html" class="btn btn-outline btn-lg">View sample report</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+
+</body>
+</html>

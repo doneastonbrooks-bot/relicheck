@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck Mockups . Tester Script</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #f6f7fb;
+      color: #1a1f33;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14.5px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 48px 32px 80px; }
+
+    /* Header */
+    header { margin-bottom: 36px; }
+    .logo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+    .logo .mark { width: 28px; height: 28px; border-radius: 6px; background: #e85d3a; display: flex; align-items: center; justify-content: center; font-family: 'Fraunces', serif; font-weight: 700; color: #ffffff; font-size: 16px; }
+    .logo .word { font-family: 'Fraunces', serif; font-weight: 600; font-size: 17px; color: #1a1f33; }
+    .pill {
+      display: inline-block;
+      background: #fde2d7;
+      color: #c2410c;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 34px;
+      margin: 0 0 10px 0;
+      letter-spacing: -0.01em;
+      line-height: 1.15;
+    }
+    .lead { font-size: 16px; color: #4a5168; margin: 0; }
+
+    .toolbar {
+      margin: 22px 0 28px;
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    }
+    .btn {
+      background: #1a1f33;
+      color: #ffffff;
+      padding: 9px 16px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost { background: #ffffff; color: #1a1f33; border: 1px solid #e5e8ed; }
+    .btn.ghost:hover { background: #f6f7fb; }
+
+    /* Setup card */
+    .setup {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      padding: 24px 26px;
+      margin-bottom: 32px;
+    }
+    .setup h2 { font-family: 'Fraunces', serif; font-size: 17px; margin: 0 0 12px 0; }
+    .setup ul { padding-left: 20px; margin: 0; }
+    .setup li { margin-bottom: 6px; font-size: 14px; }
+
+    /* Section title */
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      margin: 36px 0 12px 0;
+    }
+
+    /* Task card */
+    .task {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 14px;
+    }
+    .task-head {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .task-num {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: #fde2d7;
+      color: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 14px;
+      flex: 0 0 34px;
+    }
+    .task-head h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      margin: 4px 0 4px 0;
+      line-height: 1.3;
+    }
+    .task-head .meta {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+    }
+
+    .say {
+      background: #fafbfd;
+      border-left: 3px solid #1a1f33;
+      padding: 10px 14px;
+      margin: 8px 0 10px 0;
+      font-size: 14px;
+      border-radius: 0 6px 6px 0;
+    }
+    .say em {
+      font-style: normal;
+      font-family: 'Fraunces', serif;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .task .watch {
+      font-size: 13px;
+      color: #4a5168;
+      margin-top: 8px;
+    }
+    .task .watch strong {
+      color: #1a1f33;
+      font-weight: 600;
+    }
+    .task .target {
+      display: inline-block;
+      font-size: 11px;
+      color: #6b7088;
+      letter-spacing: 0.04em;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f0f2f6;
+      width: 100%;
+    }
+    .task .target a {
+      color: #c2410c;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Note grid */
+    .notes-block {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 12px;
+    }
+    .notes-block h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 16px;
+      margin: 0 0 12px 0;
+    }
+    .notes-grid {
+      display: grid;
+      grid-template-columns: 160px 1fr;
+      gap: 10px 16px;
+      font-size: 13px;
+    }
+    .notes-grid div:nth-child(odd) {
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      padding-top: 12px;
+    }
+    .notes-grid .line {
+      border-bottom: 1px dashed #c5cbd4;
+      min-height: 32px;
+    }
+
+    /* Debrief block */
+    .debrief {
+      background: linear-gradient(135deg, #1a1f33 0%, #2a3354 100%);
+      color: #ffffff;
+      border-radius: 14px;
+      padding: 28px 30px;
+      margin-top: 24px;
+    }
+    .debrief h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      margin: 0 0 14px 0;
+    }
+    .debrief ol {
+      padding-left: 22px;
+      margin: 0;
+      color: #d1d5e0;
+    }
+    .debrief li { margin-bottom: 8px; font-size: 14px; }
+    .debrief li strong { color: #ffffff; font-weight: 600; }
+
+    /* Print */
+    @media print {
+      body { background: #ffffff; }
+      .toolbar, .btn { display: none; }
+      .task, .setup, .notes-block, .debrief { break-inside: avoid; box-shadow: none; }
+      .debrief { background: #ffffff; color: #1a1f33; border: 1px solid #c5cbd4; }
+      .debrief h2, .debrief li strong { color: #1a1f33; }
+      .debrief ol { color: #4a5168; }
+    }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo"><span class="mark">R</span><span class="word">ReliCheck mockups</span></div>
+    <span class="pill">FACILITATOR SCRIPT</span>
+    <h1>Watch a colleague walk the prototype.</h1>
+    <p class="lead">Nine tasks, about 25 minutes total. Read each prompt aloud, then stay quiet. The goal is to find what trips people up while the fixes are still cheap.</p>
+  </header>
+
+  <div class="toolbar">
+    <a class="btn" href="index.html">Open the launcher</a>
+    <a class="btn ghost" href="#" onclick="window.print();return false;">Print this script</a>
+  </div>
+
+  <!-- SETUP -->
+  <section class="setup">
+    <h2>Before you start</h2>
+    <ul>
+      <li>Open <strong>index.html</strong> on the colleague's screen. They drive. You watch.</li>
+      <li>Tell them: "This is a clickable design. Some things won't work. Just say out loud what you'd expect to happen, and I'll tell you if it's broken or just not wired up yet."</li>
+      <li>Promise not to coach. If they ask "what do I click?", say "what would you try?"</li>
+      <li>Keep this script open on a second screen and jot answers as you go.</li>
+      <li>If they hesitate for more than about 10 seconds, that's data. Note it. Then ask "what are you looking for right now?"</li>
+    </ul>
+  </section>
+
+  <!-- ORIENTATION -->
+  <div class="section-title">Part 1 . Orientation (5 minutes)</div>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">1</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"Take 30 seconds to look at this page. What is ReliCheck for?"</h3>
+      </div>
+    </div>
+    <div class="say"><em>If they ask for more</em>: "Just first impressions. No wrong answers."</div>
+    <div class="watch"><strong>Watch for:</strong> do they read the launcher's framing, or skip to the tiles? Do they say "surveys," "stats," "analytics," "AI"? The answer tells you whether the positioning lands or needs sharper wording.</div>
+    <div class="target">Stays on <a href="index.html">index.html</a></div>
+  </article>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">2</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"Where would you click to start?"</h3>
+      </div>
+    </div>
+    <div class="say"><em>If they hover on multiple tiles</em>: stay silent. The hesitation is the finding.</div>
+    <div class="watch"><strong>Watch for:</strong> do they pick Home, Create / Upload, or Projects? People who click Projects expect a workspace; people who click Create are starting from scratch. Both are valid. Note which.</div>
+    <div class="target">Likely <a href="home.html">home.html</a> or <a href="create-upload.html">create-upload.html</a></div>
+  </article>
+
+  <!-- BUILDING -->
+  <div class="section-title">Part 2 . Building a survey (7 minutes)</div>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">3</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"You want to start a new employee engagement survey. Show me how."</h3>
+      </div>
+    </div>
+    <div class="watch"><strong>Watch for:</strong> do they go through Home's quick action, the sidebar, or the breadcrumb? On Create / Upload, do they reach for the left column (build inside) or the right (upload)? "Use a template" should be a strong pull for the new-survey scenario.</div>
+    <div class="target">Path: <a href="home.html">home</a> &rarr; <a href="create-upload.html">create-upload</a> &rarr; <a href="builder.html">builder</a></div>
+  </article>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">4</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"On the builder page, can you tell what each part of the screen is for?"</h3>
+      </div>
+    </div>
+    <div class="say"><em>Point at the purple Purpose card</em>: "What does this do?"</div>
+    <div class="watch"><strong>Watch for:</strong> does the purple Purpose card read as required or optional? Do they notice items are grouped by construct, or does it look like flat questions? Does the AI Assist rail look like a tool palette or like ads?</div>
+    <div class="target"><a href="builder.html">builder.html</a></div>
+  </article>
+
+  <!-- ANALYZING -->
+  <div class="section-title">Part 3 . Reading results (8 minutes)</div>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">5</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"You just got 412 responses back on this survey. Tell me whether the data is good enough to use."</h3>
+      </div>
+    </div>
+    <div class="say"><em>Then ask:</em> "How did you decide?"</div>
+    <div class="watch"><strong>Watch for:</strong> do they read the SSI ring (78/100), the verdict pill ("USE WITH MINOR CAUTIONS"), or skip both and look for the table? The point of the Guided view is to answer this question in five seconds. If it takes longer, the hierarchy is off.</div>
+    <div class="target"><a href="analysis-guided.html">analysis-guided.html</a></div>
+  </article>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">6</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"Find the one thing you'd want to fix before the next survey."</h3>
+      </div>
+    </div>
+    <div class="watch"><strong>Watch for:</strong> do they read the 5-step layered finding card top to bottom, or jump around? Do they open the "Show reliability statistics" disclosure, or trust the plain-language version? Do they understand what "Items 4 and 9" refers to?</div>
+    <div class="target">Same page. Layered finding card under the SSI.</div>
+  </article>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">7</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"Pretend you're a stats person. Show me where the actual numbers live."</h3>
+      </div>
+    </div>
+    <div class="watch"><strong>Watch for:</strong> do they find the Guided / Technical toggle in the top right? Many testers miss it on the first pass. If they do, do they recognize the Technical view as the same data in a denser frame?</div>
+    <div class="target"><a href="analysis-technical.html">analysis-technical.html</a></div>
+  </article>
+
+  <!-- SHARING -->
+  <div class="section-title">Part 4 . Sharing (4 minutes)</div>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">8</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"Your boss wants a one-page summary on Friday. How would you give them one?"</h3>
+      </div>
+    </div>
+    <div class="watch"><strong>Watch for:</strong> do they hit the "Share" button in the top right, the "Add to report" in the layered card, or navigate over to the Reports sidebar? All three should work. If none feel right, the path needs a sharper signpost.</div>
+    <div class="target"><a href="reports.html">reports.html</a> &rarr; <a href="report-detail.html">report-detail.html</a></div>
+  </article>
+
+  <article class="task">
+    <div class="task-head">
+      <div class="task-num">9</div>
+      <div>
+        <div class="meta">PROMPT</div>
+        <h3>"A respondent asks 'will my answers be private?' Where would you look?"</h3>
+      </div>
+    </div>
+    <div class="watch"><strong>Watch for:</strong> do they go to Account, Team, Help, or the Take view? The respondent-facing trust footer on take-survey.html is the most honest answer. Note whether they think to check the page a respondent actually sees.</div>
+    <div class="target"><a href="take-survey.html">take-survey.html</a> (trust footer at the bottom)</div>
+  </article>
+
+  <!-- NOTES -->
+  <div class="section-title">Capture as you go</div>
+
+  <div class="notes-block">
+    <h3>Per-task notes (one row each)</h3>
+    <div class="notes-grid">
+      <div>Task 1 . orientation</div><div class="line"></div>
+      <div>Task 2 . first click</div><div class="line"></div>
+      <div>Task 3 . start a survey</div><div class="line"></div>
+      <div>Task 4 . builder scan</div><div class="line"></div>
+      <div>Task 5 . SSI verdict</div><div class="line"></div>
+      <div>Task 6 . layered finding</div><div class="line"></div>
+      <div>Task 7 . technical view</div><div class="line"></div>
+      <div>Task 8 . sharing path</div><div class="line"></div>
+      <div>Task 9 . privacy answer</div><div class="line"></div>
+    </div>
+  </div>
+
+  <div class="notes-block">
+    <h3>Patterns to look for across the session</h3>
+    <div class="notes-grid">
+      <div>Where they paused</div><div class="line"></div>
+      <div>Words they used</div><div class="line"></div>
+      <div>What they expected</div><div class="line"></div>
+      <div>What they couldn't find</div><div class="line"></div>
+      <div>What surprised them</div><div class="line"></div>
+      <div>What felt wrong</div><div class="line"></div>
+    </div>
+  </div>
+
+  <!-- DEBRIEF -->
+  <section class="debrief">
+    <h2>5-minute debrief</h2>
+    <ol>
+      <li><strong>"What would you have called this product, in your own words?"</strong> Tells you whether the positioning landed.</li>
+      <li><strong>"Was anything frustrating?"</strong> Open-ended. People rarely volunteer this without being asked.</li>
+      <li><strong>"Would you have used this at your last job?"</strong> Probes fit, not features.</li>
+      <li><strong>"What was missing?"</strong> Catches the gap between the prototype and a real workflow.</li>
+      <li><strong>"On a scale of 1-10, how likely would you be to recommend ReliCheck to a colleague who needs to run a survey, and why that number?"</strong> The "why" matters more than the number.</li>
+    </ol>
+  </section>
+
+  <!-- AFTER -->
+  <div class="section-title">After the session</div>
+
+  <div class="notes-block">
+    <h3>Top 3 things to fix in the mockups</h3>
+    <div class="notes-grid">
+      <div>Fix 1</div><div class="line"></div>
+      <div>Fix 2</div><div class="line"></div>
+      <div>Fix 3</div><div class="line"></div>
+      <div>One thing that worked</div><div class="line"></div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>While you collect · ReliCheck Intelligence</title>
+  <meta name="description" content="Conversational Take lets respondents answer a ReliCheck survey in plain language. Server-side validation, per-IP rate limits, and a fixed token budget keep the data clean and the cost predictable." />
+  <link rel="canonical" href="https://relichecksurvey.com/ai/while-you-collect.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="While you collect · ReliCheck Intelligence" />
+  <meta property="og:description" content="Conversational Take lets respondents answer a ReliCheck survey in plain language, with server-side validation and per-IP rate limits." />
+  <meta property="og:url" content="https://relichecksurvey.com/ai/while-you-collect.html" />
+  <meta property="og:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <meta property="og:site_name" content="ReliCheck" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="While you collect · ReliCheck Intelligence" />
+  <meta name="twitter:description" content="Conversational Take lets respondents answer a ReliCheck survey in plain language, with server-side validation and per-IP rate limits." />
+  <meta name="twitter:image" content="https://relichecksurvey.com/hero-product.jpg" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles-2026.css?v=20260516-style" />
+  <style>
+    .stage-strip{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0 0;}
+    .stage-strip a{display:inline-block;padding:8px 14px;border:1px solid var(--ink-2,#e5e7eb);border-radius:999px;font-size:14px;font-weight:500;color:var(--ink-7,#374151);text-decoration:none;background:#fff;}
+    .stage-strip a.is-current{background:var(--ink-9,#0f172a);color:#fff;border-color:var(--ink-9,#0f172a);}
+    .stage-strip a:hover{border-color:var(--ink-5,#9ca3af);}
+    .see-all{padding:24px 0 8px;text-align:center;font-size:14px;color:var(--ink-6,#6b7280);}
+    .see-all a{color:var(--ink-8,#1f2937);font-weight:600;text-decoration:underline;}
+    .detail-block{margin-top:40px;padding:28px;background:var(--ink-0,#fafafa);border:1px solid var(--ink-2,#e5e7eb);border-radius:14px;}
+    .detail-block h3{font-family:'Fraunces',serif;font-size:22px;font-weight:600;margin:0 0 10px;}
+    .detail-block p{font-size:16px;line-height:1.6;color:var(--ink-8,#1f2937);}
+    .detail-block p + p{margin-top:10px;}
+    .detail-block .back{display:inline-block;margin-top:14px;font-size:14px;color:var(--ink-7,#374151);text-decoration:underline;}
+  </style>
+</head>
+<body>
+<div id="relicheck-nav"></div>
+<script src="/assets/js/relicheck-nav.js?v=20260517" defer></script>
+<main>
+
+<section class="solution-hero">
+  <div class="container-content">
+    <nav class="stage-strip" aria-label="ReliCheck Intelligence lifecycle">
+      <a href="before-you-collect.html">Before you collect</a>
+      <a href="while-you-collect.html" class="is-current">While you collect</a>
+      <a href="while-you-analyze.html">While you analyze</a>
+      <a href="when-you-report.html">When you report</a>
+    </nav>
+    <span class="kicker" style="margin-top:18px;display:inline-block;">ReliCheck Intelligence · While you collect</span>
+    <h1 style="margin-top:var(--s-3);">Let respondents answer in their own words.</h1>
+    <p class="lede">A long form is the fastest way to lose a respondent. Conversational Take turns the take page into a chat: people answer naturally, the structured value gets pulled out, and the same submit endpoint, autosave, and skip logic from the form mode run underneath without change.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container-content">
+    <div class="section-head">
+      <span class="kicker">How it works</span>
+      <h2>One tool, three views.</h2>
+    </div>
+    <div class="cards-3">
+      <article class="feature-card" id="conversational-take">
+        <div class="icon-tile">&#9678;</div>
+        <h3>Conversational Take</h3>
+        <p>Let respondents answer in their own words.</p>
+        <p>The survey opens as a chat instead of a form. Each question appears in plain language; the respondent replies naturally ("agree," "5," "I love this"); the answer gets recorded against the right option and confirmed back in one sentence before the next question. Same data, same reports, just an easier way to answer.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-tile">&#8615;</div>
+        <h3>Why it lifts response rates</h3>
+        <p>Long surveys lose respondents to form fatigue.</p>
+        <p>A chat reads faster, feels less like work, and gives respondents room to answer with shades of meaning a radio button can't capture ("I love this part but the workload is brutal"). The structured value gets pulled out and confirmed back, so the respondent can correct it if needed. Same data, lower abandon rate, better accessibility for people who struggle with dense form layouts (including screen readers and assistive tech).</p>
+        <p style="font-size:14px;color:var(--ink-6);margin-top:8px;">Designed with assistive-tech use in mind.</p>
+      </article>
+      <article class="feature-card">
+        <div class="icon-tile">&#128737;</div>
+        <h3>Built-in cost and abuse guardrails</h3>
+        <p>You don't have to worry about one noisy respondent running up the AI bill.</p>
+        <p>The endpoint behind the chat is rate-limited to 240 calls per hour per IP. Each call uses a 400-token output budget and a prompt constrained to the question shape, and server-side validation clamps Likert values to the survey's scale and rejects out-of-range single-choice indices. An off-topic reply can't poison the dataset.</p>
+        <p style="font-size:14px;color:var(--ink-6);margin-top:8px;">Per-IP rate limit, validated output, no respondent identifiers passed to the model.</p>
+      </article>
+    </div>
+    <p class="see-all">Looking for the bigger picture? <a href="/ai-features.html">See all twenty-nine assists in ReliCheck Intelligence</a>.</p>
+  </div>
+</section>
+
+</main>
+<div id="footer-mount"></div>
+<script src="/footer.js" defer></script>
+</body>
+</html>

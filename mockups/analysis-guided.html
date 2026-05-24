@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ReliCheck App Mockup . Analysis Results (Guided View)</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       SHARED APP SHELL (matches mockups/home.html)
+       ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      background: #f6f7fb;
+      color: #1a1f33;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    .app { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+
+    /* Sidebar */
+    .sidebar {
+      background: #0f172a;
+      color: #d1d5e0;
+      padding: 20px 0;
+      display: flex; flex-direction: column; gap: 4px;
+      position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .sidebar-brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 22px 24px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 16px;
+    }
+    .sidebar-brand .logo {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif; font-weight: 700;
+      color: #ffffff; font-size: 16px;
+    }
+    .sidebar-brand .name {
+      font-family: 'Fraunces', serif; font-weight: 600;
+      font-size: 18px; color: #ffffff; letter-spacing: -0.01em;
+    }
+    .sidebar-section {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #6b7088;
+      padding: 14px 22px 6px;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 22px;
+      color: #d1d5e0; text-decoration: none;
+      font-size: 14px; font-weight: 500;
+      border-left: 3px solid transparent;
+      transition: background 0.12s, color 0.12s;
+    }
+    .nav-item:hover { background: #1e293b; color: #ffffff; }
+    .nav-item.active {
+      background: #1e293b; color: #ffffff;
+      border-left-color: #e85d3a;
+    }
+    .nav-item .icon { width: 18px; height: 18px; flex: 0 0 18px; opacity: 0.85; }
+    .nav-item.active .icon { opacity: 1; }
+    .sidebar-foot {
+      margin-top: auto; padding: 16px 22px;
+      border-top: 1px solid #1e293b;
+      font-size: 12px; color: #6b7088;
+    }
+    .sidebar-foot strong { color: #ffffff; display: block; font-size: 13px; }
+
+    /* Top bar */
+    .topbar {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      padding: 14px 32px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 10;
+    }
+    .crumbs { display: flex; gap: 6px; align-items: center; font-size: 13px; color: #6b7088; }
+    .crumbs a { color: #6b7088; text-decoration: none; }
+    .crumbs a:hover { color: #1a1f33; }
+    .crumbs strong { color: #1a1f33; font-weight: 600; }
+    .crumbs .sep { color: #c5cbd4; }
+    .topbar-right { display: flex; gap: 16px; align-items: center; }
+    .topbar-btn {
+      width: 36px; height: 36px; border-radius: 8px;
+      border: 1px solid #e5e8ed; background: #ffffff;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #6b7088;
+    }
+    .topbar-btn:hover { background: #f6f7fb; color: #1a1f33; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: linear-gradient(135deg, #e85d3a, #d44e2c);
+      display: flex; align-items: center; justify-content: center;
+      color: #ffffff; font-weight: 700; font-size: 13px;
+    }
+
+    /* Main */
+    .main { padding: 0 0 80px; }
+
+    /* Project header bar */
+    .proj-head {
+      padding: 24px 40px 0;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      max-width: none;
+    }
+    .proj-title-row {
+      display: flex; align-items: flex-end; justify-content: space-between;
+      gap: 24px; flex-wrap: wrap;
+      padding-bottom: 16px;
+    }
+    .proj-title h1 {
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      margin: 0 0 4px 0;
+      letter-spacing: -0.01em;
+    }
+    .proj-title .pt-meta {
+      font-size: 13px; color: #6b7088;
+    }
+    .view-toggle {
+      display: inline-flex;
+      background: #f0f2f6;
+      border-radius: 8px;
+      padding: 3px;
+    }
+    .view-toggle button {
+      border: none;
+      background: transparent;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7088;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .view-toggle button.on {
+      background: #ffffff;
+      color: #1a1f33;
+      box-shadow: 0 1px 2px rgba(15,23,42,0.06);
+    }
+    .view-actions { display: flex; gap: 8px; align-items: center; }
+    .btn {
+      background: #1a1f33;
+      color: #ffffff;
+      padding: 9px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn:hover { background: #e85d3a; }
+    .btn.ghost {
+      background: #ffffff;
+      color: #1a1f33;
+      border: 1px solid #e5e8ed;
+    }
+    .btn.ghost:hover { background: #f6f7fb; border-color: #c5cbd4; }
+
+    /* Tab strip */
+    .tabs {
+      display: flex; gap: 0; overflow-x: auto;
+      border-top: 1px solid #f0f2f6;
+    }
+    .tab {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7088;
+      text-decoration: none;
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+    }
+    .tab:hover { color: #1a1f33; }
+    .tab.on { color: #1a1f33; border-bottom-color: #e85d3a; }
+
+    /* Filter strip */
+    .filter-strip {
+      padding: 14px 40px;
+      background: #ffffff;
+      border-bottom: 1px solid #e5e8ed;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+      font-size: 13px;
+    }
+    .filter-strip .label { color: #6b7088; font-weight: 500; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px;
+      background: #f6f7fb;
+      border: 1px solid #e5e8ed;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #1a1f33;
+      cursor: pointer;
+    }
+    .chip:hover { border-color: #c5cbd4; }
+    .chip .x { color: #6b7088; font-size: 14px; }
+
+    /* Body grid */
+    .body {
+      padding: 28px 40px;
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      max-width: 1320px;
+    }
+    @media (max-width: 1100px) { .body { grid-template-columns: 1fr; } }
+
+    /* Card base */
+    .card {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .card-pad { padding: 24px; }
+    .card-head {
+      padding: 18px 24px;
+      border-bottom: 1px solid #f0f2f6;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-head h2 {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      margin: 0;
+    }
+    .card-head .sub { font-size: 12px; color: #6b7088; }
+
+    /* SSI card */
+    .ssi-card {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 28px;
+      align-items: center;
+    }
+    @media (max-width: 720px) { .ssi-card { grid-template-columns: 1fr; } }
+    .ssi-ring {
+      width: 180px; height: 180px;
+      position: relative;
+      margin: 0 auto;
+    }
+    .ssi-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+    .ssi-ring .num {
+      position: absolute;
+      inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .ssi-ring .n {
+      font-family: 'Fraunces', serif;
+      font-size: 44px; font-weight: 700;
+      color: #1a1f33; line-height: 1;
+    }
+    .ssi-ring .d { font-size: 12px; color: #6b7088; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 6px; }
+    .ssi-info h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      margin: 0 0 6px 0;
+    }
+    .ssi-info .verdict-pill {
+      display: inline-block;
+      padding: 4px 12px;
+      background: #ecfdf3;
+      color: #166534;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+    }
+    .ssi-info p { margin: 0; color: #6b7088; font-size: 14px; }
+    .ssi-domains {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-top: 18px;
+    }
+    @media (max-width: 720px) { .ssi-domains { grid-template-columns: repeat(3, 1fr); } }
+    .dom-tile {
+      background: #fafbfd;
+      border: 1px solid #f0f2f6;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .dom-tile .dn { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: #6b7088; font-weight: 700; }
+    .dom-tile .dv { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700; margin-top: 4px; color: #1a1f33; }
+    .dom-tile.warn .dv { color: #c2410c; }
+    .dom-tile.good .dv { color: #166534; }
+
+    /* Layered Reliability finding card */
+    .finding {
+      margin-top: 24px;
+    }
+    .layer {
+      padding: 22px 24px;
+      border-bottom: 1px solid #f0f2f6;
+      display: grid;
+      grid-template-columns: 36px 1fr;
+      gap: 16px;
+    }
+    .layer:last-child { border-bottom: none; }
+    .layer .step {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #fde2d7;
+      color: #e85d3a;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 16px;
+      flex: 0 0 36px;
+    }
+    .layer .lab {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #6b7088;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .layer h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      margin: 0 0 6px 0;
+      line-height: 1.3;
+    }
+    .layer p { margin: 0; color: #1a1f33; font-size: 14px; line-height: 1.55; }
+    .layer p + p { margin-top: 8px; }
+    .layer .body-soft { color: #4a5168; }
+
+    .action-list {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .action-list li {
+      background: #fafbfd;
+      border: 1px solid #f0f2f6;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #1a1f33;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .action-list li::before {
+      content: "";
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #e85d3a;
+      flex: 0 0 6px;
+      margin-top: 8px;
+    }
+
+    /* Technical details disclosure */
+    details.tech {
+      margin-top: 8px;
+      background: #fafbfd;
+      border: 1px solid #f0f2f6;
+      border-radius: 10px;
+    }
+    details.tech > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1f33;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    details.tech > summary::-webkit-details-marker { display: none; }
+    details.tech > summary::after {
+      content: "+";
+      font-size: 16px;
+      color: #6b7088;
+      font-weight: 700;
+    }
+    details.tech[open] > summary::after { content: "-"; }
+    details.tech .tech-body {
+      padding: 0 16px 14px;
+      font-size: 13px;
+      color: #4a5168;
+    }
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .stat {
+      background: #ffffff;
+      border: 1px solid #e5e8ed;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .stat .sn { font-size: 11px; color: #6b7088; letter-spacing: 0.05em; text-transform: uppercase; font-weight: 600; }
+    .stat .sv { font-family: 'Fraunces', serif; font-size: 16px; font-weight: 700; color: #1a1f33; margin-top: 4px; }
+
+    .add-bar {
+      padding: 16px 24px;
+      background: #fafbfd;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .add-bar .ab-msg { font-size: 13px; color: #6b7088; }
+
+    /* Right rail */
+    .rail { display: flex; flex-direction: column; gap: 16px; }
+    .rail .card-pad { padding: 18px 20px; }
+    .narrator-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #e85d3a;
+      margin-bottom: 8px;
+    }
+    .narrator-tag .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #e85d3a;
+    }
+    .rail h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+      margin: 0 0 8px 0;
+    }
+    .rail p { margin: 0; font-size: 13px; color: #4a5168; line-height: 1.55; }
+    .tone-pill {
+      display: inline-block;
+      padding: 3px 9px;
+      background: #fff8e6;
+      color: #92400e;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      margin-top: 10px;
+    }
+    .chat-box {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #f0f2f6;
+    }
+    .chat-input {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid #e5e8ed;
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: inherit;
+    }
+    .chat-input input:focus { outline: none; border-color: #e85d3a; }
+    .chat-input button {
+      padding: 9px 14px;
+      background: #1a1f33;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .ai-suggestion {
+      font-size: 12px;
+      color: #6b7088;
+      padding: 8px 10px;
+      background: #fafbfd;
+      border: 1px solid #f0f2f6;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 6px;
+    }
+    .ai-suggestion:hover { border-color: #e85d3a; color: #1a1f33; }
+
+    .quick-jump h3 { font-family: 'Fraunces', serif; font-size: 14px; margin: 0 0 8px 0; }
+    .quick-jump ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
+    .quick-jump a {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #1a1f33;
+      text-decoration: none;
+    }
+    .quick-jump a:hover { background: #fafbfd; }
+    .quick-jump a .v {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      color: #1a1f33;
+      font-size: 13px;
+    }
+    .quick-jump a .v.warn { color: #c2410c; }
+    .quick-jump a .v.good { color: #166534; }
+
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ============================================================
+       SIDEBAR
+       ============================================================ -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo">R</span>
+      <span class="name">ReliCheck</span>
+    </div>
+    <a class="nav-item" href="home.html"><span class="icon">&#8962;</span>Home</a>
+    <a class="nav-item" href="projects.html"><span class="icon">&#9703;</span>Projects</a>
+    <a class="nav-item" href="create-upload.html"><span class="icon">+</span>Create / Upload</a>
+    <a class="nav-item active" href="analysis-guided.html"><span class="icon">&#8721;</span>Analyze</a>
+    <a class="nav-item" href="reports.html"><span class="icon">&#9636;</span>Reports</a>
+
+    <div class="sidebar-section">Tools</div>
+    <a class="nav-item" href="templates.html"><span class="icon">&#9638;</span>Templates</a>
+    <a class="nav-item" href="ai-tools.html"><span class="icon">&#10022;</span>AI Tools</a>
+
+    <div class="sidebar-section">Workspace</div>
+    <a class="nav-item" href="team.html"><span class="icon">&#9863;</span>Team</a>
+    <a class="nav-item" href="account.html"><span class="icon">&#9684;</span>Account</a>
+    <a class="nav-item" href="#"><span class="icon">?</span>Help</a>
+
+    <div class="sidebar-foot">
+      <strong>Professional plan</strong>
+      Renewed May 15
+    </div>
+  </aside>
+
+  <!-- ============================================================
+       MAIN CONTENT
+       ============================================================ -->
+  <main>
+    <div class="topbar">
+      <div class="crumbs">
+        <a href="home.html">Home</a>
+        <span class="sep">&rsaquo;</span>
+        <a href="#">Projects</a>
+        <span class="sep">&rsaquo;</span>
+        <strong>Employee Engagement 2026</strong>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-btn" aria-label="Search">&#8981;</button>
+        <button class="topbar-btn" aria-label="Notifications">&#9681;</button>
+        <div class="avatar">AM</div>
+      </div>
+    </div>
+
+    <div class="main">
+
+      <!-- Project header bar -->
+      <div class="proj-head">
+        <div class="proj-title-row">
+          <div class="proj-title">
+            <h1>Employee Engagement 2026</h1>
+            <div class="pt-meta">Survey project . 412 responses . last response 2 hours ago</div>
+          </div>
+          <div class="view-actions">
+            <div class="view-toggle" role="tablist" aria-label="View mode">
+              <button class="on" type="button">Guided View</button>
+              <button type="button">Technical View</button>
+            </div>
+            <a class="btn ghost" href="#">Export PDF</a>
+            <a class="btn" href="#">Share</a>
+          </div>
+        </div>
+
+        <!-- Tab strip -->
+        <nav class="tabs">
+          <a class="tab on" href="#">Strength Index</a>
+          <a class="tab" href="#">Reliability</a>
+          <a class="tab" href="#">Description</a>
+          <a class="tab" href="#">Validity</a>
+          <a class="tab" href="#">Open-Ended</a>
+          <a class="tab" href="#">Compare</a>
+          <a class="tab" href="#">Pre / Post</a>
+          <a class="tab" href="#">Subgroups</a>
+          <a class="tab" href="#">Predictors</a>
+          <a class="tab" href="#">Key Drivers</a>
+        </nav>
+      </div>
+
+      <!-- Filter strip -->
+      <div class="filter-strip">
+        <span class="label">Filters:</span>
+        <span class="chip">All dates <span class="x">&times;</span></span>
+        <span class="chip">All channels <span class="x">&times;</span></span>
+        <span class="chip">Completed only <span class="x">&times;</span></span>
+        <span style="margin-left:auto;color:#6b7088;font-size:12px;">412 of 487 responses shown</span>
+      </div>
+
+      <!-- ============================================================
+           BODY: main + right rail
+           ============================================================ -->
+      <div class="body">
+
+        <!-- ============================================================
+             MAIN COLUMN
+             ============================================================ -->
+        <div>
+
+          <!-- SSI CARD -->
+          <section class="card">
+            <header class="card-head">
+              <div>
+                <h2>Survey Strength Index</h2>
+                <div class="sub">A composite of six quality domains</div>
+              </div>
+              <a class="btn ghost" href="#" style="font-size:12px;padding:7px 12px;">How is this scored?</a>
+            </header>
+            <div class="card-pad">
+              <div class="ssi-card">
+                <div class="ssi-ring">
+                  <svg viewBox="0 0 120 120">
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#f0f2f6" stroke-width="12"/>
+                    <circle cx="60" cy="60" r="50" fill="none" stroke="#e85d3a" stroke-width="12"
+                            stroke-dasharray="245" stroke-dashoffset="69"
+                            stroke-linecap="round"/>
+                  </svg>
+                  <div class="num">
+                    <div class="n">78</div>
+                    <div class="d">of 100</div>
+                  </div>
+                </div>
+                <div class="ssi-info">
+                  <h3>Solid results, with one area to watch</h3>
+                  <span class="verdict-pill">USE WITH MINOR CAUTIONS</span>
+                  <p>Your survey is reliable and well-structured. Two items on the Recognition scale are weaker than the rest and may be lowering overall reliability.</p>
+                </div>
+              </div>
+
+              <div class="ssi-domains">
+                <div class="dom-tile good"><div class="dn">Reliability</div><div class="dv">22 / 25</div></div>
+                <div class="dom-tile good"><div class="dn">Factor</div><div class="dv">18 / 20</div></div>
+                <div class="dom-tile warn"><div class="dn">Item</div><div class="dv">13 / 20</div></div>
+                <div class="dom-tile good"><div class="dn">Response</div><div class="dv">13 / 15</div></div>
+                <div class="dom-tile"><div class="dn">Open-End</div><div class="dv">7 / 10</div></div>
+                <div class="dom-tile good"><div class="dn">Action</div><div class="dv">5 / 10</div></div>
+              </div>
+            </div>
+          </section>
+
+          <!-- ============================================================
+               LAYERED FINDING CARD (5-step guided pattern)
+               ============================================================ -->
+          <section class="card finding">
+            <header class="card-head">
+              <div>
+                <h2>What needs attention: Reliability</h2>
+                <div class="sub">Top finding in your data, guided step by step</div>
+              </div>
+              <span style="font-size:11px;font-weight:700;letter-spacing:0.06em;background:#fff8e6;color:#92400e;padding:4px 10px;border-radius:999px;">1 OF 3 FINDINGS</span>
+            </header>
+
+            <!-- STEP 1: WHAT WE FOUND -->
+            <div class="layer">
+              <div class="step">1</div>
+              <div>
+                <div class="lab">What ReliCheck found</div>
+                <h3>Two questions on the Recognition scale are weakening your survey's consistency.</h3>
+                <p class="body-soft">Items 4 and 9 do not move together with the rest of the Recognition scale. The scale would be more reliable if these two items were revised or removed.</p>
+              </div>
+            </div>
+
+            <!-- STEP 2: WHY IT MATTERS -->
+            <div class="layer">
+              <div class="step">2</div>
+              <div>
+                <div class="lab">Why this matters</div>
+                <h3>Inconsistent items add noise to every score you report.</h3>
+                <p class="body-soft">When two items pull in different directions than the rest of the scale, the total score becomes harder to interpret. Two employees with the same true level of recognition could end up with different scores because of how those items were phrased, not because their experiences differ.</p>
+              </div>
+            </div>
+
+            <!-- STEP 3: WHAT TO DO -->
+            <div class="layer">
+              <div class="step">3</div>
+              <div>
+                <div class="lab">What to do next</div>
+                <h3>Three options, ranked by impact.</h3>
+                <ul class="action-list">
+                  <li><strong>Rewrite Item 4</strong>: "My manager recognizes my work" is double-barreled with the next pulse's wording on feedback frequency. Split into two cleaner statements.</li>
+                  <li><strong>Drop Item 9</strong>: "Recognition is part of our culture" reads as a culture item, not a personal-experience item. Consider moving it to the Culture scale.</li>
+                  <li><strong>Run a pilot</strong> with the revised items on 30 employees before the next full pulse.</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- STEP 4: TECHNICAL DETAILS -->
+            <div class="layer">
+              <div class="step">4</div>
+              <div>
+                <div class="lab">For the methods section</div>
+                <h3>The numbers behind the finding.</h3>
+                <details class="tech">
+                  <summary>Show reliability statistics</summary>
+                  <div class="tech-body">
+                    <p style="margin:0 0 8px 0;">The Recognition scale (8 items, N = 412) shows acceptable internal consistency overall, but item-level diagnostics flag Items 4 and 9 as candidates for revision.</p>
+                    <div class="stat-grid">
+                      <div class="stat"><div class="sn">Cronbach's &alpha;</div><div class="sv">0.78</div></div>
+                      <div class="stat"><div class="sn">McDonald's &omega;</div><div class="sv">0.81</div></div>
+                      <div class="stat"><div class="sn">&alpha; if Item 4 dropped</div><div class="sv">0.84</div></div>
+                      <div class="stat"><div class="sn">&alpha; if Item 9 dropped</div><div class="sv">0.83</div></div>
+                      <div class="stat"><div class="sn">Item-total r (4)</div><div class="sv">0.18</div></div>
+                      <div class="stat"><div class="sn">Item-total r (9)</div><div class="sv">0.21</div></div>
+                    </div>
+                    <p style="margin:10px 0 0 0;">Item-total correlations below 0.30 indicate a weak relationship between the item and the rest of the scale. Dropping either item raises alpha by about 0.05.</p>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <!-- STEP 5: ADD TO REPORT -->
+            <div class="add-bar">
+              <span class="ab-msg">Add this finding (and its action items) to your executive summary or methods report.</span>
+              <div style="display:flex;gap:8px;">
+                <a class="btn ghost" href="#">Save for later</a>
+                <a class="btn" href="#">Add to report</a>
+              </div>
+            </div>
+          </section>
+
+        </div>
+
+        <!-- ============================================================
+             RIGHT RAIL
+             ============================================================ -->
+        <aside class="rail">
+
+          <!-- AI Narrator -->
+          <section class="card">
+            <div class="card-pad">
+              <span class="narrator-tag"><span class="dot"></span> AI summary</span>
+              <h3>Your survey is solid. One subscale needs love.</h3>
+              <p>Reliability and factor structure look strong. Recognition has two items that don't fit the rest of the scale. Once those are revised, the survey is in good shape for the next pulse.</p>
+              <span class="tone-pill">USE WITH MINOR CAUTIONS</span>
+              <div class="chat-box">
+                <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#6b7088;margin-bottom:8px;">Ask about these results</div>
+                <div class="ai-suggestion">Why are Items 4 and 9 flagged?</div>
+                <div class="ai-suggestion">Can I still use the Recognition score?</div>
+                <div class="ai-suggestion">Write a paragraph for my report.</div>
+                <div class="chat-input">
+                  <input type="text" placeholder="Ask a question..." />
+                  <button type="button">&rarr;</button>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quick jump -->
+          <section class="card quick-jump">
+            <div class="card-pad">
+              <h3>Jump to another tab</h3>
+              <ul>
+                <li><a href="#"><span>Reliability</span><span class="v good">0.78</span></a></li>
+                <li><a href="#"><span>Description</span><span class="v">28 items</span></a></li>
+                <li><a href="#"><span>Validity</span><span class="v good">3 factors</span></a></li>
+                <li><a href="#"><span>Open-Ended</span><span class="v">203 resp.</span></a></li>
+                <li><a href="#"><span>Compare groups</span><span class="v">by tenure</span></a></li>
+                <li><a href="#"><span>Subgroups</span><span class="v warn">2 hidden</span></a></li>
+              </ul>
+            </div>
+          </section>
+
+        </aside>
+
+      </div>
+    </div>
+  </main>
+
+</div>
+
+</body>
+</html>
