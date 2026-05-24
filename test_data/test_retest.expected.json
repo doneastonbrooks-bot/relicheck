@@ -1,0 +1,39 @@
+{
+  "_about": "Expected pre/post and test-retest values for sample-test-retest-engagement.xlsx. Verified against independent Python (pandas/scipy) on 2026-05-23. If the site's Pre/Post tab produces numbers that drift from these by more than rounding, something is broken.",
+  "dataset": "sample-test-retest-engagement.xlsx",
+  "sheet": "Engagement Test-Retest",
+  "n_pairs": 100,
+  "n_items": 10,
+  "wave_column": "wave",
+  "id_column": "employee_id",
+  "wave_values": ["Time 1", "Time 2"],
+  "scale_total": {
+    "time_1": { "mean": 3.576, "sd": 0.481 },
+    "time_2": { "mean": 3.606, "sd": 0.466 },
+    "mean_change": 0.030
+  },
+  "paired_t_test_scale_total": {
+    "t_statistic": 1.494,
+    "df": 99,
+    "p_value": 0.1383,
+    "cohens_dz": 0.149,
+    "_note": "Not statistically significant (p > 0.05). Change is small."
+  },
+  "test_retest_reliability": {
+    "pearson_r_scale_total": 0.9106,
+    "icc_2_1_absolute_agreement": 0.9091,
+    "_note": "Excellent stability. ICC > 0.90 is conventionally 'excellent'."
+  },
+  "per_item_test_retest_pearson_r": {
+    "I find my work meaningful.":                              0.762,
+    "I am energized by my work most days.":                    0.753,
+    "I am proud to tell others where I work.":                 0.787,
+    "My work gives me a sense of personal accomplishment.":    0.777,
+    "My manager helps me grow professionally.":                0.811,
+    "My manager listens to my ideas.":                         0.847,
+    "My manager gives me useful feedback when I need it.":     0.805,
+    "I have the autonomy to do my best work.":                 0.695,
+    "I can decide how to approach my tasks.":                  0.699,
+    "I have flexibility in how I organize my workday.":        0.701
+  }
+}
