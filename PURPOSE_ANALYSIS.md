@@ -21,8 +21,12 @@ These are working. Don't dilute them.
 
 These are the gaps. Each is fixable; each matters.
 
-### 1. The homepage frames features, not the decision
-"What would you like to work on today?" with Quick Actions (Create a survey / Upload data / Analyze data / ReliCheck Intelligence) — these are feature buckets. None of them name the *moment* the user is actually in: *I have data, I need to make a decision, I don't know if my evidence is strong enough.* The purpose document says lead with the problem behind the data. The homepage doesn't yet.
+### 1. The *anonymous* homepage doesn't carry the positioning weight
+**Important distinction:** there are two first screens with two different jobs.
+- The **logged-in dashboard** ("What would you like to work on today?" + Quick Actions) is for someone who's already chosen ReliCheck and wants to start work. That line is *good* on this surface — warm, personal, respects the user's agency. Keep it.
+- The **anonymous homepage** at relichecksurvey.com (for someone who's never heard of ReliCheck) is where the positioning weight belongs. That's the surface that needs the moment-of-doubt language: *Your survey is in. The numbers look right. Are they strong enough to support the decision you're about to make?* — not a feature pitch.
+
+The original drift in this analysis was applying the positioning critique to the dashboard. Correction: dashboard is fine; the *anonymous landing page* is the one that needs to do the positioning work.
 
 ### 2. The Strength Index is buried as a tab
 The composite credibility score is the most distinctive thing the platform does. It currently sits as the first tab in a strip of 13. It should be the **headline outcome** of any analysis — visible on every project card, in the project header, in the report. Right now the user has to know to click it. That undersells the differentiator.
