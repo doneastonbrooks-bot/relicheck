@@ -5662,6 +5662,7 @@ const api = {
   getDataset(id)                   { return this._json('GET',  '/api/datasets/get.php?id=' + encodeURIComponent(id)); },
   updateDataset(payload)           { return this._json('PATCH', '/api/datasets/update.php', payload); },
   refreshDataset(payload)          { return this._json('POST',  '/api/datasets/refresh.php', payload); },
+  updateDatasetColumns(id, columnMeta) { return this._json('POST', '/api/datasets/update_columns.php', { id: id, column_meta: columnMeta }); },
   // Delete projects.
   deleteSurvey(id)                 { return this._json('POST', '/api/surveys/delete.php',  { id: id }); },
   deleteDataset(id)                { return this._json('POST', '/api/datasets/delete.php', { id: id }); },
@@ -31742,6 +31743,147 @@ async function mmRenderProject(container, id) {
 // design (including legacy projects backfilled to skipped_legacy) lands on
 // Choose Design on first open and cannot leave until they pick one.
 
+// Open an overlay to edit column roles on an existing dataset.
+// Used for datasets uploaded BEFORE the smarter auto-detection landed,
+// where columns like a numeric-coded Gender were misclassified as
+// Likert. Lets the user fix the roles in-place without re-uploading.
+//
+// onSaved (optional) is called after a successful save so the caller
+// can reload analytics that depend on column types.
+async function mmEditColumns(datasetId, onSaved) {
+  if (!datasetId) { showToast('No dataset to edit.'); return; }
+
+  // Backdrop + container
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px;';
+  overlay.innerHTML =
+    '<div style="background:#fff;border-radius:10px;max-width:780px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,0.35);">' +
+      '<div style="padding:18px 22px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">' +
+        '<div>' +
+          '<h2 style="margin:0;font-family:Fraunces,serif;font-size:20px;">Edit column roles</h2>' +
+          '<p style="margin:4px 0 0;color:#5a6470;font-size:13px;">Set how each column should be treated in analyses. Changes apply to every downstream test (Reliability, Validity, Compare, Pearson, Chi-square).</p>' +
+        '</div>' +
+        '<button id="mmEditColsClose" style="background:none;border:none;font-size:22px;cursor:pointer;color:#5a6470;line-height:1;">&times;</button>' +
+      '</div>' +
+      '<div id="mmEditColsBody" style="padding:18px 22px;overflow:auto;flex:1;">' +
+        '<div class="loading-row"><div class="spinner"></div><div>Loading column metadata...</div></div>' +
+      '</div>' +
+      '<div style="padding:14px 22px;border-top:1px solid #e5e7eb;display:flex;justify-content:flex-end;gap:8px;">' +
+        '<button id="mmEditColsCancel" class="btn ghost" style="background:#f4f6fb;color:#1f2937;">Cancel</button>' +
+        '<button id="mmEditColsSave" class="btn primary">Save column roles</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.querySelector('#mmEditColsClose').addEventListener('click', close);
+  overlay.querySelector('#mmEditColsCancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  // Fetch dataset
+  let cols = [];
+  let rowsAll = [];
+  try {
+    const r = await api.getDataset(datasetId);
+    const d = (r && r.dataset) || r || {};
+    cols = Array.isArray(d.column_meta) ? d.column_meta.slice() : [];
+    rowsAll = Array.isArray(d.data) ? d.data : [];
+  } catch (e) {
+    overlay.querySelector('#mmEditColsBody').innerHTML =
+      '<div style="color:#a33;">Could not load dataset: ' + MM.esc((e && e.message) || '') + '</div>';
+    return;
+  }
+
+  // Compute hints (distinct values + sample) per column from the saved data.
+  const hints = cols.map((c, i) => {
+    const distinct = new Set();
+    for (const row of rowsAll) {
+      const s = String((row && row[i]) == null ? '' : row[i]).trim();
+      if (s !== '') distinct.add(s);
+      if (distinct.size > 12) break;
+    }
+    if (distinct.size <= 12) {
+      distinct.clear();
+      for (const row of rowsAll) {
+        const s = String((row && row[i]) == null ? '' : row[i]).trim();
+        if (s !== '') distinct.add(s);
+      }
+    }
+    const sampleVals = Array.from(distinct).slice(0, 5).join(', ');
+    const more = distinct.size > 5 ? ' …' : '';
+    return { distinct: distinct.size, sample: sampleVals + more };
+  });
+
+  const TYPE_OPTIONS = [
+    { value: 'likert', label: 'Likert scale item' },
+    { value: 'single', label: 'Categorical group' },
+    { value: 'open',   label: 'Open text / ID' },
+    { value: 'ignore', label: 'Ignore this column' }
+  ];
+
+  const rowsHtml = cols.map((c, i) => {
+    const h = hints[i];
+    const distinctLabel = (h.distinct > 12 ? '12+' : String(h.distinct)) + (h.distinct === 1 ? ' value' : ' values');
+    const currentType = c.type || 'open';
+    const opts = TYPE_OPTIONS.map(o =>
+      '<option value="' + o.value + '"' + (o.value === currentType ? ' selected' : '') + '>' + MM.esc(o.label) + '</option>'
+    ).join('');
+    return '<tr data-col-idx="' + i + '" style="border-bottom:1px solid #f0f2f4;">' +
+      '<td style="padding:8px 10px 8px 0;vertical-align:top;">' +
+        '<div style="font-weight:600;color:#1f2937;font-size:13px;">' + MM.esc(c.name || ('Column ' + (i + 1))) + '</div>' +
+        '<div style="color:#5a6470;font-size:11px;margin-top:2px;">' + MM.esc(distinctLabel) + (h.sample ? ' · ' + MM.esc(h.sample) : '') + '</div>' +
+      '</td>' +
+      '<td style="padding:8px 0;vertical-align:top;width:200px;">' +
+        '<select class="mm-edit-col-type" data-idx="' + i + '" style="width:100%;padding:6px 8px;border:1px solid #d3d8de;border-radius:6px;font-size:13px;background:#fff;">' + opts + '</select>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+
+  overlay.querySelector('#mmEditColsBody').innerHTML =
+    '<table style="width:100%;border-collapse:collapse;font-size:13px;">' +
+      '<thead><tr style="background:#fafbfc;border-bottom:1px solid #e5e7eb;">' +
+        '<th style="text-align:left;padding:8px 10px;font-size:11px;font-weight:700;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;">Column</th>' +
+        '<th style="text-align:left;padding:8px 0;font-size:11px;font-weight:700;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;">Role</th>' +
+      '</tr></thead>' +
+      '<tbody>' + rowsHtml + '</tbody>' +
+    '</table>' +
+    '<p style="margin:14px 0 0;color:#5a6470;font-size:12px;">' +
+      '<strong>Likert</strong> drives Reliability + Validity. ' +
+      '<strong>Categorical group</strong> = usable as a grouping variable (Gender, Department, etc.). ' +
+      '<strong>Open text</strong> = free responses + IDs. ' +
+      '<strong>Ignore</strong> = exclude from analyses.' +
+    '</p>';
+
+  overlay.querySelector('#mmEditColsSave').addEventListener('click', async () => {
+    // Collect the user's choices
+    const selects = overlay.querySelectorAll('select.mm-edit-col-type');
+    selects.forEach(sel => {
+      const idx = Number(sel.getAttribute('data-idx'));
+      if (Number.isFinite(idx) && cols[idx]) {
+        cols[idx].type = sel.value;
+      }
+    });
+
+    const saveBtn = overlay.querySelector('#mmEditColsSave');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      await api.updateDatasetColumns(datasetId, cols);
+      // Bust the analyze cache so the next read pulls the new types.
+      if (state && state.analyzeCache) {
+        delete state.analyzeCache[String(datasetId)];
+      }
+      showToast('Column roles saved.');
+      close();
+      if (typeof onSaved === 'function') onSaved();
+    } catch (e) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save column roles';
+      showToast((e && e.message) || 'Could not save column roles.');
+    }
+  });
+}
+
 function mmRenderProjectShell(container) {
   const p = MM.state.current;
   const c = MM.state.counts || { responses: 0, categories: 0, coded: 0 };
@@ -32147,7 +32289,9 @@ function mmRenderProjectShellV3(container) {
             '<img src="' + mmLogoSrc + '" alt="ReliCheck Mixed Methods Studio" class="mm-v3-topbar-logo" />' +
           '</div>' +
           '<div class="mm-v3-ribbon" id="mmV3Ribbon"></div>' +
-          '<div class="mm-v3-project"><div style="font-size:11px;">' + MM.esc(p.pathway === 'scores_plus_comments' ? 'Scores + comments' : 'Comments only') + '</div><strong>' + MM.esc(p.title || '(untitled)') + '</strong></div>' +
+          '<div class="mm-v3-project"><div style="font-size:11px;">' + MM.esc(p.pathway === 'scores_plus_comments' ? 'Scores + comments' : 'Comments only') + '</div><strong>' + MM.esc(p.title || '(untitled)') + '</strong>' +
+            (p.dataset_id ? '<div style="margin-top:4px;"><a href="#" id="mmV3EditCols" style="font-size:11px;color:#4338ca;text-decoration:none;">Edit column roles &rarr;</a></div>' : '') +
+          '</div>' +
         '</div>' +
 
         // three-column studio
@@ -32188,6 +32332,25 @@ function mmRenderProjectShellV3(container) {
   // -------- Wire interactivity --------
   const root = container.querySelector('#mmV3Root');
   const studio = container.querySelector('#mmV3Studio');
+
+  // "Edit column roles" link in the topbar — opens the in-place editor
+  // so testers can fix stale classifications without re-uploading. On
+  // save we bust the analyze cache and re-open the current workspace so
+  // the dropdowns reflect the new types.
+  const editColsLink = container.querySelector('#mmV3EditCols');
+  if (editColsLink && p.dataset_id) {
+    editColsLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      mmEditColumns(p.dataset_id, () => {
+        // After save, re-open whatever workspace we're currently on so
+        // the new types flow through the dropdowns.
+        const activeKey = _mmV3CurrentKey || 'v3:survey';
+        const activeItem = container.querySelector('[data-mm-v3-key="' + activeKey + '"]');
+        const lbl = activeItem ? activeItem.getAttribute('data-mm-v3-label') : null;
+        mmV3OpenWorkspace(container, activeKey, lbl);
+      });
+    });
+  }
 
   // Guidance toggle.
   function applyGuidance() {
