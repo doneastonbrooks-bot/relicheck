@@ -15817,6 +15817,76 @@ function swBuildHomeShellHTML(opts) {
     '</div>';
 }
 
+// Reports shell — Defend stage of the workflow. Used by both the
+// list view (renderReportsList) and the detail view (renderReportDetail).
+// The Defend stage is active in the ribbon. Left-nav offers filters on
+// the list view and "browse other reports" on the detail view.
+function swBuildReportsShellHTML(opts) {
+  const variant = opts.variant || 'list';       // 'list' | 'detail'
+  const title   = opts.title   || 'Reports';
+  const metaHtml = opts.metaHtml || '';
+  const leftHtml = opts.leftHtml || '';
+  const guidanceTitle = opts.guidanceTitle || 'Defending what the data shows';
+  const guidanceHtml  = opts.guidanceHtml  ||
+    '<p>A report is a defensible claim, not a summary of charts. Lead with the question the data was supposed to answer, then the evidence, then what the evidence does — and does not — let you conclude.</p>' +
+    '<p>Methodology should be readable, not hidden in an appendix. Reviewers trust evidence whose limits are spelled out.</p>';
+  const sep = '<span class="sep" aria-hidden="true">&rsaquo;</span>';
+  const stageBtn = (key, label, route, isActive) => {
+    const cls = isActive ? 'sw-stage on' : 'sw-stage';
+    const dataRoute = route ? (' data-route="' + route + '"') : '';
+    return '<button class="' + cls + '"' + dataRoute + ' data-stage="' + key + '" type="button">' +
+      '<span class="dot"></span><span class="lbl">' + label + '</span></button>';
+  };
+  const ribbon =
+    stageBtn('build',      'Build',      'builder',    false) + sep +
+    stageBtn('distribute', 'Distribute', 'distribute', false) + sep +
+    stageBtn('collect',    'Collect',    null,         false) + sep +
+    stageBtn('analyze',    'Analyze',    'analyze',    false) + sep +
+    stageBtn('defend',     'Defend',     null,         true);
+
+  return '' +
+    '<div class="sw-shell sw-shell-reports sw-shell-reports--' + variant + '" id="swShell">' +
+      '<div class="sw-topbar">' +
+        '<div class="sw-topbar-title">' +
+          '<h1>' + title + '</h1>' +
+          (metaHtml ? '<div class="meta">' + metaHtml + '</div>' : '') +
+        '</div>' +
+        '<div class="sw-topbar-spacer"></div>' +
+        '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
+      '</div>' +
+      '<div class="sw-studio" id="swStudio">' +
+        '<aside class="sw-leftnav" aria-label="Reports navigation">' +
+          '<div class="sw-leftnav-eyebrow">Workflow &middot; Defend</div>' +
+          leftHtml +
+        '</aside>' +
+        '<main class="sw-workspace" id="swWorkspace"></main>' +
+        '<aside class="sw-guidance" id="swGuidance" aria-label="Methodology guidance">' +
+          '<button class="sw-guidance-toggle" id="swGuidanceToggle" title="Hide guidance" type="button">&rsaquo;</button>' +
+          '<div class="sw-g-eyebrow"><span>Methodology</span></div>' +
+          '<div class="sw-g-title" id="swGTitle">' + guidanceTitle + '</div>' +
+          '<div class="sw-g-body" id="swGBody">' + guidanceHtml + '</div>' +
+        '</aside>' +
+        '<button class="sw-guidance-popout" id="swGuidancePopout" title="Show guidance" type="button">&lsaquo;</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function swWireReportsShell(storageKey) {
+  const studio = document.getElementById('swStudio');
+  if (!studio) return;
+  const key = 'sw.' + (storageKey || 'reports') + '.guidance';
+  const applyGuidance = () => {
+    let collapsed = false;
+    try { collapsed = localStorage.getItem(key) === '0'; } catch (_) {}
+    studio.classList.toggle('no-guidance', collapsed);
+  };
+  const toggle = document.getElementById('swGuidanceToggle');
+  if (toggle) toggle.onclick = () => { try { localStorage.setItem(key, '0'); } catch (_) {} applyGuidance(); };
+  const popout = document.getElementById('swGuidancePopout');
+  if (popout) popout.onclick = () => { try { localStorage.setItem(key, '1'); } catch (_) {} applyGuidance(); };
+  applyGuidance();
+}
+
 function swWireHomeShell() {
   const studio = document.getElementById('swStudio');
   if (!studio) return;
@@ -15987,10 +16057,12 @@ function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
 
   // Ribbon — Analyze stage is active here.
   const st = swDeriveWorkflowStatus(survey);
-  const stageBtn = (key, label, route, isActive) => {
+  const stageBtn = (key, label, route, isActive, opts) => {
     const cls = isActive ? 'sw-stage on' : 'sw-stage';
     const dotCls = 'dot' + (st[key] === 'done' ? ' done' : st[key] === 'half' ? ' half' : '');
-    const dataRoute = route ? (' data-route="' + route + '" data-id="' + id + '"') : '';
+    const wantId = !(opts && opts.noId);
+    const idAttr = (route && wantId) ? (' data-id="' + id + '"') : '';
+    const dataRoute = route ? (' data-route="' + route + '"' + idAttr) : '';
     return '<button class="' + cls + '"' + dataRoute + ' data-stage="' + key + '" type="button">' +
       '<span class="' + dotCls + '"></span><span class="lbl">' + label + '</span></button>';
   };
@@ -16000,7 +16072,7 @@ function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
     stageBtn('distribute', 'Distribute', 'distribute', false) + sep +
     stageBtn('collect',    'Collect',    null,         false) + sep +
     stageBtn('analyze',    'Analyze',    null,         true)  + sep +
-    stageBtn('defend',     'Defend',     null,         false);
+    stageBtn('defend',     'Defend',     'reports',    false, { noId: true });
 
   // Tab groups for the left-nav. Order encodes a methodological flow:
   // strength leads, instrument quality next, then patterns, then modeling.
@@ -16291,10 +16363,14 @@ function swBuildBuilderShellHTML(surveyMeta) {
   const id = escapeHtml(surveyMeta.id);
   const title = escapeHtml(surveyMeta.title || 'Untitled survey');
   const st = swDeriveWorkflowStatus(surveyMeta);
-  const stageBtn = (key, label, route) => {
+  const stageBtn = (key, label, route, opts) => {
     const cls = key === 'build' ? 'sw-stage on' : 'sw-stage';
     const dotCls = 'dot' + (st[key] === 'done' ? ' done' : st[key] === 'half' ? ' half' : '');
-    const dataRoute = route ? (' data-route="' + route + '" data-id="' + id + '"') : '';
+    // Project-scoped routes get data-id; list-style routes (reports) don\'t,
+    // or they\'d resolve to a detail view that doesn\'t exist.
+    const wantId = !(opts && opts.noId);
+    const idAttr = (route && wantId) ? (' data-id="' + id + '"') : '';
+    const dataRoute = route ? (' data-route="' + route + '"' + idAttr) : '';
     return '<button class="' + cls + '"' + dataRoute + ' data-stage="' + key + '" type="button">' +
       '<span class="' + dotCls + '"></span><span class="lbl">' + label + '</span></button>';
   };
@@ -16307,7 +16383,7 @@ function swBuildBuilderShellHTML(surveyMeta) {
     '<span class="sep" aria-hidden="true">&rsaquo;</span>' +
     stageBtn('analyze', 'Analyze', 'analyze') +
     '<span class="sep" aria-hidden="true">&rsaquo;</span>' +
-    stageBtn('defend', 'Defend', null);
+    stageBtn('defend', 'Defend', 'reports', { noId: true });
   return '' +
     '<div class="sw-shell" id="swShell">' +
       '<div class="sw-topbar">' +
@@ -28455,12 +28531,41 @@ async function renderReports(root, reportId) {
 }
 
 async function renderReportsList(root) {
-  root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>Reports</h1>' +
-        '<div class="sub">Findings, executive summaries, and methods write-ups you have built.</div>' +
-      '</div>' +
+  // Wrap the existing list in the Survey Workstation shell so the inner
+  // workflow sidebar persists across Defend stage navigation.
+  swEnsureBuilderShellStyles();
+  const leftHtml =
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Quick</div>' +
+      '<a class="sw-leftnav-item" id="swRptNewLink"><span class="dot"></span>+ New report</a>' +
+      '<a class="sw-leftnav-item" data-route="templates"><span class="dot"></span>Report templates</a>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Status</div>' +
+      '<button class="sw-leftnav-item on" data-rpt-filter="all"   type="button"><span class="dot"></span>All</button>' +
+      '<button class="sw-leftnav-item"    data-rpt-filter="draft" type="button"><span class="dot"></span>Drafts</button>' +
+      '<button class="sw-leftnav-item"    data-rpt-filter="shared" type="button"><span class="dot"></span>Shared</button>' +
+      '<button class="sw-leftnav-item"    data-rpt-filter="scheduled" type="button"><span class="dot"></span>Scheduled</button>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Back to</div>' +
+      '<a class="sw-leftnav-item" data-route="projects"><span class="dot"></span>All projects</a>' +
+      '<a class="sw-leftnav-item" data-route="home"><span class="dot"></span>Home</a>' +
+    '</div>';
+
+  root.innerHTML = swBuildReportsShellHTML({
+    variant: 'list',
+    title: 'Reports',
+    metaHtml: 'Findings, executive summaries, and methods write-ups you have built.',
+    leftHtml: leftHtml,
+  });
+  swWireReportsShell('reports');
+
+  const workspace = document.getElementById('swWorkspace');
+  if (!workspace) return;
+  workspace.innerHTML =
+    '<div class="page-head" style="margin-bottom:14px;">' +
+      '<div></div>' +
       '<div class="page-actions">' +
         '<a class="btn primary" id="rptNew">+ New report</a>' +
       '</div>' +
@@ -28468,6 +28573,8 @@ async function renderReportsList(root) {
     '<div id="rptListBody"><div class="loading-row"><div class="spinner"></div></div></div>';
 
   $('#rptNew').addEventListener('click', () => openNewReportPicker(root));
+  const sideNew = $('#swRptNewLink');
+  if (sideNew) sideNew.addEventListener('click', (e) => { e.preventDefault(); openNewReportPicker(root); });
 
   let reports = [];
   try {
@@ -28649,18 +28756,36 @@ function openNewReportPicker(root) {
 }
 
 async function renderReportDetail(root, reportId) {
-  root.innerHTML =
-    '<div class="page-head">' +
-      '<div><h1 style="margin:0;">Loading report...</h1></div>' +
-    '</div>' +
-    '<div class="loading-row"><div class="spinner"></div></div>';
+  // Wrap the detail view in the same Survey Workstation shell as the
+  // list — keeps the inner workflow sidebar visible across all Defend
+  // stage surfaces. The existing report-toc + report-doc layout lives
+  // inside the workspace column unchanged.
+  swEnsureBuilderShellStyles();
+  const detailLeft =
+    '<div class="sw-leftnav-section">' +
+      '<a class="sw-leftnav-item" data-route="reports"><span class="dot"></span>&larr; All reports</a>' +
+    '</div>';
+  const mountShell = (title) => {
+    root.innerHTML = swBuildReportsShellHTML({
+      variant: 'detail',
+      title: title,
+      metaHtml: '',
+      leftHtml: detailLeft,
+    });
+    swWireReportsShell('reports.detail');
+    return document.getElementById('swWorkspace');
+  };
+  let workspace = mountShell('Loading report...');
+  if (workspace) workspace.innerHTML = '<div class="loading-row"><div class="spinner"></div></div>';
+
   let report;
   try {
     const r = await api.getReport(parseInt(reportId, 10));
     report = r && r.report;
     if (!report) throw new Error('Report not found.');
   } catch (e) {
-    root.innerHTML =
+    workspace = mountShell('Report not found');
+    if (workspace) workspace.innerHTML =
       '<div class="stub">' +
         '<div class="stub-icon">!</div>' +
         '<h2>Report not found</h2>' +
@@ -28694,7 +28819,12 @@ async function renderReportDetail(root, reportId) {
   const ssiScore = (sSsi && Number.isFinite(sSsi.score)) ? sSsi.score : null;
   const ssiStatus = (sSsi && sSsi.status) ? sSsi.status.replace('_', ' ') : '';
 
-  root.innerHTML =
+  // Rebuild the shell with the now-known report title, then write the
+  // content into the workspace column. The report-toc inside the
+  // workspace remains the in-document navigation.
+  workspace = mountShell(report.title || 'Report');
+  if (!workspace) return;
+  workspace.innerHTML =
     '<div class="report-action-bar">' +
       '<div><span class="save-state"><span class="dot"></span>Snapshotted ' + escapeHtml(lastGen) + '</span></div>' +
       '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
