@@ -28532,8 +28532,14 @@ async function renderReports(root, reportId) {
 
 async function renderReportsList(root) {
   // Wrap the existing list in the Survey Workstation shell so the inner
-  // workflow sidebar persists across Defend stage navigation.
+  // workflow sidebar persists across Defend stage navigation. The left
+  // nav is built rich (6 sections, parity with the Analyze left nav) so
+  // the Defend stage doesn\'t feel thinner than the rest of the journey.
   swEnsureBuilderShellStyles();
+  if (!_reportsState.filter)   _reportsState.filter   = 'all';
+  if (!_reportsState.template) _reportsState.template = 'all';
+  const f = _reportsState.filter;
+  const tf = _reportsState.template;
   const leftHtml =
     '<div class="sw-leftnav-section">' +
       '<div class="sw-leftnav-section-head">Quick</div>' +
@@ -28542,10 +28548,27 @@ async function renderReportsList(root) {
     '</div>' +
     '<div class="sw-leftnav-section">' +
       '<div class="sw-leftnav-section-head">Status</div>' +
-      '<button class="sw-leftnav-item on" data-rpt-filter="all"   type="button"><span class="dot"></span>All</button>' +
-      '<button class="sw-leftnav-item"    data-rpt-filter="draft" type="button"><span class="dot"></span>Drafts</button>' +
-      '<button class="sw-leftnav-item"    data-rpt-filter="shared" type="button"><span class="dot"></span>Shared</button>' +
-      '<button class="sw-leftnav-item"    data-rpt-filter="scheduled" type="button"><span class="dot"></span>Scheduled</button>' +
+      '<button class="sw-leftnav-item ' + (f==='all'?'on':'')      + '" data-rpt-filter="all"       type="button"><span class="dot"></span>All</button>' +
+      '<button class="sw-leftnav-item ' + (f==='draft'?'on':'')    + '" data-rpt-filter="draft"     type="button"><span class="dot"></span>Drafts</button>' +
+      '<button class="sw-leftnav-item ' + (f==='shared'?'on':'')   + '" data-rpt-filter="shared"    type="button"><span class="dot"></span>Shared</button>' +
+      '<button class="sw-leftnav-item ' + (f==='scheduled'?'on':'')+ '" data-rpt-filter="scheduled" type="button"><span class="dot"></span>Scheduled</button>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">By template</div>' +
+      '<button class="sw-leftnav-item ' + (tf==='all'?'on':'')      + '" data-rpt-template="all"       type="button"><span class="dot"></span>All templates</button>' +
+      '<button class="sw-leftnav-item ' + (tf==='executive'?'on':'')+ '" data-rpt-template="executive" type="button"><span class="dot"></span>Executive Summary</button>' +
+      '<button class="sw-leftnav-item ' + (tf==='findings'?'on':'') + '" data-rpt-template="findings"  type="button"><span class="dot"></span>Findings Briefing</button>' +
+      '<button class="sw-leftnav-item ' + (tf==='methods'?'on':'')  + '" data-rpt-template="methods"   type="button"><span class="dot"></span>Methods Write-up</button>' +
+    '</div>' +
+    '<div class="sw-leftnav-section" id="swRptRecentSection">' +
+      '<div class="sw-leftnav-section-head">Recent</div>' +
+      '<div class="sw-leftnav-empty" id="swRptRecentBody">Loading&hellip;</div>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Workflow stages</div>' +
+      '<a class="sw-leftnav-item" data-route="builder"   ><span class="dot"></span>Builder</a>' +
+      '<a class="sw-leftnav-item" data-route="distribute"><span class="dot"></span>Distribute</a>' +
+      '<a class="sw-leftnav-item" data-route="analyze"   ><span class="dot"></span>Analyze</a>' +
     '</div>' +
     '<div class="sw-leftnav-section">' +
       '<div class="sw-leftnav-section-head">Back to</div>' +
@@ -28592,90 +28615,175 @@ async function renderReportsList(root) {
     return;
   }
 
-  const drafts    = reports.filter(r => r.status === 'draft').length;
-  const shared    = reports.filter(r => r.status === 'shared').length;
-  const scheduled = reports.filter(r => r.status === 'scheduled').length;
+  // Apply the active status + template filters from sidebar state. The
+  // ttabs still show un-filtered counts so the user always sees the
+  // total picture; the grid below shows only the filtered subset.
+  const statusOf = (r) => (r.status || '').toLowerCase();
+  const filterReports = () => reports.filter(r => {
+    const sOk = _reportsState.filter === 'all'   || statusOf(r) === _reportsState.filter;
+    const tOk = _reportsState.template === 'all' || (r.template || 'executive') === _reportsState.template;
+    return sOk && tOk;
+  });
+
+  const drafts    = reports.filter(r => statusOf(r) === 'draft').length;
+  const shared    = reports.filter(r => statusOf(r) === 'shared').length;
+  const scheduled = reports.filter(r => statusOf(r) === 'scheduled').length;
+
+  // Populate the sidebar Recent section with the 5 most recently
+  // updated reports, regardless of active filter. Empty state when
+  // there are none yet.
+  const recentBody = document.getElementById('swRptRecentBody');
+  if (recentBody) {
+    if (reports.length === 0) {
+      recentBody.outerHTML = '<div class="sw-leftnav-empty" id="swRptRecentBody">No reports yet.</div>';
+    } else {
+      const recent = reports.slice()
+        .sort((a, b) => new Date(b.updated_at || 0) - new Date(a.updated_at || 0))
+        .slice(0, 5);
+      const recentHtml = recent.map(r =>
+        '<a class="sw-leftnav-item" data-rpt-open="' + escapeHtml(r.id) + '"><span class="dot"></span>' + escapeHtml(r.title || 'Untitled report') + '</a>'
+      ).join('');
+      const wrap = document.createElement('div');
+      wrap.innerHTML = recentHtml;
+      recentBody.replaceWith(...Array.from(wrap.childNodes));
+      $all('[data-rpt-open]').forEach(el => {
+        el.addEventListener('click', (e) => {
+          e.preventDefault();
+          const id = el.getAttribute('data-rpt-open');
+          if (id) navigate('reports', id);
+        });
+      });
+    }
+  }
 
   const body = $('#rptListBody');
-  body.innerHTML =
-    '<nav class="ttabs">' +
-      '<a class="ttab on">All<span class="ct">' + reports.length + '</span></a>' +
-      '<a class="ttab">Drafts<span class="ct">' + drafts + '</span></a>' +
-      '<a class="ttab">Shared<span class="ct">' + shared + '</span></a>' +
-      '<a class="ttab">Scheduled<span class="ct">' + scheduled + '</span></a>' +
-    '</nav>' +
-    (reports.length === 0
-      ? '<div class="card"><div class="empty">' +
-          '<div class="icon">R</div>' +
-          '<h3>No reports yet</h3>' +
-          '<p>Start one from any project. A report bundles the findings, methods, and recommendations into something you can share with your team.</p>' +
-          '<a class="btn primary" id="rptNew2">+ Start a report</a>' +
-        '</div></div>'
-      : '<div class="reports-grid">' +
-          reports.map(r => {
-            const tone = reportTone(r.status);
-            const updated = timeAgo(r.updated_at);
-            return '<div class="report-card" role="button" tabindex="0" data-report-id="' + escapeHtml(r.id) + '">' +
-              '<div class="report-card-thumb ' + tone.thumb + '">' +
-                '<span class="status ' + tone.cls + '">' + escapeHtml(tone.label.toUpperCase()) + '</span>' +
-                '<span class="ic">R</span>' +
-              '</div>' +
-              '<div class="report-card-body">' +
-                '<h3>' + escapeHtml(r.title) + '</h3>' +
-                '<div class="src">From <strong>' + escapeHtml(r.source_title || 'project') + '</strong></div>' +
-                '<div class="meta">' +
-                  '<span>' + escapeHtml(templateLabel(r.template)) + '</span>' +
-                  '<span>updated ' + escapeHtml(updated || 'just now') + '</span>' +
-                  (r.share_count > 0 ? '<span>' + r.share_count + ' share' + (r.share_count === 1 ? '' : 's') + '</span>' : '') +
+
+  // Repaint just the grid (ttabs + cards) based on the current filter.
+  // Called by the sidebar filter buttons and the in-body ttabs.
+  const repaintGrid = () => {
+    const shown = filterReports();
+    body.innerHTML =
+      '<nav class="ttabs" id="rptTtabs">' +
+        '<a class="ttab' + (_reportsState.filter==='all'?' on':'')       + '" data-rpt-ttab="all">All<span class="ct">' + reports.length + '</span></a>' +
+        '<a class="ttab' + (_reportsState.filter==='draft'?' on':'')     + '" data-rpt-ttab="draft">Drafts<span class="ct">' + drafts + '</span></a>' +
+        '<a class="ttab' + (_reportsState.filter==='shared'?' on':'')    + '" data-rpt-ttab="shared">Shared<span class="ct">' + shared + '</span></a>' +
+        '<a class="ttab' + (_reportsState.filter==='scheduled'?' on':'') + '" data-rpt-ttab="scheduled">Scheduled<span class="ct">' + scheduled + '</span></a>' +
+      '</nav>' +
+      (shown.length === 0
+        ? '<div class="card"><div class="empty">' +
+            '<div class="icon">R</div>' +
+            '<h3>' + (reports.length === 0 ? 'No reports yet' : 'No reports match these filters') + '</h3>' +
+            '<p>' + (reports.length === 0
+              ? 'Start one from any project. A report bundles the findings, methods, and recommendations into something you can share with your team.'
+              : 'Adjust the Status or Template filter on the left, or clear them to see everything.') + '</p>' +
+            (reports.length === 0 ? '<a class="btn primary" id="rptNew2">+ Start a report</a>' : '') +
+          '</div></div>'
+        : '<div class="reports-grid">' +
+            shown.map(r => {
+              const tone = reportTone(r.status);
+              const updated = timeAgo(r.updated_at);
+              return '<div class="report-card" role="button" tabindex="0" data-report-id="' + escapeHtml(r.id) + '">' +
+                '<div class="report-card-thumb ' + tone.thumb + '">' +
+                  '<span class="status ' + tone.cls + '">' + escapeHtml(tone.label.toUpperCase()) + '</span>' +
+                  '<span class="ic">R</span>' +
                 '</div>' +
-              '</div>' +
-              '<div class="report-card-foot">' +
-                '<button class="rpt-foot-btn rpt-delete-btn" type="button" data-delete="' + escapeHtml(r.id) + '">Delete</button>' +
-                '<button class="rpt-foot-btn" type="button" data-open="' + escapeHtml(r.id) + '">Open &rsaquo;</button>' +
-              '</div>' +
-            '</div>';
-          }).join('') +
-        '</div>');
+                '<div class="report-card-body">' +
+                  '<h3>' + escapeHtml(r.title) + '</h3>' +
+                  '<div class="src">From <strong>' + escapeHtml(r.source_title || 'project') + '</strong></div>' +
+                  '<div class="meta">' +
+                    '<span>' + escapeHtml(templateLabel(r.template)) + '</span>' +
+                    '<span>updated ' + escapeHtml(updated || 'just now') + '</span>' +
+                    (r.share_count > 0 ? '<span>' + r.share_count + ' share' + (r.share_count === 1 ? '' : 's') + '</span>' : '') +
+                  '</div>' +
+                '</div>' +
+                '<div class="report-card-foot">' +
+                  '<button class="rpt-foot-btn rpt-delete-btn" type="button" data-delete="' + escapeHtml(r.id) + '">Delete</button>' +
+                  '<button class="rpt-foot-btn" type="button" data-open="' + escapeHtml(r.id) + '">Open &rsaquo;</button>' +
+                '</div>' +
+              '</div>';
+            }).join('') +
+          '</div>');
 
-  const newBtn2 = $('#rptNew2');
-  if (newBtn2) newBtn2.addEventListener('click', () => openNewReportPicker(root));
+    const newBtn2 = $('#rptNew2');
+    if (newBtn2) newBtn2.addEventListener('click', () => openNewReportPicker(root));
 
-  $all('.rpt-delete-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute('data-delete');
-      if (!id) return;
-      if (!confirm('Delete this report? This cannot be undone.')) return;
-      try {
-        await api.deleteReport(parseInt(id, 10));
-        showToast('Report deleted');
-        renderReportsList(root);
-      } catch (err) {
-        alert('Delete failed: ' + (err.message || 'try again'));
-      }
+    $all('.rpt-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-delete');
+        if (!id) return;
+        if (!confirm('Delete this report? This cannot be undone.')) return;
+        try {
+          await api.deleteReport(parseInt(id, 10));
+          showToast('Report deleted');
+          renderReportsList(root);
+        } catch (err) {
+          alert('Delete failed: ' + (err.message || 'try again'));
+        }
+      });
     });
-  });
 
-  $all('[data-open]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const id = btn.getAttribute('data-open');
-      if (id) navigate('reports', id);
+    $all('[data-open]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.getAttribute('data-open');
+        if (id) navigate('reports', id);
+      });
     });
-  });
 
-  $all('.report-card').forEach(c => {
-    c.addEventListener('click', (e) => {
-      if (e.target.closest('.report-card-foot')) return;
-      const id = c.getAttribute('data-report-id');
-      if (id) navigate('reports', id);
-    });
-    c.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
+    $all('.report-card').forEach(c => {
+      c.addEventListener('click', (e) => {
+        if (e.target.closest('.report-card-foot')) return;
         const id = c.getAttribute('data-report-id');
         if (id) navigate('reports', id);
-      }
+      });
+      c.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          const id = c.getAttribute('data-report-id');
+          if (id) navigate('reports', id);
+        }
+      });
+    });
+
+    // In-body ttabs mirror the sidebar Status filter so users can drive
+    // the grid from either location. Clicks update sidebar + grid in
+    // lockstep.
+    $all('[data-rpt-ttab]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        const next = el.getAttribute('data-rpt-ttab') || 'all';
+        _reportsState.filter = next;
+        document.querySelectorAll('[data-rpt-filter]').forEach(x =>
+          x.classList.toggle('on', x.getAttribute('data-rpt-filter') === next));
+        repaintGrid();
+      });
+    });
+  };
+
+  repaintGrid();
+
+  // Sidebar Status + Template filter wiring. Clicking either updates
+  // state and repaints the grid; sidebar active classes update too so
+  // the active filter is always visible.
+  $all('[data-rpt-filter]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = el.getAttribute('data-rpt-filter') || 'all';
+      _reportsState.filter = next;
+      document.querySelectorAll('[data-rpt-filter]').forEach(x =>
+        x.classList.toggle('on', x.getAttribute('data-rpt-filter') === next));
+      repaintGrid();
+    });
+  });
+  $all('[data-rpt-template]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = el.getAttribute('data-rpt-template') || 'all';
+      _reportsState.template = next;
+      document.querySelectorAll('[data-rpt-template]').forEach(x =>
+        x.classList.toggle('on', x.getAttribute('data-rpt-template') === next));
+      repaintGrid();
     });
   });
 }
@@ -28761,9 +28869,36 @@ async function renderReportDetail(root, reportId) {
   // stage surfaces. The existing report-toc + report-doc layout lives
   // inside the workspace column unchanged.
   swEnsureBuilderShellStyles();
+  // Rich left nav so the detail view feels as dense as the list and as
+  // Analyze. Sections: in-document TOC mirror (anchor links to the
+  // existing #rpt* sections inside the workspace), the cross-workflow
+  // jump links, and the back-to set.
   const detailLeft =
     '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">In this report</div>' +
+      '<a class="sw-leftnav-item" href="#rptOverview"><span class="dot"></span>Overview</a>' +
+      '<a class="sw-leftnav-item" href="#rptHeadlines"><span class="dot"></span>Headline numbers</a>' +
+      '<a class="sw-leftnav-item" href="#rptItems"><span class="dot"></span>Item table</a>' +
+      '<a class="sw-leftnav-item" href="#rptMethods"><span class="dot"></span>Methods</a>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Quick actions</div>' +
+      '<a class="sw-leftnav-item" data-rpt-detail-act="ai"><span class="dot"></span>Draft paragraph (AI)</a>' +
+      '<a class="sw-leftnav-item" data-rpt-detail-act="regen"><span class="dot"></span>Regenerate</a>' +
+      '<a class="sw-leftnav-item" data-rpt-detail-act="schedule"><span class="dot"></span>Schedule</a>' +
+      '<a class="sw-leftnav-item" data-rpt-detail-act="share"><span class="dot"></span>Share</a>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Workflow stages</div>' +
+      '<a class="sw-leftnav-item" data-route="builder"><span class="dot"></span>Builder</a>' +
+      '<a class="sw-leftnav-item" data-route="distribute"><span class="dot"></span>Distribute</a>' +
+      '<a class="sw-leftnav-item" data-route="analyze"><span class="dot"></span>Analyze</a>' +
+    '</div>' +
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">Back to</div>' +
       '<a class="sw-leftnav-item" data-route="reports"><span class="dot"></span>&larr; All reports</a>' +
+      '<a class="sw-leftnav-item" data-route="projects"><span class="dot"></span>All projects</a>' +
+      '<a class="sw-leftnav-item" data-route="home"><span class="dot"></span>Home</a>' +
     '</div>';
   const mountShell = (title) => {
     root.innerHTML = swBuildReportsShellHTML({
@@ -28975,6 +29110,19 @@ async function renderReportDetail(root, reportId) {
   $('#rptShare').addEventListener('click', () => openReportShareModal(report, root, reportId));
   $('#rptSchedule').addEventListener('click', () => openReportScheduleModal(report, root, reportId));
   $('#rptAiDraft').addEventListener('click', () => runReportAiDraft(report));
+
+  // Sidebar Quick-action links delegate to the in-page action buttons so
+  // both surfaces stay in sync. Keeps the sidebar useful as a permanent
+  // action column without forking the action behavior.
+  const sidebarActMap = { ai: 'rptAiDraft', regen: 'rptRegen', schedule: 'rptSchedule', share: 'rptShare' };
+  $all('[data-rpt-detail-act]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const key = el.getAttribute('data-rpt-detail-act');
+      const target = sidebarActMap[key] && document.getElementById(sidebarActMap[key]);
+      if (target) target.click();
+    });
+  });
   $all('[data-share-revoke]').forEach(b => {
     b.addEventListener('click', async () => {
       if (!confirm('Revoke this share link? Anyone holding it will no longer be able to view the report.')) return;
