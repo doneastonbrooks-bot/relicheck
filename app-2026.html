@@ -15597,6 +15597,26 @@ function swEnsureBuilderShellStyles() {
     '.sw-ribbon-edu { display:flex; flex-direction:column; align-items:flex-end; gap:3px; }',
     '.sw-ribbon-edu-eyebrow { font:600 9.5px/1 Inter,system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text-mute); }',
     '.sw-leftnav-empty { padding:6px 10px; font:400 12px/1.4 Inter,system-ui,sans-serif; color:var(--text-mute); font-style:italic; }',
+
+    // AI summary section inside the guidance pane. Collapsed by default so
+    // methodology leads ([[relicheck-philosophy]]). Mirrors MM Studio\'s
+    // mm-v3-g-ai layout: header button with chevron + label + "Supplemental"
+    // hint, body that hosts the mirrored AI rail content. Hidden entirely
+    // when the source rail is empty so the section doesn\'t feel like a
+    // placeholder waiting to be filled.
+    '.sw-g-ai { margin-top:18px; padding-top:14px; border-top:1px solid var(--border-soft, var(--border)); display:none; }',
+    '.sw-g-ai.has-content { display:block; }',
+    '.sw-g-ai-toggle { display:flex; align-items:center; gap:8px; width:100%; padding:6px 0; background:transparent; border:0; cursor:pointer; font:600 11px/1 Inter,system-ui,sans-serif; letter-spacing:.08em; text-transform:uppercase; color:var(--text-soft); text-align:left; }',
+    '.sw-g-ai-toggle .chev { display:inline-block; transition:transform .15s; color:var(--text-mute); font-size:13px; line-height:1; }',
+    '.sw-g-ai-toggle[aria-expanded="true"] .chev { transform:rotate(90deg); }',
+    '.sw-g-ai-toggle .lbl { color:var(--text); }',
+    '.sw-g-ai-toggle .hint { margin-left:auto; font:500 10px/1 Inter,system-ui,sans-serif; letter-spacing:.04em; text-transform:none; color:var(--text-mute); padding:3px 7px; background:var(--bg-soft); border:1px solid var(--border); border-radius:999px; }',
+    '.sw-g-ai-body { display:none; margin-top:10px; font:400 12.5px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); }',
+    '.sw-g-ai-body.open { display:block; }',
+    // The mirrored rail content may include its own .ai-rail-card chrome —
+    // tone it down so it doesn\'t fight the guidance pane\'s lighter weight.
+    '.sw-g-ai-body .ai-rail-card { padding:10px 12px; border-radius:8px; background:var(--panel-2); border:1px solid var(--border-soft, var(--border)); }',
+    '.sw-g-ai-body .ai-rail-card + .ai-rail-card { margin-top:8px; }',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -16027,10 +16047,62 @@ function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
           '<div class="sw-g-eyebrow"><span>Methodology</span></div>' +
           '<div class="sw-g-title" id="swGTitle">The headline number</div>' +
           '<div class="sw-g-body" id="swGBody"></div>' +
+          // AI summary section mirrors content from the legacy
+          // #analyzeAiRail. Hidden until the rail produces something;
+          // collapsed by default so methodology leads.
+          '<div class="sw-g-ai" id="swGAi">' +
+            '<button type="button" class="sw-g-ai-toggle" id="swGAiToggle" aria-expanded="false">' +
+              '<span class="chev">&rsaquo;</span>' +
+              '<span class="lbl">AI summary</span>' +
+              '<span class="hint">Supplemental</span>' +
+            '</button>' +
+            '<div class="sw-g-ai-body" id="swGAiBody"></div>' +
+          '</div>' +
         '</aside>' +
         '<button class="sw-guidance-popout" id="swGuidancePopout" title="Show guidance" type="button">&lsaquo;</button>' +
       '</div>' +
     '</div>';
+}
+
+// Mirror legacy #analyzeAiRail content into the guidance pane\'s
+// supplemental AI section. A MutationObserver keeps us decoupled from
+// the 8+ writer sites that update the rail. Hidden when the rail is
+// empty so the section doesn\'t feel like a placeholder.
+function swInstallAiMirror() {
+  const rail = document.getElementById('analyzeAiRail');
+  const section = document.getElementById('swGAi');
+  const body    = document.getElementById('swGAiBody');
+  const toggle  = document.getElementById('swGAiToggle');
+  if (!rail || !section || !body || !toggle) return;
+
+  // Restore expand/collapse preference. Default collapsed so methodology
+  // is what the user reads first.
+  let expanded = false;
+  try { expanded = localStorage.getItem('sw.analyze.ai') === '1'; } catch (_) {}
+  const applyExpanded = () => {
+    toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    body.classList.toggle('open', expanded);
+  };
+  toggle.onclick = () => {
+    expanded = !expanded;
+    try { localStorage.setItem('sw.analyze.ai', expanded ? '1' : '0'); } catch (_) {}
+    applyExpanded();
+  };
+  applyExpanded();
+
+  const sync = () => {
+    const html = rail.innerHTML || '';
+    body.innerHTML = html;
+    section.classList.toggle('has-content', html.replace(/\s|&nbsp;/g, '').length > 0);
+  };
+  sync();
+  // MutationObserver keeps the mirror in lockstep with whatever each
+  // per-tab renderer writes into the rail.
+  try {
+    if (rail._swAiObserver) rail._swAiObserver.disconnect();
+    rail._swAiObserver = new MutationObserver(sync);
+    rail._swAiObserver.observe(rail, { childList: true, subtree: true, characterData: true });
+  } catch (_) {}
 }
 
 function swWireAnalyzeShell(survey) {
@@ -16059,6 +16131,11 @@ function swWireAnalyzeShell(survey) {
   // SSI ring in the topbar — Analyze already has the data in-process via
   // loadAnalyzeData; same harvest as Builder for visual consistency.
   swPaintAnalyzeSSI(survey);
+
+  // Mirror the legacy AI rail into the guidance pane\'s collapsed
+  // supplemental section so the AI narrator is reachable but never
+  // crowds out methodology.
+  swInstallAiMirror();
 }
 
 function swPaintAnalyzeSSI(survey) {
