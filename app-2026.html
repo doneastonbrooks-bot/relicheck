@@ -15625,6 +15625,70 @@ function swDeriveWorkflowStatus(surveyMeta) {
   return status;
 }
 
+// Per-tab methodology copy for the Builder right rail. Methodology-first
+// (see [[relicheck-philosophy]]) — these are short teaching paragraphs,
+// not feature lists. AI guidance, if any, goes in a separate collapsed
+// section so methodology always leads.
+const _swBuilderGuidance = {
+  questions: {
+    title: 'Items that map to your purpose',
+    html:
+      '<p>Every item should earn its place by measuring part of the construct you named in the purpose statement. Items that float free of the purpose dilute reliability and make findings harder to defend.</p>' +
+      '<p>Group items by construct so a future reader — reviewers, IRB, or your own future self — can see what each group is <em>for</em>. Items without a construct fall into <strong>Unassigned</strong>; that\'s a flag to fix before you collect.</p>' +
+      '<p>Wording matters as much as count. Double-barreled items, leading wording, and unfamiliar jargon all surface in the reliability stats later. The inline <em>Improve</em> hint on each item catches the common offenders.</p>',
+  },
+  design: {
+    title: 'Visual design that does not bias the response',
+    html:
+      '<p>Color, typography, and ordering all carry meaning. A Likert scale with a green <em>Strongly Agree</em> and a red <em>Strongly Disagree</em> is no longer neutral — it has nudged the respondent.</p>' +
+      '<p>Keep the look quiet: neutral tone, consistent spacing, no novelty that distracts from the question itself. If respondents notice the design, the design is too loud.</p>',
+  },
+  settings: {
+    title: 'Settings that protect the response',
+    html:
+      '<p>Anonymous, identified, or hybrid — pick the answer model that matches the consent you offered respondents. Switching after launch invalidates the prior batch.</p>' +
+      '<p>Time limits and required-answer rules raise completion quality but lower completion rate; the right balance depends on how high-stakes the decision is that this data will inform.</p>' +
+      '<p>Randomization (question and option order) controls for order effects. Use it when each construct has enough items that the test still makes sense in a different sequence.</p>',
+  },
+  logic: {
+    title: 'Branching that mirrors the construct',
+    html:
+      '<p>Skip logic is methodology, not just convenience. A <em>show this only if…</em> rule encodes an assumption about who the question applies to — make sure the assumption is one you can defend.</p>' +
+      '<p>Arms (experimental conditions) let you compare matched groups within a single instrument. The arm assignment must happen before any condition-specific content is shown, or the comparison is no longer clean.</p>' +
+      '<p>Every branch is a population you\'ll need to interpret separately. If you can\'t name what each branch represents, the logic is too clever.</p>',
+  },
+  distribute: {
+    title: 'Sampling and reach that defend the data',
+    html:
+      '<p>Who can answer determines what you can conclude. A convenience sample of staff who chose to click the link is different evidence from a stratified sample drawn from a roster.</p>' +
+      '<p>Channels also affect response. Email reaches one population; in-person QR codes reach another; embedded links reach a third. Document the channel mix — it lands in the limitations section of the eventual report.</p>' +
+      '<p>Reminders raise N but at diminishing return. Three is usually the ceiling before fatigue starts hurting the credibility of the responses you do get.</p>',
+  },
+};
+
+function swPaintBuilderGuidance(tab) {
+  const g = _swBuilderGuidance[tab] || _swBuilderGuidance.questions;
+  const titleEl = document.getElementById('swGTitle');
+  const bodyEl  = document.getElementById('swGBody');
+  if (titleEl) titleEl.textContent = g.title;
+  if (bodyEl)  bodyEl.innerHTML    = g.html;
+}
+
+// Canonical tab switcher for the Builder. Called from the left-nav and
+// from any deep-link consumer. Sets state, re-renders the body, repaints
+// guidance, and syncs left-nav active state. Kept tiny on purpose so all
+// tab transitions follow the same code path.
+function swSetBuilderTab(sid, tab) {
+  const st = _builderState[sid];
+  if (!st) return;
+  st.tab = tab;
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
+    el.classList.toggle('on', el.getAttribute('data-swnav') === tab);
+  });
+  renderBuilderBody(st.surveyMeta, st.full);
+  swPaintBuilderGuidance(tab);
+}
+
 // Build the Survey Workstation shell HTML. The center column receives
 // the current builder content unchanged; the shell only adds chrome.
 function swBuildBuilderShellHTML(surveyMeta) {
@@ -15679,21 +15743,18 @@ function swBuildBuilderShellHTML(surveyMeta) {
           '<div class="builder-head">' +
             '<div class="builder-title-row">' +
               '<div class="builder-title">' +
-                // Title now lives in the topbar; keep meta line here for the
-                // existing renderBuilderBody hook that updates question count.
+                // Title is in the topbar; this meta line gets updated by
+                // renderBuilderBody once question counts are known.
                 '<div class="pt-meta">Loading questions...</div>' +
               '</div>' +
               '<div class="analyze-actions">' +
                 '<a class="btn ghost" data-route="analyze" data-id="' + id + '">Open analytics</a>' +
               '</div>' +
             '</div>' +
-            '<nav class="builder-tabs" id="builderTabs">' +
-              '<a class="builder-tab on"   data-btab="questions">Questions</a>' +
-              '<a class="builder-tab"      data-btab="design">Design</a>' +
-              '<a class="builder-tab"      data-btab="settings">Settings</a>' +
-              '<a class="builder-tab"      data-btab="logic">Logic and arms</a>' +
-              '<a class="builder-tab"      data-btab="distribute">Distribute</a>' +
-            '</nav>' +
+            // Horizontal builder-tabs strip retired — the left-nav is the
+            // primary tab switcher now. The nav element is kept empty with
+            // its id so any legacy lookup of #builderTabs no-ops safely.
+            '<nav class="builder-tabs" id="builderTabs" hidden></nav>' +
           '</div>' +
           '<div id="builderBody"><div class="loading-row"><div class="spinner"></div></div></div>' +
         '</main>' +
@@ -15711,9 +15772,10 @@ function swBuildBuilderShellHTML(surveyMeta) {
     '</div>';
 }
 
-// Wire the guidance pane collapse + left-nav click-through to the existing
-// builder tabs. Persists the collapsed state per-user via localStorage.
-function swWireBuilderShell() {
+// Wire the guidance pane collapse and the left-nav tab switcher. The
+// left-nav is now the primary tab switcher (the horizontal builder-tabs
+// strip was retired in the same pass).
+function swWireBuilderShell(sid) {
   const studio = document.getElementById('swStudio');
   if (!studio) return;
   const applyGuidance = () => {
@@ -15733,17 +15795,14 @@ function swWireBuilderShell() {
   };
   applyGuidance();
 
-  // Left-nav items mirror the existing top tab strip — clicking a left-nav
-  // item just triggers the matching builder-tab so we don't fork behavior.
+  // Left-nav owns tab switching now. All transitions go through
+  // swSetBuilderTab so the body re-renders and the guidance pane updates
+  // in lockstep.
   document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
     el.onclick = (e) => {
       e.preventDefault();
       const tab = el.getAttribute('data-swnav');
-      // Visually mark the left-nav selection.
-      document.querySelectorAll('#swStudio [data-swnav]').forEach(x => x.classList.toggle('on', x === el));
-      const top = document.querySelector('#builderTabs [data-btab="' + tab + '"]');
-      if (top && top.onclick) top.onclick(e);
-      else if (top) top.click();
+      swSetBuilderTab(sid, tab);
     };
   });
 }
@@ -15770,7 +15829,10 @@ async function renderBuilder(root, surveyId) {
   // Initial render: shell + loading.
   swEnsureBuilderShellStyles();
   root.innerHTML = swBuildBuilderShellHTML(surveyMeta);
-  swWireBuilderShell();
+  swWireBuilderShell(String(surveyMeta.id));
+  // Paint the default tab's guidance immediately so the right rail is
+  // never empty even while the survey is still loading.
+  swPaintBuilderGuidance('questions');
 
   // Fetch the full survey.
   let full;
@@ -15821,16 +15883,24 @@ function renderBuilderBody(surveyMeta, full) {
     window._pendingBuilderTab = null;
   }
 
-  // Wire (or re-wire) tab strip.
+  // Wire (or re-wire) the (now hidden) tab strip. Kept as a no-op safety
+  // net for any external code that still queries #builderTabs; the
+  // left-nav inside the .sw-shell is the primary switcher.
   $all('#builderTabs .builder-tab').forEach(el => {
     const t = el.getAttribute('data-btab');
     el.classList.toggle('on', t === st.tab);
     el.onclick = (e) => {
       e.preventDefault();
-      st.tab = t;
-      renderBuilderBody(st.surveyMeta, st.full);
+      swSetBuilderTab(sid, t);
     };
   });
+
+  // Sync left-nav active state + guidance pane so deep-link tab changes
+  // (e.g. window._pendingBuilderTab) are reflected in the chrome too.
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
+    el.classList.toggle('on', el.getAttribute('data-swnav') === st.tab);
+  });
+  try { swPaintBuilderGuidance(st.tab); } catch (_) {}
 
   if (st.tab === 'design')     return renderBuilderDesign(sid);
   if (st.tab === 'settings')   return renderBuilderSettings(sid);
