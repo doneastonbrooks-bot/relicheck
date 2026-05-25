@@ -31863,34 +31863,33 @@ function renderMixedMethodsStudio(container, param) {
   } catch (_) {}
   if (param === 'new') { mmRenderWizard(container); return; }
   if (param) { mmRenderProject(container, param); return; }
-  // Studio landing hero on top, then the existing MM v3 picker shell
-  // below it. Hero gives the BETA "you\'ve arrived" moment; the picker
-  // shell stays for the actual work of opening/creating projects.
+  // Studio landing hero on top, then the SAME dashboard grid Survey
+  // Studio uses (Quick actions / Recent projects / Activity / Plan
+  // usage). The MM v3 picker shell that used to live here was removed
+  // per Don\'s call to make MM\'s lower section match Survey\'s.
   swEnsureLandingStyles();
   const name = firstName(state.user && state.user.name) || 'there';
   const mmProjectCount = ((MM.state && MM.state.projects) || []).length ||
     ((state.surveys || []).filter(s => s && s.mm_project_id).length) || 0;
-  container.innerHTML = swBuildMMLandingHTML({
-    name: name,
-    counts: { active: mmProjectCount },
-  });
-  // Wire CTA + tiles. "new" fires the wizard; "scroll" jumps to the
-  // existing picker shell that mmRenderLanding paints below.
+  if (!state.homeOrder) state.homeOrder = HOME_DEFAULT_ORDER.slice();
+  state.homeEditMode = false;
+  container.innerHTML =
+    swBuildMMLandingHTML({ name: name, counts: { active: mmProjectCount } }) +
+    '<div class="home-grid" id="homeGrid"></div>';
+  // Wire CTA + tiles. "new" fires the wizard; "scroll" jumps the user
+  // down to the dashboard grid that sits below the hero.
   container.querySelectorAll('[data-mm-action]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       const act = el.getAttribute('data-mm-action');
       if (act === 'new') { mmStartWizard(); return; }
       if (act === 'scroll') {
-        const tgt = container.querySelector('.mm-host');
+        const tgt = container.querySelector('#homeGrid');
         if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
-  const mmHost = document.createElement('div');
-  mmHost.className = 'mm-host';
-  container.appendChild(mmHost);
-  mmRenderLanding(mmHost);
+  drawHomeGrid();
 }
 
 // Starts the wizard from the welcome panel.
