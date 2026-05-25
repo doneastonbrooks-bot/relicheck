@@ -6005,6 +6005,14 @@ const api = {
   updateDataset(payload)           { return this._json('PATCH', '/api/datasets/update.php', payload); },
   refreshDataset(payload)          { return this._json('POST',  '/api/datasets/refresh.php', payload); },
   updateDatasetColumns(id, columnMeta) { return this._json('POST', '/api/datasets/update_columns.php', { id: id, column_meta: columnMeta }); },
+  // Phase 180 derived variables: composite scores, recodes, etc. that a
+  // researcher creates inside an MM project. Project-scoped so each
+  // study owns its derived variables.
+  mmListDerivedVariables(projectId)        { return this._json('GET', '/api/mm/derived-variables.php?project_id=' + encodeURIComponent(projectId)); },
+  mmCreateDerivedVariable(projectId, name, op, spec) {
+    return this._json('POST', '/api/mm/derived-variables.php', { project_id: projectId, action: 'create', name: name, op: op, spec: spec });
+  },
+  mmDeleteDerivedVariable(projectId, id)   { return this._json('POST', '/api/mm/derived-variables.php', { project_id: projectId, action: 'delete', id: id }); },
   // Delete projects.
   deleteSurvey(id)                 { return this._json('POST', '/api/surveys/delete.php',  { id: id }); },
   deleteDataset(id)                { return this._json('POST', '/api/datasets/delete.php', { id: id }); },
@@ -43145,6 +43153,10 @@ async function mmTabQuantAnalysis(body) {
     ' &middot; Quantitative analysis on the data you provided.' +
     '</div>' +
     '<div data-mm-quant-section="dashboard">' + analyticsDashboardHtml + '</div>' +
+    // Phase 180 Derived Variables: lets the researcher compute and persist
+    // composite scores (mean / sum) of Likert items. Project-scoped so the
+    // variable survives logout and shows up in subsequent sessions.
+    '<div data-mm-quant-section="computed-variables" id="mmCvSection" style="margin-top:14px;"></div>' +
     '<div data-mm-quant-section="recommendations">' + indexCardHtml + testsHtml + '</div>';
 
   // Footer note: only meaningful when the analytics dashboard is showing.
@@ -43169,6 +43181,132 @@ async function mmTabQuantAnalysis(body) {
   // breakdown in the middle workspace.
 
   body.innerHTML = html;
+
+  // Phase 180: render the Computed Variables panel. Self-contained — it
+  // fetches the project's derived variables, renders a list + a create
+  // form, and wires the create/delete actions. Project-scoped storage.
+  // Currently supports mean + sum composites; recode/bin/standardize
+  // come in Phase 2.
+  (function renderComputedVariables() {
+    const host = body.querySelector('#mmCvSection');
+    if (!host) return;
+    // Collect Likert items from the qs array so the source-item checkbox
+    // list has stable labels. We accept any 'likert' typed question.
+    const likertItems = (Array.isArray(qs) ? qs : [])
+      .map((q, i) => ({ id: q && q.id ? q.id : ('col_' + i), label: (q && (q.label || q.prompt || q.text)) || ('col_' + i), type: (q && q.type) || 'open' }))
+      .filter(it => it.type === 'likert');
+
+    const render = (vars) => {
+      const list = (vars && Array.isArray(vars)) ? vars : [];
+      const listHtml = list.length === 0
+        ? '<div style="color:#5a6470;font-size:13px;padding:8px 0;"><em>No computed variables yet. Use the form below to create a composite score (mean or sum) from your Likert items.</em></div>'
+        : '<ul style="list-style:none;padding:0;margin:0 0 10px;">' + list.map(v => {
+            const nMissing = (v.values || []).filter(x => x === null).length;
+            const nTotal = (v.values || []).length;
+            const nGood = nTotal - nMissing;
+            const itemsLabel = (v.spec && Array.isArray(v.spec.items)) ? v.spec.items.join(', ') : '';
+            return '<li style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #e2e6ea;border-radius:6px;margin-bottom:6px;background:#fafbfc;">' +
+              '<div style="min-width:0;flex:1;">' +
+                '<div style="font-weight:600;color:#1a1f2b;font-size:13px;">' + MM.esc(v.name) + ' <span style="font-weight:400;color:#5a6470;font-size:11px;">(' + MM.esc(v.op) + ' of ' + (v.spec && v.spec.items ? v.spec.items.length : 0) + ' items)</span></div>' +
+                '<div style="color:#5a6470;font-size:11px;margin-top:2px;">Computed for ' + nGood + ' / ' + nTotal + ' respondents' + (nMissing > 0 ? ' (' + nMissing + ' missing)' : '') + '</div>' +
+                (itemsLabel ? '<div style="color:#8a93a0;font-size:11px;margin-top:2px;">Items: ' + MM.esc(itemsLabel) + '</div>' : '') +
+              '</div>' +
+              '<button type="button" data-mm-cv-del="' + v.id + '" style="font-size:11px;padding:4px 10px;border:1px solid #d3d8de;border-radius:5px;background:#fff;color:#a33;cursor:pointer;white-space:nowrap;">Delete</button>' +
+            '</li>';
+          }).join('') + '</ul>';
+
+      // Create form: name + op + item checkboxes.
+      const itemRows = likertItems.length === 0
+        ? '<div style="color:#a33;font-size:12px;">No Likert items found in this dataset. Composite scores need at least 2 Likert items.</div>'
+        : likertItems.map(it => '<label style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid #e2e6ea;border-radius:5px;background:#fff;font-size:12px;margin:0 6px 6px 0;cursor:pointer;">' +
+            '<input type="checkbox" data-mm-cv-item value="' + MM.esc(it.id) + '" />' +
+            '<span>' + MM.esc(it.label) + '</span>' +
+          '</label>').join('');
+
+      host.innerHTML =
+        '<div class="card" style="padding:14px 16px;">' +
+          '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">' +
+            '<h3 style="margin:0;font-family:inherit;font-size:16px;">Computed variables</h3>' +
+            '<span style="font-size:11px;color:#5a6470;">Composite scores you create here are saved to the project and appear in every analysis below.</span>' +
+          '</div>' +
+          listHtml +
+          (likertItems.length >= 2
+            ? '<div style="border-top:1px solid #f0f2f4;padding-top:10px;margin-top:8px;">' +
+                '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">' +
+                  '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+                    '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Name</span>' +
+                    '<input type="text" id="mmCvName" placeholder="e.g. Engagement_Total" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:200px;" />' +
+                  '</label>' +
+                  '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+                    '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Operation</span>' +
+                    '<select id="mmCvOp" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;">' +
+                      '<option value="mean">Mean</option>' +
+                      '<option value="sum">Sum</option>' +
+                    '</select>' +
+                  '</label>' +
+                  '<button type="button" id="mmCvCreate" class="btn primary" style="font-size:13px;padding:7px 14px;">Save composite</button>' +
+                '</div>' +
+                '<div style="font-size:11px;font-weight:600;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Source items (pick 2 or more)</div>' +
+                '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + itemRows + '</div>' +
+                '<div id="mmCvStatus" style="font-size:12px;color:#5a6470;margin-top:6px;"></div>' +
+              '</div>'
+            : '') +
+        '</div>';
+
+      // Wire delete buttons.
+      host.querySelectorAll('[data-mm-cv-del]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = parseInt(btn.getAttribute('data-mm-cv-del'), 10);
+          if (!id) return;
+          if (!confirm('Delete this computed variable? Analyses that referenced it will lose this column.')) return;
+          btn.disabled = true; btn.textContent = 'Deleting...';
+          try {
+            await api.mmDeleteDerivedVariable(p.id, id);
+            // Re-fetch + render.
+            const r = await api.mmListDerivedVariables(p.id);
+            render(r.variables || []);
+          } catch (e) {
+            btn.disabled = false; btn.textContent = 'Delete';
+            if (typeof showToast === 'function') showToast(e.message || 'Could not delete.');
+          }
+        });
+      });
+
+      // Wire create button.
+      const createBtn = host.querySelector('#mmCvCreate');
+      const statusEl  = host.querySelector('#mmCvStatus');
+      if (createBtn) {
+        createBtn.addEventListener('click', async () => {
+          const name = (host.querySelector('#mmCvName').value || '').trim();
+          const op   = host.querySelector('#mmCvOp').value;
+          const items = Array.from(host.querySelectorAll('[data-mm-cv-item]:checked')).map(c => c.value);
+          if (!name) { statusEl.innerHTML = '<span style="color:#a33;">Please enter a name.</span>'; return; }
+          if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
+            statusEl.innerHTML = '<span style="color:#a33;">Names must start with a letter and contain only letters, numbers, and underscores (no spaces).</span>';
+            return;
+          }
+          if (items.length < 2) { statusEl.innerHTML = '<span style="color:#a33;">Pick at least 2 source items.</span>'; return; }
+          createBtn.disabled = true;
+          statusEl.innerHTML = 'Computing and saving...';
+          try {
+            const r = await api.mmCreateDerivedVariable(p.id, name, op, { items: items });
+            statusEl.innerHTML = '<span style="color:#1f6f3a;">Saved. Computed for ' + r.n_computed + ' / ' + (r.n_computed + r.n_missing) + ' respondents.</span>';
+            const list = await api.mmListDerivedVariables(p.id);
+            render(list.variables || []);
+          } catch (e) {
+            createBtn.disabled = false;
+            statusEl.innerHTML = '<span style="color:#a33;">' + MM.esc(e.message || 'Could not save.') + '</span>';
+          }
+        });
+      }
+    };
+
+    // Initial load.
+    host.innerHTML = '<div class="card" style="padding:14px 16px;color:#5a6470;font-size:13px;"><em>Loading computed variables...</em></div>';
+    api.mmListDerivedVariables(p.id)
+      .then(r => render((r && r.variables) || []))
+      .catch(() => render([])); // empty state if endpoint not yet deployed
+  })();
 
   // Per-task visibility. Reads the v3 sidebar key the user clicked and
   // shows only the section(s) relevant to that task. Mirrors how Qual
