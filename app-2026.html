@@ -34333,9 +34333,11 @@ async function mmRenderLanding(container) {
     '<div class="mm-v3-root" id="mmV3Root">' +
       '<div class="mm-v3-main">' +
         '<div class="mm-v3-topbar">' +
-          '<div class="mm-v3-topbar-left">' +
-            '<img src="' + mmLogoSrc + '" alt="ReliCheck Mixed Methods Studio" class="mm-v3-topbar-logo" />' +
-          '</div>' +
+          // Lower MM Studio logo removed per Don. The main top nav already
+          // shows the ReliCheck brand, and the breadcrumb tells the user
+          // they are inside Mixed-Methods Studio. The second logo was
+          // visual redundancy.
+
           '<div class="mm-v3-ribbon"></div>' +
           '<div class="mm-v3-project"><div style="font-size:11px;">Studio overview</div><strong>No project open</strong></div>' +
         '</div>' +
@@ -36946,9 +36948,11 @@ function mmRenderProjectShellV3(container) {
         '<div class="mm-v3-topbar">' +
           // Left block: just the MM-Logo. The Methods Design tile moved
           // down to the workspace-head row to align with the WORKSPACE crumb.
-          '<div class="mm-v3-topbar-left">' +
-            '<img src="' + mmLogoSrc + '" alt="ReliCheck Mixed Methods Studio" class="mm-v3-topbar-logo" />' +
-          '</div>' +
+          // Lower MM Studio logo removed per Don. The main top nav already
+          // shows the ReliCheck brand, and the breadcrumb tells the user
+          // they are inside Mixed-Methods Studio. The second logo was
+          // visual redundancy.
+
           '<div class="mm-v3-ribbon" id="mmV3Ribbon"></div>' +
           '<div class="mm-v3-project"><div style="font-size:11px;">' + MM.esc(p.pathway === 'scores_plus_comments' ? 'Scores + comments' : 'Comments only') + '</div><strong>' + MM.esc(p.title || '(untitled)') + '</strong>' +
             // Promoted from a tiny corner link to a pill button so the
