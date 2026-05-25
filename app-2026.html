@@ -2203,7 +2203,11 @@
       background: var(--panel);
       color: var(--text-mute);
       cursor: pointer;
-      transition: border-color 0.12s, background 0.12s;
+      transition: border-color 0.12s, background 0.12s, box-shadow 0.18s;
+      box-shadow:
+        0 24px 60px rgba(11,23,51,0.10),
+        0 8px 20px rgba(11,23,51,0.06),
+        0 2px 4px rgba(11,23,51,0.04);
     }
     .up-dropzone:hover, .up-dropzone.drag {
       border-color: var(--primary);
@@ -2252,6 +2256,20 @@
       border-radius: 12px;
       overflow: hidden;
       margin-bottom: 18px;
+      box-shadow:
+        0 24px 60px rgba(11,23,51,0.10),
+        0 8px 20px rgba(11,23,51,0.06),
+        0 2px 4px rgba(11,23,51,0.04);
+    }
+    /* MM wizard card carries the same Apple-style heavy shadow so the
+       study-setup form does not get lost on the light page background.
+       Scoped under .mm-shell so other generic .card uses are unaffected. */
+    .mm-shell > .card {
+      box-shadow:
+        0 24px 60px rgba(11,23,51,0.10),
+        0 8px 20px rgba(11,23,51,0.06),
+        0 2px 4px rgba(11,23,51,0.04);
+      border-radius: 12px;
     }
     .up-review-head {
       padding: 16px 22px;
@@ -31997,11 +32015,28 @@ async function boot() {
 const MM = {
   draftFlag() {
     try {
+      // 1) Explicit URL flag, primary opt-in path for invited testers.
+      //    Persisted to localStorage (not sessionStorage) so it survives
+      //    browser restarts; previously every fresh browser session put
+      //    the user back behind the gate, including the owner.
       const qs = new URLSearchParams(location.search || '');
       if (qs.get('draft') === '1') {
-        try { sessionStorage.setItem('mm_draft', '1'); } catch (_) {}
+        try { localStorage.setItem('mm_draft', '1'); } catch (_) {}
         return true;
       }
+      // 2) Server-side beta entitlement. /api/auth/me returns
+      //    user.beta_access_mm = true for any account that has redeemed
+      //    a promo code marked is_beta_cohort = 1. When present, the
+      //    Studio is auto-unlocked.
+      try {
+        if (typeof state !== 'undefined' && state && state.user && state.user.beta_access_mm) {
+          return true;
+        }
+      } catch (_) {}
+      // 3) Persisted local opt-in from a prior visit.
+      try { if (localStorage.getItem('mm_draft') === '1') return true; } catch (_) {}
+      // 4) Legacy sessionStorage flag, honor it for the current tab so
+      //    anyone mid-session is not bounced out.
       try { return sessionStorage.getItem('mm_draft') === '1'; } catch (_) {}
     } catch (_) {}
     return false;
@@ -32084,25 +32119,30 @@ function renderMixedMethodsStudio(container, param) {
   const name = firstName(state.user && state.user.name) || 'there';
   const mmProjectCount = ((MM.state && MM.state.projects) || []).length ||
     ((state.surveys || []).filter(s => s && s.mm_project_id).length) || 0;
-  if (!state.homeOrder) state.homeOrder = HOME_DEFAULT_ORDER.slice();
-  state.homeEditMode = false;
-  container.innerHTML =
-    swBuildMMLandingHTML({ name: name, counts: { active: mmProjectCount } }) +
-    '<div class="home-grid" id="homeGrid"></div>';
+  container.innerHTML = swBuildMMLandingHTML({
+    name: name,
+    counts: { active: mmProjectCount },
+  });
   // Wire CTA + tiles. "new" fires the wizard; "scroll" jumps the user
-  // down to the dashboard grid that sits below the hero.
+  // down to the MM picker shell that mmRenderLanding paints below.
   container.querySelectorAll('[data-mm-action]').forEach(el => {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       const act = el.getAttribute('data-mm-action');
       if (act === 'new') { mmStartWizard(); return; }
       if (act === 'scroll') {
-        const tgt = container.querySelector('#homeGrid');
+        const tgt = container.querySelector('.mm-host');
         if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
-  drawHomeGrid();
+  // Below the landing hero, render the MM Studio picker shell (six-stop
+  // banner, MM project list, MM activity). Don\'s call: MM\'s lower
+  // section should be MM, not the Survey Studio Quick actions grid.
+  const mmHost = document.createElement('div');
+  mmHost.className = 'mm-host';
+  container.appendChild(mmHost);
+  mmRenderLanding(mmHost);
 }
 
 // Starts the wizard from the welcome panel.
