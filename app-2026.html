@@ -16118,6 +16118,46 @@ function swEnsureLandingStyles() {
       '.sw-welcome-pickup { margin-bottom:32px; padding:8px 14px; font-size:13px; }' +
       '.sw-welcome-grid { grid-template-columns:repeat(2,1fr); }' +
     '}',
+
+    // === Shared page-hero for studio routes that match the welcome flow:
+    // Create/Upload, Projects, and any future big-headline page.
+    '.sw-page { max-width:1200px; margin:0 auto; padding:64px 32px 80px; }',
+    '.sw-page-hero { display:grid; grid-template-columns:1fr auto; gap:24px; align-items:end; margin-bottom:36px; }',
+    '.sw-page-eyebrow { font:600 11px/1 Inter,system-ui,sans-serif; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-mute); margin:0 0 12px; }',
+    '.sw-page-title { font:700 64px/1.05 Fraunces,serif; color:var(--text); letter-spacing:-0.025em; margin:0 0 12px; }',
+    '.sw-page-sub { font:400 17px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:640px; margin:0; }',
+    '.sw-page-actions { display:flex; gap:10px; align-items:center; }',
+    '@media (max-width:900px) {' +
+      '.sw-page { padding:40px 20px 56px; }' +
+      '.sw-page-hero { grid-template-columns:1fr; }' +
+      '.sw-page-title { font-size:42px; }' +
+      '.sw-page-sub { font-size:15px; }' +
+    '}',
+
+    // === Create / Upload intake panels =================================
+    '.sw-intake { display:grid; grid-template-columns:1fr 1fr; gap:20px; }',
+    '@media (max-width:900px) { .sw-intake { grid-template-columns:1fr; } }',
+    '.sw-intake-panel { padding:24px; border-radius:16px; background:#fff; border:1px solid var(--border); }',
+    '.sw-intake-panel.build  { border-color:#fde2d7; background:linear-gradient(180deg, #fff 0%, #fff7f3 100%); }',
+    '.sw-intake-panel.upload { border-color:#cdd9ef; background:linear-gradient(180deg, #fff 0%, #f4f8ff 100%); }',
+    '.sw-intake-panel h2 { font:600 22px/1.2 Fraunces,serif; margin:0 0 4px; letter-spacing:-0.01em; }',
+    '.sw-intake-panel.build  h2 { color:#e85d3a; }',
+    '.sw-intake-panel.upload h2 { color:#2563eb; }',
+    '.sw-intake-panel .panel-sub { font:400 14px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); margin:0 0 18px; }',
+    '.sw-intake-card { display:grid; grid-template-columns:48px 1fr auto; gap:14px; align-items:center; padding:14px 16px; background:#fff; border:1px solid var(--border); border-radius:12px; text-decoration:none; cursor:pointer; transition:transform .14s, border-color .14s, box-shadow .14s; margin-bottom:10px; }',
+    '.sw-intake-card:hover { transform:translateX(2px); border-color:var(--border-strong); box-shadow:0 6px 16px rgba(11,23,51,0.06); }',
+    '.sw-intake-card:last-child { margin-bottom:0; }',
+    '.sw-intake-panel.build  .sw-intake-card:hover { border-color:#e85d3a; }',
+    '.sw-intake-panel.upload .sw-intake-card:hover { border-color:#2563eb; }',
+    '.sw-intake-card-ico { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; font:700 16px/1 Fraunces,serif; }',
+    '.sw-intake-panel.build  .sw-intake-card-ico { background:#fdeee9; color:#e85d3a; }',
+    '.sw-intake-panel.upload .sw-intake-card-ico { background:#e0ecff; color:#2563eb; }',
+    '.sw-intake-card-body { min-width:0; }',
+    '.sw-intake-card-name { font:600 14.5px/1.2 Inter,system-ui,sans-serif; color:var(--text); margin-bottom:3px; }',
+    '.sw-intake-card-desc { font:400 12.5px/1.45 Inter,system-ui,sans-serif; color:var(--text-mute); }',
+    '.sw-intake-card-meta { display:inline-block; margin-top:6px; font:600 9.5px/1 Inter,system-ui,sans-serif; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-mute); padding:3px 6px; border-radius:4px; background:var(--bg-soft, var(--bg)); }',
+    '.sw-intake-card.intel .sw-intake-card-meta { background:var(--accent-soft); color:var(--accent); }',
+    '.sw-intake-card-arrow { color:var(--text-mute); font-size:20px; }',
   ].join('\n');
   document.head.appendChild(s);
 }
@@ -27358,50 +27398,45 @@ function renderCreateUpload(root) {
     { ic: 'I', cls: 'alt', name: 'Import survey definition',desc: 'Paste survey text or upload a Qualtrics .qsf. Opens in the builder.',                                meta: '.qsf .docx', action: 'import' },
   ];
 
-  const renderCard = (c) =>
-    '<a class="opt" data-card-action="' + escapeHtml(c.action) + '">' +
-      '<div class="opt-icon ' + c.cls + '">' + escapeHtml(c.ic) + '</div>' +
-      '<div class="opt-body">' +
-        '<div class="opt-name">' + escapeHtml(c.name) + '</div>' +
-        '<div class="opt-desc">' + escapeHtml(c.desc) + '</div>' +
-        (c.meta ? '<span class="opt-meta">' + escapeHtml(c.meta) + '</span>' : '') +
+  swEnsureLandingStyles();
+  // Render each intake item as a row card with an icon plate on the
+  // left, name + descriptor in the middle, and an arrow on the right.
+  // Intelligence cards carry an extra accent-tinted meta badge.
+  const renderCard = (c) => {
+    const isIntel = (c.meta || '').toLowerCase() === 'intelligence';
+    return '<a class="sw-intake-card' + (isIntel ? ' intel' : '') + '" data-card-action="' + escapeHtml(c.action) + '">' +
+      '<div class="sw-intake-card-ico">' + escapeHtml(c.ic) + '</div>' +
+      '<div class="sw-intake-card-body">' +
+        '<div class="sw-intake-card-name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="sw-intake-card-desc">' + escapeHtml(c.desc) + '</div>' +
+        (c.meta ? '<span class="sw-intake-card-meta">' + escapeHtml(c.meta) + '</span>' : '') +
       '</div>' +
-      '<div class="opt-arrow">&rsaquo;</div>' +
+      '<div class="sw-intake-card-arrow">&rsaquo;</div>' +
     '</a>';
+  };
 
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>How would you like to get started?</h1>' +
-        '<div class="sub">Build inside ReliCheck, or bring data in from another tool. You can switch paths later.</div>' +
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">How would you like<br>to get started?</h1>' +
+          '<p class="sw-page-sub">Build inside ReliCheck, or bring data in from another tool. You can switch paths later.</p>' +
+        '</div>' +
       '</div>' +
-    '</div>' +
 
-    '<div class="intake">' +
-      '<section class="intake-col">' +
-        '<header>' +
+      '<div class="sw-intake">' +
+        '<div class="sw-intake-panel build">' +
           '<h2>Build inside ReliCheck</h2>' +
-          '<div class="col-sub">Author a new survey or test, or start from a template.</div>' +
-        '</header>' +
-        buildCards.map(renderCard).join('') +
-      '</section>' +
-
-      '<section class="intake-col">' +
-        '<header>' +
+          '<p class="panel-sub">Create new surveys, tests, or start from a template.</p>' +
+          buildCards.map(renderCard).join('') +
+        '</div>' +
+        '<div class="sw-intake-panel upload">' +
           '<h2>Upload what you already have</h2>' +
-          '<div class="col-sub">Bring in an existing survey, test, or dataset. Then analyze in ReliCheck.</div>' +
-        '</header>' +
-        uploadCards.map(renderCard).join('') +
-      '</section>' +
-    '</div>' +
-
-    '<div class="help-line">' +
-      '<div>' +
-        '<p class="ht">Not sure which path to take?</p>' +
-        '<div class="hd">Walk through one of your existing projects end to end before starting a new one.</div>' +
+          '<p class="panel-sub">Bring in existing surveys, tests, or datasets.</p>' +
+          uploadCards.map(renderCard).join('') +
+        '</div>' +
       '</div>' +
-      '<a class="btn" data-route="projects">Open recent projects</a>' +
-    '</div>';
+    '</section>';
 
   $all('[data-card-action]').forEach(c => {
     c.addEventListener('click', (e) => {
@@ -38054,26 +38089,23 @@ async function mmTabCodebook(host) {
     return;
   }
   if (!state.entries.length) {
-    // Phase 178z: universal two-stage UI. Stage 1 (rule-based) renders
-    // automatically with no spinner -- we compute candidate themes from the
-    // project's responses using a lexicon + frequency clustering pass. The
-    // researcher sees real suggestions immediately. Stage 2 ("Refine with
-    // AI") sits next to it as an optional polish path.
+    // Auto-persist starter themes. Previously this screen showed rule-based
+    // suggestions with checkboxes and a manual "Add selected themes" button;
+    // a reviewer reported that closing the tab before clicking the button
+    // lost all the work and that re-running produced a different set each
+    // time. New flow: the moment the suggester returns themes, save every
+    // one of them as a draft category via mmCategoryAction.add, then reload
+    // the Codebook so the user lands in the standard three-panel layout
+    // with their starter set already persisted. They can rename, refine,
+    // merge, or delete from there. AI Refine and manual add still apply on
+    // top of the saved set.
     host.innerHTML =
-      '<div class="card" style="padding:24px;max-width:1100px;margin:0 auto;">' +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap;">' +
-          '<h3 style="margin:0;">Codebook &amp; Themes</h3>' +
-          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">' +
-            '<button class="btn ghost" id="mmCbAddManual" style="font-size:12px;padding:6px 12px;">+ Add a theme by hand</button>' +
-            '<button class="btn ghost" id="mmCbBuildAi" style="font-size:12px;padding:6px 12px;border-color:var(--primary);color:var(--primary);">&#9889; Refine with AI</button>' +
-          '</div>' +
-        '</div>' +
-        '<p style="color:#5a6470;margin:0 0 14px;">No themes yet. Below are rule-based suggestions read directly from your responses. Pick which ones to add, rename anything that needs it, or use the buttons above for a manual add or an AI rewrite.</p>' +
-        '<div id="mmCbStage1Host"><div class="loading-row" style="padding:18px;"><div class="spinner"></div><div>Reading your responses to suggest themes...</div></div></div>' +
-        '<div id="mmCbBuildStatus" style="font-size:12px;color:#5a6470;margin-top:10px;"></div>' +
+      '<div class="card" style="padding:24px;max-width:900px;margin:0 auto;">' +
+        '<h3 style="margin:0 0 8px;">Codebook &amp; Themes</h3>' +
+        '<p style="color:#5a6470;margin:0 0 18px;font-size:13.5px;line-height:1.55;">Reading your open-ended responses to build a starter codebook. Themes are saved automatically as soon as they’re generated, so closing the tab will not lose your work. Once they appear you can rename, refine, merge, or delete any of them.</p>' +
+        '<div id="mmCbStage1Host"><div class="loading-row" style="padding:18px;"><div class="spinner"></div><div>Generating and saving starter themes...</div></div></div>' +
       '</div>';
 
-    // Stage 1: kick off the rule-based theme suggestion immediately.
     (async () => {
       const stage1 = host.querySelector('#mmCbStage1Host');
       let suggested;
@@ -38084,66 +38116,35 @@ async function mmTabCodebook(host) {
         return;
       }
       if (!suggested || !suggested.themes || suggested.themes.length === 0) {
+        // Nothing to auto-save. Offer manual add and AI refine.
         if (stage1) stage1.innerHTML =
           '<div style="padding:14px 16px;background:#fafbfc;border:1px dashed #d3d8de;border-radius:8px;color:#5a6470;font-size:13px;">' +
             MM.esc((suggested && suggested.error) || 'No theme suggestions could be derived from the current responses.') +
-            ' Try the "+ Add a theme by hand" button above, or click "Refine with AI" for a different pass.' +
-          '</div>';
+          '</div>' +
+          '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">' +
+            '<button class="btn ghost" id="mmCbAddManual" style="font-size:12px;padding:6px 12px;">+ Add a theme by hand</button>' +
+            '<button class="btn ghost" id="mmCbBuildAi" style="font-size:12px;padding:6px 12px;border-color:var(--primary);color:var(--primary);">&#9889; Refine with AI</button>' +
+          '</div>' +
+          '<div id="mmCbBuildStatus" style="font-size:12px;color:#5a6470;margin-top:10px;"></div>';
         return;
       }
-      // Render the suggested themes as a list of cards with checkboxes.
-      const themesHtml = suggested.themes.map((t, i) => {
-        const kw = (t.keywords || []).slice(0, 5).join(' &middot; ');
-        const ex = (t.examples || []).map(e => '<li style="font-size:12px;color:#3a4252;line-height:1.45;margin:2px 0;overflow-wrap:anywhere;">"' + MM.esc(e) + '"</li>').join('');
-        return '<div style="border:1px solid #e2e6ea;border-radius:10px;padding:14px;background:#fff;margin-bottom:10px;">' +
-                 '<div style="display:flex;align-items:flex-start;gap:12px;">' +
-                   '<input type="checkbox" id="mmCbSugChk_' + i + '" data-mm-sug-idx="' + i + '" checked style="margin-top:5px;flex-shrink:0;width:16px;height:16px;cursor:pointer;" />' +
-                   '<div style="flex:1;min-width:0;">' +
-                     '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">' +
-                       '<input type="text" id="mmCbSugName_' + i + '" data-mm-sug-name="' + i + '" value="' + MM.esc(t.name) + '" style="flex:1;min-width:160px;font-size:14px;font-weight:600;color:#1a1f2b;padding:4px 8px;border:1px solid #e2e6ea;border-radius:6px;" />' +
-                       '<span style="font-size:11px;color:#5a6470;background:#f4f5f7;padding:2px 8px;border-radius:999px;">' + t.size + ' response' + (t.size === 1 ? '' : 's') + '</span>' +
-                     '</div>' +
-                     (kw ? '<div style="font-size:11px;color:#5a6470;margin-bottom:6px;"><strong style="color:#3a4252;font-weight:600;">Top keywords:</strong> ' + kw + '</div>' : '') +
-                     (ex ? '<ul style="list-style:none;margin:0;padding:0 0 0 4px;border-left:2px solid #e2e6ea;padding-left:10px;">' + ex + '</ul>' : '') +
-                   '</div>' +
-                 '</div>' +
-               '</div>';
-      }).join('');
-      if (stage1) stage1.innerHTML =
-        '<div style="font-size:11px;font-weight:700;color:#5a6470;letter-spacing:0.04em;text-transform:none;margin-bottom:10px;">Suggested themes (rule-based)</div>' +
-        themesHtml +
-        '<button class="btn primary" id="mmCbAddSelected" style="margin-top:4px;font-size:13px;padding:9px 18px;">Add selected themes</button>' +
-        '<div id="mmCbAddSelStatus" style="display:inline-block;margin-left:12px;font-size:12px;color:#5a6470;"></div>';
 
-      // Wire the "Add selected" button. Loops over checked rows and calls
-      // mmCategoryAction.add for each one, then reloads the Codebook.
-      const addBtn = host.querySelector('#mmCbAddSelected');
-      const addStatus = host.querySelector('#mmCbAddSelStatus');
-      if (addBtn) addBtn.addEventListener('click', async () => {
-        const checks = Array.from(host.querySelectorAll('[data-mm-sug-idx]')).filter(c => c.checked);
-        if (checks.length === 0) {
-          if (addStatus) addStatus.innerHTML = '<span style="color:#a33;">Pick at least one theme to add.</span>';
-          return;
-        }
-        addBtn.disabled = true;
-        const orig = addBtn.textContent;
-        addBtn.textContent = 'Adding ' + checks.length + ' theme' + (checks.length === 1 ? '' : 's') + '...';
-        if (addStatus) addStatus.textContent = '';
-        let added = 0;
-        let failed = 0;
-        for (let i = 0; i < checks.length; i++) {
-          const idx = parseInt(checks[i].getAttribute('data-mm-sug-idx'), 10);
-          const nameEl = host.querySelector('[data-mm-sug-name="' + idx + '"]');
-          const name = nameEl ? (nameEl.value || '').trim() : '';
-          if (!name) { failed++; continue; }
-          try {
-            await api.mmCategoryAction({ project_id: p.id, action: 'add', name: name });
-            added++;
-          } catch (_) { failed++; }
-        }
-        if (addStatus) addStatus.textContent = added + ' theme' + (added === 1 ? '' : 's') + ' added' + (failed > 0 ? (', ' + failed + ' failed') : '') + '. Reloading...';
-        setTimeout(() => { mmTabCodebook(host); }, 500);
-      });
+      // Persist every suggestion in parallel. A single failure does not stop
+      // the others. After all settle, reload the Codebook so the user sees
+      // the standard three-panel layout with their starter set in place.
+      if (stage1) stage1.innerHTML = '<div class="loading-row" style="padding:18px;"><div class="spinner"></div><div>Saving ' + suggested.themes.length + ' starter theme' + (suggested.themes.length === 1 ? '' : 's') + ' to your project...</div></div>';
+      const results = await Promise.all(suggested.themes.map(t =>
+        api.mmCategoryAction({ project_id: p.id, action: 'add', name: t.name })
+          .then(() => ({ ok: true, name: t.name }))
+          .catch(e => ({ ok: false, name: t.name, err: (e && e.message) || 'add failed' }))
+      ));
+      const saved  = results.filter(r => r.ok).length;
+      const failed = results.length - saved;
+      if (typeof showToast === 'function') {
+        showToast('Saved ' + saved + ' starter theme' + (saved === 1 ? '' : 's') + (failed ? ' (' + failed + ' could not be saved)' : '') + '. Rename, refine, or delete from the codebook.');
+      }
+      // Reload the workspace so the standard three-panel renders.
+      mmTabCodebook(host);
     })();
 
     // Stage 2 button: "Refine with AI" calls the existing mmBuild endpoint.
