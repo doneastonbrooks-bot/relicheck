@@ -12107,20 +12107,36 @@ async function renderTests(root, param) {
   // Param = test id. Render detail-shell stub (real analytics in Phase 137).
   if (param) { renderTestDetailStub(root, param); return; }
 
+  // Test & Item Analysis Studio landing hero on top (COMING SOON status),
+  // then the early-access tests-list view below it.
+  swEnsureLandingStyles();
+  const name = firstName(state.user && state.user.name) || 'there';
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>Tests</h1>' +
-        '<div class="sub">Multiple-choice tests with answer keys. Reliability, item difficulty, distractor analysis, skill heatmap.</div>' +
+    swBuildTestLandingHTML({ name: name }) +
+    '<div class="early-access-host">' +
+      '<div class="page-head">' +
+        '<div>' +
+          '<h1>Tests</h1>' +
+          '<div class="sub">Early access &mdash; multiple-choice tests with answer keys. Reliability, item difficulty, distractor analysis, skill heatmap.</div>' +
+        '</div>' +
+        '<div class="page-actions">' +
+          '<button class="btn ghost" id="btnBuildTest" type="button">Build a test</button>' +
+          '<button class="btn primary" id="btnUploadTest" type="button">Upload test</button>' +
+        '</div>' +
       '</div>' +
-      '<div class="page-actions">' +
-        '<button class="btn ghost" id="btnBuildTest" type="button">Build a test</button>' +
-        '<button class="btn primary" id="btnUploadTest" type="button">Upload test</button>' +
-      '</div>' +
-    '</div>' +
 
-    '<div class="tests-kpis" id="testsKpis"></div>' +
-    '<div id="testsListHost"><div class="loading-row"><div class="spinner"></div><div>Loading tests...</div></div></div>';
+      '<div class="tests-kpis" id="testsKpis"></div>' +
+      '<div id="testsListHost"><div class="loading-row"><div class="spinner"></div><div>Loading tests...</div></div></div>' +
+    '</div>';
+
+  // Landing tile "scroll" actions jump to the early-access section below.
+  root.querySelectorAll('[data-test-action="scroll"]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tgt = root.querySelector('.early-access-host');
+      if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 
   const bb = $('#btnBuildTest');
   if (bb) bb.addEventListener('click', () => openTestBuilderHandoff('new'));
@@ -15979,7 +15995,13 @@ function swEnsureLandingStyles() {
     // so it greets without taking up hero real estate. Fades in like the
     // eyebrow used to.
     '.sw-landing .la-welcome { position:absolute; top:18px; right:24px; z-index:3; font:500 13px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); padding:6px 12px; background:rgba(255,255,255,0.7); border:1px solid var(--border); border-radius:999px; backdrop-filter:saturate(180%) blur(8px); -webkit-backdrop-filter:saturate(180%) blur(8px); opacity:0; animation:laFade 600ms ease forwards 100ms; }',
-    '.sw-landing .la-title { font:600 44px/1 Fraunces,serif; color:var(--la-accent); margin:0 0 4px; letter-spacing:-0.02em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 200ms; }',
+    '.sw-landing .la-title { font:600 44px/1 Fraunces,serif; color:var(--la-accent); margin:0 0 4px; letter-spacing:-0.02em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 200ms; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }',
+    // Status badge next to the studio title — BETA, COMING SOON, etc.
+    '.sw-landing .la-badge { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font:700 10px/1 Inter,sans-serif; letter-spacing:0.1em; text-transform:uppercase; background:var(--la-accent-soft); color:var(--la-accent); border:1px solid var(--la-accent); }',
+    '.sw-landing .la-badge.muted { background:var(--bg-soft, var(--bg)); color:var(--text-mute); border-color:var(--border-strong); }',
+    // Disabled-style CTA for coming-soon studios.
+    '.sw-landing .la-cta.disabled { background:var(--bg-soft, var(--bg)); color:var(--text-mute); border:1px solid var(--border-strong); box-shadow:none; cursor:default; }',
+    '.sw-landing .la-cta.disabled:hover { background:var(--bg-soft, var(--bg)); color:var(--text-mute); transform:none; box-shadow:none; }',
     '.sw-landing .la-sub { font:600 28px/1.15 Fraunces,serif; color:var(--text); margin:0 0 18px; letter-spacing:-0.01em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 320ms; }',
     '.sw-landing .la-body { font:400 14.5px/1.6 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:460px; margin:0 0 22px; opacity:0; animation:laFade 700ms ease forwards 480ms; }',
     '.sw-landing .la-cta { display:inline-flex; align-items:center; gap:8px; padding:12px 22px; background:var(--la-accent); color:#fff; border:0; border-radius:999px; font:600 14px/1 Inter,system-ui,sans-serif; cursor:pointer; box-shadow:0 6px 16px var(--la-accent-soft); text-decoration:none; opacity:0; transform:translateY(6px); animation:laRise 600ms cubic-bezier(.2,.7,.2,1) forwards 620ms; transition:transform .18s, box-shadow .18s, background .18s; }',
@@ -16017,6 +16039,193 @@ function swEnsureLandingStyles() {
     '}',
   ].join('\n');
   document.head.appendChild(s);
+}
+
+// Mixed-Methods Studio landing — purple palette, BETA badge, Venn
+// illustration. CTA fires mmStartWizard via a click delegate set in
+// the consumer; existing MM project picker renders below the landing.
+function swBuildMMLandingHTML(opts) {
+  const name   = opts.name || 'there';
+  const counts = opts.counts || { active: 0, designs: 3 };
+  return '' +
+    '<section class="sw-landing" data-studio="mm">' +
+      '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="10" r="5"/><circle cx="15" cy="14" r="5"/></svg></div></div>' +
+      '<span class="la-wm wm1">M</span><span class="la-wm wm2">M</span><span class="la-wm wm3">M</span><span class="la-wm wm4">M</span>' +
+      '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
+      '<div class="la-hero">' +
+        '<div class="la-text">' +
+          '<h2 class="la-title">Mixed-Methods Studio <span class="la-badge">BETA</span></h2>' +
+          '<h3 class="la-sub">When the numbers don&rsquo;t tell the whole story.</h3>' +
+          '<p class="la-body">Pair quantitative scores with qualitative voice. Three classic designs &mdash; Explanatory, Exploratory, Convergent &mdash; with the workflow scaffolding and joint displays you&rsquo;d build by hand.</p>' +
+          '<a class="la-cta" data-mm-action="new">+ Start a mixed-methods project <span class="arr">&rarr;</span></a>' +
+        '</div>' +
+        '<div class="la-graphic">' +
+          '<svg viewBox="0 0 220 200" aria-hidden="true">' +
+            '<circle cx="80"  cy="100" r="68" fill="var(--la-accent)" opacity="0.18"/>' +
+            '<circle cx="140" cy="100" r="68" fill="var(--la-accent)" opacity="0.42"/>' +
+            '<text x="60"  y="106" font-family="Fraunces,serif" font-size="20" font-weight="600" fill="var(--la-accent-deep)" text-anchor="middle">QUAN</text>' +
+            '<text x="160" y="106" font-family="Fraunces,serif" font-size="20" font-weight="600" fill="#fff" text-anchor="middle">QUAL</text>' +
+            '<circle cx="110" cy="48"  r="6" fill="var(--la-accent)"/>' +
+            '<circle cx="50"  cy="170" r="5" fill="var(--la-accent)" opacity="0.5"/>' +
+            '<circle cx="180" cy="170" r="5" fill="var(--la-accent)" opacity="0.5"/>' +
+          '</svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="la-tiles">' +
+        '<a class="la-tile" data-mm-action="new">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
+          '<div class="la-tile-lab">New MM project</div>' +
+          '<div class="la-tile-sub">Pick a design that fits your question</div>' +
+        '</a>' +
+        '<a class="la-tile" data-mm-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg></div>' +
+          '<div class="la-tile-lab">Open existing</div>' +
+          '<div class="la-tile-sub">Browse your projects below</div>' +
+        '</a>' +
+        '<a class="la-tile" data-mm-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h16"/></svg></div>' +
+          '<div class="la-tile-lab">Methods guide</div>' +
+          '<div class="la-tile-sub">Which design when? Read first</div>' +
+        '</a>' +
+        '<a class="la-tile" data-route="ai">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 5.4 5.6.6-4.3 4 1.2 5.8L12 14.8l-4.9 3 1.2-5.8L4 8l5.6-.6z"/></svg></div>' +
+          '<div class="la-tile-lab">AI methodology helper</div>' +
+          '<div class="la-tile-sub">Narration on top of methodology</div>' +
+        '</a>' +
+      '</div>' +
+      '<div class="la-strip">' +
+        '<div class="la-stat"><strong>' + counts.active + '</strong><span>Active studies</span></div>' +
+        '<div class="la-stat"><strong>3</strong><span>Designs available</span></div>' +
+        '<div class="la-stat"><strong>BETA</strong><span>Studio status</span></div>' +
+        '<span class="la-strip-arrow">&darr; Scroll for projects</span>' +
+      '</div>' +
+    '</section>';
+}
+
+// Test & Item Analysis Studio landing — blue palette, COMING SOON
+// badge. CTA shows a coming-soon placeholder; existing /#/tests content
+// renders below as an early-access preview.
+function swBuildTestLandingHTML(opts) {
+  const name = opts.name || 'there';
+  return '' +
+    '<section class="sw-landing" data-studio="testitem">' +
+      '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg></div></div>' +
+      '<span class="la-wm wm1">T</span><span class="la-wm wm2">T</span><span class="la-wm wm3">T</span><span class="la-wm wm4">T</span>' +
+      '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
+      '<div class="la-hero">' +
+        '<div class="la-text">' +
+          '<h2 class="la-title">Test &amp; Item Analysis <span class="la-badge muted">Coming Soon</span></h2>' +
+          '<h3 class="la-sub">Before you trust the score, check the instrument.</h3>' +
+          '<p class="la-body">Classical statistics and item-response theory side by side &mdash; difficulty, discrimination, distractor analysis, 1PL/2PL/3PL models, and information curves. Catch the items dragging your test before they reach a student.</p>' +
+          '<a class="la-cta disabled" aria-disabled="true">Coming soon &mdash; early access below</a>' +
+        '</div>' +
+        '<div class="la-graphic">' +
+          '<svg viewBox="0 0 220 200" aria-hidden="true">' +
+            '<line x1="20" y1="170" x2="200" y2="170" stroke="var(--la-accent)" stroke-width="2" opacity="0.4"/>' +
+            '<line x1="20" y1="170" x2="20" y2="30" stroke="var(--la-accent)" stroke-width="2" opacity="0.4"/>' +
+            '<rect x="34"  y="120" width="20" height="50"  rx="3" fill="var(--la-accent)" opacity="0.55"/>' +
+            '<rect x="62"  y="80"  width="20" height="90"  rx="3" fill="var(--la-accent)" opacity="0.75"/>' +
+            '<rect x="90"  y="60"  width="20" height="110" rx="3" fill="var(--la-accent)"/>' +
+            '<rect x="118" y="92"  width="20" height="78"  rx="3" fill="var(--la-accent)" opacity="0.7"/>' +
+            '<rect x="146" y="138" width="20" height="32"  rx="3" fill="var(--la-accent)" opacity="0.45"/>' +
+            '<rect x="174" y="156" width="20" height="14"  rx="3" fill="var(--la-accent)" opacity="0.3"/>' +
+            '<circle cx="100" cy="50" r="6" fill="var(--la-accent-deep)"/>' +
+            '<text x="100" y="36" font-family="Inter" font-size="9" font-weight="700" fill="var(--la-accent-deep)" text-anchor="middle">PEAK</text>' +
+          '</svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="la-tiles">' +
+        '<a class="la-tile" data-test-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
+          '<div class="la-tile-lab">Import test</div>' +
+          '<div class="la-tile-sub">Responses + answer key</div>' +
+        '</a>' +
+        '<a class="la-tile" data-test-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></div>' +
+          '<div class="la-tile-lab">Item statistics</div>' +
+          '<div class="la-tile-sub">Classical difficulty + discrimination</div>' +
+        '</a>' +
+        '<a class="la-tile" data-test-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 14c0-5 4-8 8-8s8 3 8 8"/><path d="M2 18h20"/></svg></div>' +
+          '<div class="la-tile-lab">IRT models</div>' +
+          '<div class="la-tile-sub">1PL / 2PL / 3PL fit</div>' +
+        '</a>' +
+        '<a class="la-tile" data-test-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/></svg></div>' +
+          '<div class="la-tile-lab">Early-access preview</div>' +
+          '<div class="la-tile-sub">Browse what&rsquo;s there today</div>' +
+        '</a>' +
+      '</div>' +
+      '<div class="la-strip">' +
+        '<div class="la-stat"><strong>COMING SOON</strong><span>Studio status</span></div>' +
+        '<div class="la-stat"><strong>4</strong><span>Models planned</span></div>' +
+        '<div class="la-stat"><strong>Early</strong><span>Access available below</span></div>' +
+        '<span class="la-strip-arrow">&darr; Scroll for early access</span>' +
+      '</div>' +
+    '</section>';
+}
+
+// 360 Studio landing — teal palette, COMING SOON badge.
+function swBuildPanelLandingHTML(opts) {
+  const name = opts.name || 'there';
+  return '' +
+    '<section class="sw-landing" data-studio="360">' +
+      '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg></div></div>' +
+      '<span class="la-wm wm1">3</span><span class="la-wm wm2">6</span><span class="la-wm wm3">0</span><span class="la-wm wm4">3</span>' +
+      '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
+      '<div class="la-hero">' +
+        '<div class="la-text">' +
+          '<h2 class="la-title">360 Studio <span class="la-badge muted">Coming Soon</span></h2>' +
+          '<h3 class="la-sub">When feedback should drive growth, not judgment.</h3>' +
+          '<p class="la-body">Self, peer, manager, and direct-report perspectives in one defensible view. Built-in rater-count gating so a thin response doesn&rsquo;t pretend to be a full picture.</p>' +
+          '<a class="la-cta disabled" aria-disabled="true">Coming soon &mdash; early access below</a>' +
+        '</div>' +
+        '<div class="la-graphic">' +
+          '<svg viewBox="0 0 220 200" aria-hidden="true">' +
+            '<circle cx="110" cy="100" r="80" fill="none" stroke="var(--la-accent)" stroke-width="1.5" opacity="0.25" stroke-dasharray="2 4"/>' +
+            '<circle cx="110" cy="100" r="55" fill="none" stroke="var(--la-accent)" stroke-width="1.5" opacity="0.45"/>' +
+            '<circle cx="110" cy="100" r="22" fill="var(--la-accent)"/>' +
+            '<text x="110" y="105" font-family="Inter" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">SELF</text>' +
+            '<circle cx="110" cy="45"  r="11" fill="var(--la-accent)" opacity="0.85"/>' +
+            '<circle cx="165" cy="100" r="11" fill="var(--la-accent)" opacity="0.7"/>' +
+            '<circle cx="110" cy="155" r="11" fill="var(--la-accent)" opacity="0.85"/>' +
+            '<circle cx="55"  cy="100" r="11" fill="var(--la-accent)" opacity="0.7"/>' +
+            '<circle cx="155" cy="55"  r="8"  fill="var(--la-accent)" opacity="0.55"/>' +
+            '<circle cx="155" cy="145" r="8"  fill="var(--la-accent)" opacity="0.55"/>' +
+            '<circle cx="65"  cy="55"  r="8"  fill="var(--la-accent)" opacity="0.55"/>' +
+            '<circle cx="65"  cy="145" r="8"  fill="var(--la-accent)" opacity="0.55"/>' +
+          '</svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="la-tiles">' +
+        '<a class="la-tile" data-panel-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
+          '<div class="la-tile-lab">New 360 cycle</div>' +
+          '<div class="la-tile-sub">Define subject + rater pool</div>' +
+        '</a>' +
+        '<a class="la-tile" data-panel-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3 3-5 6-5s6 2 6 5"/></svg></div>' +
+          '<div class="la-tile-lab">Manage raters</div>' +
+          '<div class="la-tile-sub">Coverage + reminders</div>' +
+        '</a>' +
+        '<a class="la-tile" data-panel-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>' +
+          '<div class="la-tile-lab">Growth template</div>' +
+          '<div class="la-tile-sub">Coaching-first report style</div>' +
+        '</a>' +
+        '<a class="la-tile" data-panel-action="scroll">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>' +
+          '<div class="la-tile-lab">Early-access preview</div>' +
+          '<div class="la-tile-sub">Browse what&rsquo;s there today</div>' +
+        '</a>' +
+      '</div>' +
+      '<div class="la-strip">' +
+        '<div class="la-stat"><strong>COMING SOON</strong><span>Studio status</span></div>' +
+        '<div class="la-stat"><strong>5+</strong><span>Min raters for defensibility</span></div>' +
+        '<div class="la-stat"><strong>4</strong><span>Rater roles supported</span></div>' +
+        '<span class="la-strip-arrow">&darr; Scroll for early access</span>' +
+      '</div>' +
+    '</section>';
 }
 
 // Build the Survey Studio landing HTML — the hero moment when a user
@@ -29643,20 +29852,36 @@ async function renderPanels(root, panelId) {
 }
 
 async function renderPanelsList(root) {
+  // 360 Studio landing hero on top (COMING SOON status), then the
+  // early-access panels-list view below it.
+  swEnsureLandingStyles();
+  const name = firstName(state.user && state.user.name) || 'there';
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>360 Panels</h1>' +
-        '<div class="sub">Manager 360s, leadership development, peer feedback. Each panel binds a survey to subjects and their evaluators.</div>' +
+    swBuildPanelLandingHTML({ name: name }) +
+    '<div class="early-access-host">' +
+      '<div class="page-head">' +
+        '<div>' +
+          '<h1>360 Panels</h1>' +
+          '<div class="sub">Early access &mdash; manager 360s, leadership development, peer feedback. Each panel binds a survey to subjects and their evaluators.</div>' +
+        '</div>' +
+        '<div class="page-actions">' +
+          '<button class="btn primary" id="pnGoTo360Suite" type="button">From the 360 suite</button>' +
+          // Phase 154b: in-app panel creation flow is not yet built. Until the
+          // wizard ships, new panels are created from the 360 Suite template,
+          // and the "+ New panel" button is hidden.
+        '</div>' +
       '</div>' +
-      '<div class="page-actions">' +
-        '<button class="btn primary" id="pnGoTo360Suite" type="button">From the 360 suite</button>' +
-        // Phase 154b: in-app panel creation flow is not yet built. Until the
-        // wizard ships, new panels are created from the 360 Suite template,
-        // and the "+ New panel" button is hidden.
-      '</div>' +
-    '</div>' +
-    '<div id="pnListBody"><div class="loading-row"><div class="spinner"></div></div></div>';
+      '<div id="pnListBody"><div class="loading-row"><div class="spinner"></div></div></div>' +
+    '</div>';
+
+  // Landing tile "scroll" actions jump to the early-access section below.
+  root.querySelectorAll('[data-panel-action="scroll"]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tgt = root.querySelector('.early-access-host');
+      if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
 
   let panels = [];
   try {
@@ -31638,7 +31863,34 @@ function renderMixedMethodsStudio(container, param) {
   } catch (_) {}
   if (param === 'new') { mmRenderWizard(container); return; }
   if (param) { mmRenderProject(container, param); return; }
-  mmRenderLanding(container);
+  // Studio landing hero on top, then the existing MM v3 picker shell
+  // below it. Hero gives the BETA "you\'ve arrived" moment; the picker
+  // shell stays for the actual work of opening/creating projects.
+  swEnsureLandingStyles();
+  const name = firstName(state.user && state.user.name) || 'there';
+  const mmProjectCount = ((MM.state && MM.state.projects) || []).length ||
+    ((state.surveys || []).filter(s => s && s.mm_project_id).length) || 0;
+  container.innerHTML = swBuildMMLandingHTML({
+    name: name,
+    counts: { active: mmProjectCount },
+  });
+  // Wire CTA + tiles. "new" fires the wizard; "scroll" jumps to the
+  // existing picker shell that mmRenderLanding paints below.
+  container.querySelectorAll('[data-mm-action]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const act = el.getAttribute('data-mm-action');
+      if (act === 'new') { mmStartWizard(); return; }
+      if (act === 'scroll') {
+        const tgt = container.querySelector('.mm-host');
+        if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+  const mmHost = document.createElement('div');
+  mmHost.className = 'mm-host';
+  container.appendChild(mmHost);
+  mmRenderLanding(mmHost);
 }
 
 // Starts the wizard from the welcome panel.
