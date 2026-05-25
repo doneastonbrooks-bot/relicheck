@@ -2031,11 +2031,13 @@ p  { margin: 0 0 1em; color: var(--ink-7); }
     radial-gradient(600px 280px at -10% 110%, rgba(31, 158, 155, 0.05), transparent 70%),
     var(--bg);
 }
-/* Single-card centered layout on a warm amber page. Auth-aside is
+/* Centered layout. Page background stays neutral (platform default);
+   only the inner .auth-form-box gets the orange border + heavy shadow
+   so the form is the punctuation, not the whole page. Auth-aside is
    hidden so the existing markup stays intact while the new layout
    uses only auth-main + auth-card. */
 body.auth-page {
-  background: #f4a847;
+  background: var(--bg);
   min-height: 100vh;
 }
 .auth-topbar {
@@ -2169,46 +2171,47 @@ body.auth-page {
   flex: 1;
   width: 100%;
 }
-/* Centered card on the orange page. Wider than the old form-only
-   card so it can hold the WELCOME BACK / GET STARTED kicker,
-   the serif headline, and the supporting copy above the form.
-   Coral border + heavy layered shadow lifts the card off the
-   amber background. */
+/* Outer wrapper carries the wide kicker / headline / lede block. No
+   border, no shadow: the wrapping is for layout only. The bordered
+   shadowed box is the inner .auth-form-box around just the form. */
 .auth-card {
   width: 100%;
-  max-width: 520px;
-  background: #fff;
-  border: 2px solid #e85d3a;
-  border-radius: 18px;
-  box-shadow:
-    0 30px 80px rgba(11,23,51,0.20),
-    0 12px 32px rgba(11,23,51,0.10),
-    0 4px 8px rgba(11,23,51,0.06);
-  padding: clamp(32px, 4vw, 48px);
+  max-width: 560px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
   position: relative;
+  text-align: center;
 }
 .auth-card .top-link {
   position: absolute;
-  top: var(--s-4); right: var(--s-4);
+  top: calc(var(--s-4) * -1); right: 0;
   font-size: var(--text-sm);
-  color: var(--ink-5);
+  color: var(--ink-9);
+  background: rgba(255,255,255,0.85);
+  padding: var(--s-2) var(--s-3);
+  border-radius: 999px;
+  backdrop-filter: saturate(180%) blur(8px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
 }
 .auth-card .top-link a { font-weight: var(--fw-semibold); margin-left: 4px; }
-/* Kicker, headline, and supporting copy now live inside the card,
-   above the form, so the centered layout still carries the studio
-   identity language the navy aside used to. */
+/* Kicker, headline, and supporting copy sit at the top, outside the
+   form box, so the visual hierarchy reads as: identity above, action
+   below. */
 .auth-card .auth-kicker {
   display: inline-block;
   font-size: 11px;
   font-weight: var(--fw-bold);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #e85d3a;
+  color: var(--ink-9);
   margin: 0 0 var(--s-3);
 }
 .auth-card .auth-headline {
   font-family: var(--font-display);
-  font-size: clamp(28px, 3.4vw, 36px);
+  font-size: clamp(30px, 3.6vw, 40px);
   line-height: 1.1;
   letter-spacing: -0.02em;
   color: var(--ink-9);
@@ -2217,17 +2220,31 @@ body.auth-page {
 }
 .auth-card .auth-lede {
   font-size: var(--text-base);
-  color: var(--ink-6);
-  margin: 0 0 var(--s-6);
+  color: var(--ink-9);
+  margin: 0 auto var(--s-8);
   line-height: 1.55;
+  max-width: 480px;
+}
+/* The actual form lives in this narrower bordered box. Coral border
+   and heavy three-layer shadow lift it off the amber page. */
+.auth-form-box {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  background: #fff;
+  border: 2px solid #e85d3a;
+  border-radius: 16px;
+  box-shadow:
+    0 30px 80px rgba(11,23,51,0.20),
+    0 12px 32px rgba(11,23,51,0.10),
+    0 4px 8px rgba(11,23,51,0.06);
+  padding: clamp(24px, 3.5vw, 36px);
+  text-align: left;
 }
 .auth-card h1 {
   font-size: var(--text-2xl);
   margin: 0 0 var(--s-2);
   letter-spacing: -0.01em;
-  padding-top: var(--s-3);
-  border-top: 1px solid var(--line);
-  margin-top: var(--s-2);
 }
 .auth-card .sub { color: var(--ink-6); font-size: var(--text-base); margin: 0 0 var(--s-6); }
 
