@@ -5771,7 +5771,7 @@
             <div class="dropb">When the numbers do not tell the whole story.</div>
           </a>
           <a class="nav-item nav-drop-item" data-route="tests" data-studio="testitem" role="menuitem">
-            <div class="dropt">Item Analysis Studio <span class="nav-badge muted">early</span></div>
+            <div class="dropt">Test &amp; Item Analysis Studio <span class="nav-badge muted">early</span></div>
             <div class="dropb">Classical and IRT psychometrics for instruments.</div>
           </a>
           <a class="nav-item nav-drop-item" data-route="panels" data-studio="360" role="menuitem">
@@ -11638,7 +11638,7 @@ const routes = {
   welcome:   { title: 'Welcome',        render: renderWelcome },
   home:      { title: 'Home',           render: renderHome },
   projects:  { title: 'Projects',       render: renderProjects },
-  tests:     { title: 'Tests',          render: renderTests },
+  tests:     { title: 'Test & Item Analysis Studio', render: renderTests },
   datasets:  { title: 'Datasets',       render: renderDatasets },
   webhooks:  { title: 'Webhooks',       render: renderWebhooks },
   panels:    { title: 'Panels (360)',   render: renderPanels },
@@ -11727,7 +11727,7 @@ function render() {
     analyze: 'Survey Studio', distribute: 'Survey Studio', reports: 'Survey Studio',
     create: 'Survey Studio', 'upload-dataset': 'Survey Studio',
     mm: 'Mixed-Methods Studio',
-    tests: 'Item Analysis Studio',
+    tests: 'Test & Item Analysis Studio',
     panels: '360 Studio',
   };
   const STUDIO_ROUTE_FOR = {
@@ -11756,10 +11756,12 @@ function render() {
       const s = (state.surveys || []).find(x => String(x.id) === String(p));
       const title = s ? (s.title || 'Untitled survey') : 'Project';
       crumbs.innerHTML = '<a data-route="projects">Projects</a><span class="sep">&rsaquo;</span><a data-route="analyze" data-id="' + escapeHtml(p) + '">' + escapeHtml(title) + '</a><span class="sep">&rsaquo;</span><strong>Distribute</strong>';
+    } else if (r === 'tests' && p === 'new') {
+      crumbs.innerHTML = '<a data-route="tests">Test &amp; Item Analysis Studio</a><span class="sep">&rsaquo;</span><strong>Workstation</strong>';
     } else if (r === 'tests' && p) {
       const t = (state.tests || []).find(x => String(x.id) === String(p));
       const title = t ? (t.title || 'Untitled test') : 'Test';
-      crumbs.innerHTML = '<a data-route="tests">Tests</a><span class="sep">&rsaquo;</span><strong>' + escapeHtml(title) + '</strong>';
+      crumbs.innerHTML = '<a data-route="tests">Test &amp; Item Analysis Studio</a><span class="sep">&rsaquo;</span><strong>' + escapeHtml(title) + '</strong>';
     } else if (r === 'datasets' && p) {
       // Title isn't in state.surveys reliably; the detail renderer overrides
       // the breadcrumb itself once the dataset loads, so a generic fallback
@@ -11917,6 +11919,7 @@ async function renderHome(root) {
     }) +
     '<div class="home-grid" id="homeGrid"></div>';
 
+  swWireSurveyLandingJourney();
   drawHomeGrid();
 }
 
@@ -12200,54 +12203,1530 @@ async function renderRecentActivityCard() {
    with a native 10-card dashboard.
    ============================================================ */
 async function renderTests(root, param) {
-  // Param = test id. Render detail-shell stub (real analytics in Phase 137).
-  if (param) { renderTestDetailStub(root, param); return; }
+  // Routing, matching the MM Studio pattern:
+  //   #/tests          -> landing hero + recent-tests card
+  //   #/tests/new      -> Test & Item Analysis workstation (full-screen)
+  //   #/tests/<id>     -> existing test detail / analytics view
+  if (param === 'new') { renderTiaWorkstation(root); return; }
+  if (param)           { renderTestDetailStub(root, param); return; }
 
-  // Test & Item Analysis Studio landing hero on top (COMING SOON status),
-  // then the early-access tests-list view below it.
+  // Landing surface. Hero on top, a single Recent Tests card below.
+  // No workstation here; clicking "Open the workstation" navigates to
+  // #/tests/new, which mounts the three-panel surface on its own page.
   swEnsureLandingStyles();
   const name = firstName(state.user && state.user.name) || 'there';
   root.innerHTML =
     swBuildTestLandingHTML({ name: name }) +
-    '<div class="early-access-host">' +
-      '<div class="page-head">' +
-        '<div>' +
-          '<h1>Tests</h1>' +
-          '<div class="sub">Early access, multiple-choice tests with answer keys. Reliability, item difficulty, distractor analysis, skill heatmap.</div>' +
+    '<div class="tia-landing-lower" id="tiaLandingLower">' +
+      '<section class="home-card home-card--recent" data-card-key="recent-tests">' +
+        '<header class="card-head">' +
+          '<h2>Recent tests</h2>' +
+          '<div class="card-head-right">' +
+            '<button class="btn ghost sm" type="button" id="tiaLandingNew">+ New project</button>' +
+          '</div>' +
+        '</header>' +
+        '<div class="card-body" id="tiaRecentBody">' +
+          '<div class="loading-row"><div class="spinner"></div><div>Loading tests...</div></div>' +
         '</div>' +
-        '<div class="page-actions">' +
-          '<button class="btn ghost" id="btnBuildTest" type="button">Build a test</button>' +
-          '<button class="btn primary" id="btnUploadTest" type="button">Upload test</button>' +
-        '</div>' +
-      '</div>' +
-
-      '<div class="tests-kpis" id="testsKpis"></div>' +
-      '<div id="testsListHost"><div class="loading-row"><div class="spinner"></div><div>Loading tests...</div></div></div>' +
+      '</section>' +
     '</div>';
 
-  // Landing tile "scroll" actions jump to the early-access section below.
-  root.querySelectorAll('[data-test-action="scroll"]').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.preventDefault();
-      const tgt = root.querySelector('.early-access-host');
-      if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    });
-  });
-
-  const bb = $('#btnBuildTest');
-  if (bb) bb.addEventListener('click', () => openTestBuilderHandoff('new'));
-  const bu = $('#btnUploadTest');
-  if (bu) bu.addEventListener('click', () => openTestBuilderHandoff('upload'));
+  // Landing CTAs (hero + tiles + "+ New project") all open the
+  // workstation as a separate route, matching how MM's "Start a
+  // mixed-methods project" fires the wizard at #/mm/new.
+  const goWorkstation = (e) => {
+    if (e) e.preventDefault();
+    navigate('tests', 'new');
+  };
+  root.querySelectorAll('[data-tia-action="open"]').forEach(el => el.addEventListener('click', goWorkstation));
+  const newBtn = root.querySelector('#tiaLandingNew');
+  if (newBtn) newBtn.addEventListener('click', goWorkstation);
 
   try {
     const data = await api.listTests();
     state.tests = data.tests || [];
   } catch (e) {
     state.tests = [];
-    showToast('Could not load tests: ' + (e.message || 'unknown error'));
   }
-  drawTestsKpis();
-  drawTestsList();
+  tiaDrawRecentList(root);
+}
+
+// Recent-tests list rendered into the landing's lower card.
+function tiaDrawRecentList(root) {
+  const host = root.querySelector('#tiaRecentBody');
+  if (!host) return;
+  const tests = (state.tests || []).slice(0, 8);
+  if (!tests.length) {
+    host.innerHTML =
+      '<div class="empty" style="padding:24px 18px;">' +
+        '<h3 style="margin:0 0 6px;">No tests yet</h3>' +
+        '<p style="margin:0 0 14px;color:var(--text-mute);font-size:13px;">Open the workstation to set up your first project. The flow walks you from the decision through Item Strength and the Assessment Strength Index.</p>' +
+        '<button class="btn primary" type="button" id="tiaEmptyOpen">Open the workstation &rarr;</button>' +
+      '</div>';
+    const b = host.querySelector('#tiaEmptyOpen');
+    if (b) b.addEventListener('click', () => navigate('tests', 'new'));
+    return;
+  }
+  host.innerHTML = tests.map(t => {
+    const items    = t.num_items || 0;
+    const students = t.response_count || 0;
+    const avgRaw   = Number(t.avg_percent);
+    const avgTxt   = Number.isFinite(avgRaw) ? Math.round(avgRaw) + '% avg' : 'no avg yet';
+    const updated  = timeAgo(t.updated_at || t.created_at);
+    let pillHtml;
+    if      (students >= 20)     pillHtml = '<span class="pill good">Analyzed</span>';
+    else if (students > 0)       pillHtml = '<span class="pill ready">Collecting</span>';
+    else if (t.is_published)     pillHtml = '<span class="pill ready">Published</span>';
+    else                         pillHtml = '<span class="pill draft">Draft</span>';
+    return '<div class="test-row">' +
+        '<a class="test-row-main" data-test-id="' + escapeAttr(String(t.id)) + '">' +
+          '<div>' +
+            '<div class="proj-name">' + escapeHtml(t.title || '(untitled test)') + '</div>' +
+            '<div class="proj-meta">' +
+              items + ' item' + (items === 1 ? '' : 's') +
+              ' . ' + students.toLocaleString() + ' student' + (students === 1 ? '' : 's') +
+              ' . ' + escapeHtml(avgTxt) +
+              (updated ? ' . updated ' + escapeHtml(updated) : '') +
+            '</div>' +
+          '</div>' +
+          pillHtml +
+        '</a>' +
+      '</div>';
+  }).join('');
+}
+
+// TIA workstation, mounted as a full-screen surface at #/tests/new.
+// Owns its own state; the landing is intentionally not in the DOM here.
+function renderTiaWorkstation(root) {
+  swEnsureLandingStyles();
+  tiaEnsureStyles();
+  root.innerHTML = tiaBuildWorkstationHTML();
+
+  state.tia = state.tia || {
+    stage:       'setup',
+    project:     null,
+    upload:      null,
+    confirmed:   false,
+    activeTest:  null,
+    sampleMode:  true,
+  };
+
+  // Make sure the project rail has data without blocking the first paint.
+  (async () => {
+    try {
+      const data = await api.listTests();
+      state.tests = data.tests || [];
+      tiaRenderLeftRail(root);
+    } catch (_) { /* rail handles its own empty state */ }
+  })();
+
+  tiaWireWorkstation(root);
+  tiaRenderStage(root);
+}
+
+/* ============================================================
+   TEST & ITEM ANALYSIS STUDIO . Three-panel workstation
+   Left rail (flow + project switcher) . Center workstation
+   (full browser width) . Right ReliCheck Interpretation panel
+   (plain language + branded scores + decision support).
+   Cultural Context of Knowledge surfaces live inside the
+   Analyze stage as the Cognitive Demand, Open-Ended Voice,
+   and Rubric Integrity sections. Branded scores: ReliCheck
+   Item Strength Score (per item) and ReliCheck Assessment
+   Strength Index (whole test).
+   ============================================================ */
+
+function tiaEnsureStyles() {
+  if (document.getElementById('tiaStudioStyles')) return;
+  const s = document.createElement('style');
+  s.id = 'tiaStudioStyles';
+  s.textContent = [
+    // Tokens. Blue accent matches the studio identity. Tints, shadows,
+    // and ink stops all roll from a tiny palette so the workstation
+    // reads as one surface, not a stack of widgets.
+    '.tia-shell { --tia-accent:#2563eb; --tia-accent-hover:#1d4ed8; --tia-accent-soft:#e0ecff; --tia-accent-tint:#f4f8ff; --tia-accent-deep:#1e40af; --tia-ink:#0b1733; --tia-ink-7:#3a4252; --tia-ink-6:#5a6470; --tia-ink-5:#8b95a3; --tia-border:#e2e6ea; --tia-border-soft:#eef1f4; --tia-panel:#ffffff; --tia-panel-2:#f7f9fb; --tia-shadow:0 12px 32px rgba(15,23,42,0.06); }',
+    '.tia-shell, .tia-shell *, .tia-shell *::before, .tia-shell *::after { box-sizing:border-box; }',
+
+    // Outer shell. Sits flush with the page; uses negative side margins
+    // (matching .sw-landing) so the workstation fills the browser. The
+    // content router clamps the rest of the app, but a studio surface
+    // needs the whole canvas.
+    '.tia-shell { position:relative; width:auto; margin:0 clamp(-56px,-3vw,-24px) 56px; background:var(--tia-panel-2); border:1px solid var(--tia-border); border-radius:18px; overflow:hidden; box-shadow:var(--tia-shadow); }',
+    // Solo mode = workstation is the only thing on the route (#/tests/new).
+    // Pulls negative margins further out so the surface fills the viewport,
+    // drops the bottom margin since nothing follows.
+    '.tia-shell--solo { margin:-32px clamp(-56px,-3vw,-24px) 0; border-radius:0; min-height:calc(100vh - 120px); }',
+    '.tia-shell--solo .tia-grid { min-height:calc(100vh - 200px); }',
+
+    // Back-to-landing button in the topbar.
+    '.tia-back { display:inline-flex; align-items:center; gap:6px; padding:7px 13px; border-radius:999px; border:1px solid var(--tia-border); background:#fff; font:600 12.5px/1 Inter,sans-serif; color:var(--tia-ink-7); cursor:pointer; transition:border-color .12s, color .12s, background .12s; }',
+    '.tia-back:hover { border-color:var(--tia-accent); color:var(--tia-accent-deep); background:var(--tia-accent-tint); }',
+    '.tia-brand-divider { width:1px; height:22px; background:var(--tia-border); margin:0 4px; }',
+
+    // Topbar above the three panels: identity + project context + branded scores.
+    '.tia-topbar { display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:24px; padding:18px 28px; background:#fff; border-bottom:1px solid var(--tia-border); }',
+    '.tia-topbar-brand { display:flex; align-items:center; gap:12px; }',
+    '.tia-topbar-brand .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; background:var(--tia-accent-soft); color:var(--tia-accent-deep); font:700 10px/1 Inter,system-ui,sans-serif; letter-spacing:0.1em; text-transform:uppercase; }',
+    '.tia-topbar-brand h2 { margin:0; font:600 18px/1.2 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.01em; }',
+    '.tia-topbar-context { font:500 13px/1.45 Inter,system-ui,sans-serif; color:var(--tia-ink-6); }',
+    '.tia-topbar-context strong { color:var(--tia-ink); font-weight:600; }',
+    '.tia-topbar-scores { display:flex; align-items:stretch; gap:14px; }',
+    '.tia-mini-score { display:flex; flex-direction:column; align-items:flex-end; padding:6px 14px; border-left:1px solid var(--tia-border); min-width:130px; }',
+    '.tia-mini-score:first-child { border-left:0; padding-left:0; }',
+    '.tia-mini-score .lab { font:600 10px/1 Inter,system-ui,sans-serif; color:var(--tia-ink-5); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }',
+    '.tia-mini-score .val { font:700 22px/1 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.01em; }',
+    '.tia-mini-score .val .unit { font:600 12px/1 Inter,system-ui,sans-serif; color:var(--tia-ink-6); margin-left:3px; }',
+    '.tia-mini-score .tone-strong { color:#1f7a3a; }',
+    '.tia-mini-score .tone-watch  { color:#9a6b00; }',
+    '.tia-mini-score .tone-weak   { color:#a33; }',
+
+    // Three-panel grid. Fluid center; rails fixed; expands to fill the
+    // browser. Width tokens chosen so the rails feel substantial without
+    // crowding the center workstation.
+    '.tia-grid { display:grid; grid-template-columns:260px minmax(0,1fr) 360px; gap:0; align-items:stretch; min-height:720px; }',
+    '@media (max-width:1399px) { .tia-grid { grid-template-columns:240px minmax(0,1fr) 320px; } }',
+    '@media (max-width:1199px) { .tia-grid { grid-template-columns:1fr; min-height:0; } .tia-leftrail, .tia-rightpanel { border:0; border-top:1px solid var(--tia-border); } }',
+
+    // Left rail. White panel; the workflow flow is the centerpiece;
+    // below it sits the project switcher and an existing-tests list.
+    '.tia-leftrail { background:#fff; border-right:1px solid var(--tia-border); padding:24px 18px; display:flex; flex-direction:column; gap:22px; overflow-y:auto; min-width:0; }',
+    '.tia-rail-section { display:flex; flex-direction:column; gap:10px; }',
+    '.tia-rail-heading { font:700 10.5px/1 Inter,system-ui,sans-serif; color:var(--tia-ink-5); letter-spacing:0.12em; text-transform:uppercase; padding:0 6px; }',
+
+    // Flow steps. Each step has a number circle, a label, a sublabel,
+    // and a status pill. The active step uses the accent; completed
+    // steps get a soft accent tint; locked steps stay quiet.
+    '.tia-flow { display:flex; flex-direction:column; gap:6px; }',
+    '.tia-flow-step { display:grid; grid-template-columns:32px 1fr auto; gap:12px; align-items:center; padding:11px 12px; border-radius:10px; border:1px solid transparent; cursor:pointer; background:transparent; text-align:left; transition:background .14s, border-color .14s; }',
+    '.tia-flow-step:hover { background:var(--tia-accent-tint); }',
+    '.tia-flow-step .tia-step-num { width:32px; height:32px; border-radius:50%; background:var(--tia-panel-2); color:var(--tia-ink-6); display:flex; align-items:center; justify-content:center; font:700 13px/1 Inter,sans-serif; border:1px solid var(--tia-border); transition:background .14s, color .14s, border-color .14s; }',
+    '.tia-flow-step .tia-step-body { min-width:0; }',
+    '.tia-flow-step .tia-step-lab { font:600 13.5px/1.2 Inter,sans-serif; color:var(--tia-ink); margin-bottom:2px; }',
+    '.tia-flow-step .tia-step-sub { font:400 11.5px/1.35 Inter,sans-serif; color:var(--tia-ink-6); }',
+    '.tia-flow-step .tia-step-pip { width:7px; height:7px; border-radius:50%; background:var(--tia-border); }',
+    '.tia-flow-step.is-active { background:var(--tia-accent-soft); border-color:var(--tia-accent); }',
+    '.tia-flow-step.is-active .tia-step-num { background:var(--tia-accent); color:#fff; border-color:var(--tia-accent); }',
+    '.tia-flow-step.is-active .tia-step-pip { background:var(--tia-accent); }',
+    '.tia-flow-step.is-done .tia-step-num { background:#e6f4ea; color:#1f7a3a; border-color:#cfe6d6; }',
+    '.tia-flow-step.is-done .tia-step-pip { background:#1f7a3a; }',
+    '.tia-flow-line { width:1px; height:14px; background:var(--tia-border); margin-left:27px; }',
+
+    // Existing tests list inside the left rail. Keeps the rail dense
+    // (matches Analyze sidebar parity); no sparse navs.
+    '.tia-rail-projects { display:flex; flex-direction:column; gap:6px; }',
+    '.tia-rail-project { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 12px; border-radius:8px; border:1px solid var(--tia-border-soft); background:#fff; cursor:pointer; transition:border-color .12s, background .12s; }',
+    '.tia-rail-project:hover { border-color:var(--tia-accent); background:var(--tia-accent-tint); }',
+    '.tia-rail-project.is-active { border-color:var(--tia-accent); background:var(--tia-accent-soft); }',
+    '.tia-rail-project .nm { font:600 12.5px/1.25 Inter,sans-serif; color:var(--tia-ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; flex:1; }',
+    '.tia-rail-project .pill { font:600 10px/1 Inter,sans-serif; padding:3px 7px; border-radius:999px; background:var(--tia-panel-2); color:var(--tia-ink-6); letter-spacing:0.04em; }',
+    '.tia-rail-project .pill.good { background:#e6f4ea; color:#1f7a3a; }',
+    '.tia-rail-project .pill.warn { background:#fef5e7; color:#9a6b00; }',
+    '.tia-rail-empty { font:400 12px/1.45 Inter,sans-serif; color:var(--tia-ink-5); padding:8px 12px; }',
+
+    // Center workstation. White surface; generous padding; the breathing
+    // room is what makes it feel Apple-like.
+    '.tia-center { background:#fff; padding:36px 44px 56px; overflow-y:auto; min-width:0; }',
+    '@media (max-width:899px) { .tia-center { padding:24px 22px 40px; } }',
+    '.tia-stage-eyebrow { font:600 11px/1 Inter,sans-serif; color:var(--tia-accent); letter-spacing:0.14em; text-transform:uppercase; margin:0 0 10px; }',
+    '.tia-stage-title { font:600 34px/1.1 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.02em; margin:0 0 12px; }',
+    '.tia-stage-lede { font:400 16px/1.55 Inter,sans-serif; color:var(--tia-ink-7); max-width:720px; margin:0 0 32px; }',
+    '.tia-stage-section { margin:32px 0 0; }',
+    '.tia-stage-section + .tia-stage-section { margin-top:40px; }',
+    '.tia-section-head { display:flex; align-items:baseline; justify-content:space-between; gap:14px; margin-bottom:14px; }',
+    '.tia-section-head h3 { font:600 20px/1.2 Fraunces,serif; color:var(--tia-ink); margin:0; letter-spacing:-0.01em; }',
+    '.tia-section-head .sub { font:500 12px/1.35 Inter,sans-serif; color:var(--tia-ink-6); }',
+    '.tia-section-help { font:400 13.5px/1.55 Inter,sans-serif; color:var(--tia-ink-7); margin:0 0 14px; max-width:700px; }',
+
+    // Forms inside the workstation. Apple-density: tall labels, modest
+    // borders, ample spacing.
+    '.tia-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:18px 22px; }',
+    '@media (max-width:899px) { .tia-form-grid { grid-template-columns:1fr; } }',
+    '.tia-field { display:flex; flex-direction:column; gap:6px; }',
+    '.tia-field label { font:600 12px/1 Inter,sans-serif; color:var(--tia-ink); letter-spacing:0.04em; text-transform:uppercase; }',
+    '.tia-field input, .tia-field select, .tia-field textarea { width:100%; padding:11px 14px; border:1px solid var(--tia-border); border-radius:10px; font:400 14px/1.4 Inter,sans-serif; color:var(--tia-ink); background:#fff; transition:border-color .12s, box-shadow .12s; }',
+    '.tia-field textarea { min-height:88px; resize:vertical; }',
+    '.tia-field input:focus, .tia-field select:focus, .tia-field textarea:focus { outline:0; border-color:var(--tia-accent); box-shadow:0 0 0 3px var(--tia-accent-soft); }',
+    '.tia-field .hint { font:400 12px/1.4 Inter,sans-serif; color:var(--tia-ink-6); }',
+
+    // Stakes selector. Pill cluster, single-select. Cultural Context of
+    // Knowledge starts here: the decision shapes everything downstream.
+    '.tia-pill-group { display:flex; gap:8px; flex-wrap:wrap; }',
+    '.tia-pill { display:inline-flex; align-items:center; gap:8px; padding:9px 14px; border:1px solid var(--tia-border); border-radius:999px; background:#fff; cursor:pointer; font:500 13px/1 Inter,sans-serif; color:var(--tia-ink-7); transition:border-color .12s, background .12s, color .12s; }',
+    '.tia-pill:hover { border-color:var(--tia-accent); color:var(--tia-accent-deep); }',
+    '.tia-pill.is-active { background:var(--tia-accent); border-color:var(--tia-accent); color:#fff; }',
+
+    // Actions row.
+    '.tia-actions { display:flex; align-items:center; gap:12px; margin-top:24px; }',
+    '.tia-btn { display:inline-flex; align-items:center; gap:8px; padding:11px 22px; border-radius:999px; border:1px solid var(--tia-border); background:#fff; font:600 13.5px/1 Inter,sans-serif; color:var(--tia-ink); cursor:pointer; text-decoration:none; transition:border-color .12s, background .12s, color .12s, transform .12s, box-shadow .12s; }',
+    '.tia-btn:hover { border-color:var(--tia-accent); color:var(--tia-accent-deep); }',
+    '.tia-btn.primary { background:var(--tia-accent); border-color:var(--tia-accent); color:#fff; box-shadow:0 6px 16px var(--tia-accent-soft); }',
+    '.tia-btn.primary:hover { background:var(--tia-accent-hover); border-color:var(--tia-accent-hover); color:#fff; transform:translateY(-1px); box-shadow:0 10px 20px rgba(11,23,51,0.10); }',
+    '.tia-btn.ghost { background:transparent; }',
+    '.tia-btn[disabled] { opacity:0.55; cursor:not-allowed; }',
+
+    // Drop area for upload stage.
+    '.tia-drop { border:2px dashed var(--tia-border); background:var(--tia-panel-2); border-radius:14px; padding:42px 28px; text-align:center; transition:border-color .12s, background .12s; }',
+    '.tia-drop.is-over { border-color:var(--tia-accent); background:var(--tia-accent-tint); }',
+    '.tia-drop h4 { margin:0 0 6px; font:600 16px/1.25 Fraunces,serif; color:var(--tia-ink); }',
+    '.tia-drop p { margin:0 0 16px; font:400 13px/1.5 Inter,sans-serif; color:var(--tia-ink-6); }',
+    '.tia-drop-hint { font:500 11px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.06em; text-transform:uppercase; margin-top:14px; display:block; }',
+    '.tia-format-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:22px; }',
+    '@media (max-width:899px) { .tia-format-row { grid-template-columns:1fr; } }',
+    '.tia-format { padding:16px 18px; border:1px solid var(--tia-border-soft); border-radius:12px; background:var(--tia-panel-2); }',
+    '.tia-format h5 { margin:0 0 6px; font:600 13px/1.2 Inter,sans-serif; color:var(--tia-ink); }',
+    '.tia-format p { margin:0; font:400 12.5px/1.5 Inter,sans-serif; color:var(--tia-ink-6); }',
+
+    // Confirm step. Stat strip + preview table.
+    '.tia-stat-strip { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:24px; }',
+    '@media (max-width:899px) { .tia-stat-strip { grid-template-columns:repeat(2,1fr); } }',
+    '.tia-stat-tile { background:var(--tia-panel-2); border:1px solid var(--tia-border-soft); border-radius:14px; padding:16px 18px; }',
+    '.tia-stat-tile .lab { font:600 10.5px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:8px; }',
+    '.tia-stat-tile .val { font:700 26px/1 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.01em; }',
+    '.tia-stat-tile .sub { font:400 12px/1.4 Inter,sans-serif; color:var(--tia-ink-6); margin-top:6px; }',
+
+    // Tables. Designed to be readable without breaking the page: tabular
+    // numerals, generous row padding, sticky header, horizontal scroll
+    // only on narrow viewports.
+    '.tia-table-wrap { background:#fff; border:1px solid var(--tia-border); border-radius:14px; overflow:hidden; box-shadow:0 4px 14px rgba(15,23,42,0.03); }',
+    '.tia-table-wrap .tia-table-scroll { width:100%; overflow-x:auto; }',
+    '.tia-table { width:100%; border-collapse:separate; border-spacing:0; font:400 13.5px/1.45 Inter,sans-serif; color:var(--tia-ink); }',
+    '.tia-table th { text-align:left; font:600 10.5px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.08em; text-transform:uppercase; padding:14px 16px; background:var(--tia-panel-2); border-bottom:1px solid var(--tia-border); white-space:nowrap; }',
+    '.tia-table td { padding:14px 16px; border-bottom:1px solid var(--tia-border-soft); vertical-align:middle; font-variant-numeric:tabular-nums; }',
+    '.tia-table tr:last-child td { border-bottom:0; }',
+    '.tia-table tbody tr:hover td { background:var(--tia-accent-tint); }',
+    '.tia-table td.item-id { font:600 13.5px/1.2 Inter,sans-serif; color:var(--tia-ink); font-variant-numeric:normal; }',
+    '.tia-table td.item-text { color:var(--tia-ink-7); max-width:280px; }',
+    '.tia-table td.num { text-align:right; font-variant-numeric:tabular-nums; }',
+
+    // ReliCheck Item Strength Score badge. A small pill that pairs a
+    // number with a tone (strong / watch / weak). Reads like a grade.
+    '.tia-iss { display:inline-flex; align-items:center; gap:7px; padding:4px 10px; border-radius:999px; font:700 12px/1 Inter,sans-serif; letter-spacing:0.02em; background:var(--tia-panel-2); color:var(--tia-ink-7); border:1px solid var(--tia-border-soft); }',
+    '.tia-iss.strong { background:#e6f4ea; color:#1f7a3a; border-color:#cfe6d6; }',
+    '.tia-iss.watch  { background:#fef5e7; color:#9a6b00; border-color:#f1dca4; }',
+    '.tia-iss.weak   { background:#fdecec; color:#a33;    border-color:#f1c5c5; }',
+    '.tia-iss .dot { width:7px; height:7px; border-radius:50%; background:currentColor; opacity:0.7; }',
+
+    // Distractor mini-bars.
+    '.tia-dist { display:inline-flex; gap:3px; align-items:flex-end; height:18px; }',
+    '.tia-dist .bar { width:7px; background:var(--tia-accent); border-radius:2px 2px 0 0; opacity:0.65; }',
+    '.tia-dist .bar.dead { background:#f1c5c5; opacity:1; }',
+    '.tia-dist .bar.key { background:var(--tia-accent-deep); opacity:1; }',
+
+    // Assessment Strength Index gauge. Large round badge centerpiece for
+    // the Analyze stage. Conveys whole-test defensibility at a glance.
+    '.tia-asi { display:grid; grid-template-columns:auto 1fr; gap:24px; align-items:center; padding:22px 24px; background:linear-gradient(135deg, var(--tia-accent-tint) 0%, #fff 80%); border:1px solid var(--tia-accent-soft); border-radius:16px; }',
+    '.tia-asi-ring { position:relative; width:140px; height:140px; }',
+    '.tia-asi-ring svg { width:100%; height:100%; transform:rotate(-90deg); }',
+    '.tia-asi-ring .ring-bg { stroke:var(--tia-border-soft); stroke-width:14; fill:none; }',
+    '.tia-asi-ring .ring-fg { stroke:var(--tia-accent); stroke-width:14; fill:none; stroke-linecap:round; transition:stroke-dashoffset .4s ease; }',
+    '.tia-asi-ring .ring-num { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }',
+    '.tia-asi-ring .ring-num strong { font:700 36px/1 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.02em; }',
+    '.tia-asi-ring .ring-num span { font:600 10.5px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.1em; text-transform:uppercase; margin-top:5px; }',
+    '.tia-asi-body { min-width:0; }',
+    '.tia-asi-eye { font:600 10.5px/1 Inter,sans-serif; color:var(--tia-accent-deep); letter-spacing:0.12em; text-transform:uppercase; margin:0 0 6px; }',
+    '.tia-asi-title { margin:0 0 8px; font:600 22px/1.2 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.01em; }',
+    '.tia-asi-line { margin:0; font:400 14px/1.55 Inter,sans-serif; color:var(--tia-ink-7); }',
+    '.tia-asi-dim { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }',
+    '@media (max-width:899px) { .tia-asi { grid-template-columns:1fr; text-align:center; } .tia-asi-ring { margin:0 auto; } .tia-asi-dim { grid-template-columns:repeat(2,1fr); } }',
+    '.tia-asi-dim-item { padding:8px 10px; background:#fff; border:1px solid var(--tia-border-soft); border-radius:10px; }',
+    '.tia-asi-dim-item .lab { font:600 10px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:4px; }',
+    '.tia-asi-dim-item .val { font:700 14px/1 Inter,sans-serif; color:var(--tia-ink); }',
+    '.tia-asi-dim-item .val.tone-strong { color:#1f7a3a; }',
+    '.tia-asi-dim-item .val.tone-watch  { color:#9a6b00; }',
+    '.tia-asi-dim-item .val.tone-weak   { color:#a33; }',
+
+    // Cultural Context of Knowledge surfaces. Three sibling cards in the
+    // Analyze stage: Cognitive Demand, Open-Ended Voice, Rubric Integrity.
+    // The philosophy thread is the explicit framing that "what counts as
+    // a right answer" is itself a cultural choice; the analysis surfaces
+    // where the test's choices favor or exclude ways of knowing.
+    '.tia-cck-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }',
+    '@media (max-width:1199px) { .tia-cck-grid { grid-template-columns:1fr; } }',
+    '.tia-cck-card { background:#fff; border:1px solid var(--tia-border); border-radius:14px; padding:18px 20px; display:flex; flex-direction:column; gap:10px; }',
+    '.tia-cck-card .eye { font:700 10px/1 Inter,sans-serif; color:var(--tia-accent-deep); background:var(--tia-accent-soft); padding:4px 8px; border-radius:999px; letter-spacing:0.1em; text-transform:uppercase; align-self:flex-start; }',
+    '.tia-cck-card h4 { margin:0; font:600 16px/1.2 Fraunces,serif; color:var(--tia-ink); letter-spacing:-0.005em; }',
+    '.tia-cck-card .row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--tia-border-soft); font:500 13px/1.35 Inter,sans-serif; color:var(--tia-ink-7); }',
+    '.tia-cck-card .row:last-child { border-bottom:0; }',
+    '.tia-cck-card .row .v { font-variant-numeric:tabular-nums; color:var(--tia-ink); font-weight:600; }',
+    '.tia-cck-card .note { font:400 12.5px/1.5 Inter,sans-serif; color:var(--tia-ink-6); margin:6px 0 0; padding-top:10px; border-top:1px dashed var(--tia-border-soft); }',
+    '.tia-cck-card .note strong { color:var(--tia-accent-deep); font-weight:600; }',
+
+    // Right interpretation panel. Plain language, branded scores, and
+    // the decision-support question that anchors the studio: "is the
+    // assessment strong enough to support the intended decision?"
+    '.tia-rightpanel { background:#fff; border-left:1px solid var(--tia-border); padding:26px 22px 32px; display:flex; flex-direction:column; gap:18px; overflow-y:auto; min-width:0; }',
+    '.tia-rp-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:5px 11px; border-radius:999px; background:var(--tia-accent); color:#fff; font:700 10px/1 Inter,sans-serif; letter-spacing:0.12em; text-transform:uppercase; align-self:flex-start; }',
+    '.tia-rp-eyebrow .icon { width:11px; height:11px; }',
+    '.tia-rp-eyebrow .icon svg { width:100%; height:100%; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }',
+    '.tia-rp-headline { font:600 19px/1.3 Fraunces,serif; color:var(--tia-ink); margin:0; letter-spacing:-0.01em; }',
+    '.tia-rp-decision { background:var(--tia-accent-tint); border:1px solid var(--tia-accent-soft); border-radius:14px; padding:16px 18px; }',
+    '.tia-rp-decision .lab { font:600 10px/1 Inter,sans-serif; color:var(--tia-accent-deep); letter-spacing:0.1em; text-transform:uppercase; margin:0 0 8px; }',
+    '.tia-rp-decision .q { font:600 15px/1.4 Fraunces,serif; color:var(--tia-ink); margin:0 0 10px; }',
+    '.tia-rp-decision .a { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:#fff; border:1px solid var(--tia-border); font:600 12.5px/1 Inter,sans-serif; }',
+    '.tia-rp-decision .a.yes { background:#e6f4ea; border-color:#cfe6d6; color:#1f7a3a; }',
+    '.tia-rp-decision .a.qualified { background:#fef5e7; border-color:#f1dca4; color:#9a6b00; }',
+    '.tia-rp-decision .a.no { background:#fdecec; border-color:#f1c5c5; color:#a33; }',
+    '.tia-rp-decision .a .dot { width:7px; height:7px; border-radius:50%; background:currentColor; }',
+    '.tia-rp-section { padding:0; }',
+    '.tia-rp-section h5 { margin:0 0 8px; font:600 11px/1 Inter,sans-serif; color:var(--tia-ink-5); letter-spacing:0.1em; text-transform:uppercase; }',
+    '.tia-rp-section p { margin:0 0 8px; font:400 13.5px/1.55 Inter,sans-serif; color:var(--tia-ink-7); }',
+    '.tia-rp-section p strong { color:var(--tia-ink); font-weight:600; }',
+    '.tia-rp-section .branded { color:var(--tia-accent-deep); font-weight:600; }',
+    '.tia-rp-divider { height:1px; background:var(--tia-border-soft); }',
+    '.tia-rp-next { display:flex; flex-direction:column; gap:8px; }',
+    '.tia-rp-next-item { display:grid; grid-template-columns:24px 1fr; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid var(--tia-border-soft); border-radius:10px; background:var(--tia-panel-2); }',
+    '.tia-rp-next-item .num { width:22px; height:22px; border-radius:50%; background:var(--tia-accent); color:#fff; display:flex; align-items:center; justify-content:center; font:700 11px/1 Inter,sans-serif; }',
+    '.tia-rp-next-item .body { font:400 12.5px/1.45 Inter,sans-serif; color:var(--tia-ink-7); }',
+    '.tia-rp-next-item .body strong { color:var(--tia-ink); font-weight:600; }',
+
+    // Empty / locked stage hints for the interpretation panel.
+    '.tia-rp-locked { padding:14px 16px; background:var(--tia-panel-2); border:1px dashed var(--tia-border); border-radius:12px; font:400 13px/1.5 Inter,sans-serif; color:var(--tia-ink-6); }',
+    '.tia-rp-locked strong { color:var(--tia-ink-7); }',
+  ].join('\n');
+  document.head.appendChild(s);
+}
+
+// Builds the empty shell. Stage content + interpretation render later.
+function tiaBuildWorkstationHTML() {
+  return '' +
+    '<section class="tia-shell tia-shell--solo" id="tiaShell">' +
+      '<div class="tia-topbar">' +
+        '<div class="tia-topbar-brand">' +
+          '<button type="button" class="tia-back" data-tia-cta="back-to-landing" aria-label="Back to Test &amp; Item Analysis landing">' +
+            '<span aria-hidden="true">&larr;</span> Studio home' +
+          '</button>' +
+          '<span class="tia-brand-divider" aria-hidden="true"></span>' +
+          '<span class="badge">Test &amp; Item Analysis</span>' +
+          '<h2>Workstation</h2>' +
+        '</div>' +
+        '<div class="tia-topbar-context" id="tiaContext">' +
+          'No project open. Set the decision your test needs to support, then upload data.' +
+        '</div>' +
+        '<div class="tia-topbar-scores" id="tiaTopScores">' +
+          '<div class="tia-mini-score">' +
+            '<span class="lab">Item Strength</span>' +
+            '<span class="val">&mdash;</span>' +
+          '</div>' +
+          '<div class="tia-mini-score">' +
+            '<span class="lab">Assessment Strength Index</span>' +
+            '<span class="val">&mdash;</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tia-grid">' +
+        '<aside class="tia-leftrail" id="tiaLeftRail"></aside>' +
+        '<main class="tia-center" id="tiaCenter"></main>' +
+        '<aside class="tia-rightpanel" id="tiaRightPanel"></aside>' +
+      '</div>' +
+    '</section>';
+}
+
+// Left-rail flow state. Static metadata describing each stage.
+function tiaStages() {
+  return [
+    { id:'setup',   num:1, lab:'Project Setup', sub:'Define the decision the test must support' },
+    { id:'upload',  num:2, lab:'Upload',        sub:'Responses, key, and any rubric / open-ended data' },
+    { id:'confirm', num:3, lab:'Confirm',       sub:'Verify the data matches your intent' },
+    { id:'analyze', num:4, lab:'Analyze',       sub:'Item Strength, ASI, and the interpretation' },
+  ];
+}
+
+function tiaStageStatus(id) {
+  const t = state.tia || {};
+  const order = ['setup', 'upload', 'confirm', 'analyze'];
+  const cur   = order.indexOf(t.stage);
+  const me    = order.indexOf(id);
+  if (me === cur) return 'active';
+  if (me <  cur) return 'done';
+  // "done" can also depend on real data when present:
+  if (id === 'setup'   && t.project)   return 'done';
+  if (id === 'upload'  && t.upload)    return 'done';
+  if (id === 'confirm' && t.confirmed) return 'done';
+  return 'locked';
+}
+
+function tiaWireWorkstation(root) {
+  // Stage switching from the left rail. Delegated so a re-render is fine.
+  root.addEventListener('click', (e) => {
+    const step = e.target.closest && e.target.closest('[data-tia-step]');
+    if (step) {
+      const stg = step.getAttribute('data-tia-step');
+      if (stg) {
+        state.tia.stage = stg;
+        tiaRenderStage(root);
+      }
+      return;
+    }
+    const proj = e.target.closest && e.target.closest('[data-tia-test]');
+    if (proj) {
+      const tid = proj.getAttribute('data-tia-test');
+      if (tid) {
+        // Load the test data into state.openTest, set this as the
+        // active TIA test, and advance to the Analyze stage so the
+        // real CTT results show up. This keeps the user inside the
+        // TIA workstation instead of bouncing them to the legacy
+        // analytics view.
+        (async () => {
+          try {
+            const data = await api.getTest(tid);
+            const responses = data.responses || [];
+            state.openTest = { test: data.test, responses: responses };
+            state.tia.activeTest = tid;
+            // Synthesize a project block from the saved test so the
+            // topbar context line and the verdict copy have something
+            // to read. Stakes default to medium if the test didn't
+            // store one; the user can adjust on a follow-up.
+            if (!state.tia.project) {
+              state.tia.project = {
+                title:    data.test.title || '(untitled test)',
+                decision: data.test.decision || 'Evaluate item quality and overall assessment strength',
+                audience: data.test.audience || (responses.length + ' respondents'),
+                stakes:   data.test.stakes || 'medium',
+              };
+            }
+            state.tia.upload    = state.tia.upload || { fileName: data.test.title + ' (saved)', rowCount: responses.length, itemCount: data.test.num_items || 0, openCount: 0, rubricCount: 0 };
+            state.tia.confirmed = true;
+            state.tia.sampleMode = false;
+            state.tia.stage     = 'analyze';
+            tiaRenderStage(root);
+          } catch (err) {
+            showToast('Could not load this test: ' + (err.message || 'unknown error'));
+          }
+        })();
+      }
+      return;
+    }
+    const cta = e.target.closest && e.target.closest('[data-tia-cta]');
+    if (cta) {
+      const what = cta.getAttribute('data-tia-cta');
+      tiaHandleCta(root, what);
+    }
+  });
+}
+
+function tiaHandleCta(root, what) {
+  const t = state.tia;
+  if (what === 'save-project') {
+    const form = root.querySelector('#tiaSetupForm');
+    if (!form) return;
+    const title    = (form.querySelector('[name="title"]')   || {}).value || '';
+    const decision = (form.querySelector('[name="decision"]')|| {}).value || '';
+    const audience = (form.querySelector('[name="audience"]')|| {}).value || '';
+    const stakes   = (form.querySelector('[data-stakes].is-active') || {}).getAttribute
+      ? form.querySelector('[data-stakes].is-active').getAttribute('data-stakes')
+      : 'medium';
+    if (!title.trim() || !decision.trim()) {
+      showToast('Give the project a title and a decision before continuing.');
+      return;
+    }
+    t.project   = { title:title.trim(), decision:decision.trim(), audience:audience.trim(), stakes:stakes };
+    t.stage     = 'upload';
+    tiaRenderStage(root);
+  } else if (what === 'load-sample') {
+    t.project = t.project || { title:'Algebra Unit 4 Quiz', decision:'Decide which students are ready to move to Unit 5', audience:'28 ninth-grade students', stakes:'medium' };
+    t.upload  = { fileName:'algebra-unit4-sample.csv', rowCount:28, itemCount:12, openCount:1, rubricCount:1 };
+    t.confirmed = true;
+    t.stage     = 'analyze';
+    t.sampleMode = true;
+    tiaRenderStage(root);
+  } else if (what === 'go-upload')   { t.stage = 'upload';   tiaRenderStage(root); }
+  else if   (what === 'go-confirm')  { t.upload = t.upload || { fileName:'sample-classroom-test.csv', rowCount:28, itemCount:12, openCount:1, rubricCount:1 }; t.stage = 'confirm'; tiaRenderStage(root); }
+  else if   (what === 'confirm-yes') { t.confirmed = true; t.stage = 'analyze'; tiaRenderStage(root); }
+  else if   (what === 'reset')       { state.tia = { stage:'setup', project:null, upload:null, confirmed:false, sampleMode:true }; tiaRenderStage(root); }
+  else if   (what === 'open-builder'){ openTestBuilderHandoff('new'); }
+  else if   (what === 'open-upload') { openTestBuilderHandoff('upload'); }
+  else if   (what === 'back-to-landing') { navigate('tests'); }
+}
+
+function tiaRenderStage(root) {
+  const t = state.tia;
+  tiaRenderLeftRail(root);
+  tiaRenderCenter(root);
+  tiaRenderRightPanel(root);
+  tiaRenderTopbar(root);
+}
+
+function tiaRenderLeftRail(root) {
+  const host = root.querySelector('#tiaLeftRail');
+  if (!host) return;
+  const stages = tiaStages();
+  const flowHtml = stages.map((s, idx) => {
+    const status = tiaStageStatus(s.id);
+    const cls = status === 'active' ? 'is-active' : (status === 'done' ? 'is-done' : '');
+    const line = idx < stages.length - 1 ? '<div class="tia-flow-line"></div>' : '';
+    const numDisplay = status === 'done' ? '&#10003;' : String(s.num);
+    return '<button type="button" class="tia-flow-step ' + cls + '" data-tia-step="' + s.id + '">' +
+        '<span class="tia-step-num">' + numDisplay + '</span>' +
+        '<span class="tia-step-body">' +
+          '<span class="tia-step-lab">' + s.lab + '</span>' +
+          '<span class="tia-step-sub">' + s.sub + '</span>' +
+        '</span>' +
+        '<span class="tia-step-pip" aria-hidden="true"></span>' +
+      '</button>' + line;
+  }).join('');
+
+  const tests = Array.isArray(state.tests) ? state.tests : [];
+  let projHtml;
+  if (!tests.length) {
+    projHtml = '<div class="tia-rail-empty">No saved projects yet. Build a test or upload one to see it here.</div>';
+  } else {
+    projHtml = tests.slice(0, 12).map(test => {
+      const n   = Number(test.response_count) || 0;
+      const pill = n >= 20 ? '<span class="pill good">Analyzed</span>' : (n > 0 ? '<span class="pill warn">Collecting</span>' : '<span class="pill">Draft</span>');
+      const isActive = state.tia.activeTest && String(state.tia.activeTest) === String(test.id) ? 'is-active' : '';
+      return '<button type="button" class="tia-rail-project ' + isActive + '" data-tia-test="' + escapeAttr(String(test.id)) + '">' +
+          '<span class="nm">' + escapeHtml(test.title || '(untitled test)') + '</span>' +
+          pill +
+        '</button>';
+    }).join('');
+  }
+
+  host.innerHTML =
+    '<div class="tia-rail-section">' +
+      '<div class="tia-rail-heading">Workflow</div>' +
+      '<div class="tia-flow">' + flowHtml + '</div>' +
+    '</div>' +
+    '<div class="tia-rail-section">' +
+      '<div class="tia-rail-heading">Your tests</div>' +
+      '<div class="tia-rail-projects">' + projHtml + '</div>' +
+    '</div>' +
+    '<div class="tia-rail-section">' +
+      '<div class="tia-rail-heading">Builder</div>' +
+      '<button type="button" class="tia-btn ghost" data-tia-cta="open-builder" style="justify-content:center;">+ Build a new test</button>' +
+      '<button type="button" class="tia-btn ghost" data-tia-cta="open-upload" style="justify-content:center;margin-top:6px;">Upload responses</button>' +
+    '</div>';
+}
+
+function tiaRenderTopbar(root) {
+  const t = state.tia;
+  const ctx = root.querySelector('#tiaContext');
+  const scores = root.querySelector('#tiaTopScores');
+  if (!ctx || !scores) return;
+
+  const dataForTopbar = (t.project && t.stage === 'analyze' && t.confirmed) ? tiaScoredFromState() : null;
+  if (dataForTopbar) {
+    const data = dataForTopbar;
+    const med  = tiaMedianItemStrength(data);
+    const asi  = tiaAssessmentStrengthIndex(data);
+    const stakes = t.project.stakes ? (' &middot; ' + escapeHtml(t.project.stakes) + ' stakes') : '';
+    ctx.innerHTML = '<strong>' + escapeHtml(t.project.title) + '</strong> &middot; ' + escapeHtml(t.project.decision) + stakes;
+    const medTone = med.tone === 'strong' ? 'tone-strong' : (med.tone === 'watch' ? 'tone-watch' : 'tone-weak');
+    const asiTone = asi.tone === 'strong' ? 'tone-strong' : (asi.tone === 'watch' ? 'tone-watch' : 'tone-weak');
+    scores.innerHTML =
+      '<div class="tia-mini-score">' +
+        '<span class="lab">Item Strength (median)</span>' +
+        '<span class="val ' + medTone + '">' + med.score + '<span class="unit">/100</span></span>' +
+      '</div>' +
+      '<div class="tia-mini-score">' +
+        '<span class="lab">Assessment Strength Index</span>' +
+        '<span class="val ' + asiTone + '">' + asi.score + '<span class="unit">/100</span></span>' +
+      '</div>';
+  } else if (t.project) {
+    ctx.innerHTML = '<strong>' + escapeHtml(t.project.title) + '</strong> &middot; ' + escapeHtml(t.project.decision);
+    scores.innerHTML =
+      '<div class="tia-mini-score"><span class="lab">Item Strength</span><span class="val">&mdash;</span></div>' +
+      '<div class="tia-mini-score"><span class="lab">Assessment Strength Index</span><span class="val">&mdash;</span></div>';
+  } else {
+    ctx.innerHTML = 'No project open. Set the decision your test needs to support, then upload data.';
+    scores.innerHTML =
+      '<div class="tia-mini-score"><span class="lab">Item Strength</span><span class="val">&mdash;</span></div>' +
+      '<div class="tia-mini-score"><span class="lab">Assessment Strength Index</span><span class="val">&mdash;</span></div>';
+  }
+}
+
+function tiaRenderCenter(root) {
+  const host = root.querySelector('#tiaCenter');
+  if (!host) return;
+  const stage = (state.tia || {}).stage || 'setup';
+  if      (stage === 'setup')   host.innerHTML = tiaCenterSetupHTML();
+  else if (stage === 'upload')  host.innerHTML = tiaCenterUploadHTML();
+  else if (stage === 'confirm') host.innerHTML = tiaCenterConfirmHTML();
+  else                          host.innerHTML = tiaCenterAnalyzeHTML();
+  tiaWireCenter(root);
+}
+
+function tiaCenterSetupHTML() {
+  const p = (state.tia.project || {});
+  const stakes = p.stakes || 'medium';
+  const pill = (val, lab, desc) =>
+    '<button type="button" class="tia-pill ' + (val === stakes ? 'is-active' : '') + '" data-stakes="' + val + '" title="' + escapeAttr(desc) + '">' + lab + '</button>';
+  return '' +
+    '<p class="tia-stage-eyebrow">Stage 1 of 4 . Project setup</p>' +
+    '<h2 class="tia-stage-title">What decision does this test need to support?</h2>' +
+    '<p class="tia-stage-lede">A test score is only useful in the context of a decision. Naming the decision up front shapes the whole analysis: which items deserve more weight, how strict the rubric should be, and whether the Assessment Strength Index meets the bar this decision requires.</p>' +
+    '<form id="tiaSetupForm" class="tia-stage-section" onsubmit="return false;">' +
+      '<div class="tia-form-grid">' +
+        '<div class="tia-field">' +
+          '<label>Project title</label>' +
+          '<input type="text" name="title" placeholder="e.g., Algebra Unit 4 Quiz" value="' + escapeAttr(p.title || '') + '" />' +
+          '<span class="hint">Short and descriptive. Shows in your project list and on every report.</span>' +
+        '</div>' +
+        '<div class="tia-field">' +
+          '<label>Audience</label>' +
+          '<input type="text" name="audience" placeholder="e.g., 28 ninth-grade students" value="' + escapeAttr(p.audience || '') + '" />' +
+          '<span class="hint">Who took the test? Group size matters for reliability.</span>' +
+        '</div>' +
+        '<div class="tia-field" style="grid-column:1 / -1;">' +
+          '<label>The decision</label>' +
+          '<textarea name="decision" placeholder="e.g., Decide which students are ready to move to Unit 5, and which need a reteach.">' + escapeHtml(p.decision || '') + '</textarea>' +
+          '<span class="hint">Be specific. ReliCheck checks whether the test is strong enough to support <em>this</em> decision, not just whether the items are statistically clean.</span>' +
+        '</div>' +
+        '<div class="tia-field" style="grid-column:1 / -1;">' +
+          '<label>Decision stakes</label>' +
+          '<div class="tia-pill-group">' +
+            pill('low',    'Low stakes',    'Formative feedback, practice. Reliability bar around 0.65.') +
+            pill('medium', 'Medium stakes', 'Classroom grading, course completion. Reliability bar around 0.75.') +
+            pill('high',   'High stakes',   'Placement, certification, gatekeeping. Reliability bar 0.85+.') +
+          '</div>' +
+          '<span class="hint">High-stakes decisions raise the floor on every dimension of the Assessment Strength Index.</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tia-actions">' +
+        '<button type="button" class="tia-btn primary" data-tia-cta="save-project">Save &amp; continue <span aria-hidden="true">&rarr;</span></button>' +
+        '<button type="button" class="tia-btn ghost"   data-tia-cta="load-sample">Skip to a sample project</button>' +
+      '</div>' +
+    '</form>';
+}
+
+function tiaCenterUploadHTML() {
+  const u = state.tia.upload || {};
+  const loaded = !!u.fileName;
+  return '' +
+    '<p class="tia-stage-eyebrow">Stage 2 of 4 . Upload</p>' +
+    '<h2 class="tia-stage-title">Bring the data the analysis will read.</h2>' +
+    '<p class="tia-stage-lede">Drop a file with student responses and the answer key. Open-ended responses and rubric scores are welcome too: the Cultural Context of Knowledge analysis reads them to surface whose ways of knowing the test rewards.</p>' +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-drop" id="tiaDrop" role="button" tabindex="0" style="cursor:pointer;">' +
+        '<h4>' + (loaded ? '&#10003; ' + escapeHtml(u.fileName) : 'Drop a CSV, TSV, or XLSX &mdash; or click to choose a file') + '</h4>' +
+        '<p>' + (loaded ? (u.rowCount + ' respondents &middot; ' + u.itemCount + ' items detected. Continue to confirm.') : 'One row per respondent. Include a row whose first cell reads <strong>KEY</strong> with the answer key. Columns after the first are item responses (A/B/C/D or 0/1).') + '</p>' +
+        '<input type="file" id="tiaFileInput" accept=".csv,.tsv,.txt,.xls,.xlsx" style="display:none;" />' +
+        '<span class="tia-drop-hint">CSV . XLSX . TSV . Paste</span>' +
+      '</div>' +
+      '<div id="tiaUploadStatus" style="margin-top:12px;font-size:13px;line-height:1.5;display:none;"></div>' +
+      '<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center;">' +
+        '<button type="button" class="tia-btn ghost" id="tiaPasteToggle" style="font-size:12.5px;">Paste responses instead</button>' +
+        '<button type="button" class="tia-btn ghost" data-tia-cta="load-sample" style="font-size:12.5px;">Or use the sample classroom test &rarr;</button>' +
+      '</div>' +
+      '<div id="tiaPasteBox" style="display:none;margin-top:14px;">' +
+        '<label style="font-size:12px;font-weight:600;color:#3a4252;display:block;margin-bottom:6px;">Paste CSV or TSV (one row per respondent; one row with KEY in the first cell)</label>' +
+        '<textarea id="tiaPasteArea" rows="8" placeholder="KEY,A,B,C,D,...\nStudent 1,A,B,C,D,...\nStudent 2,B,B,C,D,..." style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:12.5px;padding:10px;border:1px solid #e2e6ea;border-radius:8px;background:#fff;"></textarea>' +
+        '<div style="margin-top:8px;display:flex;gap:8px;">' +
+          '<button type="button" class="tia-btn primary" id="tiaPasteSubmit">Use these responses &rarr;</button>' +
+          '<button type="button" class="tia-btn ghost" id="tiaPasteCancel">Cancel</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tia-format-row" style="margin-top:18px;">' +
+        '<div class="tia-format"><h5>Closed-response columns</h5><p>Multiple choice or true/false with an answer key. Difficulty, discrimination, and distractor analysis come from here.</p></div>' +
+        '<div class="tia-format"><h5>Open-ended text</h5><p>Free-response columns. Flagged so the Cultural Context of Knowledge analysis can read voice and reasoning, not just correctness.</p></div>' +
+        '<div class="tia-format"><h5>Rubric-scored items</h5><p>Numeric scores against a rubric. Each rubric criterion gets its own Item Strength Score so you can see which dimensions the test actually measures.</p></div>' +
+      '</div>' +
+    '</div>';
+}
+
+function tiaCenterConfirmHTML() {
+  const u = state.tia.upload || { fileName:'sample-classroom-test.csv', rowCount:28, itemCount:12, openCount:1, rubricCount:1 };
+  const sample = tiaSampleResponses().slice(0, 6);
+  const rowsHtml = sample.map(r => {
+    const cells = r.cells.map(c => '<td class="num">' + escapeHtml(String(c)) + '</td>').join('');
+    return '<tr><td class="item-id">' + escapeHtml(r.id) + '</td>' + cells + '</tr>';
+  }).join('');
+  const headCells = ['Respondent', 'Q1', 'Q2', 'Q3', 'Q4', 'Q5', 'Q6', 'Q7', 'Q8', 'Q9', 'Q10', 'Q11', 'Q12']
+    .map(h => '<th>' + h + '</th>').join('');
+  return '' +
+    '<p class="tia-stage-eyebrow">Stage 3 of 4 . Confirm</p>' +
+    '<h2 class="tia-stage-title">Does this look like what you uploaded?</h2>' +
+    '<p class="tia-stage-lede">Quick visual confirmation before the analysis runs. Counts and column inference live above; a preview of the first six respondents sits below. If anything is off, swap the file before continuing.</p>' +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-stat-strip">' +
+        '<div class="tia-stat-tile"><div class="lab">File</div><div class="val">' + escapeHtml(u.fileName) + '</div><div class="sub">Last upload</div></div>' +
+        '<div class="tia-stat-tile"><div class="lab">Respondents</div><div class="val">' + u.rowCount + '</div><div class="sub">Rows detected</div></div>' +
+        '<div class="tia-stat-tile"><div class="lab">Closed items</div><div class="val">' + u.itemCount + '</div><div class="sub">With answer keys</div></div>' +
+        '<div class="tia-stat-tile"><div class="lab">Open &amp; rubric</div><div class="val">' + ((u.openCount||0) + (u.rubricCount||0)) + '</div><div class="sub">' + (u.openCount||0) + ' open &middot; ' + (u.rubricCount||0) + ' rubric</div></div>' +
+      '</div>' +
+      '<div class="tia-section-head">' +
+        '<h3>Preview of responses</h3>' +
+        '<span class="sub">Showing 6 of ' + u.rowCount + '</span>' +
+      '</div>' +
+      '<div class="tia-table-wrap"><div class="tia-table-scroll">' +
+        '<table class="tia-table">' +
+          '<thead><tr>' + headCells + '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div></div>' +
+      '<div class="tia-actions">' +
+        '<button type="button" class="tia-btn primary" data-tia-cta="confirm-yes">Looks right, run the analysis <span aria-hidden="true">&rarr;</span></button>' +
+        '<button type="button" class="tia-btn ghost"   data-tia-cta="go-upload">Re-upload</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function tiaCenterAnalyzeHTML() {
+  const data = tiaScoredFromState();
+  if (!data) {
+    // No real upload and no explicit sample-mode pick. Tell the user
+    // exactly that, with two clear paths forward.
+    return '' +
+      '<p class="tia-stage-eyebrow">Stage 4 of 4 . Analyze</p>' +
+      '<h2 class="tia-stage-title">Nothing to analyze yet.</h2>' +
+      '<p class="tia-stage-lede">Upload a test in Stage 2 to see real Item Strength Scores and the Assessment Strength Index computed from your responses. If you want to see what the analysis looks like first, you can load a sample classroom test instead.</p>' +
+      '<div class="tia-stage-section">' +
+        '<div class="tia-drop" style="text-align:left;">' +
+          '<h4>Two ways to get to real numbers</h4>' +
+          '<p style="margin-bottom:14px;">Either upload your own data or load the demo to see the analysis layout before committing.</p>' +
+          '<div class="tia-actions">' +
+            '<button type="button" class="tia-btn primary" data-tia-cta="go-upload">Go to Upload <span aria-hidden="true">&rarr;</span></button>' +
+            '<button type="button" class="tia-btn ghost"   data-tia-cta="load-sample">Load the sample classroom test</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+  const asi  = tiaAssessmentStrengthIndex(data);
+
+  // ASI gauge.
+  const circ = 2 * Math.PI * 60;
+  const dash = circ * (asi.score / 100);
+  const asiGauge =
+    '<div class="tia-asi-ring">' +
+      '<svg viewBox="0 0 140 140">' +
+        '<circle class="ring-bg" cx="70" cy="70" r="60"/>' +
+        '<circle class="ring-fg" cx="70" cy="70" r="60" stroke-dasharray="' + circ.toFixed(2) + '" stroke-dashoffset="' + (circ - dash).toFixed(2) + '"/>' +
+      '</svg>' +
+      '<div class="ring-num"><strong>' + asi.score + '</strong><span>ASI / 100</span></div>' +
+    '</div>';
+
+  const dimTone = (s) => (s == null) ? 'tone-pending' : (s >= 80 ? 'tone-strong' : (s >= 65 ? 'tone-watch' : 'tone-weak'));
+  const dimVal  = (s) => (s == null) ? '<span style="font-size:13px;color:#8b95a3;">Not yet</span>' : String(s);
+  const dims =
+    '<div class="tia-asi-dim">' +
+      '<div class="tia-asi-dim-item"><div class="lab">Reliability</div><div class="val ' + dimTone(asi.dims.reliability) + '">' + dimVal(asi.dims.reliability) + '</div></div>' +
+      '<div class="tia-asi-dim-item"><div class="lab">Item health</div><div class="val ' + dimTone(asi.dims.itemHealth) + '">' + dimVal(asi.dims.itemHealth) + '</div></div>' +
+      '<div class="tia-asi-dim-item"><div class="lab">Cognitive demand</div><div class="val ' + dimTone(asi.dims.demand) + '">' + dimVal(asi.dims.demand) + '</div></div>' +
+      '<div class="tia-asi-dim-item"><div class="lab">Cultural validity</div><div class="val ' + dimTone(asi.dims.culture) + '">' + dimVal(asi.dims.culture) + '</div></div>' +
+    '</div>';
+
+  // Per-item table.
+  const rowsHtml = data.items.map(it => {
+    const tone = it.iss >= 75 ? 'strong' : (it.iss >= 55 ? 'watch' : 'weak');
+    const label = tone === 'strong' ? 'Strong' : (tone === 'watch' ? 'Watch' : 'Weak');
+    return '<tr>' +
+      '<td class="item-id">' + escapeHtml(it.id) + '</td>' +
+      '<td class="item-text">' + escapeHtml(it.text) + '</td>' +
+      '<td class="num">' + it.difficulty.toFixed(2) + '</td>' +
+      '<td class="num">' + (it.disc >= 0 ? '+' : '') + it.disc.toFixed(2) + '</td>' +
+      '<td>' + tiaDistractorBars(it.distractors, it.keyIdx) + '</td>' +
+      '<td>' + escapeHtml(it.demand) + '</td>' +
+      '<td><span class="tia-iss ' + tone + '"><span class="dot"></span>' + it.iss + ' &middot; ' + label + '</span></td>' +
+    '</tr>';
+  }).join('');
+
+  // Cultural Context of Knowledge cards. Sample data carries illustrative
+  // values for all three lenses; live data does not yet — the cognitive-
+  // demand classifier, open-ended voice analyzer, and rubric inter-rater
+  // kappa each need their own infrastructure. When those are not yet
+  // computed, the section renders a single honest "not yet computed"
+  // panel instead of three cards full of fake numbers.
+  let cckCards;
+  if (data.hasCck && data.cck) {
+    const cck = data.cck;
+    cckCards =
+      '<div class="tia-cck-grid">' +
+        '<div class="tia-cck-card">' +
+          '<span class="eye">Cognitive demand</span>' +
+          '<h4>What kinds of thinking did the test reward?</h4>' +
+          '<div class="row"><span>Recall &amp; recognition</span><span class="v">' + cck.demand.recall + '%</span></div>' +
+          '<div class="row"><span>Application</span><span class="v">' + cck.demand.application + '%</span></div>' +
+          '<div class="row"><span>Synthesis / interpretation</span><span class="v">' + cck.demand.synthesis + '%</span></div>' +
+          '<p class="note"><strong>Why this matters:</strong> if 80% of items reward recall, the test measures recognition memory more than understanding. The decision you set in Stage 1 should match the demand the test actually exercises.</p>' +
+        '</div>' +
+        '<div class="tia-cck-card">' +
+          '<span class="eye">Open-ended voice</span>' +
+          '<h4>Whose ways of explaining count as a right answer?</h4>' +
+          '<div class="row"><span>Open responses scored</span><span class="v">' + cck.voice.scored + '</span></div>' +
+          '<div class="row"><span>Answer variants accepted</span><span class="v">' + cck.voice.variants + '</span></div>' +
+          '<div class="row"><span>Language-bias flags</span><span class="v">' + cck.voice.flags + '</span></div>' +
+          '<p class="note"><strong>Cultural Context of Knowledge:</strong> open-ended items are where students bring their own ways of explaining. ReliCheck checks whether the rubric accepts the range of valid reasoning, not just the phrasing the test author expected.</p>' +
+        '</div>' +
+        '<div class="tia-cck-card">' +
+          '<span class="eye">Rubric integrity</span>' +
+          '<h4>Does the rubric measure what you say it measures?</h4>' +
+          '<div class="row"><span>Criteria defined</span><span class="v">' + cck.rubric.criteria + '</span></div>' +
+          '<div class="row"><span>Inter-rater agreement (&kappa;)</span><span class="v">' + cck.rubric.kappa.toFixed(2) + '</span></div>' +
+          '<div class="row"><span>Ceiling / floor criteria</span><span class="v">' + cck.rubric.ceilingFloor + '</span></div>' +
+          '<p class="note"><strong>Why this matters:</strong> a rubric that everyone scores the same on (ceiling) or no one passes (floor) is not separating the students. The rubric is part of the instrument; it gets scored too.</p>' +
+        '</div>' +
+      '</div>';
+  } else {
+    cckCards =
+      '<div class="tia-cck-grid">' +
+        '<div class="tia-cck-card" style="grid-column:1 / -1;background:#fafbfc;border-style:dashed;">' +
+          '<span class="eye">Not yet computed for live data</span>' +
+          '<h4>Cognitive demand &middot; Open-ended voice &middot; Rubric integrity</h4>' +
+          '<p class="note" style="margin:8px 0 0;">The three Cultural Context of Knowledge lenses each require their own infrastructure: a Bloom\'s-inspired demand classifier, a voice-acceptance analyzer for open-ended items, and inter-rater &kappa; for multi-rater rubric scoring. None of those are computed for your uploaded test yet, so the Assessment Strength Index above is built from Reliability and Item Health only. CCK lenses are on the build list.</p>' +
+        '</div>' +
+      '</div>';
+  }
+
+  const demoBanner = data.demoMode
+    ? '<div style="margin:0 0 16px;padding:10px 14px;background:#fff4d6;border:1px solid #f3d97a;border-radius:8px;font-size:13px;color:#5a4500;line-height:1.5;">' +
+        '<strong>Demo mode.</strong> The numbers below are illustrative, computed from a built-in sample test. To see your own results, pick a saved test from the left rail.' +
+      '</div>'
+    : '<div style="margin:0 0 16px;padding:10px 14px;background:#eef7ee;border:1px solid #c8e6c9;border-radius:8px;font-size:13px;color:#0f5128;line-height:1.5;">' +
+        '<strong>Live results.</strong> Item Strength Score and Reliability are computed from your uploaded responses. The Cultural Context of Knowledge lenses are not yet computed for live data &mdash; see the section below.' +
+      '</div>';
+
+  return '' +
+    '<p class="tia-stage-eyebrow">Stage 4 of 4 . Analyze</p>' +
+    '<h2 class="tia-stage-title">Is the assessment strong enough to support the decision?</h2>' +
+    '<p class="tia-stage-lede">The numbers tell you whether each item is doing its job. The interpretation panel on the right turns that into a decision: yes, with caveats, or not yet. Anything in the <span style="color:var(--tia-accent-deep);font-weight:600;">ReliCheck Assessment Strength Index</span> reflects the bar this decision requires, not a generic statistical floor.</p>' +
+    demoBanner +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-asi">' +
+        asiGauge +
+        '<div class="tia-asi-body">' +
+          '<p class="tia-asi-eye">ReliCheck Assessment Strength Index</p>' +
+          '<h3 class="tia-asi-title">' + asi.headline + '</h3>' +
+          '<p class="tia-asi-line">' + asi.line + '</p>' +
+          dims +
+        '</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-section-head">' +
+        '<h3>Per-item picture</h3>' +
+        '<span class="sub">' + data.items.length + ' items &middot; ranked by Item Strength Score</span>' +
+      '</div>' +
+      '<p class="tia-section-help">Each row is one item. The <strong>ReliCheck Item Strength Score</strong> rolls difficulty, discrimination, distractor health, and key fit into one 0&ndash;100 number with a Strong / Watch / Weak band.</p>' +
+      '<div class="tia-table-wrap"><div class="tia-table-scroll">' +
+        '<table class="tia-table">' +
+          '<thead><tr>' +
+            '<th>Item</th><th>Stem</th><th>Difficulty</th><th>Discrimination</th><th>Distractors</th><th>Demand</th><th>Item Strength</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table>' +
+      '</div></div>' +
+    '</div>' +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-section-head">' +
+        '<h3>Cultural Context of Knowledge</h3>' +
+        '<span class="sub">Demand &middot; voice &middot; rubric</span>' +
+      '</div>' +
+      '<p class="tia-section-help">What counts as a right answer is itself a choice. These three lenses check whether the test rewards the range of ways students actually demonstrate knowing.</p>' +
+      cckCards +
+    '</div>' +
+    '<div class="tia-stage-section">' +
+      '<div class="tia-actions">' +
+        '<button type="button" class="tia-btn ghost" data-tia-cta="reset">Start a new project</button>' +
+        '<button type="button" class="tia-btn"       data-tia-cta="go-upload">Re-upload data</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function tiaWireCenter(root) {
+  // Stakes-pill toggle inside the Setup form.
+  const form = root.querySelector('#tiaSetupForm');
+  if (form) {
+    form.querySelectorAll('[data-stakes]').forEach(p => {
+      p.addEventListener('click', () => {
+        form.querySelectorAll('[data-stakes]').forEach(x => x.classList.remove('is-active'));
+        p.classList.add('is-active');
+      });
+    });
+  }
+  // Upload stage wiring. Drop, click-to-pick, and paste all converge on
+  // tiaIngestText which parses with parseTestCsv, POSTs to api.createTest,
+  // loads the new test into state.openTest, and advances to Analyze.
+  const drop      = root.querySelector('#tiaDrop');
+  const fileInput = root.querySelector('#tiaFileInput');
+  const status    = root.querySelector('#tiaUploadStatus');
+  const pasteTgl  = root.querySelector('#tiaPasteToggle');
+  const pasteBox  = root.querySelector('#tiaPasteBox');
+  const pasteArea = root.querySelector('#tiaPasteArea');
+  const pasteGo   = root.querySelector('#tiaPasteSubmit');
+  const pasteX    = root.querySelector('#tiaPasteCancel');
+
+  const setStatus = (msg, tone) => {
+    if (!status) return;
+    if (!msg) { status.style.display = 'none'; status.innerHTML = ''; return; }
+    const bg = tone === 'err' ? '#fdecec' : (tone === 'ok' ? '#eef7ee' : '#f7faff');
+    const fg = tone === 'err' ? '#a33'    : (tone === 'ok' ? '#0f5128' : '#23303d');
+    const border = tone === 'err' ? '#f5c2c2' : (tone === 'ok' ? '#c8e6c9' : '#d6e4ff');
+    status.style.cssText = 'margin-top:12px;font-size:13px;line-height:1.5;display:block;background:' + bg + ';color:' + fg + ';border:1px solid ' + border + ';border-radius:8px;padding:10px 14px;';
+    status.innerHTML = msg;
+  };
+
+  if (drop && fileInput) {
+    const openPicker = () => fileInput.click();
+    drop.addEventListener('click', (e) => {
+      // Don't fire when the user clicked one of the buttons inside
+      // (they have data-tia-cta and are handled by the delegated handler).
+      if (e.target.closest('[data-tia-cta]')) return;
+      openPicker();
+    });
+    drop.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openPicker(); }
+    });
+    drop.addEventListener('dragover',  (e) => { e.preventDefault(); drop.classList.add('is-over'); });
+    drop.addEventListener('dragleave', ()  => drop.classList.remove('is-over'));
+    drop.addEventListener('drop', (e) => {
+      e.preventDefault();
+      drop.classList.remove('is-over');
+      const f = (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) || null;
+      if (f) tiaReadFile(f, root, setStatus);
+    });
+    fileInput.addEventListener('change', () => {
+      const f = (fileInput.files && fileInput.files[0]) || null;
+      if (f) tiaReadFile(f, root, setStatus);
+    });
+  }
+
+  if (pasteTgl && pasteBox) {
+    pasteTgl.addEventListener('click', () => {
+      pasteBox.style.display = pasteBox.style.display === 'none' ? 'block' : 'none';
+      if (pasteBox.style.display === 'block' && pasteArea) setTimeout(() => pasteArea.focus(), 0);
+    });
+  }
+  if (pasteX && pasteBox) {
+    pasteX.addEventListener('click', () => { pasteBox.style.display = 'none'; });
+  }
+  if (pasteGo && pasteArea) {
+    pasteGo.addEventListener('click', () => {
+      const txt = (pasteArea.value || '').trim();
+      if (!txt) { setStatus('Paste your CSV/TSV first.', 'err'); return; }
+      tiaIngestText(txt, '(pasted)', root, setStatus);
+    });
+  }
+}
+
+// Read a dropped or picked file. CSV/TSV/TXT go straight to the text
+// parser; XLSX lazy-loads SheetJS, converts the first sheet to CSV, and
+// hands that to the same parser. Anything else is rejected with a
+// readable error.
+function tiaReadFile(file, root, setStatus) {
+  const name = file.name || 'upload';
+  const isXlsx = /\.(xlsx|xls)$/i.test(name);
+  const isText = /\.(csv|tsv|txt)$/i.test(name) || /text\//i.test(file.type || '');
+  if (!isXlsx && !isText) {
+    setStatus('Unrecognized file type. Use CSV, TSV, or XLSX.', 'err');
+    return;
+  }
+  setStatus('<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #d6e4ff;border-top-color:#2563eb;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:-2px;margin-right:8px;"></div>Reading ' + name + '...');
+  if (isText) {
+    const reader = new FileReader();
+    reader.onload = () => tiaIngestText(String(reader.result || ''), name, root, setStatus);
+    reader.onerror = () => setStatus('Could not read the file.', 'err');
+    reader.readAsText(file);
+    return;
+  }
+  // XLSX path — lazy-load SheetJS from the CDN the rest of the app uses.
+  (async () => {
+    try {
+      if (typeof loadScriptOnce === 'function') {
+        await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      }
+      if (!window.XLSX) throw new Error('XLSX library failed to load.');
+      const buf = await file.arrayBuffer();
+      const wb = window.XLSX.read(buf, { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const aoa = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      // Convert array-of-arrays to CSV text so the existing parser can
+      // handle it without a new branch.
+      const csv = aoa.map(row => row.map(cell => {
+        const s = (cell == null) ? '' : String(cell);
+        if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }).join(',')).join('\n');
+      tiaIngestText(csv, name, root, setStatus);
+    } catch (e) {
+      setStatus('Could not read XLSX: ' + ((e && e.message) || 'unknown error') + '. Try saving the sheet as CSV and dropping that instead.', 'err');
+    }
+  })();
+}
+
+// Shared submit path: parse the CSV/TSV text, build a createTest payload,
+// POST it, then load the result into state.openTest and advance the
+// workstation to the Analyze stage. The Setup stage's project title is
+// used as the test title (Setup is Stage 1; the user has already named
+// the project before reaching Upload).
+async function tiaIngestText(text, fileName, root, setStatus) {
+  // Two-step parse. First try the strict "answer-key required" form
+  // (parseTestCsv). If that fails, try the "already-scored 1/0 matrix"
+  // form which is what classroom teachers actually export — one title
+  // row, one header row, one row per student with 1=correct / 0=wrong
+  // already filled in, possibly trailing derived columns (Raw Score,
+  // Percentage, Letter Grade). That parser synthesizes an all-correct
+  // key so the existing CTT engine treats every '1' as a correct hit.
+  let parsed = parseTestCsv(text);
+  if (!parsed.ok) {
+    const scoredAttempt = parseScoredCsv(text);
+    if (scoredAttempt.ok) {
+      parsed = scoredAttempt;
+    } else {
+      setStatus('Could not parse your file as either an answer-key test or a pre-scored test.<br><br><strong>Answer-key path:</strong> ' + (parsed.error || 'unknown error') +
+                '<br><br><strong>Pre-scored path:</strong> ' + (scoredAttempt.error || 'unknown error') +
+                '<br><br><strong>Two supported shapes:</strong><br>(1) A row with <code>KEY</code> in column 1 holding the answer key, then student rows with raw answers (A/B/C/D).<br>(2) A row of column headers like <code>Student ID, Student Name, Q1, Q2, …</code>, then student rows where each item cell is <code>1</code> (correct) or <code>0</code> (incorrect). A title row above the headers is fine; trailing Raw Score / Percentage / Letter Grade columns are auto-detected and ignored.', 'err');
+      return;
+    }
+  }
+  const project = state.tia && state.tia.project ? state.tia.project : null;
+  const title = (project && project.title)
+    ? project.title
+    : (fileName.replace(/\.(csv|tsv|txt|xlsx|xls)$/i, '') || 'Untitled test');
+  setStatus('<div class="spinner" style="display:inline-block;width:14px;height:14px;border:2px solid #d6e4ff;border-top-color:#2563eb;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:-2px;margin-right:8px;"></div>Saving ' + parsed.rows.length + ' respondent rows...');
+  const payload = {
+    title:          title,
+    description:    (project && project.decision) ? project.decision : null,
+    pass_threshold: 70,
+    answer_key:     parsed.answerKey,
+    item_labels:    parsed.itemLabels,
+    skill_tags:     parsed.skillTags,
+    responses:      parsed.rows,
+  };
+  try {
+    const res = await api.createTest(payload);
+    // Pull the saved test (with computed percent_correct, etc.) back so
+    // computeTestAnalysis has everything it needs.
+    const full = await api.getTest(res.test_id);
+    state.openTest = { test: full.test, responses: full.responses || [] };
+    // Refresh the rail so this project appears immediately.
+    try {
+      const list = await api.listTests();
+      state.tests = list.tests || [];
+    } catch (_) {}
+    // Workstation state.
+    state.tia.activeTest = res.test_id;
+    state.tia.upload = {
+      fileName:    fileName,
+      rowCount:    parsed.rows.length,
+      itemCount:   parsed.answerKey.length,
+      openCount:   0,
+      rubricCount: 0,
+    };
+    state.tia.confirmed = true;
+    state.tia.sampleMode = false;
+    state.tia.stage     = 'analyze';
+    setStatus('Saved. Computing Item Strength and Assessment Strength Index...', 'ok');
+    tiaRenderStage(root);
+  } catch (e) {
+    setStatus('Could not save: ' + ((e && e.message) || 'unknown error') + '. Check the format and try again.', 'err');
+  }
+}
+
+function tiaRenderRightPanel(root) {
+  const host = root.querySelector('#tiaRightPanel');
+  if (!host) return;
+  const t = state.tia;
+  const stage = t.stage;
+
+  // Stage-aware interpretation. Every stage gets a plain-language
+  // headline, the decision question, and a "what to do next" list.
+  const headline = (() => {
+    if (stage === 'setup')   return 'Name the decision first.';
+    if (stage === 'upload')  return 'Bring the data.';
+    if (stage === 'confirm') return 'Quick sanity check.';
+    return 'Translation of the numbers.';
+  })();
+
+  let decisionBox = '';
+  let body        = '';
+  let next        = '';
+
+  if (stage === 'setup') {
+    body =
+      '<div class="tia-rp-section">' +
+        '<h5>Why this matters</h5>' +
+        '<p>The same test can be strong enough for low-stakes formative use and not strong enough for a placement decision. <strong>Naming the decision in Stage 1 sets the bar</strong> the <span class="branded">Assessment Strength Index</span> has to clear later.</p>' +
+      '</div>' +
+      '<div class="tia-rp-section">' +
+        '<h5>Cultural Context of Knowledge</h5>' +
+        '<p>How you describe the decision shapes whose ways of knowing the test is allowed to reward. A decision about &ldquo;mastery of procedural fluency&rdquo; reads differently than &ldquo;reasoning about why a method works.&rdquo;</p>' +
+      '</div>';
+    next =
+      '<div class="tia-rp-next">' +
+        '<div class="tia-rp-next-item"><span class="num">1</span><span class="body"><strong>Write one sentence</strong> describing the call this test has to support.</span></div>' +
+        '<div class="tia-rp-next-item"><span class="num">2</span><span class="body"><strong>Pick the stakes.</strong> Low &middot; medium &middot; high sets the floor on every dimension.</span></div>' +
+        '<div class="tia-rp-next-item"><span class="num">3</span><span class="body"><strong>Save and continue</strong> to upload responses.</span></div>' +
+      '</div>';
+  } else if (stage === 'upload') {
+    body =
+      '<div class="tia-rp-section">' +
+        '<h5>What ReliCheck is looking for</h5>' +
+        '<p>One row per respondent, then columns for each item with an answer key. Open-ended text and rubric-scored items are optional but unlock the <span class="branded">Cultural Context of Knowledge</span> surfaces in Stage 4.</p>' +
+      '</div>' +
+      '<div class="tia-rp-section">' +
+        '<h5>What does not count as data</h5>' +
+        '<p>Totals or percentages without the underlying responses. The whole point of item analysis is to look <em>inside</em> the score, so the per-row responses are required.</p>' +
+      '</div>';
+    next =
+      '<div class="tia-rp-next">' +
+        '<div class="tia-rp-next-item"><span class="num">1</span><span class="body"><strong>Drop your file</strong> or use the sample classroom test to see the flow.</span></div>' +
+        '<div class="tia-rp-next-item"><span class="num">2</span><span class="body"><strong>Confirm the parse</strong> in Stage 3 before the analysis runs.</span></div>' +
+      '</div>';
+  } else if (stage === 'confirm') {
+    body =
+      '<div class="tia-rp-section">' +
+        '<h5>Sanity check</h5>' +
+        '<p>The preview is the easiest place to catch the &ldquo;wrong file&rdquo; mistake. <strong>Row count, item count, and the first few responses</strong> should match the test you just gave.</p>' +
+      '</div>' +
+      '<div class="tia-rp-section">' +
+        '<h5>What happens when you confirm</h5>' +
+        '<p>ReliCheck computes per-item statistics, rolls them into the <span class="branded">Item Strength Score</span>, and produces the whole-test <span class="branded">Assessment Strength Index</span>. Nothing leaves your workspace.</p>' +
+      '</div>';
+    next =
+      '<div class="tia-rp-next">' +
+        '<div class="tia-rp-next-item"><span class="num">1</span><span class="body"><strong>Confirm</strong> the data is right.</span></div>' +
+        '<div class="tia-rp-next-item"><span class="num">2</span><span class="body"><strong>Review</strong> the interpretation in Stage 4.</span></div>' +
+      '</div>';
+  } else {
+    const data = tiaScoredFromState();
+    if (!data) {
+      headline = 'Nothing to interpret yet';
+      decisionBox =
+        '<div class="tia-rp-decision">' +
+          '<p class="lab">The studio question</p>' +
+          '<p class="q">Is this test strong enough to support the decision you set?</p>' +
+          '<span class="a"><span class="dot"></span>Pending data</span>' +
+        '</div>';
+      body =
+        '<div class="tia-rp-section"><h5>How this works</h5>' +
+        '<p>Upload your test responses in Stage 2 (or click "Load the sample classroom test" if you want to see what the interpretation looks like first). Once data is in, the panel here turns into a plain-language read on whether the test clears the bar for your decision.</p></div>';
+      next = '';
+      host.innerHTML =
+        '<span class="tia-rp-eyebrow"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg></span>ReliCheck Interpretation</span>' +
+        '<h3 class="tia-rp-headline">' + headline + '</h3>' +
+        decisionBox +
+        body;
+      return;
+    }
+    const asi  = tiaAssessmentStrengthIndex(data);
+    const verdict = tiaVerdict(asi, (t.project && t.project.stakes) || 'medium');
+    const cls = verdict.kind; // yes | qualified | no
+    const stakesLabel = (t.project && t.project.stakes) || 'medium';
+    decisionBox =
+      '<div class="tia-rp-decision">' +
+        '<p class="lab">The studio question</p>' +
+        '<p class="q">Is this test strong enough to support <em>' + escapeHtml((t.project && t.project.decision) || 'the intended decision') + '</em>?</p>' +
+        '<span class="a ' + cls + '"><span class="dot"></span>' + verdict.label + '</span>' +
+      '</div>';
+    body =
+      '<div class="tia-rp-section">' +
+        '<h5>In plain language</h5>' +
+        '<p>' + verdict.plain + '</p>' +
+      '</div>' +
+      '<div class="tia-rp-section">' +
+        '<h5>What the numbers say</h5>' +
+        '<p>The <span class="branded">Assessment Strength Index</span> is <strong>' + asi.score + ' / 100</strong>, against a <strong>' + escapeHtml(stakesLabel) + '-stakes</strong> floor of <strong>' + verdict.floor + '</strong>. Reliability is the strongest driver; cultural validity is where the test leaves the most on the table.</p>' +
+      '</div>' +
+      '<div class="tia-rp-section">' +
+        '<h5>Why the goal is decision support, not scoring</h5>' +
+        '<p>A clean statistical score on a test that does not exercise the kind of thinking your decision requires is still the wrong test. <strong>Strong enough to support the decision</strong> is the only bar that matters.</p>' +
+      '</div>';
+    next =
+      '<div class="tia-rp-next">' +
+        verdict.next.map((line, i) => '<div class="tia-rp-next-item"><span class="num">' + (i + 1) + '</span><span class="body">' + line + '</span></div>').join('') +
+      '</div>';
+  }
+
+  host.innerHTML =
+    '<span class="tia-rp-eyebrow"><span class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 2"/></svg></span>ReliCheck Interpretation</span>' +
+    '<h3 class="tia-rp-headline">' + headline + '</h3>' +
+    decisionBox +
+    body +
+    '<div class="tia-rp-divider"></div>' +
+    '<div class="tia-rp-section"><h5>Do this next</h5></div>' +
+    next;
+}
+
+/* ---------- TIA scoring + sample data ---------- */
+
+// tiaScoredFromState — the single entry point every Analyze-stage renderer
+// reads from. Returns either a {items, cck, demoMode, hasCck, source}
+// object OR null when nothing is loaded.
+//
+//   * Real upload (state.openTest has rows) → live CTT bridge, source 'live'.
+//   * User chose "Use sample classroom test" (state.tia.sampleMode) →
+//     sample data with demoMode true.
+//   * Otherwise → null. Renderers translate null into an "Upload a test
+//     first" empty state instead of silently falling through to demo
+//     data, which had previously been confusing testers into thinking
+//     their upload had been ignored.
+function tiaScoredFromState() {
+  try {
+    const open = state.openTest;
+    if (open && open.test && Array.isArray(open.responses) && open.responses.length > 0) {
+      const ctt = computeTestAnalysis(open.test, open.responses);
+      if (ctt && Array.isArray(ctt.items)) {
+        return tiaBridgeFromCtt(open.test, open.responses, ctt);
+      }
+    }
+  } catch (_) { /* fall through */ }
+  if (state.tia && state.tia.sampleMode) {
+    const sample = tiaScoredData();
+    sample.demoMode = true;
+    sample.hasCck   = true;
+    sample.source   = 'sample';
+    return sample;
+  }
+  return null;
+}
+
+// Bridge: convert the Classical Test Theory engine output into the
+// {items, cck, ...} shape every TIA renderer reads. Per-item Item
+// Strength Score is computed here from real difficulty, discrimination,
+// and distractor health.
+function tiaBridgeFromCtt(test, responses, ctt) {
+  const itemLabels = (test && test.item_labels) || [];
+  const itemTexts  = (test && test.item_texts)  || [];
+  const skillTags  = (test && test.skill_tags)  || [];
+  const items = ctt.items.map((it, idx) => {
+    const label = itemLabels[idx] || it.label || ('Q' + (idx + 1));
+    const text  = itemTexts[idx]  || ('Item ' + (idx + 1));
+    // Distractor counts straight from the engine (answerChoices is an
+    // array of {option, count, isKey, ...} per item).
+    const choices = it.answerChoices || [];
+    const distractors = choices.map(c => c.count || 0);
+    const keyIdx = choices.findIndex(c => !!c.isKey);
+    const iss   = tiaItemStrengthScore(it, choices);
+    // Cognitive-demand tag pulled from skill_tags if the test author
+    // tagged items; otherwise left blank so the bridge does not invent
+    // a label.
+    const demand = (skillTags[idx] || '').toString().trim() || '—';
+    return {
+      id:         label,
+      text:       text,
+      difficulty: Number.isFinite(it.pCorrect)   ? it.pCorrect   : 0,
+      disc:       Number.isFinite(it.pointBis)   ? it.pointBis   : 0,
+      distractors: distractors,
+      keyIdx:     keyIdx >= 0 ? keyIdx : 0,
+      demand:     demand,
+      iss:        iss,
+    };
+  });
+  // Real reliability dimension — Cronbach's α scaled to 0–100. The other
+  // CCK dimensions (cognitive demand, voice, rubric) are placeholders
+  // until those lenses are built; downstream code reads hasCck to
+  // suppress those panels when not yet computed.
+  const alpha = ctt.alpha;
+  const reliability = (alpha != null && Number.isFinite(alpha))
+    ? Math.max(0, Math.min(100, Math.round(alpha * 100)))
+    : null;
+  return {
+    items: items,
+    cck: null,        // not yet computed for live data
+    hasCck: false,
+    demoMode: false,
+    source: 'live',
+    test: test,
+    ctt: ctt,
+    reliabilityScore: reliability,
+  };
+}
+
+// Item Strength Score (0–100) composed from psychometric signals the CTT
+// engine already produces. Discrimination is the dominant signal (a
+// high-difficulty item that no one discriminates on is a bad item), with
+// secondary penalties for floor/ceiling difficulty and for non-functioning
+// distractors. Designed so the bands line up with the existing UI
+// thresholds (Strong ≥ 75, Watch ≥ 55, Weak < 55).
+function tiaItemStrengthScore(item, answerChoices) {
+  const p   = Number.isFinite(item.pCorrect) ? item.pCorrect : 0.5;
+  const pb  = Number.isFinite(item.pointBis) ? item.pointBis : 0;
+  // Discrimination base: maps point-biserial roughly to 0–80.
+  //   pb ≥ 0.40 → 80   (Strong)
+  //   pb ≈ 0.30 → 65   (Good)
+  //   pb ≈ 0.15 → 40   (Review)
+  //   pb < 0.05 → 10   (Problem)
+  //   pb < 0    → 5    (negative — actively misleading)
+  let base;
+  if      (pb >= 0.40) base = 80;
+  else if (pb >= 0.30) base = 65;
+  else if (pb >= 0.20) base = 55;
+  else if (pb >= 0.15) base = 45;
+  else if (pb >= 0.05) base = 25;
+  else if (pb >= 0)    base = 12;
+  else                 base = 5;
+  // Difficulty bonus / penalty. 0.30 ≤ p ≤ 0.85 is the productive band.
+  let diffAdj;
+  if      (p >= 0.30 && p <= 0.85) diffAdj = 12;
+  else if (p > 0.85)               diffAdj = -8;   // ceiling
+  else if (p < 0.30 && p >= 0.15)  diffAdj = -4;   // hard but ok
+  else                              diffAdj = -10;  // floor
+  // Distractor health penalty: each non-functioning distractor (count = 0)
+  // costs a few points, capped at 9 (3 dead distractors).
+  let deadCount = 0;
+  if (Array.isArray(answerChoices)) {
+    answerChoices.forEach(c => {
+      if (c && !c.isKey && (c.count === 0)) deadCount++;
+    });
+  }
+  const distAdj = -Math.min(9, deadCount * 3);
+  const iss = Math.max(0, Math.min(100, Math.round(base + diffAdj + distAdj)));
+  return iss;
+}
+
+// Sample data so the workstation reads as a real working surface even
+// before the user has uploaded a test. When real data is loaded in a
+// later phase, swap tiaScoredData() for an api.computeTia() call.
+function tiaSampleResponses() {
+  return [
+    { id:'R-001', cells:['A','B','C','D','B','A','C','D','A','B','C','D'] },
+    { id:'R-002', cells:['A','B','A','D','B','A','C','C','A','B','B','D'] },
+    { id:'R-003', cells:['A','C','C','D','B','A','D','D','A','B','C','D'] },
+    { id:'R-004', cells:['B','B','C','D','B','A','C','D','A','D','C','D'] },
+    { id:'R-005', cells:['A','B','C','D','A','B','C','D','A','B','C','C'] },
+    { id:'R-006', cells:['A','B','C','D','B','A','C','D','A','B','C','D'] },
+  ];
+}
+
+function tiaScoredData() {
+  // Twelve representative items, span Strong / Watch / Weak bands so the
+  // table conveys the full range. Demand tags are pulled from a
+  // simplified Bloom's-inspired vocabulary that pairs cleanly with the
+  // Cultural Context of Knowledge framing.
+  const items = [
+    { id:'Q1',  text:'Solve for x: 3x + 7 = 22',                                                 difficulty:0.78, disc:0.42, distractors:[20,3,2,3], keyIdx:0, demand:'Application', iss:84 },
+    { id:'Q2',  text:'Which expression is equivalent to 2(x + 3)?',                              difficulty:0.92, disc:0.08, distractors:[26,1,1,0], keyIdx:0, demand:'Recall',      iss:48 },
+    { id:'Q3',  text:'A line passes through (0, 4) and (2, 10). What is its slope?',             difficulty:0.54, disc:0.51, distractors:[15,4,6,3], keyIdx:0, demand:'Application', iss:82 },
+    { id:'Q4',  text:'Explain why dividing by zero is undefined.',                               difficulty:0.36, disc:0.39, distractors:[10,8,7,3], keyIdx:0, demand:'Synthesis',   iss:74 },
+    { id:'Q5',  text:'Identify the y-intercept of y = -2x + 5.',                                 difficulty:0.82, disc:0.36, distractors:[23,1,3,1], keyIdx:0, demand:'Recall',      iss:71 },
+    { id:'Q6',  text:'Which strategy would you use first to solve 4(x - 2) = 16?',               difficulty:0.61, disc:0.46, distractors:[17,4,5,2], keyIdx:0, demand:'Application', iss:80 },
+    { id:'Q7',  text:'Compare two methods for solving 5x = 35.',                                 difficulty:0.50, disc:0.41, distractors:[14,6,5,3], keyIdx:0, demand:'Synthesis',   iss:76 },
+    { id:'Q8',  text:'Choose the answer that is closest in meaning to &ldquo;equivalent.&rdquo;',difficulty:0.93, disc:0.04, distractors:[26,1,0,1], keyIdx:0, demand:'Recall',      iss:44 },
+    { id:'Q9',  text:'A graph rises from left to right. What is the sign of its slope?',         difficulty:0.86, disc:0.28, distractors:[24,2,1,1], keyIdx:0, demand:'Recall',      iss:65 },
+    { id:'Q10', text:'Which scenario can be modeled by y = 50 + 2x?',                            difficulty:0.46, disc:0.49, distractors:[13,5,7,3], keyIdx:0, demand:'Application', iss:78 },
+    { id:'Q11', text:'Explain why a vertical line has an undefined slope.',                      difficulty:0.32, disc:0.18, distractors:[ 9,8,9,2], keyIdx:0, demand:'Synthesis',   iss:53 },
+    { id:'Q12', text:'Which of the following is NOT a linear function?',                         difficulty:0.18, disc:-0.10, distractors:[ 5,8,7,8], keyIdx:0, demand:'Application', iss:22 },
+  ];
+
+  const cck = {
+    demand: { recall:33, application:42, synthesis:25 },
+    voice:  { scored:28,  variants:5, flags:1 },
+    rubric: { criteria:4, kappa:0.78, ceilingFloor:'1 ceiling, 0 floor' },
+  };
+
+  return { items, cck };
+}
+
+function tiaMedianItemStrength(data) {
+  const xs = data.items.map(i => i.iss).slice().sort((a,b) => a-b);
+  const mid = Math.floor(xs.length / 2);
+  const median = xs.length % 2 ? xs[mid] : Math.round((xs[mid-1] + xs[mid]) / 2);
+  const tone = median >= 75 ? 'strong' : (median >= 55 ? 'watch' : 'weak');
+  return { score: median, tone };
+}
+
+function tiaAssessmentStrengthIndex(data) {
+  // Composite of four dimensions, each on a 0–100 scale. Live data
+  // (data.source === 'live') uses real Cronbach's α for reliability and
+  // a real mean ISS for item health. The cognitive-demand and cultural-
+  // validity lenses are not yet computed for live data, so when hasCck
+  // is false the formula reweights to the two real dimensions and the
+  // dropped lenses surface as "Not yet computed" in the UI instead of
+  // contributing a fake number to the score.
+  const issAvg = Math.round(data.items.reduce((s,i) => s + i.iss, 0) / data.items.length);
+  const itemHealth = issAvg;
+
+  let reliability;
+  if (data.source === 'live' && data.reliabilityScore != null) {
+    reliability = data.reliabilityScore;
+  } else if (data.cck) {
+    reliability = 78;
+  } else {
+    reliability = null;
+  }
+
+  let demand = null;
+  let culture = null;
+  if (data.hasCck && data.cck) {
+    demand  = Math.round((data.cck.demand.application * 1.0 + data.cck.demand.synthesis * 1.2 + data.cck.demand.recall * 0.6) / 1.6);
+    culture = Math.round((data.cck.rubric.kappa * 60) + (data.cck.voice.variants * 6) - (data.cck.voice.flags * 8));
+  }
+
+  const dims = {
+    reliability: reliability != null ? Math.max(0, Math.min(100, reliability)) : null,
+    itemHealth:  Math.max(0, Math.min(100, itemHealth)),
+    demand:      demand  != null ? Math.max(0, Math.min(100, demand))  : null,
+    culture:     culture != null ? Math.max(0, Math.min(100, culture)) : null,
+  };
+
+  let score;
+  if (data.hasCck && dims.reliability != null) {
+    // Full four-dimension composite — used for sample data and any
+    // future build that computes CCK on live data.
+    score = Math.round((dims.reliability * 0.35) + (dims.itemHealth * 0.30) + (dims.demand * 0.20) + (dims.culture * 0.15));
+  } else if (dims.reliability != null) {
+    // Two-dimension composite — reliability + item health, reweighted
+    // so the score is comparable in magnitude. 60/40 split keeps
+    // reliability as the dominant signal.
+    score = Math.round((dims.reliability * 0.60) + (dims.itemHealth * 0.40));
+  } else {
+    score = itemHealth;
+  }
+  const tone  = score >= 80 ? 'strong' : (score >= 65 ? 'watch' : 'weak');
+  const headline = score >= 80
+    ? 'Strong enough to defend, with notes.'
+    : (score >= 65
+        ? 'Holds for medium stakes, not yet for high.'
+        : 'Not strong enough to lean on.');
+  const line = score >= 80
+    ? 'Reliability is solid, items are doing their job, and the cognitive demand matches the decision. A few items are worth retiring before next administration.'
+    : (score >= 65
+        ? 'The test gets you to a medium-stakes answer but has weak spots: a few items are dragging reliability down and the rubric is doing more work than it should.'
+        : 'Reliability, item health, or cognitive demand are below the bar this decision requires. Fix the flagged items before you use the score to act.');
+
+  return { score, tone, headline, line, dims };
+}
+
+function tiaVerdict(asi, stakes) {
+  const floor = stakes === 'high' ? 85 : (stakes === 'low' ? 65 : 75);
+  if (asi.score >= floor) {
+    return {
+      kind: 'yes',
+      label: 'Yes, strong enough',
+      floor,
+      plain: 'The test clears the bar for the decision you set. The weak items are minor and can be revised after the fact; the call you make from this score is defensible.',
+      next: [
+        '<strong>Use the score</strong> to support the decision. Cite the Assessment Strength Index in your report.',
+        '<strong>Mark</strong> the 2&ndash;3 lowest Item Strength items for revision before the next administration.',
+        '<strong>Keep</strong> the rubric and cognitive-demand profile; they earned their place.',
+      ],
+    };
+  }
+  if (asi.score >= floor - 10) {
+    return {
+      kind: 'qualified',
+      label: 'Yes, with qualifications',
+      floor,
+      plain: 'The test is close to the bar but not quite over it. You can act on the score if you name the qualifications publicly: which items are weak, and which decisions you would not extend the score to.',
+      next: [
+        '<strong>Act with caveats.</strong> Document the items pulling reliability down.',
+        '<strong>Reweight or drop</strong> the items below 55 on the Item Strength Score before re-scoring.',
+        '<strong>Re-run</strong> the Assessment Strength Index after revision.',
+      ],
+    };
+  }
+  return {
+    kind: 'no',
+    label: 'Not yet',
+    floor,
+    plain: 'The test is below the bar this decision requires. Use the analysis to repair the instrument before you use the score to act on a student.',
+    next: [
+      '<strong>Do not use</strong> this score for the stated decision yet.',
+      '<strong>Replace</strong> the Weak items (below 55) and rewrite the items with dead distractors.',
+      '<strong>Re-administer or rescore</strong> with the revised items and re-check the ASI.',
+    ],
+  };
+}
+
+function tiaDistractorBars(counts, keyIdx) {
+  if (!counts || !counts.length) return '<span class="tia-iss">&mdash;</span>';
+  const max = Math.max.apply(null, counts);
+  return '<span class="tia-dist">' + counts.map((c, i) => {
+    const h = Math.max(3, Math.round((c / Math.max(1, max)) * 16));
+    const isKey  = i === keyIdx;
+    const isDead = c === 0;
+    const cls = isKey ? 'key' : (isDead ? 'dead' : '');
+    return '<span class="bar ' + cls + '" style="height:' + h + 'px;" title="Option ' + ['A','B','C','D','E','F','G','H'][i] + ': ' + c + (isKey ? ' (key)' : '') + '"></span>';
+  }).join('') + '</span>';
 }
 
 function drawTestsKpis() {
@@ -12886,12 +14365,20 @@ function _parseAddResponses(text, numItems) {
 }
 
 function parseTestCsv(text) {
-  var lines = String(text || '').split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
+  // Strip BOM if present — common when Excel saves UTF-8 CSV.
+  var raw = String(text || '');
+  if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+  var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
   if (lines.length < 2) return { ok: false, error: 'Need at least an answer key row and one student row.' };
   var firstRow = lines[0];
-  var sep = (firstRow.indexOf('\t') !== -1 && firstRow.indexOf(',') === -1) ? '\t' : ',';
+  // Separator sniff: tab, semicolon, or comma. Semicolon is common in
+  // European Excel exports; tab from copy-paste out of a spreadsheet.
+  var sep;
+  if      (firstRow.indexOf('\t') !== -1 && firstRow.indexOf(',') === -1) sep = '\t';
+  else if (firstRow.indexOf(';')  !== -1 && firstRow.indexOf(',') === -1) sep = ';';
+  else                                                                    sep = ',';
   var parseRow = function (line) {
-    if (sep === '\t') return line.split('\t').map(function (s) { return s.trim(); });
+    if (sep !== ',') return line.split(sep).map(function (s) { return s.trim(); });
     var out = [], cur = '', inQ = false;
     for (var i = 0; i < line.length; i++) {
       var ch = line[i];
@@ -12924,9 +14411,32 @@ function parseTestCsv(text) {
   if (keyRowIdx < 0 && skillRowIdx < 0) keyRowIdx = 0;
   if (keyRowIdx < 0) return { ok: false, error: 'Could not find the answer key row. The first column of one row should read KEY (or Answer Key).' };
   var keyRow = parsed[keyRowIdx];
-  if (!keyRow || keyRow.length < 4) return { ok: false, error: 'Answer key row needs at least 3 items.' };
+  // Compose a short diagnostic of what the parser actually saw so the
+  // user can tell why a row looks empty without re-uploading blindly.
+  var snippet = function () {
+    var labels = ['Separator: "' + (sep === '\t' ? '\\t (tab)' : sep) + '"',
+                  parsed.length + ' rows detected',
+                  'Row 1 has ' + (parsed[0] ? parsed[0].length : 0) + ' column' + ((parsed[0] && parsed[0].length === 1) ? '' : 's')];
+    var rowDump = parsed.slice(0, 3).map(function (r, i) {
+      var preview = r.slice(0, 8).map(function (c) { return '"' + (c || '').slice(0, 16) + '"'; }).join(', ');
+      var more = r.length > 8 ? ' …(+' + (r.length - 8) + ')' : '';
+      return 'Row ' + (i + 1) + ': [' + preview + more + ']';
+    }).join('  ·  ');
+    return labels.join('; ') + '. ' + rowDump;
+  };
+  if (!keyRow || keyRow.length < 4) return { ok: false, error: 'Answer key row needs at least 3 items. (' + snippet() + ')' };
   var answerKey = keyRow.slice(1).map(function (s) { return s.trim(); });
-  if (answerKey.some(function (s) { return s === ''; })) return { ok: false, error: 'Answer key has empty cells.' };
+  // Trim trailing empty cells — spreadsheets routinely export extra
+  // blank columns at the end of every row, which is not a real gap in
+  // the key; it's a serialization artifact.
+  while (answerKey.length > 0 && answerKey[answerKey.length - 1] === '') answerKey.pop();
+  if (answerKey.length < 3) return { ok: false, error: 'Answer key row has fewer than 3 items after trimming blanks (found ' + answerKey.length + '). Most likely cause: the parser is not detecting your column separator. (' + snippet() + ')' };
+  // If empty cells remain in the middle, name the position so the user
+  // can fix it instead of staring at a generic error.
+  var firstEmpty = answerKey.findIndex(function (s) { return s === ''; });
+  if (firstEmpty !== -1) {
+    return { ok: false, error: 'Answer key cell for item ' + (firstEmpty + 1) + ' (column ' + (firstEmpty + 2) + ') is empty. Every item from item 1 through item ' + answerKey.length + ' needs an answer in the KEY row.' };
+  }
   var itemLabels = headerRow ? headerRow.slice(1).map(function (s) { return s.trim(); }) : null;
   var skillTags = null;
   if (skillRowIdx >= 0) {
@@ -12949,6 +14459,186 @@ function parseTestCsv(text) {
   }
   if (rows.length < 1) return { ok: false, error: 'No student rows found.' };
   return { ok: true, answerKey: answerKey, itemLabels: itemLabels, skillTags: skillTags, rows: rows };
+}
+
+// Second-chance parser for the "already-scored 0/1 matrix" shape that
+// classroom teachers actually export from a gradebook. Layout:
+//
+//   Row 1 (optional title):  "Science Test - 20 questions"
+//   Row 2 (column headers):  Student ID | Student Name | Q1 | Q2 | …
+//   Row 3..N (student rows): S01        | Alex Reyes   | 1  | 0  | …
+//
+// Cells in item columns are 1 (correct) or 0 (incorrect). The classical
+// CTT engine expects raw answers (A/B/C/D) against an answer key, so
+// this parser synthesizes an answer key of all "1"s — every item's
+// "correct" answer is then 1, and the existing engine reads each cell
+// as a match (1) or miss (0), which is exactly the semantics already
+// encoded in the file. Trailing derived columns (Raw Score, Score,
+// Total, Percentage, %, Letter Grade, Grade) are auto-detected and
+// dropped before the synthesized key is built.
+function parseScoredCsv(text) {
+  var raw = String(text || '');
+  if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+  var lines = raw.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(function (l) { return l.length > 0; });
+  if (lines.length < 2) return { ok: false, error: 'Need at least a header row and one student row.' };
+  var firstRow = lines[0];
+  var sep;
+  if      (firstRow.indexOf('\t') !== -1 && firstRow.indexOf(',') === -1) sep = '\t';
+  else if (firstRow.indexOf(';')  !== -1 && firstRow.indexOf(',') === -1) sep = ';';
+  else                                                                    sep = ',';
+  var parseRow = function (line) {
+    if (sep !== ',') return line.split(sep).map(function (s) { return (s || '').trim(); });
+    var out = [], cur = '', inQ = false;
+    for (var i = 0; i < line.length; i++) {
+      var ch = line[i];
+      if (inQ) {
+        if (ch === '"' && line[i+1] === '"') { cur += '"'; i++; }
+        else if (ch === '"') { inQ = false; }
+        else cur += ch;
+      } else {
+        if (ch === '"') inQ = true;
+        else if (ch === ',') { out.push(cur.trim()); cur = ''; }
+        else cur += ch;
+      }
+    }
+    out.push(cur.trim());
+    return out;
+  };
+  var grid = lines.map(parseRow);
+
+  // Trim trailing empty columns globally (spreadsheet artifact).
+  var maxLen = grid.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+  grid.forEach(function (r) { while (r.length < maxLen) r.push(''); });
+  while (maxLen > 0 && grid.every(function (r) { return (r[maxLen - 1] || '') === ''; })) {
+    grid.forEach(function (r) { r.pop(); });
+    maxLen--;
+  }
+  if (maxLen < 3) return { ok: false, error: 'Need at least 3 columns of data.' };
+
+  // Skip a leading title row — a row whose first cell is non-empty but
+  // whose remaining cells are all empty. The next row is treated as
+  // the column header row.
+  var headerIdx = 0;
+  if (grid[0].length > 1 && (grid[0][0] || '') !== '' &&
+      grid[0].slice(1).every(function (c) { return (c || '') === ''; })) {
+    headerIdx = 1;
+  }
+  if (headerIdx >= grid.length - 1) return { ok: false, error: 'Found a title row but no data rows beneath it.' };
+
+  var header = grid[headerIdx].map(function (s) { return (s || '').trim(); });
+  // Gather student rows. A blank ID cell, or an ID cell containing a
+  // known summary label (Item p-value, Class Summary, Class average,
+  // % Passing, Letter grade count, etc.), signals the end of student
+  // data and the start of a footer summary block. Stop scanning at
+  // the first such row so a trailing block doesn't poison the parse.
+  var isFooterLabel = function (cellA, cellB) {
+    var combo = (((cellA || '') + ' ' + (cellB || ''))).toLowerCase();
+    return combo.indexOf('p-value')   !== -1 ||
+           combo.indexOf('p value')   !== -1 ||
+           combo.indexOf('class summary') !== -1 ||
+           combo.indexOf('class average') !== -1 ||
+           combo.indexOf('% passing')  !== -1 ||
+           combo.indexOf('percent pass') !== -1 ||
+           combo.indexOf('letter grade count') !== -1 ||
+           combo.indexOf('item analysis') !== -1 ||
+           combo.indexOf('difficulty') !== -1 ||
+           combo.indexOf('mean') === 0;
+  };
+  var dataRows = [];
+  for (var ri = headerIdx + 1; ri < grid.length; ri++) {
+    var rr2 = grid[ri];
+    var idCell = (rr2[0] || '').trim();
+    var col1 = (rr2[1] || '').trim();
+    if (idCell === '' || isFooterLabel(idCell, col1)) break;
+    if (!rr2.some(function (c) { return (c || '') !== ''; })) break;
+    dataRows.push(rr2);
+  }
+  if (dataRows.length < 1) return { ok: false, error: 'No student rows found below the header.' };
+
+  // Classify each column. Column 0 must be the student ID column.
+  // Column 1 might be a student name (optional). Trailing columns
+  // named Raw Score / Score / Total / Percentage / % / Letter Grade /
+  // Grade are derived — drop them. The remaining columns are items.
+  var isDerived = function (label) {
+    var s = (label || '').toLowerCase().replace(/\s+/g, '');
+    return s === 'rawscore' || s === 'score' || s === 'total' ||
+           s === 'percentage' || s === 'percent' || s === '%' ||
+           s === 'lettergrade' || s === 'grade' || s === 'pass' ||
+           s === 'passfail' || s === 'result';
+  };
+  var isNameCol = function (label) {
+    var s = (label || '').toLowerCase().replace(/\s+/g, '');
+    return s === 'studentname' || s === 'name' || s === 'fullname' || s === 'student';
+  };
+  var isIdCol = function (label) {
+    var s = (label || '').toLowerCase().replace(/\s+/g, '');
+    return s === 'studentid' || s === 'id' || s === 'respondentid' || s === 'respondent';
+  };
+  // Drop trailing derived columns first so they don't get treated as items.
+  var lastItemCol = header.length - 1;
+  while (lastItemCol >= 0 && isDerived(header[lastItemCol])) lastItemCol--;
+  if (lastItemCol < 2) return { ok: false, error: 'Not enough item columns found after dropping derived columns (Raw Score, Percentage, etc.).' };
+
+  // Identify the ID and (optional) name columns at the start.
+  var idCol = 0;
+  var nameCol = -1;
+  if (header.length > 1 && isNameCol(header[1])) nameCol = 1;
+  // If column 0 doesn't look like an ID but column 1 does, swap. Most
+  // exports put ID first, so this is a defensive case.
+  if (!isIdCol(header[0]) && header.length > 1 && isIdCol(header[1])) {
+    idCol = 1;
+    if (nameCol === 1) nameCol = -1;
+  }
+  var firstItemCol = Math.max(idCol, nameCol) + 1;
+  if (firstItemCol < 1) firstItemCol = 1;
+  if (lastItemCol < firstItemCol + 1) return { ok: false, error: 'Could not locate at least 2 item columns between ID and the derived columns.' };
+
+  var itemLabels = [];
+  for (var c = firstItemCol; c <= lastItemCol; c++) itemLabels.push(header[c] || ('Q' + (c - firstItemCol + 1)));
+  var k = itemLabels.length;
+
+  // Build student rows. Each item cell must be 1, 0, blank, or a
+  // simple correct/incorrect marker. Anything else trips the
+  // pre-scored shape so we fail back to the answer-key path.
+  var ok1 = function (cell) {
+    var s = (cell || '').toString().trim().toLowerCase();
+    if (s === '' || s === '1' || s === '0') return s;
+    if (s === 'true'  || s === 't' || s === 'correct'   || s === 'right' || s === 'y' || s === 'yes') return '1';
+    if (s === 'false' || s === 'f' || s === 'incorrect' || s === 'wrong' || s === 'n' || s === 'no')  return '0';
+    return null;
+  };
+  var rows = [];
+  for (var r = 0; r < dataRows.length; r++) {
+    var rr = dataRows[r];
+    var sid = (rr[idCol] || '').toString().trim() || ('Student_' + (r + 1));
+    if (nameCol >= 0) {
+      var nm = (rr[nameCol] || '').toString().trim();
+      if (nm) sid = sid + ' — ' + nm;
+    }
+    var answers = [];
+    for (var c2 = firstItemCol; c2 <= lastItemCol; c2++) {
+      var v = ok1(rr[c2]);
+      if (v === null) return { ok: false, error: 'Row ' + (r + headerIdx + 2) + ', item ' + (c2 - firstItemCol + 1) + ' has value "' + (rr[c2] || '') + '" which is not 0 / 1 / blank / correct / incorrect.' };
+      answers.push(v);
+    }
+    rows.push({ student_id: sid, answers: answers });
+  }
+  if (!rows.length) return { ok: false, error: 'No student rows after filtering.' };
+
+  // Synthesize an answer key of all "1"s. The CTT engine will then
+  // score every cell of "1" as a hit and every "0" as a miss, which
+  // is exactly the encoding the file already carries.
+  var answerKey = [];
+  for (var i2 = 0; i2 < k; i2++) answerKey.push('1');
+
+  return {
+    ok: true,
+    answerKey:  answerKey,
+    itemLabels: itemLabels,
+    skillTags:  null,
+    rows:       rows,
+    preScored:  true,
+  };
 }
 
 function _splitCsvToGrid(text) {
@@ -16131,10 +17821,31 @@ function swEnsureLandingStyles() {
     '.sw-landing .la-stat span   { font:500 11px/1 Inter,sans-serif; color:var(--text-mute); letter-spacing:.04em; text-transform:uppercase; }',
     '.sw-landing .la-strip-arrow { margin-left:auto; color:var(--text-mute); font-size:14px; }',
 
+    // First-run journey callout. Sits between the hero and the quick-action
+    // tiles, teaches the five stages (Build > Distribute > Collect > Analyze
+    // > Defend) before the user navigates. Dismissible; once dismissed the
+    // localStorage flag sw.survey.journey-callout hides it on every reload.
+    // Scoped to .sw-landing[data-studio="survey"] so other studios can later
+    // ship their own variants.
+    '.sw-landing .la-journey { position:relative; z-index:2; margin:0 64px 28px; padding:20px 24px 22px; background:rgba(255,255,255,0.72); border:1px solid var(--la-accent-soft); border-radius:14px; backdrop-filter:saturate(180%) blur(8px); -webkit-backdrop-filter:saturate(180%) blur(8px); }',
+    '.sw-landing .la-journey-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }',
+    '.sw-landing .la-journey-eye { font:600 10.5px/1 Inter,system-ui,sans-serif; letter-spacing:0.12em; text-transform:uppercase; color:var(--la-accent); }',
+    '.sw-landing .la-journey-title { font:600 13px/1.3 Inter,system-ui,sans-serif; color:var(--text); margin-left:10px; }',
+    '.sw-landing .la-journey-dismiss { background:transparent; border:0; padding:4px 10px; color:var(--text-mute); cursor:pointer; font:500 12px/1 Inter,system-ui,sans-serif; border-radius:999px; }',
+    '.sw-landing .la-journey-dismiss:hover { color:var(--text); background:var(--la-accent-soft); }',
+    '.sw-landing .la-journey-steps { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; }',
+    '.sw-landing .la-journey-step { display:flex; flex-direction:column; gap:6px; padding:12px 12px 14px; background:#fff; border:1px solid var(--border); border-radius:10px; }',
+    '.sw-landing .la-journey-step-head { display:flex; align-items:center; gap:8px; }',
+    '.sw-landing .la-journey-step-num { width:22px; height:22px; border-radius:999px; background:var(--la-accent); color:#fff; display:inline-flex; align-items:center; justify-content:center; font:700 11.5px/1 Inter,sans-serif; flex-shrink:0; }',
+    '.sw-landing .la-journey-step-name { font:600 13px/1.2 Inter,system-ui,sans-serif; color:var(--text); }',
+    '.sw-landing .la-journey-step-body { font:400 12px/1.45 Inter,system-ui,sans-serif; color:var(--text-mute); }',
+
     '@media (max-width:900px) {' +
       '.sw-landing .la-hero { grid-template-columns:1fr; padding:150px 28px 24px; }' +
       '.sw-landing .la-tiles { grid-template-columns:repeat(2,1fr); padding:8px 28px 36px; }' +
       '.sw-landing .la-strip { padding:16px 28px; flex-wrap:wrap; }' +
+      '.sw-landing .la-journey { margin:0 28px 24px; padding:16px 16px 18px; }' +
+      '.sw-landing .la-journey-steps { grid-template-columns:repeat(2,1fr); }' +
     '}',
 
     // === Welcome picker ===========================================
@@ -16280,8 +17991,8 @@ function swBuildWelcomeHTML(opts) {
         }) +
         card({
           studio: 'testitem', route: 'tests',
-          title: 'Item Analysis Studio', word: 'Diagnose',
-          badge: 'Coming soon', badgeMuted: true,
+          title: 'Test & Item Analysis Studio', word: 'Diagnose',
+          badge: 'Early access', badgeMuted: true,
           icon: '<svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg>',
         }) +
         card({
@@ -16379,22 +18090,22 @@ function swBuildMMLandingHTML(opts) {
     '</section>';
 }
 
-// Test & Item Analysis Studio landing, blue palette, COMING SOON
-// badge. CTA shows a coming-soon placeholder; existing /#/tests content
-// renders below as an early-access preview.
+// Test & Item Analysis Studio landing, blue palette. The studio's
+// promise is decision support, not scoring: "is the assessment strong
+// enough to support the decision you're about to make with it?"
 function swBuildTestLandingHTML(opts) {
   const name = opts.name || 'there';
   return '' +
     '<section class="sw-landing" data-studio="testitem">' +
       '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg></div></div>' +
-      '<span class="la-wm wm1">T</span><span class="la-wm wm2">T</span><span class="la-wm wm3">T</span><span class="la-wm wm4">T</span>' +
+      '<span class="la-wm wm1">T</span><span class="la-wm wm2">I</span><span class="la-wm wm3">A</span><span class="la-wm wm4">T</span>' +
       '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
       '<div class="la-hero">' +
         '<div class="la-text">' +
-          '<h2 class="la-title">Item Analysis Studio <span class="la-badge muted">Coming Soon</span></h2>' +
-          '<h3 class="la-sub">Before you trust the score, check the instrument.</h3>' +
-          '<p class="la-body">Classical statistics and item-response theory side by side: difficulty, discrimination, distractor analysis, 1PL/2PL/3PL models, and information curves. Catch the items dragging your test before they reach a student.</p>' +
-          '<a class="la-cta disabled" aria-disabled="true">Coming soon, early access below</a>' +
+          '<h2 class="la-title">Test &amp; Item Analysis Studio <span class="la-badge">Early access</span></h2>' +
+          '<h3 class="la-sub">Strong enough to support the decision?</h3>' +
+          '<p class="la-body">A test score is only as good as the items behind it, and an item is only as good as the decision it can defend. Item difficulty, discrimination, distractor health, cognitive demand, and rubric integrity roll into two branded scores: the ReliCheck Item Strength Score and the Assessment Strength Index. Plain-language interpretation tells you whether to trust the call.</p>' +
+          '<a class="la-cta" data-tia-action="open">Open the workstation <span class="arr">&rarr;</span></a>' +
         '</div>' +
         '<div class="la-graphic">' +
           '<svg viewBox="0 0 220 200" aria-hidden="true">' +
@@ -16412,32 +18123,32 @@ function swBuildTestLandingHTML(opts) {
         '</div>' +
       '</div>' +
       '<div class="la-tiles">' +
-        '<a class="la-tile" data-test-action="scroll">' +
+        '<a class="la-tile" data-tia-action="open">' +
           '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
-          '<div class="la-tile-lab">Import test</div>' +
-          '<div class="la-tile-sub">Responses + answer key</div>' +
+          '<div class="la-tile-lab">Start a project</div>' +
+          '<div class="la-tile-sub">Set the decision, then load data</div>' +
         '</a>' +
-        '<a class="la-tile" data-test-action="scroll">' +
+        '<a class="la-tile" data-tia-action="open">' +
           '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></div>' +
-          '<div class="la-tile-lab">Item statistics</div>' +
-          '<div class="la-tile-sub">Classical difficulty + discrimination</div>' +
+          '<div class="la-tile-lab">Item Strength Score</div>' +
+          '<div class="la-tile-sub">Per-item health, one number</div>' +
         '</a>' +
-        '<a class="la-tile" data-test-action="scroll">' +
-          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 14c0-5 4-8 8-8s8 3 8 8"/><path d="M2 18h20"/></svg></div>' +
-          '<div class="la-tile-lab">IRT models</div>' +
-          '<div class="la-tile-sub">1PL / 2PL / 3PL fit</div>' +
+        '<a class="la-tile" data-tia-action="open">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>' +
+          '<div class="la-tile-lab">Assessment Strength Index</div>' +
+          '<div class="la-tile-sub">Whole-test defensibility</div>' +
         '</a>' +
-        '<a class="la-tile" data-test-action="scroll">' +
-          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/></svg></div>' +
-          '<div class="la-tile-lab">Early-access preview</div>' +
-          '<div class="la-tile-sub">Browse what&rsquo;s there today</div>' +
+        '<a class="la-tile" data-tia-action="open">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h10"/><path d="M4 18h16"/><circle cx="18" cy="12" r="2"/></svg></div>' +
+          '<div class="la-tile-lab">Plain-language interpretation</div>' +
+          '<div class="la-tile-sub">What it means, what to do</div>' +
         '</a>' +
       '</div>' +
       '<div class="la-strip">' +
-        '<div class="la-stat"><strong>COMING SOON</strong><span>Studio status</span></div>' +
-        '<div class="la-stat"><strong>4</strong><span>Models planned</span></div>' +
-        '<div class="la-stat"><strong>Early</strong><span>Access available below</span></div>' +
-        '<span class="la-strip-arrow">&darr; Scroll for early access</span>' +
+        '<div class="la-stat"><strong>2</strong><span>Branded scores</span></div>' +
+        '<div class="la-stat"><strong>4</strong><span>Workflow stages</span></div>' +
+        '<div class="la-stat"><strong>3</strong><span>Demand &middot; voice &middot; rubric lenses</span></div>' +
+        '<span class="la-strip-arrow">&darr; Workstation below</span>' +
       '</div>' +
     '</section>';
 }
@@ -16537,6 +18248,41 @@ function swBuildSurveyLandingHTML(opts) {
           '</svg>' +
         '</div>' +
       '</div>' +
+      // First-run journey callout. Seeds the five-stage vocabulary
+      // before the user navigates. Hidden once dismissed via
+      // swWireSurveyLandingJourney (localStorage key:
+      // sw.survey.journey-callout).
+      '<div class="la-journey" id="laJourney">' +
+        '<div class="la-journey-head">' +
+          '<div>' +
+            '<span class="la-journey-eye">The journey</span>' +
+            '<span class="la-journey-title">How Survey Studio works</span>' +
+          '</div>' +
+          '<button type="button" class="la-journey-dismiss" id="laJourneyDismiss" aria-label="Dismiss this callout">Got it &times;</button>' +
+        '</div>' +
+        '<div class="la-journey-steps">' +
+          '<div class="la-journey-step">' +
+            '<div class="la-journey-step-head"><span class="la-journey-step-num">1</span><span class="la-journey-step-name">Build</span></div>' +
+            '<div class="la-journey-step-body">Frame items so each one maps to a construct you can defend.</div>' +
+          '</div>' +
+          '<div class="la-journey-step">' +
+            '<div class="la-journey-step-head"><span class="la-journey-step-num">2</span><span class="la-journey-step-name">Distribute</span></div>' +
+            '<div class="la-journey-step-body">Send to respondents while tracking who you reached.</div>' +
+          '</div>' +
+          '<div class="la-journey-step">' +
+            '<div class="la-journey-step-head"><span class="la-journey-step-num">3</span><span class="la-journey-step-name">Collect</span></div>' +
+            '<div class="la-journey-step-body">Quality gates run as responses arrive, not after.</div>' +
+          '</div>' +
+          '<div class="la-journey-step">' +
+            '<div class="la-journey-step-head"><span class="la-journey-step-num">4</span><span class="la-journey-step-name">Analyze</span></div>' +
+            '<div class="la-journey-step-body">Reliability, validity, and the Strength Index in one place.</div>' +
+          '</div>' +
+          '<div class="la-journey-step">' +
+            '<div class="la-journey-step-head"><span class="la-journey-step-num">5</span><span class="la-journey-step-name">Defend</span></div>' +
+            '<div class="la-journey-step-body">Export an evidence trail reviewers will trust.</div>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
       '<div class="la-tiles">' +
         '<a class="la-tile" data-route="create">' +
           '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
@@ -16566,6 +18312,23 @@ function swBuildSurveyLandingHTML(opts) {
         '<span class="la-strip-arrow">&darr; Scroll for dashboard</span>' +
       '</div>' +
     '</section>';
+}
+
+// Hide the first-run journey callout once dismissed and wire the
+// dismiss button. The localStorage key sw.survey.journey-callout is
+// set to "0" on dismiss; reads on every render so the callout never
+// reappears after the first acknowledgment.
+function swWireSurveyLandingJourney() {
+  const block = document.getElementById('laJourney');
+  if (!block) return;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem('sw.survey.journey-callout') === '0'; } catch (_) {}
+  if (dismissed) { block.style.display = 'none'; return; }
+  const btn = document.getElementById('laJourneyDismiss');
+  if (btn) btn.onclick = () => {
+    try { localStorage.setItem('sw.survey.journey-callout', '0'); } catch (_) {}
+    block.style.display = 'none';
+  };
 }
 
 // Home shell, same three-column pattern, but Home isn\'t project-scoped
@@ -27863,67 +29626,169 @@ async function renderDistribute(root, surveyId) {
     return;
   }
 
+  swEnsureBuilderShellStyles();
+
   const items     = s.item_count    || 0;
   const responses = s.response_count|| 0;
   const updated   = timeAgo(s.updated_at);
   const activeTab = state.distributeTab || 'method';
-  const tabs = [
-    { key: 'method',    label: 'Method' },
-    { key: 'contacts',  label: 'Contacts' },
-    { key: 'send',      label: 'Send' },
-    { key: 'status',    label: 'Status' },
-    { key: 'reminders', label: 'Reminders' },
-    { key: 'pulse',     label: 'Pulse' },
-    { key: 'channels',  label: 'Channels' },
+  const id    = escapeHtml(surveyId);
+  const title = escapeHtml(s.title || 'Untitled survey');
+  const meta  =
+    items + ' item' + (items === 1 ? '' : 's') +
+    ' &middot; ' + responses + ' response' + (responses === 1 ? '' : 's') +
+    (updated ? ' &middot; updated ' + escapeHtml(updated) : '');
+
+  // Workflow ribbon, Distribute stage is active here. Same builder/painter
+  // contract used by the Builder and Analyze shells so the visual stays
+  // identical across the studio.
+  const st = swDeriveWorkflowStatus(s);
+  const stageBtn = (key, label, route, isActive, opts) => {
+    const cls = isActive ? 'sw-stage on' : 'sw-stage';
+    const dotCls = 'dot' + (st[key] === 'done' ? ' done' : st[key] === 'half' ? ' half' : '');
+    const wantId = !(opts && opts.noId);
+    const idAttr = (route && wantId) ? (' data-id="' + id + '"') : '';
+    const dataRoute = route ? (' data-route="' + route + '"' + idAttr) : '';
+    return '<button class="' + cls + '"' + dataRoute + ' data-stage="' + key + '" type="button">' +
+      '<span class="' + dotCls + '"></span><span class="lbl">' + label + '</span></button>';
+  };
+  const sep = '<span class="sep" aria-hidden="true">&rsaquo;</span>';
+  const ribbon =
+    stageBtn('build',      'Build',      'builder',    false) + sep +
+    stageBtn('distribute', 'Distribute', null,         true)  + sep +
+    stageBtn('collect',    'Collect',    null,         false) + sep +
+    stageBtn('analyze',    'Analyze',    'analyze',    false) + sep +
+    stageBtn('defend',     'Defend',     'reports',    false, { noId: true });
+
+  // Sidebar groupings, honor the density rule (~5 sections) so the nav
+  // reads as part of the platform, not a sparse leftover.
+  const tabByKey = {
+    method:    { label: 'Method' },
+    contacts:  { label: 'Contacts' },
+    send:      { label: 'Send' },
+    reminders: { label: 'Reminders' },
+    status:    { label: 'Status' },
+    pulse:     { label: 'Pulse' },
+    channels:  { label: 'Channels' },
+  };
+  const groups = [
+    { head: 'Prepare',  keys: ['method','contacts'] },
+    { head: 'Send',     keys: ['send','reminders'] },
+    { head: 'Track',    keys: ['status','pulse'] },
+    { head: 'Channels', keys: ['channels'] },
   ];
+  const navItem = (k) => {
+    const t = tabByKey[k];
+    if (!t) return '';
+    const onCls = k === activeTab ? ' on' : '';
+    return '<button class="sw-leftnav-item' + onCls + '" data-swnav="' + k + '" type="button">' +
+      '<span class="dot"></span>' + escapeHtml(t.label) + '</button>';
+  };
+  const groupsHtml = groups.map(g =>
+    '<div class="sw-leftnav-section">' +
+      '<div class="sw-leftnav-section-head">' + g.head + '</div>' +
+      g.keys.map(navItem).join('') +
+    '</div>'
+  ).join('');
 
   root.innerHTML =
-    // Header bar -- same chrome as Analyze.
-    '<div class="analyze-head">' +
-      '<div class="analyze-title-row">' +
-        '<div class="analyze-title">' +
-          '<h1>' + escapeHtml(s.title || 'Untitled survey') + '</h1>' +
-          '<div class="pt-meta">Distribute . ' +
-            items + ' item' + (items === 1 ? '' : 's') +
-            ' . ' + responses + ' response' + (responses === 1 ? '' : 's') +
-            (updated ? ' . updated ' + updated : '') +
+    '<div class="sw-shell sw-shell-distribute" id="swShell">' +
+      '<div class="sw-topbar">' +
+        '<div class="sw-topbar-title">' +
+          '<h1>' + title + '</h1>' +
+          '<div class="meta">' + meta + '</div>' +
+        '</div>' +
+        '<div class="sw-topbar-spacer"></div>' +
+        '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
+        // Strength Index ring, persistent credibility signal. Reuses the
+        // Analyze IDs so swPaintAnalyzeSSI can paint it without a new
+        // helper, only one shell exists on screen at a time.
+        '<div class="sw-ssi-wrap">' +
+          '<button type="button" class="sw-ssi-ring" id="swAnalyzeSsiChip" data-route="analyze" data-id="' + id + '" title="Strength Index, click for the full breakdown">' +
+            '<svg viewBox="0 0 36 36" aria-hidden="true">' +
+              '<circle class="ring-track" cx="18" cy="18" r="15.915" />' +
+              '<circle class="ring-arc"   cx="18" cy="18" r="15.915" id="swAnalyzeSsiArc" />' +
+            '</svg>' +
+            '<span class="sw-ssi-ring-num">' +
+              '<span class="num" id="swAnalyzeSsiScore">--</span>' +
+              '<span class="den">/ 100</span>' +
+            '</span>' +
+          '</button>' +
+          '<div class="sw-ssi-label">' +
+            '<span class="eyebrow">Strength</span>' +
+            '<span class="status" id="swAnalyzeSsiStatus">Pending</span>' +
           '</div>' +
         '</div>' +
-        '<div class="analyze-actions">' +
-          '<a class="btn ghost" data-route="projects">All projects</a>' +
-          '<a class="btn ghost" data-route="builder" data-id="' + escapeHtml(surveyId) + '">Edit survey</a>' +
-          '<button class="btn ghost" type="button" id="distSettingsBtn" data-id="' + escapeHtml(surveyId) + '">Settings</button>' +
-          '<a class="btn ghost" data-route="analyze" data-id="' + escapeHtml(surveyId) + '">Open analytics</a>' +
-        '</div>' +
       '</div>' +
-      '<nav class="analyze-tabs">' +
-        tabs.map(t =>
-          '<a class="analyze-tab' + (t.key === activeTab ? ' on' : '') + '" data-dtab="' + t.key + '">' +
-            escapeHtml(t.label) +
-          '</a>'
-        ).join('') +
-      '</nav>' +
-    '</div>' +
-    '<div id="distributeTabBody"></div>';
+      '<div class="sw-studio" id="swStudio">' +
+        '<aside class="sw-leftnav" aria-label="Distribution sections">' +
+          '<div class="sw-leftnav-eyebrow">Workflow &middot; Distribute</div>' +
+          groupsHtml +
+          '<div class="sw-leftnav-section">' +
+            '<div class="sw-leftnav-section-head">Next stage</div>' +
+            '<a class="sw-leftnav-item" data-route="analyze" data-id="' + id + '"><span class="dot"></span>Analyze responses</a>' +
+          '</div>' +
+        '</aside>' +
+        '<main class="sw-workspace" id="swWorkspace">' +
+          '<div class="sw-workspace-actions">' +
+            '<a class="btn ghost" data-route="projects">All projects</a>' +
+            '<a class="btn ghost" data-route="builder" data-id="' + id + '">Edit survey</a>' +
+            '<button class="btn ghost" type="button" id="distSettingsBtn" data-id="' + id + '">Settings</button>' +
+            '<a class="btn ghost" data-route="analyze" data-id="' + id + '">Open analytics</a>' +
+          '</div>' +
+          '<div id="distributeTabBody"></div>' +
+        '</main>' +
+        '<aside class="sw-guidance" id="swGuidance" aria-label="Methodology guidance">' +
+          '<button class="sw-guidance-toggle" id="swGuidanceToggle" title="Hide guidance" type="button">&rsaquo;</button>' +
+          '<div class="sw-g-eyebrow"><span>Methodology</span></div>' +
+          '<div class="sw-g-title">Reaching the right respondents</div>' +
+          '<div class="sw-g-body">' +
+            '<p>Who you invite shapes what you can claim. A defensible sample is wide enough and representative enough that your findings generalize beyond the people who happened to answer.</p>' +
+            '<p>Pick a distribution method that matches the consent you offered. Email invitations let you track who responded; public links protect anonymity but you trade away coverage information.</p>' +
+            '<p>Reminders raise completion rate but can introduce recency effects. Send them on a fixed schedule, not on whim.</p>' +
+            '<p style="color:var(--text-mute);font-size:12.5px;">Workspace-specific guidance lands here in the next pass.</p>' +
+          '</div>' +
+        '</aside>' +
+        '<button class="sw-guidance-popout" id="swGuidancePopout" title="Show guidance" type="button">&lsaquo;</button>' +
+      '</div>' +
+    '</div>';
 
-  // Tab click handlers.
-  $all('.analyze-tab[data-dtab]').forEach(tEl => {
-    tEl.addEventListener('click', (e) => {
+  // Left-nav owns Distribute tab switching now. All transitions route
+  // through dSwitchTab so the active state, body render, and any future
+  // per-tab guidance follow one code path.
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(el => {
+    el.onclick = (e) => {
       e.preventDefault();
-      const key = tEl.getAttribute('data-dtab');
-      if (!key || key === state.distributeTab) return;
-      state.distributeTab = key;
-      $all('.analyze-tab[data-dtab]').forEach(x => x.classList.remove('on'));
-      tEl.classList.add('on');
-      renderDistributeTabBody(surveyId, s);
-    });
+      const key = el.getAttribute('data-swnav');
+      if (!key) return;
+      dSwitchTab(key);
+    };
   });
 
-  // Phase 153: Settings shortcut from the Distribute header.
+  // Settings shortcut from the workspace actions.
   const distSettings = $('#distSettingsBtn');
   if (distSettings) distSettings.addEventListener('click', () => {
     navigate('settings', surveyId);
   });
+
+  // Guidance pane collapse, mirrors Builder + Analyze shells. Per-route
+  // storage key so each studio remembers its own preference.
+  const studio = document.getElementById('swStudio');
+  if (studio) {
+    const applyGuidance = () => {
+      let collapsed = false;
+      try { collapsed = localStorage.getItem('sw.distribute.guidance') === '0'; } catch (_) {}
+      studio.classList.toggle('no-guidance', collapsed);
+    };
+    const gToggle = document.getElementById('swGuidanceToggle');
+    if (gToggle) gToggle.onclick = () => { try { localStorage.setItem('sw.distribute.guidance', '0'); } catch (_) {} applyGuidance(); };
+    const gPopout = document.getElementById('swGuidancePopout');
+    if (gPopout) gPopout.onclick = () => { try { localStorage.setItem('sw.distribute.guidance', '1'); } catch (_) {} applyGuidance(); };
+    applyGuidance();
+  }
+
+  // SSI ring uses the Analyze painter (same DOM IDs).
+  swPaintAnalyzeSSI(s);
 
   renderDistributeTabBody(surveyId, s);
 }
@@ -27942,7 +29807,10 @@ function renderDistributeTabBody(surveyId, survey) {
 function dSwitchTab(key) {
   if (state.distributeTab === key) return;
   state.distributeTab = key;
-  $all('.analyze-tab[data-dtab]').forEach(x => x.classList.toggle('on', x.getAttribute('data-dtab') === key));
+  // The Distribute shell uses the sw-leftnav now. Toggle the active class
+  // on the matching nav button so the sidebar reflects the new tab.
+  document.querySelectorAll('#swStudio [data-swnav]').forEach(x =>
+    x.classList.toggle('on', x.getAttribute('data-swnav') === key));
   const sid = findSurveyIdFromHash();
   const survey = (state.surveys || []).find(x => String(x.id) === String(sid));
   renderDistributeTabBody(sid, survey);
@@ -40273,11 +42141,36 @@ async function mmTabQuantAnalysis(body) {
   };
 
   // One-way ANOVA.
+  // Auto-drops categories with fewer than 2 observations — they can't
+  // contribute within-group variance (variance of a single point is
+  // undefined). Tracks which were dropped so the UI can name them in a
+  // non-blocking note ("2 categories with N<2 were excluded: ..."),
+  // instead of failing the whole analysis. Same statistical decision,
+  // much better UX. Only fails outright if fewer than 2 valid groups
+  // remain after the drop, or if all groups happen to be constant.
   const runAnova = (groups) => {
-    const keys = Object.keys(groups);
-    const arrs = keys.map(k => groups[k]);
-    if (arrs.length < 2) return { error: 'Need at least two groups.' };
-    if (arrs.some(a => a.length < 2)) return { error: 'Each group needs at least 2 observations.' };
+    const allKeys = Object.keys(groups);
+    const droppedGroups = [];
+    const validKeys = [];
+    const arrs = [];
+    allKeys.forEach(k => {
+      const a = groups[k] || [];
+      if (a.length < 2) {
+        droppedGroups.push({ name: k, n: a.length });
+      } else {
+        validKeys.push(k);
+        arrs.push(a);
+      }
+    });
+    if (arrs.length < 2) {
+      return {
+        error: 'Need at least two groups with 2+ observations each. ' +
+               (droppedGroups.length
+                 ? 'Dropped: ' + droppedGroups.map(g => g.name + ' (N=' + g.n + ')').join(', ') + '.'
+                 : ''),
+        dropped_groups: droppedGroups
+      };
+    }
     const allVals = arrs.reduce((a, b) => a.concat(b), []);
     const nTotal = allVals.length;
     const grandMean = allVals.reduce((s, v) => s + v, 0) / nTotal;
@@ -40289,13 +42182,25 @@ async function mmTabQuantAnalysis(body) {
     });
     const dfB = arrs.length - 1;
     const dfW = nTotal - arrs.length;
-    if (dfW <= 0 || ssw === 0) return { error: 'Insufficient within-group variance.' };
+    if (dfW <= 0 || ssw === 0) return { error: 'Insufficient within-group variance.', dropped_groups: droppedGroups };
     const msb = ssb / dfB, msw = ssw / dfW;
     const F = msb / msw;
     const p = fDistP(F, dfB, dfW);
     const etaSq = ssb / (ssb + ssw); // eta-squared
     return { test: 'anova', statistic: F, df: dfB + ',' + dfW, p_value: p, effect_size: etaSq, effect_label: 'eta-squared',
-             n_total: nTotal, summary: 'F(' + dfB + ',' + dfW + ') = ' + fmt(F) + ', p = ' + fmtP(p) + ', eta-sq = ' + fmt(etaSq, 3) };
+             n_total: nTotal,
+             // Group means + per-group N so post-hoc / pairwise UI can use them
+             // without redoing the bookkeeping.
+             group_stats: validKeys.map((k, i) => {
+               const a = arrs[i];
+               const m = a.reduce((s, v) => s + v, 0) / a.length;
+               const v = a.reduce((s, x) => s + (x - m) * (x - m), 0) / (a.length - 1);
+               return { name: k, n: a.length, mean: m, variance: v, sd: Math.sqrt(v) };
+             }),
+             dropped_groups: droppedGroups,
+             df_within: dfW,
+             ms_within: msw,
+             summary: 'F(' + dfB + ',' + dfW + ') = ' + fmt(F) + ', p = ' + fmtP(p) + ', eta-sq = ' + fmt(etaSq, 3) };
   };
 
   // Pearson correlation between two paired arrays.
@@ -41192,14 +43097,16 @@ async function mmTabQuantAnalysis(body) {
     }
   })();
 
-  // Render the ReliCheck analytics dashboard into the host card. Trim to the
-  // MM Studio quant subset by:
-  //   1. Hiding the survey toolbar row (title + All projects / Edit survey /
-  //      Settings / Distribute / Export PDF / Full Report / Draft report
-  //      paragraph / Delete). That row is .analyze-title-row.
-  //   2. Hiding the analytics tabs that don't belong here: Open-Ended (lives
-  //      on Qual Analysis), Trends ("Soon"), Action Priority ("Soon"; key is
-  //      'ipm' in the main app, not 'action_priority').
+  // Render the ReliCheck analytics dashboard into the host card. Trim away
+  // every piece of Survey-Studio chrome so only the analytics body shows
+  // inside MM Studio. The Survey Workstation shell was rewritten to use
+  // .sw-* class names; the prior trim still looked for .analyze-title-row,
+  // .analyze-tab, and .analyze-ai-rail, which no longer exist — so the
+  // whole survey topbar (title, Build/Distribute/Collect/Analyze/Defend
+  // ribbon, duplicate Strength ring), the Workflow·Analyze sidebar, the
+  // action toolbar (All projects / Edit survey / Settings / Distribute /
+  // Export PDF / Full Report / Draft report paragraph / Delete), and the
+  // right-hand Methodology rail all leaked straight through.
   const dashHost = body.querySelector('#mmQuantDashHost');
   if (dashHost && showFullDashboard) {
     const linkedId = analyticsSurveyId || analyticsDatasetId;
@@ -41211,29 +43118,59 @@ async function mmTabQuantAnalysis(body) {
         // both immediately and after a short delay to cover the late mount.
         const trim = () => {
           try {
-            // 1. Hide the survey toolbar row (title + action buttons).
-            dashHost.querySelectorAll('.analyze-title-row').forEach(el => { el.style.display = 'none'; });
-            // 2. Hide non-quant tabs.
-            // Phase 180: also hide Descriptives / Compare / Pre-Post from the
-            // top tab strip, those surfaces are reached through the v3 inner
-            // sidebar instead, so showing them here would duplicate navigation.
+            // 1. Suppress the entire Survey-Studio outer chrome. MM Studio
+            //    already provides the project header, trust journey ribbon,
+            //    Strength Index ring, workflow sidebar, and methodology
+            //    pane via its own v3 shell.
+            dashHost.querySelectorAll(
+              '.sw-topbar, .sw-workspace-actions, .sw-guidance, .sw-guidance-popout, ' +
+              '.analyze-title-row, .analyze-ai-rail'
+            ).forEach(el => { el.style.display = 'none'; });
+
+            // 2. Keep the inner Survey Workstation sub-sidebar (Workflow ·
+            //    Analyze → Strength / Readiness / Reliability / etc.) so
+            //    users can still switch between sub-tabs. MM Studio's outer
+            //    sidebar lists umbrella surfaces only (Survey Analysis,
+            //    Coded Variables, Descriptives, Recommendations, t-test,
+            //    ANOVA, Chi-square, Group Differences); these inner items
+            //    are the fine-grained diagnostics inside Survey Analysis.
+            //    Re-skin the sidebar so it looks subordinate to MM's outer
+            //    rail rather than competing with it.
+            dashHost.querySelectorAll('.sw-leftnav').forEach(el => {
+              el.style.background = '#fafbfc';
+              el.style.borderRight = '1px solid #eef0f3';
+              el.style.padding = '12px 10px';
+              el.style.fontSize = '12.5px';
+            });
+
+            // 3. The .sw-shell wrapper still applies a card background and
+            //    border. Strip it so the embedded dashboard sits flush
+            //    inside the MM Studio card.
+            dashHost.querySelectorAll('.sw-shell, .sw-workspace').forEach(el => {
+              el.style.background = 'transparent';
+              el.style.border = '0';
+              el.style.boxShadow = 'none';
+              el.style.padding = '0';
+              el.style.margin = '0';
+            });
+
+            // 4. Legacy compatibility — the old .analyze-tab strip and the
+            //    .analyze-body-wrap two-column grid still appear in a few
+            //    sub-tab renderers. Strip the non-quant tabs there too in
+            //    case any per-tab renderer mounts the old shell.
             const hideKeys = { 'openended': 1, 'trends': 1, 'ipm': 1,
                                'descriptives': 1, 'compare': 1, 'prepost': 1 };
             dashHost.querySelectorAll('.analyze-tab[data-tab-key]').forEach(t => {
               const k = t.getAttribute('data-tab-key');
               if (hideKeys[k]) t.style.display = 'none';
             });
-            // 3. Hide the 300px AI rail and reflow the body to single column.
-            //    The v3 guidance pane on the right already shows ReliCheck
-            //    Intelligence narration, so the rail just produces blank
-            //    space inside the workspace card.
-            dashHost.querySelectorAll('.analyze-ai-rail').forEach(el => { el.style.display = 'none'; });
             dashHost.querySelectorAll('.analyze-body-wrap').forEach(el => { el.style.gridTemplateColumns = '1fr'; });
           } catch (_) {}
         };
         trim();
         setTimeout(trim, 50);
         setTimeout(trim, 300);
+        setTimeout(trim, 1000);
       } catch (e) {
         dashHost.innerHTML =
           '<div style="padding:18px;color:#a33;font-size:13px;">' +
@@ -41435,12 +43372,33 @@ async function mmTabQuantAnalysis(body) {
   // machinery. Each button writes ONLY into its own slot.
   (function wireRecButtons() {
     const slotFor = (tid) => body.querySelector('#mmRecSlot_' + tid);
+    // Yellow banner naming any small categories that were auto-excluded from
+    // the test. Same statistical decision as before (a category with N<2
+    // contributes no within-group variance) but now reported transparently
+    // instead of blocking the whole analysis. Researchers reading a report
+    // need to know which groups were dropped and why.
+    const droppedNote = (r) => {
+      const dg = r && r.dropped_groups;
+      if (!Array.isArray(dg) || dg.length === 0) return '';
+      const list = dg.map(g => MM.esc(g.name) + ' (N=' + g.n + ')').join(', ');
+      return '<div style="margin-bottom:8px;padding:8px 12px;background:#fff8e1;border:1px solid #f0d68c;border-radius:6px;color:#7a5a00;font-size:12px;line-height:1.5;">' +
+        '<strong>' + dg.length + ' categor' + (dg.length === 1 ? 'y' : 'ies') + ' excluded</strong> for having fewer than 2 respondents: ' + list + '. The test ran on the remaining groups.' +
+      '</div>';
+    };
+
     const okRow = (r, varNote) => {
       if (!r) return '<div style="color:#a33;font-size:13px;">Test did not return a result.</div>';
-      if (r.error) return '<div style="color:#a33;font-size:13px;padding:8px 12px;background:#fdecec;border:1px solid #f5c2c2;border-radius:6px;">' + MM.esc(r.error) + '</div>';
+      if (r.error) {
+        // Error case — but still surface dropped-groups context if the test
+        // failed BECAUSE everything was dropped. The error message itself
+        // already names them (runAnova builds them into the string) so the
+        // yellow note here is supplemental, not redundant.
+        return '<div style="color:#a33;font-size:13px;padding:8px 12px;background:#fdecec;border:1px solid #f5c2c2;border-radius:6px;">' + MM.esc(r.error) + '</div>';
+      }
       const star = (r.p_value != null && r.p_value < 0.05) ? ' <span style="color:#1f6feb;font-weight:600;">*</span>' : '';
       const summary = (r.summary || '') + (varNote ? ' (' + varNote + ')' : '');
-      return '<div style="background:#f7faff;border:1px solid #d6e4ff;border-radius:8px;padding:10px 14px;font-size:13px;color:#23303d;">' +
+      return droppedNote(r) +
+        '<div style="background:#f7faff;border:1px solid #d6e4ff;border-radius:8px;padding:10px 14px;font-size:13px;color:#23303d;">' +
         '<div style="display:flex;flex-wrap:wrap;gap:10px 18px;">' +
           '<span><span style="color:#5a6470;">statistic:</span> <strong>' + fmt(r.statistic, 3) + '</strong></span>' +
           '<span><span style="color:#5a6470;">df:</span> <strong>' + (r.df != null ? r.df : '-') + '</strong></span>' +
