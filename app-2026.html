@@ -32131,18 +32131,42 @@ function renderMixedMethodsStudio(container, param) {
       const act = el.getAttribute('data-mm-action');
       if (act === 'new') { mmStartWizard(); return; }
       if (act === 'scroll') {
-        const tgt = container.querySelector('.mm-host');
+        const tgt = container.querySelector('.mm-lower');
         if (tgt) tgt.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
   });
-  // Below the landing hero, render the MM Studio picker shell (six-stop
-  // banner, MM project list, MM activity). Don\'s call: MM\'s lower
-  // section should be MM, not the Survey Studio Quick actions grid.
-  const mmHost = document.createElement('div');
-  mmHost.className = 'mm-host';
-  container.appendChild(mmHost);
-  mmRenderLanding(mmHost);
+  // Below the landing hero, render just two cards: Recent projects and
+  // Recent activity. Don\'s call after seeing the full mmRenderLanding
+  // shell: just these two things. We render the home-grid card wrappers
+  // by hand (rather than reusing drawHomeGrid, which would also paint
+  // Quick actions and Plan usage) and then call the two existing card
+  // renderers so the data and the click handlers stay in one place.
+  const lower = document.createElement('div');
+  lower.className = 'home-grid mm-lower';
+  lower.id = 'homeGrid';
+  lower.innerHTML =
+    '<section class="home-card home-card--recent" data-card-key="recent">' +
+      '<header class="card-head">' +
+        '<h2>Recent projects</h2>' +
+        '<div class="card-head-right"><a data-route="projects">View all</a></div>' +
+      '</header>' +
+      '<div class="card-body" id="homeCardBody-recent">' +
+        '<div class="loading-row"><div class="spinner"></div></div>' +
+      '</div>' +
+    '</section>' +
+    '<section class="home-card home-card--activity" data-card-key="activity">' +
+      '<header class="card-head">' +
+        '<h2>Recent activity</h2>' +
+        '<div class="card-head-right"></div>' +
+      '</header>' +
+      '<div class="card-body" id="homeCardBody-activity">' +
+        '<div class="loading-row"><div class="spinner"></div></div>' +
+      '</div>' +
+    '</section>';
+  container.appendChild(lower);
+  renderRecentProjectsCard();
+  renderRecentActivityCard();
 }
 
 // Starts the wizard from the welcome panel.
