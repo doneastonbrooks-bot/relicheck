@@ -14231,16 +14231,19 @@ function renderProjects(root) {
     { key: 'title',     label: 'Title (A-Z)' },
   ];
 
+  swEnsureLandingStyles();
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>Projects</h1>' +
-        '<div class="sub">' + (state.surveys || []).length + ' total. Surveys, tests, and datasets you own or share.</div>' +
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">Your projects.<br>All in one place.</h1>' +
+          '<p class="sw-page-sub">Create, organize, and collaborate on surveys, tests, and datasets with your team.</p>' +
+        '</div>' +
+        '<div class="sw-page-actions">' +
+          '<a class="btn primary" data-route="create">+ New project</a>' +
+        '</div>' +
       '</div>' +
-      '<div class="page-actions">' +
-        '<a class="btn primary" data-route="create">+ New project</a>' +
-      '</div>' +
-    '</div>' +
+    '</section>' +
 
     '<div class="proj-toolbar-sticky">' +
       '<div class="toolbar proj-toolbar-top">' +
