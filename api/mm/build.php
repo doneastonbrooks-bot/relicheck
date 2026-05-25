@@ -31,6 +31,16 @@ $mode            = clean_string((string)($body['mode'] ?? 'hybrid'), 16);
 $targetClusters  = (int)($body['target_clusters'] ?? 6);
 $rawCategories   = $body['user_categories'] ?? [];
 $outcomeFocus    = clean_string((string)($body['outcome_focus'] ?? ''), 200);
+// Per-question theme generation (tester feedback May 2026): when a
+// question_id is supplied, responses + saved categories are scoped to
+// THAT question only. The caller is expected to loop over each
+// open-ended question and call this endpoint once per question, so
+// the resulting codebook has question-specific themes (matching how
+// the main Analyze "Find themes" button already works), not generic
+// blob themes spanning every open-ended item.
+$questionId      = isset($body['question_id']) && $body['question_id'] !== '' && $body['question_id'] !== null
+                     ? (int)$body['question_id']
+                     : null;
 
 if ($projectId <= 0) fail('bad_input', 'Missing project_id.');
 if (!in_array($mode, ['auto', 'guided', 'hybrid'], true)) {
@@ -53,9 +63,20 @@ if ($mode === 'guided' && count($userCategories) < 2) {
 
 mm_require_project($pdo, $uid, $projectId);
 $responses  = mm_load_responses($pdo, $projectId, 3000);
+// If a question_id was supplied, scope the response set to just that
+// question. Responses are stored with question_id_raw per row when the
+// project was loaded with proper question-level metadata.
+if ($questionId !== null) {
+    $responses = array_values(array_filter($responses, function ($r) use ($questionId) {
+        return isset($r['question_id_raw']) && (int)$r['question_id_raw'] === $questionId;
+    }));
+}
 $totalCount = count($responses);
 if ($totalCount < 3) {
-    fail('insufficient_data', 'The project needs at least 3 text responses before the builder can run.');
+    fail('insufficient_data',
+        $questionId !== null
+            ? 'This question has only ' . $totalCount . ' text response(s). The builder needs at least 3 to find meaningful themes.'
+            : 'The project needs at least 3 text responses before the builder can run.');
 }
 
 $truncate = function (string $t, int $max = 600): string {
@@ -167,15 +188,35 @@ $summary = clean_string((string)($parsed['summary'] ?? ''), 600);
 $categoryNames = array_map(function ($r) { return $r['name']; }, $catRows);
 
 // Persist categories first.
+// When question_id is supplied, the delete + insert is scoped to that
+// question so a per-question loop doesn't wipe out the previous
+// question's themes. When question_id is null, the legacy whole-project
+// behavior is preserved.
 $pdo->beginTransaction();
 try {
-    $pdo->prepare('DELETE FROM mm_coded_responses WHERE project_id = :p AND coder_id = :u')->execute([':p' => $projectId, ':u' => $uid]);
-    $pdo->prepare('DELETE FROM mm_sentiment_scores WHERE project_id = :p')->execute([':p' => $projectId]);
-    $pdo->prepare('DELETE FROM mm_theme_categories WHERE project_id = :p AND source_mode <> "user"')->execute([':p' => $projectId]);
+    if ($questionId !== null) {
+        // Scoped delete: only auto-generated categories for this specific
+        // question. Coded responses linked to those categories cascade
+        // through the category_id reference.
+        $deleteCat = $pdo->prepare(
+            'DELETE FROM mm_theme_categories
+             WHERE project_id = :p AND question_id = :q AND source_mode <> "user"'
+        );
+        $deleteCat->execute([':p' => $projectId, ':q' => $questionId]);
+        // Sentiment + coded responses are still cleared because they'll
+        // be re-derived from the new categories in Pass 2.
+        $pdo->prepare('DELETE FROM mm_coded_responses WHERE project_id = :p AND coder_id = :u')->execute([':p' => $projectId, ':u' => $uid]);
+        $pdo->prepare('DELETE FROM mm_sentiment_scores WHERE project_id = :p')->execute([':p' => $projectId]);
+    } else {
+        // Legacy whole-project delete.
+        $pdo->prepare('DELETE FROM mm_coded_responses WHERE project_id = :p AND coder_id = :u')->execute([':p' => $projectId, ':u' => $uid]);
+        $pdo->prepare('DELETE FROM mm_sentiment_scores WHERE project_id = :p')->execute([':p' => $projectId]);
+        $pdo->prepare('DELETE FROM mm_theme_categories WHERE project_id = :p AND source_mode <> "user"')->execute([':p' => $projectId]);
+    }
 
     $insertCat = $pdo->prepare(
-        'INSERT INTO mm_theme_categories (project_id, name, description, source_mode, confidence, position)
-         VALUES (:p, :n, :d, :sm, :c, :pos)'
+        'INSERT INTO mm_theme_categories (project_id, name, description, source_mode, confidence, position, question_id)
+         VALUES (:p, :n, :d, :sm, :c, :pos, :q)'
     );
     $catIdByLower = [];
     $userCatStmt = $pdo->prepare('SELECT id, name FROM mm_theme_categories WHERE project_id = :p');
@@ -187,6 +228,7 @@ try {
         $insertCat->execute([
             ':p'   => $projectId, ':n' => $cr['name'], ':d' => $cr['description'],
             ':sm'  => $mode,      ':c' => $cr['confidence'], ':pos' => $i + 1,
+            ':q'   => $questionId, // null is fine — column allows NULL
         ]);
         $catIdByLower[mb_strtolower($cr['name'])] = (int)$pdo->lastInsertId();
     }
