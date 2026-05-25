@@ -5722,7 +5722,7 @@
        The .nav-item class on dropdown items is kept so the existing
        per-route active highlighter ($all(.nav-item)) still works. -->
   <aside class="sidebar" aria-label="Site navigation">
-    <a href="#/welcome" class="sidebar-brand" data-route="welcome" aria-label="ReliCheck home">
+    <a href="index.html" class="sidebar-brand" aria-label="ReliCheck marketing site">
       <img src="/logo-brand.svg" alt="ReliCheck" class="brand-logo" />
       <span class="tag" aria-hidden="true">2.0</span>
     </a>
@@ -11696,11 +11696,13 @@ function render() {
   // accents on /#/welcome (the picker has no studio identity yet).
   const appEl = document.querySelector('.app');
   if (appEl) appEl.setAttribute('data-current-route', r);
-  // Relabel the topnav Home link to reflect the studio the user is
-  // currently inside. The link still routes to /#/welcome; the label
-  // becomes a quiet orientation cue ("you are in Survey Studio").
+  // Topnav studio link. Label reflects the studio the user is currently
+  // inside; click takes them to that studio\'s landing page. Survey
+  // Studio routes (home, projects, builder, analyze, distribute,
+  // reports, create, upload-dataset) all route the link to /#/home.
+  // MM, Tests, Panels routes route to their own landings.
   const STUDIO_LABEL_FOR = {
-    welcome: 'Home',
+    welcome: 'Back to the beginning',
     home: 'Survey Studio', projects: 'Survey Studio', builder: 'Survey Studio',
     analyze: 'Survey Studio', distribute: 'Survey Studio', reports: 'Survey Studio',
     create: 'Survey Studio', 'upload-dataset': 'Survey Studio',
@@ -11708,8 +11710,17 @@ function render() {
     tests: 'Item Analysis Studio',
     panels: '360 Studio',
   };
-  const homeLink = document.querySelector('.nav-toplink[data-route="welcome"]');
-  if (homeLink) homeLink.textContent = STUDIO_LABEL_FOR[r] || 'Home';
+  const STUDIO_ROUTE_FOR = {
+    welcome: 'welcome',
+    home: 'home', projects: 'home', builder: 'home', analyze: 'home',
+    distribute: 'home', reports: 'home', create: 'home', 'upload-dataset': 'home',
+    mm: 'mm', tests: 'tests', panels: 'panels',
+  };
+  const homeLink = document.querySelector('.sidebar nav .nav-toplink');
+  if (homeLink) {
+    homeLink.textContent = STUDIO_LABEL_FOR[r] || 'Back to the beginning';
+    homeLink.setAttribute('data-route', STUDIO_ROUTE_FOR[r] || 'welcome');
+  }
   // Update breadcrumbs.
   const crumbs = $('#crumbs');
   if (crumbs) {
@@ -11746,8 +11757,18 @@ function render() {
       const s = (state.surveys || []).find(x => String(x.id) === String(p));
       const title = s ? (s.title || 'Untitled survey') : 'Survey';
       crumbs.innerHTML = '<a data-route="projects">Projects</a><span class="sep">&rsaquo;</span><a data-route="analyze" data-id="' + escapeHtml(p) + '">' + escapeHtml(title) + '</a><span class="sep">&rsaquo;</span><strong>Settings</strong>';
+    } else if (r === 'welcome') {
+      // Already at the beginning; no back link needed.
+      crumbs.innerHTML = '<strong>Welcome</strong>';
     } else {
-      crumbs.innerHTML = '<strong>' + escapeHtml(routes[r].title) + '</strong>';
+      // Every other route gets a "Back to the beginning" link at the
+      // start of the crumb trail so users always have a one-click
+      // return to the welcome picker. The route\'s own title still
+      // shows as the bold current-location after the separator.
+      crumbs.innerHTML =
+        '<a data-route="welcome">Back to the beginning</a>' +
+        '<span class="sep">&rsaquo;</span>' +
+        '<strong>' + escapeHtml(routes[r].title) + '</strong>';
     }
   }
   // Render content
