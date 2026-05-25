@@ -40121,7 +40121,7 @@ async function mmTabCodebook(host) {
           '</div>' +
           '<div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;">' +
             '<button class="btn ghost" id="mmCbAddManual" style="font-size:12px;padding:6px 12px;">+ Add a theme by hand</button>' +
-            '<button class="btn ghost" id="mmCbBuildAi" style="font-size:12px;padding:6px 12px;border-color:var(--primary);color:var(--primary);">&#9889; Refine with AI</button>' +
+            '<button class="btn ghost" id="mmCbBuildAi" style="font-size:12px;padding:6px 12px;border-color:var(--primary);color:var(--primary);">&#9889; Generate themes per question (AI)</button>' +
           '</div>' +
           '<div id="mmCbBuildStatus" style="font-size:12px;color:#5a6470;margin-top:10px;"></div>';
         return;
@@ -40145,23 +40145,40 @@ async function mmTabCodebook(host) {
       mmTabCodebook(host);
     })();
 
-    // Stage 2 button: "Refine with AI" calls the existing mmBuild endpoint.
-    // Same hard-constraint contract as elsewhere in the hybrid engine. On
-    // failure (overload, etc.) the Stage 1 list stays on screen so the
-    // researcher always has something to act on.
+    // Stage 2 button: "Refine with AI" now uses the per-question theme
+    // generator (themes-per-question.php) instead of the legacy global
+    // builder (build.php). Per tester feedback May 2026: the global
+    // builder produces generic blob themes spanning every open-ended
+    // question — the per-question generator produces specific themes
+    // for each question separately, matching the main Analyze view's
+    // "Find themes" behavior. Themes are persisted to mm_theme_categories
+    // with question_id set, and survive logout.
     const aiBtn = host.querySelector('#mmCbBuildAi');
     const aiStatus = host.querySelector('#mmCbBuildStatus');
     if (aiBtn) aiBtn.addEventListener('click', async () => {
       aiBtn.disabled = true;
       const orig = aiBtn.innerHTML;
-      aiBtn.innerHTML = 'Refining with AI...';
-      if (aiStatus) aiStatus.textContent = 'This usually takes 10-20 seconds.';
+      aiBtn.innerHTML = 'Generating per-question themes...';
+      if (aiStatus) aiStatus.textContent = 'AI is analyzing each open-ended question separately. This usually takes 15-60 seconds per question.';
       try {
-        await api.mmBuild({ project_id: p.id, mode: 'hybrid', target_clusters: 6, user_categories: [], outcome_focus: '' });
-        if (aiStatus) aiStatus.textContent = 'AI-generated themes saved. Reloading the Codebook...';
-        setTimeout(() => { mmTabCodebook(host); }, 500);
+        const r = await api.mmThemesPerQuestion(p.id);
+        // Stash the result so other views (Categories tab) can pick it up
+        // without re-fetching.
+        MM.state.themesPerQuestion = r;
+        const qCount = (r && Array.isArray(r.questions)) ? r.questions.length : 0;
+        const themeCount = (r && Array.isArray(r.questions))
+          ? r.questions.reduce((s, q) => s + ((q && Array.isArray(q.themes)) ? q.themes.length : 0), 0)
+          : 0;
+        if (aiStatus) {
+          aiStatus.innerHTML = '<span style="color:#1f6f3a;">' +
+            'Generated ' + themeCount + ' theme' + (themeCount === 1 ? '' : 's') +
+            ' across ' + qCount + ' question' + (qCount === 1 ? '' : 's') +
+            ' and saved them to your codebook. Reloading...' +
+            '</span>';
+        }
+        setTimeout(() => { mmTabCodebook(host); }, 700);
       } catch (e) {
-        if (aiStatus) aiStatus.innerHTML = '<span style="color:#8a5a00;">AI refinement unavailable right now (' + MM.esc((e && e.message) || 'unknown error') + '). The rule-based suggestions above are unaffected; add the ones you want.</span>';
+        if (aiStatus) aiStatus.innerHTML = '<span style="color:#8a5a00;">AI generation unavailable right now (' + MM.esc((e && e.message) || 'unknown error') + '). The rule-based suggestions above are unaffected; add the ones you want.</span>';
         aiBtn.disabled = false;
         aiBtn.innerHTML = orig;
       }
