@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReliCheck studio color identities &mdash; preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ====== Platform tokens (shared) ====== */
+  :root {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --panel-2: #fafbff;
+    --border: #e6eaf2;
+    --border-strong: #d3d9e6;
+    --text: #0b1733;
+    --text-soft: #4a5578;
+    --text-mute: #6b7691;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #eef1f7; font-family: 'Inter', system-ui, sans-serif; color: var(--text); }
+  .page { max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
+  .head { padding: 8px 0 24px; }
+  .head h1 { font: 700 26px/1.2 'Inter'; margin: 0 0 6px; }
+  .head p  { font: 400 14px/1.55 'Inter'; color: var(--text-soft); margin: 0; max-width: 720px; }
+  .stack { display: flex; flex-direction: column; gap: 24px; }
+
+  /* ====== Per-studio palette tokens, set on .mock[data-studio] ====== */
+  .mock[data-studio="survey"]   { --accent:#e85d3a; --accent-hover:#cc4a2a; --accent-soft:#fdeee9; --accent-tint:#fff7f3; --studio-name:'Survey Studio'; }
+  .mock[data-studio="mm"]       { --accent:#7c3aed; --accent-hover:#6d28d9; --accent-soft:#f0e7ff; --accent-tint:#faf6ff; --studio-name:'Mixed-Methods Studio'; }
+  .mock[data-studio="testitem"] { --accent:#2563eb; --accent-hover:#1d4ed8; --accent-soft:#e0ecff; --accent-tint:#f4f8ff; --studio-name:'Test & Item Analysis Studio'; }
+  .mock[data-studio="360"]      { --accent:#0d9488; --accent-hover:#0b7f74; --accent-soft:#d2f0ec; --accent-tint:#f0faf8; --studio-name:'360 Studio'; }
+
+  /* ====== Mock card chrome ====== */
+  .mock {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(11,23,51,0.04), 0 8px 24px rgba(11,23,51,0.06);
+  }
+  .mock-label {
+    padding: 10px 16px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    font: 600 12px/1.2 'Inter';
+    color: var(--text-mute);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .mock-label .swatch {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 600; letter-spacing: 0; text-transform: none; font-size: 12.5px; color: var(--text-soft);
+  }
+  .mock-label .swatch .chip { width: 14px; height: 14px; border-radius: 4px; background: var(--accent); border: 1px solid rgba(0,0,0,0.08); }
+
+  /* ====== Topnav row ====== */
+  .topnav {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 18px; padding: 0 18px; height: 50px;
+  }
+  .topnav .brand { font: 700 16px/1 'Inter'; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+  .topnav .brand .tag { font: 600 9px/1 'Inter'; padding: 2px 5px; border-radius: 3px; background: var(--accent-soft); color: var(--accent); }
+  .topnav nav { display: flex; align-items: center; gap: 4px; flex: 1; }
+  .topnav nav a { padding: 6px 11px; font: 500 12.5px/1 'Inter'; color: var(--text-soft); border-radius: 7px; text-decoration: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+  .topnav nav a:hover { background: var(--accent-tint); color: var(--text); }
+  .topnav nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .topnav nav a .chev { font-size: 8px; opacity: 0.7; }
+  .topnav .right { display: flex; gap: 6px; align-items: center; }
+  .topnav .btn { width: 26px; height: 26px; border-radius: 6px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-mute); display: inline-flex; align-items: center; justify-content: center; font: 600 11px/1 'Inter'; }
+  .topnav .av  { width: 26px; height: 26px; border-radius: 999px; background: linear-gradient(135deg, var(--accent), var(--accent-hover)); color: #fff; display: inline-flex; align-items: center; justify-content: center; font: 700 11px/1 'Inter'; }
+
+  /* ====== Crumbs strip ====== */
+  .crumbs { padding: 6px 18px; background: var(--panel-2); border-bottom: 1px solid var(--border); font: 500 11.5px/1 'Inter'; color: var(--text-mute); }
+  .crumbs strong { color: var(--text); }
+
+  /* ====== Shell: 3 columns (workflow nav, workspace, guidance) ====== */
+  .shell { display: grid; grid-template-columns: 200px minmax(0,1fr) 240px; background: var(--bg); min-height: 240px; }
+
+  /* Workflow ribbon */
+  .ribbon { padding: 10px 14px; background: #fff; border-bottom: 1px solid var(--border); grid-column: 1 / -1; display: flex; align-items: center; gap: 6px; }
+  .ribbon .stage { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: transparent; color: var(--text-soft); font: 600 11.5px/1 'Inter'; }
+  .ribbon .stage .dot { width: 7px; height: 7px; border-radius: 999px; background: #d3d9e6; }
+  .ribbon .stage .dot.done { background: var(--accent); }
+  .ribbon .stage .dot.half { background: linear-gradient(90deg, var(--accent) 50%, #fff 50%); border: 1px solid var(--accent); }
+  .ribbon .stage.on { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-soft); }
+  .ribbon .sep { color: var(--text-mute); font-size: 10px; }
+  .ribbon-wrap { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
+  .ssi { display: inline-flex; align-items: center; gap: 4px; }
+  .ssi svg { width: 42px; height: 42px; transform: rotate(-90deg); }
+  .ssi .track { fill: none; stroke: #eef0f3; stroke-width: 3.4; }
+  .ssi .arc   { fill: none; stroke: var(--accent); stroke-width: 3.4; stroke-linecap: round; stroke-dasharray: 78 22; }
+  .ssi .lab   { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; }
+  .ssi .eye   { font: 600 9px/1 'Inter'; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-mute); }
+  .ssi .num   { font: 600 11px/1 'Inter'; color: var(--text); }
+
+  /* Left workflow nav */
+  .leftnav { background: #fff; border-right: 1px solid var(--border); padding: 10px 8px; }
+  .leftnav .eye { font: 600 9px/1 'Inter'; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); padding: 4px 8px 8px; }
+  .leftnav .sec { font: 600 10.5px/1 'Inter'; color: var(--text-soft); padding: 6px 8px 4px; }
+  .leftnav .item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font: 500 12px/1.2 'Inter'; color: var(--text); cursor: pointer; }
+  .leftnav .item:hover { background: var(--accent-tint); color: var(--accent); }
+  .leftnav .item.on { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .leftnav .item .dot { width: 6px; height: 6px; border-radius: 999px; background: #d3d9e6; flex-shrink: 0; }
+  .leftnav .item.on .dot { background: var(--accent); }
+
+  /* Center workspace */
+  .ws { padding: 16px 18px; overflow: hidden; }
+  .ws h3 { font: 600 15px/1.2 'Inter'; margin: 0 0 6px; }
+  .ws p  { font: 400 12.5px/1.55 'Inter'; color: var(--text-soft); margin: 0 0 12px; }
+  .ws .btnrow { display: flex; gap: 8px; }
+  .ws .btn-primary { padding: 7px 14px; border: 0; border-radius: 7px; background: var(--accent); color: #fff; font: 600 12.5px/1 'Inter'; cursor: pointer; }
+  .ws .btn-primary:hover { background: var(--accent-hover); }
+  .ws .btn-ghost   { padding: 7px 14px; border: 1px solid var(--border); border-radius: 7px; background: #fff; color: var(--text); font: 500 12.5px/1 'Inter'; cursor: pointer; }
+  .ws .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; font: 600 10.5px/1 'Inter'; background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+
+  /* Right guidance */
+  .guide { background: #fff; border-left: 1px solid var(--border); padding: 12px; }
+  .guide .eye { font: 600 9.5px/1 'Inter'; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 4px; }
+  .guide h4   { font: 600 13px/1.3 'Inter'; margin: 0 0 6px; color: var(--text); }
+  .guide p    { font: 400 12px/1.5 'Inter'; color: var(--text-soft); margin: 0; }
+
+  .legend {
+    margin-top: 22px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: 400 13px/1.55 'Inter';
+    color: var(--text-soft);
+  }
+  .legend strong { color: var(--text); }
+  .legend ul { margin: 8px 0 0; padding-left: 20px; }
+  .legend li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="head">
+    <h1>Studio color identities &mdash; preview</h1>
+    <p>Same chrome, same nav, same workflow ribbon &mdash; one accent color shifts per studio. Tint is <strong>subtle</strong> (Office-style): accent only on dots, active pills, ring arc, primary buttons. Brand wordmark and topnav stay platform-neutral so the platform identity remains the constant.</p>
+  </div>
+
+  <div class="stack">
+
+    <!-- =================== SURVEY STUDIO (coral) =================== -->
+    <div class="mock" data-studio="survey">
+      <div class="mock-label">
+        <span>Survey Studio &mdash; coral (current flagship)</span>
+        <span class="swatch"><span class="chip"></span> #e85d3a</span>
+      </div>
+      <div class="topnav">
+        <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+        <nav>
+          <a class="active">Home</a>
+          <a class="active">Studios <span class="chev">&#9662;</span></a>
+          <a>Suites <span class="chev">&#9662;</span></a>
+          <a>Resources <span class="chev">&#9662;</span></a>
+          <a>Workspace <span class="chev">&#9662;</span></a>
+        </nav>
+        <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+      </div>
+      <div class="crumbs"><strong>Projects</strong> &rsaquo; Workplace Equity Survey &rsaquo; <strong>Analyze</strong></div>
+      <div class="shell">
+        <div class="ribbon">
+          <div class="ribbon-wrap" style="grid-column: 1 / -1; width: 100%;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div class="stage"><span class="dot done"></span>Build</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Distribute</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Collect</div><span class="sep">&rsaquo;</span>
+              <div class="stage on"><span class="dot half"></span>Analyze</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>Defend</div>
+            </div>
+            <div class="ssi">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="track" cx="18" cy="18" r="15.915"/>
+                <circle class="arc"   cx="18" cy="18" r="15.915"/>
+              </svg>
+              <div class="lab"><span class="eye">Strength</span><span class="num">78 / 100</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="leftnav">
+          <div class="eye">Workflow &middot; Analyze</div>
+          <div class="sec">Strength</div>
+          <div class="item on"><span class="dot"></span>Strength Index</div>
+          <div class="item"><span class="dot"></span>Readiness</div>
+          <div class="sec">Instrument quality</div>
+          <div class="item"><span class="dot"></span>Reliability</div>
+          <div class="item"><span class="dot"></span>Validity</div>
+        </div>
+        <div class="ws">
+          <h3>Strength Index</h3>
+          <p><span class="pill">Strong</span>Reliability + validity + sampling + quality combine into a single defensibility score.</p>
+          <div class="btnrow"><button class="btn-primary">Draft paragraph (AI)</button><button class="btn-ghost">Export PDF</button></div>
+        </div>
+        <div class="guide">
+          <div class="eye">Methodology</div>
+          <h4>The headline number</h4>
+          <p>Combines reliability, validity, sampling adequacy, and response quality into a single 0&ndash;100 score.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== MM STUDIO (purple) =================== -->
+    <div class="mock" data-studio="mm">
+      <div class="mock-label">
+        <span>Mixed-Methods Studio &mdash; purple (integrative)</span>
+        <span class="swatch"><span class="chip"></span> #7c3aed</span>
+      </div>
+      <div class="topnav">
+        <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+        <nav>
+          <a>Home</a>
+          <a class="active">Studios <span class="chev">&#9662;</span></a>
+          <a>Suites <span class="chev">&#9662;</span></a>
+          <a>Resources <span class="chev">&#9662;</span></a>
+          <a>Workspace <span class="chev">&#9662;</span></a>
+        </nav>
+        <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+      </div>
+      <div class="crumbs"><strong>Mixed-Methods Studio</strong> &rsaquo; Workplace Equity Project &rsaquo; <strong>Integrate</strong></div>
+      <div class="shell">
+        <div class="ribbon">
+          <div class="ribbon-wrap" style="grid-column: 1 / -1; width: 100%;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div class="stage"><span class="dot done"></span>Setup</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Data Check</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Quan</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Qual</div><span class="sep">&rsaquo;</span>
+              <div class="stage on"><span class="dot half"></span>Integrate</div>
+            </div>
+            <div class="ssi">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="track" cx="18" cy="18" r="15.915"/>
+                <circle class="arc"   cx="18" cy="18" r="15.915"/>
+              </svg>
+              <div class="lab"><span class="eye">Strength</span><span class="num">82 / 100</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="leftnav">
+          <div class="eye">Workflow &middot; MM</div>
+          <div class="sec">Design</div>
+          <div class="item"><span class="dot"></span>Explanatory</div>
+          <div class="item on"><span class="dot"></span>Convergent</div>
+          <div class="sec">Integration</div>
+          <div class="item"><span class="dot"></span>Joint display</div>
+          <div class="item"><span class="dot"></span>Side-by-side</div>
+        </div>
+        <div class="ws">
+          <h3>Convergent Parallel</h3>
+          <p><span class="pill">Quan + Qual</span>Both tracks run in parallel; findings are compared side-by-side.</p>
+          <div class="btnrow"><button class="btn-primary">Open joint display</button><button class="btn-ghost">Edit column roles</button></div>
+        </div>
+        <div class="guide">
+          <div class="eye">Methodology</div>
+          <h4>When the numbers don&rsquo;t tell the whole story</h4>
+          <p>Convergent designs let quan and qual answer the same question independently, then triangulate.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== TEST & ITEM (blue) =================== -->
+    <div class="mock" data-studio="testitem">
+      <div class="mock-label">
+        <span>Test &amp; Item Analysis Studio &mdash; blue (analytical)</span>
+        <span class="swatch"><span class="chip"></span> #2563eb</span>
+      </div>
+      <div class="topnav">
+        <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+        <nav>
+          <a>Home</a>
+          <a class="active">Studios <span class="chev">&#9662;</span></a>
+          <a>Suites <span class="chev">&#9662;</span></a>
+          <a>Resources <span class="chev">&#9662;</span></a>
+          <a>Workspace <span class="chev">&#9662;</span></a>
+        </nav>
+        <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+      </div>
+      <div class="crumbs"><strong>Test &amp; Item Analysis</strong> &rsaquo; Final Exam Form A &rsaquo; <strong>Item statistics</strong></div>
+      <div class="shell">
+        <div class="ribbon">
+          <div class="ribbon-wrap" style="grid-column: 1 / -1; width: 100%;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div class="stage"><span class="dot done"></span>Import</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot done"></span>Key</div><span class="sep">&rsaquo;</span>
+              <div class="stage on"><span class="dot half"></span>Item stats</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>IRT</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>Report</div>
+            </div>
+            <div class="ssi">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="track" cx="18" cy="18" r="15.915"/>
+                <circle class="arc"   cx="18" cy="18" r="15.915"/>
+              </svg>
+              <div class="lab"><span class="eye">Test quality</span><span class="num">71 / 100</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="leftnav">
+          <div class="eye">Workflow &middot; Items</div>
+          <div class="sec">Classical</div>
+          <div class="item on"><span class="dot"></span>Difficulty &amp; discrimination</div>
+          <div class="item"><span class="dot"></span>Distractor analysis</div>
+          <div class="sec">IRT</div>
+          <div class="item"><span class="dot"></span>1PL / 2PL / 3PL</div>
+          <div class="item"><span class="dot"></span>Item information</div>
+        </div>
+        <div class="ws">
+          <h3>Difficulty &amp; discrimination</h3>
+          <p><span class="pill">42 items</span>Items below the discrimination threshold are flagged for revision.</p>
+          <div class="btnrow"><button class="btn-primary">Flag revision candidates</button><button class="btn-ghost">Export item table</button></div>
+        </div>
+        <div class="guide">
+          <div class="eye">Methodology</div>
+          <h4>Before you trust the score, check the instrument</h4>
+          <p>Low discrimination usually means the item is off-construct, not that the construct is wrong.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- =================== 360 STUDIO (teal) =================== -->
+    <div class="mock" data-studio="360">
+      <div class="mock-label">
+        <span>360 Studio &mdash; teal (growth)</span>
+        <span class="swatch"><span class="chip"></span> #0d9488</span>
+      </div>
+      <div class="topnav">
+        <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+        <nav>
+          <a>Home</a>
+          <a class="active">Studios <span class="chev">&#9662;</span></a>
+          <a>Suites <span class="chev">&#9662;</span></a>
+          <a>Resources <span class="chev">&#9662;</span></a>
+          <a>Workspace <span class="chev">&#9662;</span></a>
+        </nav>
+        <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+      </div>
+      <div class="crumbs"><strong>360 Studio</strong> &rsaquo; Q3 Leadership Review &rsaquo; <strong>Raters</strong></div>
+      <div class="shell">
+        <div class="ribbon">
+          <div class="ribbon-wrap" style="grid-column: 1 / -1; width: 100%;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div class="stage"><span class="dot done"></span>Set up</div><span class="sep">&rsaquo;</span>
+              <div class="stage on"><span class="dot half"></span>Raters</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>Collect</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>Synthesize</div><span class="sep">&rsaquo;</span>
+              <div class="stage"><span class="dot"></span>Coach</div>
+            </div>
+            <div class="ssi">
+              <svg viewBox="0 0 36 36" aria-hidden="true">
+                <circle class="track" cx="18" cy="18" r="15.915"/>
+                <circle class="arc"   cx="18" cy="18" r="15.915"/>
+              </svg>
+              <div class="lab"><span class="eye">Coverage</span><span class="num">68 / 100</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="leftnav">
+          <div class="eye">Workflow &middot; 360</div>
+          <div class="sec">Raters</div>
+          <div class="item on"><span class="dot"></span>Self</div>
+          <div class="item"><span class="dot"></span>Peers</div>
+          <div class="item"><span class="dot"></span>Manager</div>
+          <div class="sec">Reports</div>
+          <div class="item"><span class="dot"></span>Growth narrative</div>
+        </div>
+        <div class="ws">
+          <h3>Rater coverage</h3>
+          <p><span class="pill">5 of 7 raters</span>Two more peer raters needed before the report becomes defensible.</p>
+          <div class="btnrow"><button class="btn-primary">Send reminders</button><button class="btn-ghost">Add raters</button></div>
+        </div>
+        <div class="guide">
+          <div class="eye">Methodology</div>
+          <h4>When feedback should drive growth, not judgment</h4>
+          <p>Single-rater 360s skew toward whoever was loudest. Aim for 5+ raters per subject.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <strong>What stays the same across all four:</strong>
+    <ul>
+      <li>Brand wordmark (navy text, neutral)</li>
+      <li>Topnav structure (Home + 4 dropdowns + right side)</li>
+      <li>Crumbs strip, three-column shell, workflow ribbon, sw-leftnav, right guidance pane</li>
+      <li>Typography, spacing, layout grids</li>
+    </ul>
+    <strong>What changes per studio:</strong>
+    <ul>
+      <li>Active pill color (workflow ribbon, sw-leftnav active item, dropdown trigger when on a studio route)</li>
+      <li>Status dots (done / half) and the SSI ring arc</li>
+      <li>Primary button color + avatar gradient</li>
+      <li>Tint pill on the workspace headline</li>
+      <li>The studio version pill next to the brand wordmark</li>
+    </ul>
+    <p style="margin: 12px 0 0; color: var(--text-mute); font-size: 12.5px;">
+      Tell me <strong>yes</strong> if these palettes work, or which one to retune. Once locked, I roll them into the live app by adding <code>data-studio="..."</code> to <code>.app</code> on route change and exposing the accent tokens via CSS custom properties (one source of truth, four palettes, zero per-component edits).
+    </p>
+  </div>
+
+</div>
+</body>
+</html>

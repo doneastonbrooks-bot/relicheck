@@ -76,14 +76,14 @@
        collapse. Kept so any legacy code that sets the class doesn\'t
        throw, but it has no visual effect. */
     .app.sidebar-collapsed { /* no-op */ }
-    /* The old collapse-toggle button is hidden — horizontal nav doesn\'t
+    /* The old collapse-toggle button is hidden, horizontal nav doesn\'t
        collapse the same way. */
     .sidebar-toggle { display: none; }
     /* ============================================================
        MOBILE & RESPONSIVE POLISH
        ============================================================ */
 
-    /* --- P2: Tab strip — sidebar becomes horizontal scroll strip at ≤720px ---
+    /* --- P2: Tab strip, sidebar becomes horizontal scroll strip at ≤720px ---
        Instead of hiding the sidebar, collapse it into a top strip.
        The grid switches to a single column; the sidebar sits above main. */
     @media (max-width: 720px) {
@@ -156,7 +156,7 @@
         align-items: center;
         padding: 10px 12px;
       }
-      /* Checkboxes — larger hit area */
+      /* Checkboxes, larger hit area */
       .dist-table .ck-col input[type="checkbox"],
       .dist-table td input[type="checkbox"] {
         width: 20px;
@@ -207,7 +207,7 @@
     /* === Sidebar restyled as horizontal top nav (Option A) ===========
        The DOM element is still <aside class="sidebar"> but it now sits
        as the first row of the .app grid: 56px tall, full width, sticky.
-       Apple-product-page aesthetic — translucent white with a subtle
+       Apple-product-page aesthetic, translucent white with a subtle
        backdrop blur, navy text, coral active state. */
     .sidebar {
       background: rgba(255, 255, 255, 0.88);
@@ -290,7 +290,7 @@
     .nav-item:hover .icon, .nav-item.active .icon { opacity: 1; color: currentColor; }
     /* === Themed dropdowns (Studios / Suites / Resources / Workspace) ==
        Four parallel triggers in the topnav; each opens a richer panel
-       than the old More dropdown — items carry a title + one-line
+       than the old More dropdown, items carry a title + one-line
        descriptor so the panels feel like macOS menu bars rather than
        quick-access lists. */
     .nav-drop {
@@ -380,7 +380,7 @@
     }
     .nav-badge.muted { background: var(--bg-soft, var(--bg)); color: var(--text-mute); }
 
-    /* Standalone top-level link (no dropdown) — Home. Visually matches a
+    /* Standalone top-level link (no dropdown), Home. Visually matches a
        .nav-drop-trigger so the strip reads as a single row of peers, but
        no chevron and no panel. Inherits .nav-item active styling so the
        existing route-active highlighter ($all('.nav-item')) lights it
@@ -400,11 +400,11 @@
     }
     .nav-toplink:hover { background: var(--accent-tint); color: var(--text); }
     .nav-toplink.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
-    /* The global .nav-item rules add icon styling — neutralize for the
+    /* The global .nav-item rules add icon styling, neutralize for the
        standalone link since it has no icon child. */
     .nav-toplink .icon { display: none; }
 
-    /* Plan label inside the Workspace dropdown — small footer under the
+    /* Plan label inside the Workspace dropdown, small footer under the
        items, separated by a thin rule. */
     .nav-drop-foot {
       margin-top: 8px;
@@ -425,7 +425,7 @@
       color: var(--text);
     }
 
-    /* === Topbar — slimmed to a thin crumbs strip beneath the topnav.
+    /* === Topbar, slimmed to a thin crumbs strip beneath the topnav.
        The right side (search/notifs/avatar/user menu) has moved into
        the topnav itself, so the topbar is just for breadcrumbs now. */
     .topbar {
@@ -622,19 +622,19 @@
     .pill.review::before { content: "~\00a0"; }
     .pill.warn::before   { content: "!\00a0"; }
 
-    /* Sentiment pills — shape prefix */
+    /* Sentiment pills, shape prefix */
     .oe-resp .sent-pill.positive::before { content: "✓\00a0"; }
     .oe-resp .sent-pill.negative::before { content: "!\00a0"; }
     .oe-resp .sent-pill.mixed::before    { content: "~\00a0"; }
 
-    /* SSI verdict pills — shape prefix (pills already carry a text label,
+    /* SSI verdict pills, shape prefix (pills already carry a text label,
        this adds an extra cue without repeating the full word) */
     .ssi-verdict-pill[data-tone="good"]::before { content: "✓\00a0"; font-size: 12px; }
     .ssi-verdict-pill[data-tone="ok"]::before   { content: "~\00a0"; font-size: 12px; }
     .ssi-verdict-pill[data-tone="warn"]::before { content: "!\00a0"; font-size: 12px; }
     .ssi-verdict-pill[data-tone="bad"]::before  { content: "×\00a0"; font-size: 12px; }
 
-    /* Hide the decorative dot when a prefix symbol is present —
+    /* Hide the decorative dot when a prefix symbol is present,
        it becomes redundant and adds visual noise. */
     .ssi-verdict-pill[data-tone] .dot { display: none; }
 
@@ -3250,7 +3250,7 @@
     }
     .oe-resp .sent-pill.positive { background: #ecfdf3; color: var(--good); }
     .oe-resp .sent-pill.neutral  { background: var(--bg);  color: var(--text-mute); }
-    /* Blue for negative — CVD-safe (distinguishable under deuteranopia) */
+    /* Blue for negative, CVD-safe (distinguishable under deuteranopia) */
     .oe-resp .sent-pill.negative { background: #eff6ff; color: #1d4ed8; }
     .oe-resp .sent-pill.mixed    { background: #fff8e6; color: #8a5b00; }
 
@@ -3726,7 +3726,7 @@
     /* APA-style frequency tables in the descriptives surface. Replaces
        the older bar-based visualization (.desc-bars / .desc-bar-track)
        so the dashboard matches publication convention. Tables can be
-       copied directly into a manuscript — bars cannot. */
+       copied directly into a manuscript, bars cannot. */
     .desc-table {
       width: 100%;
       border-collapse: collapse;
@@ -5682,7 +5682,7 @@
 <div class="app" id="appRoot" style="display:none;">
 
   <!-- Top nav (Option A, themed dropdown variant). Site-level navigation
-       only — workstation-specific routes live in each shell\'s sw-leftnav.
+       only, workstation-specific routes live in each shell\'s sw-leftnav.
        Brand on the left is a clickable home link. Four dropdowns themed
        by what the user thinks about ("where you work / what you\'re
        working on / tools that span studios / your org and account").
@@ -5702,7 +5702,7 @@
            Survey Studio card from /#/welcome. -->
       <a class="nav-item nav-toplink" data-route="welcome" role="link">Home</a>
 
-      <!-- STUDIOS — where you work -->
+      <!-- STUDIOS, where you work -->
       <div class="nav-drop" data-drop="studios" data-routes="home projects builder analyze distribute reports mm tests panels">
         <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
           Studios <span class="chev" aria-hidden="true">&#9662;</span>
@@ -5768,7 +5768,7 @@
         </div>
       </div>
 
-      <!-- WORKSPACE — your org and account -->
+      <!-- WORKSPACE, your org and account -->
       <div class="nav-drop" data-drop="workspace" data-routes="team manager webhooks account">
         <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
           Workspace <span class="chev" aria-hidden="true">&#9662;</span>
@@ -5791,7 +5791,7 @@
             <div class="dropt">Account &amp; settings</div>
             <div class="dropb">Profile, security, and billing.</div>
           </a>
-          <!-- Plan label — populated by the existing fetch path that sets
+          <!-- Plan label, populated by the existing fetch path that sets
                #sidePlanLabel. Lives inside Workspace so the user can
                check their plan without leaving the dropdown. -->
           <div class="nav-drop-foot">
@@ -6138,7 +6138,7 @@ const api = {
   mmWizard(payload)                { return this._json('POST', '/api/mm/wizard.php', payload); },
   mmSeed()                         { return this._json('POST', '/api/mm/seed.php', {}); },
   mmQualityBrief(projectId)        { return this._json('POST', '/api/mm/quality-brief.php', { project_id: projectId }); },
-  // Phase 181 — Intercoder invitations + memberships.
+  // Phase 181, Intercoder invitations + memberships.
   mmCoderInviteCreate(payload)     { return this._json('POST', '/api/mm/coder-invite-create.php', payload); },
   mmCoderInviteList(projectId)     { return this._json('GET',  '/api/mm/coder-invite-list.php?project_id=' + encodeURIComponent(projectId)); },
   mmCoderInviteAction(payload)     { return this._json('POST', '/api/mm/coder-invite-list.php', payload); },
@@ -10019,7 +10019,7 @@ async function exportAnalyzeTabPdf(survey, tabKey, tabLabel) {
       y += maxH + 4;
     }
 
-    // ----- Findings (narrator findings list — may be in the sticky rail) -----
+    // ----- Findings (narrator findings list, may be in the sticky rail) -----
     const _findingBody = bodyEl ? Array.from(bodyEl.querySelectorAll('.tab-narrator-finding')) : [];
     const _findingRail = railEl ? Array.from(railEl.querySelectorAll('.tab-narrator-finding')) : [];
     const findingEls = _findingBody.length ? _findingBody : _findingRail;
@@ -11708,7 +11708,7 @@ function render() {
 window.addEventListener('hashchange', render);
 
 /* ============================================================
-   KEYBOARD NAVIGATION — sidebar tab strip (P2 Accessibility)
+   KEYBOARD NAVIGATION, sidebar tab strip (P2 Accessibility)
 
    Arrow keys move focus through nav items in roving-tabindex style.
    ArrowDown / ArrowRight advance; ArrowUp / ArrowLeft retreat.
@@ -11803,7 +11803,7 @@ async function renderHome(root) {
   if (!state.homeOrder) state.homeOrder = HOME_DEFAULT_ORDER.slice();
   if (typeof state.homeEditMode !== 'boolean') state.homeEditMode = false;
 
-  // Live counts for the landing's stats strip — read straight off
+  // Live counts for the landing's stats strip, read straight off
   // state.surveys so the numbers always match the rest of the app.
   const surveys = Array.isArray(state.surveys) ? state.surveys : [];
   const drafts  = surveys.filter(s => (s.status || '').toLowerCase() === 'draft').length;
@@ -11811,10 +11811,10 @@ async function renderHome(root) {
   const responses = surveys.reduce((sum, s) => sum + (Number(s.response_count) || 0), 0);
 
   // Survey Studio landing hero on top, then the dashboard grid below it.
-  // No sw-shell on Home — the landing is the front door and the grid is
+  // No sw-shell on Home, the landing is the front door and the grid is
   // the daily-work surface that scrolls into view beneath it. The landing
   // CSS uses negative top/side margins so it bleeds to the edges of
-  // #content. The customize-layout bar was removed — this is THE layout.
+  // #content. The customize-layout bar was removed, this is THE layout.
   state.homeEditMode = false;
   swEnsureBuilderShellStyles();
   swEnsureLandingStyles();
@@ -13249,7 +13249,7 @@ function renderTestAnalyticsView(host) {
     if (panel.dataset.rendered !== '1') {
       renderTab(id, panel);
     } else {
-      // Panel already rendered — just re-mount narrator into the (now-clear) rail
+      // Panel already rendered, just re-mount narrator into the (now-clear) rail
       if (id === 'overview') {
         insertTabNarratorCard(panel, {
           cardId:      'tabNarratorTestOv',
@@ -15759,7 +15759,7 @@ function renderBuilderPicker(root) {
 
 // Inject the scoped Survey Workstation shell CSS once. Scoped under
 // .sw-shell so it cannot leak into the rest of the app. Mirrors
-// mmEnsureV3Styles in pattern — the visual language echoes MM Studio's
+// mmEnsureV3Styles in pattern, the visual language echoes MM Studio's
 // three-column shell so the platform reads as ONE platform with
 // studios (see [[relicheck-one-platform]]), not two different products.
 function swEnsureBuilderShellStyles() {
@@ -15778,7 +15778,7 @@ function swEnsureBuilderShellStyles() {
     '.sw-topbar-title .meta { font-size:12px; color:var(--text-mute); margin-top:2px; }',
     '.sw-topbar-spacer { flex:1; }',
 
-    // Workflow ribbon — Build → Distribute → Collect → Analyze → Defend.
+    // Workflow ribbon, Build → Distribute → Collect → Analyze → Defend.
     // Status dots: gray (not started), half (in progress), filled (done).
     // The ribbon is the "trust journey" for the survey workstation; same
     // role as MM Studio\'s trust strip.
@@ -15826,7 +15826,7 @@ function swEnsureBuilderShellStyles() {
     '.sw-guidance-popout { display:none; position:absolute; top:90px; right:0; width:24px; height:48px; background:#fff; border:1px solid var(--border); border-right:0; border-radius:6px 0 0 6px; color:var(--text-mute); cursor:pointer; align-items:center; justify-content:center; font-size:14px; }',
     '.sw-guidance-popout:hover { color:var(--text); }',
 
-    // Strength Index ring in the topbar — always-visible credibility
+    // Strength Index ring in the topbar, always-visible credibility
     // signal. DOM mirrors mm-v3-ssi-ring so the visual stays consistent
     // across studios. Painted by swPaintBuilderSSI off a hidden render
     // of renderSSICard so the topbar never has to wait on Analyze.
@@ -15880,7 +15880,7 @@ function swEnsureBuilderShellStyles() {
     '.sw-g-ai-toggle .hint { margin-left:auto; font:500 10px/1 Inter,system-ui,sans-serif; letter-spacing:.04em; text-transform:none; color:var(--text-mute); padding:3px 7px; background:var(--bg-soft); border:1px solid var(--border); border-radius:999px; }',
     '.sw-g-ai-body { display:none; margin-top:10px; font:400 12.5px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); }',
     '.sw-g-ai-body.open { display:block; }',
-    // The mirrored rail content may include its own .ai-rail-card chrome —
+    // The mirrored rail content may include its own .ai-rail-card chrome,
     // tone it down so it doesn\'t fight the guidance pane\'s lighter weight.
     '.sw-g-ai-body .ai-rail-card { padding:10px 12px; border-radius:8px; background:var(--panel-2); border:1px solid var(--border-soft, var(--border)); }',
     '.sw-g-ai-body .ai-rail-card + .ai-rail-card { margin-top:8px; }',
@@ -15888,7 +15888,7 @@ function swEnsureBuilderShellStyles() {
   document.head.appendChild(s);
 }
 
-// Derive workflow status dots from current state. Heuristics only — no
+// Derive workflow status dots from current state. Heuristics only, no
 // new data needed. "build" is done once questions exist; "distribute" is
 // half once a survey is published, done once it has a send record;
 // "collect" is half on first response, done at the analytics threshold;
@@ -15898,7 +15898,7 @@ function swDeriveWorkflowStatus(surveyMeta) {
   if (!surveyMeta) return status;
   const responses = Number(surveyMeta.response_count) || 0;
   const isPublished = !!(surveyMeta.status && String(surveyMeta.status).toLowerCase() !== 'draft');
-  // Build: heuristic — if the survey exists at all it's at least started.
+  // Build: heuristic, if the survey exists at all it's at least started.
   // We'll mark it 'done' if it has been published OR has any responses.
   status.build = (isPublished || responses > 0) ? 'done' : 'half';
   status.distribute = isPublished ? (responses > 0 ? 'done' : 'half') : 'todo';
@@ -15909,7 +15909,7 @@ function swDeriveWorkflowStatus(surveyMeta) {
 }
 
 // Per-tab methodology copy for the Builder right rail. Methodology-first
-// (see [[relicheck-philosophy]]) — these are short teaching paragraphs,
+// (see [[relicheck-philosophy]]), these are short teaching paragraphs,
 // not feature lists. AI guidance, if any, goes in a separate collapsed
 // section so methodology always leads.
 const _swBuilderGuidance = {
@@ -15917,26 +15917,26 @@ const _swBuilderGuidance = {
     title: 'Items that map to your purpose',
     html:
       '<p>Every item should earn its place by measuring part of the construct you named in the purpose statement. Items that float free of the purpose dilute reliability and make findings harder to defend.</p>' +
-      '<p>Group items by construct so a future reader — reviewers, IRB, or your own future self — can see what each group is <em>for</em>. Items without a construct fall into <strong>Unassigned</strong>; that\'s a flag to fix before you collect.</p>' +
+      '<p>Group items by construct so a future reader, reviewers, IRB, or your own future self, can see what each group is <em>for</em>. Items without a construct fall into <strong>Unassigned</strong>; that\'s a flag to fix before you collect.</p>' +
       '<p>Wording matters as much as count. Double-barreled items, leading wording, and unfamiliar jargon all surface in the reliability stats later. The inline <em>Improve</em> hint on each item catches the common offenders.</p>',
   },
   design: {
     title: 'Visual design that does not bias the response',
     html:
-      '<p>Color, typography, and ordering all carry meaning. A Likert scale with a green <em>Strongly Agree</em> and a red <em>Strongly Disagree</em> is no longer neutral — it has nudged the respondent.</p>' +
+      '<p>Color, typography, and ordering all carry meaning. A Likert scale with a green <em>Strongly Agree</em> and a red <em>Strongly Disagree</em> is no longer neutral, it has nudged the respondent.</p>' +
       '<p>Keep the look quiet: neutral tone, consistent spacing, no novelty that distracts from the question itself. If respondents notice the design, the design is too loud.</p>',
   },
   settings: {
     title: 'Settings that protect the response',
     html:
-      '<p>Anonymous, identified, or hybrid — pick the answer model that matches the consent you offered respondents. Switching after launch invalidates the prior batch.</p>' +
+      '<p>Anonymous, identified, or hybrid, pick the answer model that matches the consent you offered respondents. Switching after launch invalidates the prior batch.</p>' +
       '<p>Time limits and required-answer rules raise completion quality but lower completion rate; the right balance depends on how high-stakes the decision is that this data will inform.</p>' +
       '<p>Randomization (question and option order) controls for order effects. Use it when each construct has enough items that the test still makes sense in a different sequence.</p>',
   },
   logic: {
     title: 'Branching that mirrors the construct',
     html:
-      '<p>Skip logic is methodology, not just convenience. A <em>show this only if…</em> rule encodes an assumption about who the question applies to — make sure the assumption is one you can defend.</p>' +
+      '<p>Skip logic is methodology, not just convenience. A <em>show this only if…</em> rule encodes an assumption about who the question applies to, make sure the assumption is one you can defend.</p>' +
       '<p>Arms (experimental conditions) let you compare matched groups within a single instrument. The arm assignment must happen before any condition-specific content is shown, or the comparison is no longer clean.</p>' +
       '<p>Every branch is a population you\'ll need to interpret separately. If you can\'t name what each branch represents, the logic is too clever.</p>',
   },
@@ -15944,7 +15944,7 @@ const _swBuilderGuidance = {
     title: 'Sampling and reach that defend the data',
     html:
       '<p>Who can answer determines what you can conclude. A convenience sample of staff who chose to click the link is different evidence from a stratified sample drawn from a roster.</p>' +
-      '<p>Channels also affect response. Email reaches one population; in-person QR codes reach another; embedded links reach a third. Document the channel mix — it lands in the limitations section of the eventual report.</p>' +
+      '<p>Channels also affect response. Email reaches one population; in-person QR codes reach another; embedded links reach a third. Document the channel mix, it lands in the limitations section of the eventual report.</p>' +
       '<p>Reminders raise N but at diminishing return. Three is usually the ceiling before fatigue starts hurting the credibility of the responses you do get.</p>',
   },
 };
@@ -15966,7 +15966,7 @@ function swEnsureLandingStyles() {
   const s = document.createElement('style');
   s.id = 'swLandingStyles';
   s.textContent = [
-    // Per-studio palette — applied via data-studio on .sw-landing. Survey
+    // Per-studio palette, applied via data-studio on .sw-landing. Survey
     // Studio is the platform default so its tokens match the global ones,
     // but we set them explicitly here for clarity + parity with MM/Test/360
     // when those land.
@@ -15991,16 +15991,16 @@ function swEnsureLandingStyles() {
     '.sw-landing .la-wm.wm3 { bottom:24px; right:280px; transform:rotate(-6deg); font-size:64px; }',
     '.sw-landing .la-wm.wm4 { top:60px; right:80px; transform:rotate(8deg); font-size:100px; opacity:0.04; }',
 
-    // Hero grid — text on the left, illustration on the right.
+    // Hero grid, text on the left, illustration on the right.
     '.sw-landing .la-hero { position:relative; display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:center; padding:150px 64px 32px; min-height:320px; z-index:2; }',
     '.sw-landing .la-text { z-index:2; }',
     '.sw-landing .la-eyebrow { font:500 14px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); margin:0 0 6px; opacity:0; animation:laFade 600ms ease forwards 100ms; }',
-    // Personal welcome — anchored to the top-right of the landing card
+    // Personal welcome, anchored to the top-right of the landing card
     // so it greets without taking up hero real estate. Fades in like the
     // eyebrow used to.
     '.sw-landing .la-welcome { position:absolute; top:18px; right:24px; z-index:3; font:500 13px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); padding:6px 12px; background:rgba(255,255,255,0.7); border:1px solid var(--border); border-radius:999px; backdrop-filter:saturate(180%) blur(8px); -webkit-backdrop-filter:saturate(180%) blur(8px); opacity:0; animation:laFade 600ms ease forwards 100ms; }',
     '.sw-landing .la-title { font:600 44px/1 Fraunces,serif; color:var(--la-accent); margin:0 0 4px; letter-spacing:-0.02em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 200ms; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }',
-    // Status badge next to the studio title — BETA, COMING SOON, etc.
+    // Status badge next to the studio title, BETA, COMING SOON, etc.
     '.sw-landing .la-badge { display:inline-flex; align-items:center; padding:4px 10px; border-radius:999px; font:700 10px/1 Inter,sans-serif; letter-spacing:0.1em; text-transform:uppercase; background:var(--la-accent-soft); color:var(--la-accent); border:1px solid var(--la-accent); }',
     '.sw-landing .la-badge.muted { background:var(--bg-soft, var(--bg)); color:var(--text-mute); border-color:var(--border-strong); }',
     // Disabled-style CTA for coming-soon studios.
@@ -16129,7 +16129,7 @@ function renderWelcome(root) {
   root.innerHTML = swBuildWelcomeHTML({ name: name });
 }
 
-// Mixed-Methods Studio landing — purple palette, BETA badge, Venn
+// Mixed-Methods Studio landing, purple palette, BETA badge, Venn
 // illustration. CTA fires mmStartWizard via a click delegate set in
 // the consumer; existing MM project picker renders below the landing.
 function swBuildMMLandingHTML(opts) {
@@ -16190,7 +16190,7 @@ function swBuildMMLandingHTML(opts) {
     '</section>';
 }
 
-// Test & Item Analysis Studio landing — blue palette, COMING SOON
+// Test & Item Analysis Studio landing, blue palette, COMING SOON
 // badge. CTA shows a coming-soon placeholder; existing /#/tests content
 // renders below as an early-access preview.
 function swBuildTestLandingHTML(opts) {
@@ -16253,7 +16253,7 @@ function swBuildTestLandingHTML(opts) {
     '</section>';
 }
 
-// 360 Studio landing — teal palette, COMING SOON badge.
+// 360 Studio landing, teal palette, COMING SOON badge.
 function swBuildPanelLandingHTML(opts) {
   const name = opts.name || 'there';
   return '' +
@@ -16316,7 +16316,7 @@ function swBuildPanelLandingHTML(opts) {
     '</section>';
 }
 
-// Build the Survey Studio landing HTML — the hero moment when a user
+// Build the Survey Studio landing HTML, the hero moment when a user
 // arrives on /#/home. Live stats are computed from state.surveys.
 function swBuildSurveyLandingHTML(opts) {
   const name   = opts.name || 'there';
@@ -16379,7 +16379,7 @@ function swBuildSurveyLandingHTML(opts) {
     '</section>';
 }
 
-// Home shell — same three-column pattern, but Home isn\'t project-scoped
+// Home shell, same three-column pattern, but Home isn\'t project-scoped
 // so the workflow ribbon is shown in an educational mode (no stage
 // active) and the SSI ring is omitted. Left-nav becomes "Start /
 // Continue / Explore" rather than within-project navigation.
@@ -16411,7 +16411,7 @@ function swBuildHomeShellHTML(opts) {
           '<div class="meta">' + summary + '</div>' +
         '</div>' +
         '<div class="sw-topbar-spacer"></div>' +
-        '<div class="sw-ribbon-edu" title="Every survey moves through these five stages — Home is where you pick which one to work on.">' +
+        '<div class="sw-ribbon-edu" title="Every survey moves through these five stages, Home is where you pick which one to work on.">' +
           '<span class="sw-ribbon-edu-eyebrow">The journey</span>' +
           '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
         '</div>' +
@@ -16464,7 +16464,7 @@ function swBuildHomeShellHTML(opts) {
     '</div>';
 }
 
-// Reports shell — Defend stage of the workflow. Used by both the
+// Reports shell, Defend stage of the workflow. Used by both the
 // list view (renderReportsList) and the detail view (renderReportDetail).
 // The Defend stage is active in the ribbon. Left-nav offers filters on
 // the list view and "browse other reports" on the detail view.
@@ -16475,7 +16475,7 @@ function swBuildReportsShellHTML(opts) {
   const leftHtml = opts.leftHtml || '';
   const guidanceTitle = opts.guidanceTitle || 'Defending what the data shows';
   const guidanceHtml  = opts.guidanceHtml  ||
-    '<p>A report is a defensible claim, not a summary of charts. Lead with the question the data was supposed to answer, then the evidence, then what the evidence does — and does not — let you conclude.</p>' +
+    '<p>A report is a defensible claim, not a summary of charts. Lead with the question the data was supposed to answer, then the evidence, then what the evidence does, and does not, let you conclude.</p>' +
     '<p>Methodology should be readable, not hidden in an appendix. Reviewers trust evidence whose limits are spelled out.</p>';
   const sep = '<span class="sep" aria-hidden="true">&rsaquo;</span>';
   const stageBtn = (key, label, route, isActive) => {
@@ -16551,12 +16551,12 @@ function swWireHomeShell() {
 
 // Per-tab methodology guidance for the Analyze shell right rail. Same
 // structural pattern as _swBuilderGuidance. Tight, methodology-first
-// copy — never feature lists, never marketing.
+// copy, never feature lists, never marketing.
 const _swAnalyzeGuidance = {
   strength: {
     title: 'The headline number',
     html:
-      '<p>The Strength Index combines reliability, validity, sampling adequacy, and response quality into a single 0&ndash;100 score. It is not an average — weak components drag the score harder than strong components lift it, because credibility is bottlenecked by its weakest link.</p>' +
+      '<p>The Strength Index combines reliability, validity, sampling adequacy, and response quality into a single 0&ndash;100 score. It is not an average, weak components drag the score harder than strong components lift it, because credibility is bottlenecked by its weakest link.</p>' +
       '<p>Treat the score as a defense-readiness check, not a grade. A score in the <em>Watch</em> or <em>Weak</em> band tells you what to fix before relying on the data; it does not say the data is meaningless.</p>',
   },
   readiness: {
@@ -16569,7 +16569,7 @@ const _swAnalyzeGuidance = {
     title: 'Are items measuring the same thing?',
     html:
       '<p>Reliability asks whether items intended to measure a single construct actually hang together. Cronbach\'s alpha is the headline; item-total correlations diagnose which items are pulling away from the rest.</p>' +
-      '<p>Low reliability rarely means the construct is wrong — it usually means one or two items are off-construct and should be cut or rewritten.</p>',
+      '<p>Low reliability rarely means the construct is wrong, it usually means one or two items are off-construct and should be cut or rewritten.</p>',
   },
   description: {
     title: 'What does the response distribution look like?',
@@ -16580,31 +16580,31 @@ const _swAnalyzeGuidance = {
   validity: {
     title: 'Does the survey measure what it claims to?',
     html:
-      '<p>Validity is harder than reliability because it is partly a judgment call. The numerical pieces — convergent, discriminant, factor structure — support the argument; they do not make it for you.</p>' +
+      '<p>Validity is harder than reliability because it is partly a judgment call. The numerical pieces, convergent, discriminant, factor structure, support the argument; they do not make it for you.</p>' +
       '<p>If validity evidence is mixed, name the construct more narrowly in the report rather than overclaiming.</p>',
   },
   openended: {
     title: 'Themes in the words',
     html:
       '<p>Open-ended responses carry evidence the closed-ended items often miss. ReliCheck extracts candidate themes; you decide which themes are real and which are artifacts of phrasing or sample.</p>' +
-      '<p>The AI summary is supplemental — read a sample of the raw responses yourself before adopting any theme as a finding.</p>',
+      '<p>The AI summary is supplemental, read a sample of the raw responses yourself before adopting any theme as a finding.</p>',
   },
   quality: {
     title: 'Did respondents answer honestly?',
     html:
       '<p>Quality checks flag careless responding: too-fast completions, straight-lining, contradictory answer pairs, and impossible value combinations.</p>' +
-      '<p>Flagged respondents are not automatically removed — they are flagged for you to inspect. Removal is a methodological choice you have to defend.</p>',
+      '<p>Flagged respondents are not automatically removed, they are flagged for you to inspect. Removal is a methodological choice you have to defend.</p>',
   },
   completion: {
     title: 'Who finished and who dropped?',
     html:
       '<p>Completion patterns tell you where the survey lost respondents. A drop spike on one item usually means the item is confusing, sensitive, or technically broken.</p>' +
-      '<p>Compare completer and non-completer demographics; if they differ, your findings generalize only to completers — not to the population you sampled.</p>',
+      '<p>Compare completer and non-completer demographics; if they differ, your findings generalize only to completers, not to the population you sampled.</p>',
   },
   compare: {
     title: 'Group differences with the right test',
     html:
-      '<p>Compare runs the appropriate inferential test based on variable types — t-test, ANOVA, chi-square, Mann-Whitney — and reports effect size alongside the p-value. Effect size is the part you should lead with in the report; p-value alone is sample-size-dependent.</p>',
+      '<p>Compare runs the appropriate inferential test based on variable types, t-test, ANOVA, chi-square, Mann-Whitney, and reports effect size alongside the p-value. Effect size is the part you should lead with in the report; p-value alone is sample-size-dependent.</p>',
   },
   prepost: {
     title: 'Change over time, within respondents',
@@ -16627,25 +16627,25 @@ const _swAnalyzeGuidance = {
   predictors: {
     title: 'What variables relate to the outcome?',
     html:
-      '<p>Predictor analyses (multiple regression, logistic regression) describe association, not causation. A coefficient says how the outcome shifts with the predictor when the others are held constant — it does not say the predictor caused the outcome.</p>' +
+      '<p>Predictor analyses (multiple regression, logistic regression) describe association, not causation. A coefficient says how the outcome shifts with the predictor when the others are held constant, it does not say the predictor caused the outcome.</p>' +
       '<p>Check for multicollinearity before trusting individual coefficients; predictors that move together can swap significance unpredictably.</p>',
   },
   drivers: {
     title: 'Which items move the outcome most',
     html:
       '<p>Driver analyses rank predictors by their importance to the outcome. The ranking is most stable when the sample is large and the predictors are not too correlated.</p>' +
-      '<p>Use drivers as a starting point for action — they tell you where the leverage is, not what intervention will work.</p>',
+      '<p>Use drivers as a starting point for action, they tell you where the leverage is, not what intervention will work.</p>',
   },
   mlm: {
     title: 'Nested data, modeled honestly',
     html:
-      '<p>Multilevel models (MLM) account for the fact that respondents are clustered — within schools, departments, teams. Ignoring nesting underestimates standard errors and overstates significance.</p>' +
+      '<p>Multilevel models (MLM) account for the fact that respondents are clustered, within schools, departments, teams. Ignoring nesting underestimates standard errors and overstates significance.</p>' +
       '<p>Report intraclass correlation and design effect; they tell the reader whether nesting mattered in this dataset.</p>',
   },
   irt: {
     title: 'Item-level psychometrics',
     html:
-      '<p>Item Response Theory characterizes each item by its difficulty and discrimination — the precision the item adds across the trait scale. Items with poor discrimination are candidates for revision.</p>' +
+      '<p>Item Response Theory characterizes each item by its difficulty and discrimination, the precision the item adds across the trait scale. Items with poor discrimination are candidates for revision.</p>' +
       '<p>IRT requires larger N than classical reliability; treat results from small samples as suggestive.</p>',
   },
   trends: {
@@ -16657,7 +16657,7 @@ const _swAnalyzeGuidance = {
   ipm: {
     title: 'What to fix first',
     html:
-      '<p>The Importance-Performance Map plots driver importance against current performance so you can see which items are both impactful and under-performing — the natural action priorities.</p>' +
+      '<p>The Importance-Performance Map plots driver importance against current performance so you can see which items are both impactful and under-performing, the natural action priorities.</p>' +
       '<p style="color:var(--text-mute);font-size:12.5px;">Forthcoming.</p>',
   },
 };
@@ -16670,7 +16670,7 @@ function swPaintAnalyzeGuidance(tab) {
   if (bodyEl)  bodyEl.innerHTML    = g.html;
 }
 
-// Canonical tab switcher for the Analyze shell. Mirrors swSetBuilderTab —
+// Canonical tab switcher for the Analyze shell. Mirrors swSetBuilderTab,
 // updates state.analyzeTab, re-renders the tab body, repaints guidance,
 // syncs the left-nav active state.
 function swSetAnalyzeTab(survey, tab) {
@@ -16702,7 +16702,7 @@ function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
     ' &middot; ' + responses + ' response' + (responses === 1 ? '' : 's') +
     (updated ? ' &middot; updated ' + escapeHtml(updated) : '');
 
-  // Ribbon — Analyze stage is active here.
+  // Ribbon, Analyze stage is active here.
   const st = swDeriveWorkflowStatus(survey);
   const stageBtn = (key, label, route, isActive, opts) => {
     const cls = isActive ? 'sw-stage on' : 'sw-stage';
@@ -16795,7 +16795,7 @@ function swBuildAnalyzeShellHTML(survey, tabs, activeTab) {
             '<button class="btn ghost" id="analyzeDraftReportBtn" type="button" title="Draft an executive paragraph from the SSI snapshot">Draft report paragraph</button>' +
             '<button class="btn ghost" id="analyzeDeleteBtn" type="button" style="color:var(--bad);margin-left:auto;">Delete</button>' +
           '</div>' +
-          // Hidden legacy tab strip — kept so any code that queries
+          // Hidden legacy tab strip, kept so any code that queries
           // .analyze-tab continues to no-op safely.
           '<nav class="analyze-tabs" hidden></nav>' +
           '<div class="analyze-body-wrap">' +
@@ -16889,7 +16889,7 @@ function swWireAnalyzeShell(survey) {
     };
   });
 
-  // SSI ring in the topbar — Analyze already has the data in-process via
+  // SSI ring in the topbar, Analyze already has the data in-process via
   // loadAnalyzeData; same harvest as Builder for visual consistency.
   swPaintAnalyzeSSI(survey);
 
@@ -16958,9 +16958,9 @@ function swPaintBuilderSSI(surveyMeta) {
     arc.setAttribute('stroke-dasharray', pct + ' ' + (100 - pct));
     ring.classList.remove('tone-good','tone-usable','tone-warn','tone-bad');
     ring.classList.add('tone-' + toneFor(pct));
-    ring.setAttribute('title', 'Strength Index: ' + score + ' / 100' + (status ? ' (' + status + ')' : '') + ' — click for the full breakdown');
+    ring.setAttribute('title', 'Strength Index: ' + score + ' / 100' + (status ? ' (' + status + ')' : '') + ', click for the full breakdown');
   };
-  // Cached score per project — paint immediately on render so the ring is
+  // Cached score per project, paint immediately on render so the ring is
   // never blank, then refresh below.
   let cached = null;
   try { cached = JSON.parse(localStorage.getItem('sw.builder.ssi.' + surveyMeta.id) || 'null'); } catch (_) {}
@@ -17040,12 +17040,12 @@ function swBuildBuilderShellHTML(surveyMeta) {
         '</div>' +
         '<div class="sw-topbar-spacer"></div>' +
         '<nav class="sw-ribbon" aria-label="Survey workflow">' + ribbon + '</nav>' +
-        // Strength Index ring — always-on credibility signal. Score is
+        // Strength Index ring, always-on credibility signal. Score is
         // harvested off-screen on load (see swPaintBuilderSSI) and cached
         // per-project so the ring shows the last-known value instantly on
         // subsequent renders. Click opens the Analyze Strength tab.
         '<div class="sw-ssi-wrap">' +
-          '<button type="button" class="sw-ssi-ring" id="swBuilderSsiChip" data-route="analyze" data-id="' + id + '" title="Strength Index — click for the full breakdown">' +
+          '<button type="button" class="sw-ssi-ring" id="swBuilderSsiChip" data-route="analyze" data-id="' + id + '" title="Strength Index, click for the full breakdown">' +
             '<svg viewBox="0 0 36 36" aria-hidden="true">' +
               '<circle class="ring-track" cx="18" cy="18" r="15.915" />' +
               '<circle class="ring-arc"   cx="18" cy="18" r="15.915" id="swBuilderSsiArc" />' +
@@ -17090,7 +17090,7 @@ function swBuildBuilderShellHTML(surveyMeta) {
                 '<a class="btn ghost" data-route="analyze" data-id="' + id + '">Open analytics</a>' +
               '</div>' +
             '</div>' +
-            // Horizontal builder-tabs strip retired — the left-nav is the
+            // Horizontal builder-tabs strip retired, the left-nav is the
             // primary tab switcher now. The nav element is kept empty with
             // its id so any legacy lookup of #builderTabs no-ops safely.
             '<nav class="builder-tabs" id="builderTabs" hidden></nav>' +
@@ -23572,7 +23572,7 @@ function descLikertCard(q, qIdx, responses) {
   const ku   = n > 3 ? Stats.kurtosis(values) : NaN;
   // Median: sort and take middle (or average of two middles for even N).
   // Mode: the scale point with the highest frequency. If tied, take the
-  // first (lower-numbered) one and append "(bimodal)" — APA convention
+  // first (lower-numbered) one and append "(bimodal)", APA convention
   // is to flag ties rather than hide them.
   let median = NaN, mode = NaN, modeFlag = '';
   if (n > 0) {
@@ -23600,8 +23600,8 @@ function descLikertCard(q, qIdx, responses) {
     cumCount += c;
     const scalePoint = i + 1;
     let labelText;
-    if (i === 0)              labelText = scalePoint + ' — ' + lowLab;
-    else if (i === points - 1) labelText = scalePoint + ' — ' + highLab;
+    if (i === 0)              labelText = scalePoint + ', ' + lowLab;
+    else if (i === points - 1) labelText = scalePoint + ', ' + highLab;
     else                       labelText = String(scalePoint);
     const sharePct = n > 0 ? (c / n) * 100 : 0;
     const cumPct   = n > 0 ? (cumCount / n) * 100 : 0;
@@ -23632,12 +23632,12 @@ function descLikertCard(q, qIdx, responses) {
     '</table>' +
     '<div class="desc-stats-line">' +
       'N = ' + n +
-      ', Mean = '   + (Number.isFinite(mean)   ? mean.toFixed(2)   : '—') +
-      ', Median = ' + (Number.isFinite(median) ? (Number.isInteger(median) ? String(median) : median.toFixed(1)) : '—') +
-      ', Mode = '   + (Number.isFinite(mode)   ? mode + modeFlag   : '—') +
-      ', SD = '     + (Number.isFinite(sd)     ? sd.toFixed(2)     : '—') +
-      ', Skewness = ' + (Number.isFinite(sk)   ? sk.toFixed(2)     : '—') +
-      ', Kurtosis = ' + (Number.isFinite(ku)   ? ku.toFixed(2)     : '—') +
+      ', Mean = '   + (Number.isFinite(mean)   ? mean.toFixed(2)   : ', ') +
+      ', Median = ' + (Number.isFinite(median) ? (Number.isInteger(median) ? String(median) : median.toFixed(1)) : ', ') +
+      ', Mode = '   + (Number.isFinite(mode)   ? mode + modeFlag   : ', ') +
+      ', SD = '     + (Number.isFinite(sd)     ? sd.toFixed(2)     : ', ') +
+      ', Skewness = ' + (Number.isFinite(sk)   ? sk.toFixed(2)     : ', ') +
+      ', Kurtosis = ' + (Number.isFinite(ku)   ? ku.toFixed(2)     : ', ') +
     '</div>' +
     (Number.isFinite(sk) && Math.abs(sk) > 2
       ? '<div class="desc-note"><strong style="color:var(--bad);">Strong skew flagged.</strong> Consider what this means for parametric tests on this item.</div>'
@@ -23664,7 +23664,7 @@ function descChoiceCard(q, qIdx, responses, multi) {
 
   // APA-style frequency table for categorical/single/multi distributions:
   // Category, n, %. Sorted by frequency descending so the mode reads
-  // first — the convention in demographic tables. (Previous version
+  // first, the convention in demographic tables. (Previous version
   // rendered bars sorted by option order, which looked like a dashboard.)
   const rowsWithCount = opts.map((opt, i) => {
     const label = (typeof opt === 'string') ? opt : (opt.label || ('Option ' + (i + 1)));
@@ -23673,7 +23673,7 @@ function descChoiceCard(q, qIdx, responses, multi) {
   rowsWithCount.sort((a, b) => b.count - a.count);
   // Mode: most-frequent category. The sort above puts it first. If two
   // categories tie at the top, flag "(multimodal)" per APA convention.
-  let modeLabel = '—';
+  let modeLabel = ', ';
   let modeFlag = '';
   if (rowsWithCount.length && rowsWithCount[0].count > 0) {
     modeLabel = rowsWithCount[0].label;
@@ -23712,7 +23712,7 @@ function descChoiceCard(q, qIdx, responses, multi) {
     tableHtml +
     '<div class="desc-stats-line">' +
       'N = ' + answered +
-      ', Mode = ' + (modeLabel === '—' ? '—' : '"' + escapeHtml(modeLabel) + '"' + modeFlag) +
+      ', Mode = ' + (modeLabel === ', ' ? ', ' : '"' + escapeHtml(modeLabel) + '"' + modeFlag) +
       (multi ? '. Multi-select; rows sum to >100% by design.' : '. Percentages sum to 100%.') +
     '</div>' +
   '</section>';
@@ -24139,7 +24139,7 @@ function adaptDatasetToResponses(d) {
           answers['col_' + j] = parts;
         }
       } else {
-        // open, text, other — preserve raw value
+        // open, text, other, preserve raw value
         answers['col_' + j] = v == null ? '' : v;
       }
     });
@@ -26885,7 +26885,7 @@ function inferColumnMeta(parsed, k) {
   //               2-3 distinct values which are almost certainly groups).
   //   - 'open':   everything else (free text, IDs, long strings).
   // The user can override any of these in the wizard's "Confirm what we
-  // found" step — auto-detect *proposes*, the user *confirms*.
+  // found" step, auto-detect *proposes*, the user *confirms*.
   return parsed.headers.map((name, i) => {
     // Scan ALL rows to find distinct values; small samples can miss a
     // categorical that has rare 4th/5th codes.
@@ -26904,7 +26904,7 @@ function inferColumnMeta(parsed, k) {
     }
     let type = 'open';
     if (nonEmpty > 0 && allInteger && distinct.size >= 2 && distinct.size <= 7) {
-      // Small set of integer codes — almost certainly categorical groups
+      // Small set of integer codes, almost certainly categorical groups
       // (Gender 1/2/3, Department 1-5, etc.). Even if the values fall in
       // 1..k, low cardinality means it's not a real Likert scale.
       type = 'single';
@@ -26913,7 +26913,7 @@ function inferColumnMeta(parsed, k) {
       // scale points used. Real Likert items use most of their range.
       type = 'likert';
     }
-    // Sample values for the column hint line — first 5 distinct
+    // Sample values for the column hint line, first 5 distinct
     // non-empty values plus an ellipsis when truncated. Mirrors
     // mmEditColumns so the upload review feels like one platform.
     const sampleVals = Array.from(distinct).slice(0, 5);
@@ -26921,7 +26921,7 @@ function inferColumnMeta(parsed, k) {
       distinct: distinct.size,
       sample: sampleVals.join(', ') + (distinct.size > 5 ? ' …' : ''),
     };
-    // `auto: true` flags that the user hasn\'t touched this row yet —
+    // `auto: true` flags that the user hasn\'t touched this row yet,
     // the UI surfaces a "Suggested" pill until the user confirms or
     // changes the type. `suggested` remembers what we proposed so the
     // user can revert a manual change.
@@ -26998,7 +26998,7 @@ function renderUploadStep2() {
         '</div>' +
       '</div>' +
 
-      // Bulk actions for the role suggestions — methodology-first stance
+      // Bulk actions for the role suggestions, methodology-first stance
       // is that auto-detect proposes, the user confirms. These give the
       // user one-click control without forcing per-column edits.
       '<div class="up-bulk-actions">' +
@@ -29512,7 +29512,7 @@ function openNewReportPicker(root) {
 
 async function renderReportDetail(root, reportId) {
   // Wrap the detail view in the same Survey Workstation shell as the
-  // list — keeps the inner workflow sidebar visible across all Defend
+  // list, keeps the inner workflow sidebar visible across all Defend
   // stage surfaces. The existing report-toc + report-doc layout lives
   // inside the workspace column unchanged.
   swEnsureBuilderShellStyles();
@@ -31989,22 +31989,22 @@ function mmStartWizard() {
 }
 
 // Teaching content for the landing-page sidebar. Each key matches a
-// MM_V3_NAV entry. The Studio is meant to *teach* — clicking a sidebar
+// MM_V3_NAV entry. The Studio is meant to *teach*, clicking a sidebar
 // item before a project exists shows what the method is, when to use it,
 // and where it fits in a mixed-methods design. AI is supplemental, not
 // the driver: this content is hand-authored methodology guidance.
 const MM_V3_TEACH = {
   // ---------- Workflow ----------
   'data':           { title: 'Data Upload',                 what: 'Bring data in: upload a CSV/XLSX, link a survey from the main site, or paste responses.', when: 'First step of every project. The Studio inspects your columns to figure out which are scales, which are categorical, and which are open-ended.', fit: 'Step 1 of the workflow. Nothing else unlocks until data is in.' },
-  'wiz:data-kind':  { title: 'What kind of data do you have?', what: 'A short questionnaire that classifies your data — numeric scales only, open text only, or both.', when: 'Immediately after Data Upload. The answer shapes which analyses are available.', fit: 'Step 2 of the workflow, before you choose a design.' },
+  'wiz:data-kind':  { title: 'What kind of data do you have?', what: 'A short questionnaire that classifies your data, numeric scales only, open text only, or both.', when: 'Immediately after Data Upload. The answer shapes which analyses are available.', fit: 'Step 2 of the workflow, before you choose a design.' },
   'wiz:intent':     { title: 'What are you trying to understand?', what: 'Your research intent: confirming an expected pattern, exploring something new, comparing groups, or building theory.', when: 'After classifying the data. Intent narrows the recommended design.', fit: 'Step 3 of the workflow. Outputs feed the design recommendation.' },
-  'wiz:design':     { title: 'Choose your mixed-methods design', what: 'Pick one of three classic designs: Explanatory Sequential (quan → qual), Exploratory Sequential (qual → quan), or Convergent Parallel (both at once).', when: 'After data-kind and intent. The Studio recommends a design but the choice is yours.', fit: 'Step 4 of the workflow. The chosen design controls the order of the sidebar — explanatory leads with QUAN, exploratory leads with QUAL.' },
-  'builder':        { title: 'Design (category builder)', what: 'Optional helper that proposes initial qualitative categories from your open-ended responses. AI may suggest a starting point; you edit, replace, or reject.', when: 'When you want a draft codebook to react to rather than starting from a blank page.', fit: 'Step 5 of the workflow, between the wizard and active coding. Optional — skip if you prefer to write your own codebook.' },
+  'wiz:design':     { title: 'Choose your mixed-methods design', what: 'Pick one of three classic designs: Explanatory Sequential (quan → qual), Exploratory Sequential (qual → quan), or Convergent Parallel (both at once).', when: 'After data-kind and intent. The Studio recommends a design but the choice is yours.', fit: 'Step 4 of the workflow. The chosen design controls the order of the sidebar, explanatory leads with QUAN, exploratory leads with QUAL.' },
+  'builder':        { title: 'Design (category builder)', what: 'Optional helper that proposes initial qualitative categories from your open-ended responses. AI may suggest a starting point; you edit, replace, or reject.', when: 'When you want a draft codebook to react to rather than starting from a blank page.', fit: 'Step 5 of the workflow, between the wizard and active coding. Optional, skip if you prefer to write your own codebook.' },
 
   // ---------- Quan analysis ----------
   'v3:survey':        { title: 'Survey Analysis (foundation)', what: 'Internal-consistency reliability (Cronbach α, McDonald ω) and structural validity (factor analysis, KMO) for your instrument.', when: 'Before any inferential test. If the items don\'t hang together, the analyses that follow won\'t mean much.', fit: 'The foundation of the quant track. Always start here when you have Likert/scale items.' },
   'dataset':          { title: 'Coded Variables', what: 'Map raw columns to scales, demographics, and outcomes. Confirm the Studio guessed right about each column.', when: 'After Data Upload, before running comparisons or regressions.', fit: 'Quant prep step. Lives between data loading and the analytical tabs.' },
-  'v3:descriptives':  { title: 'Descriptives', what: 'Means, standard deviations, distributions, missingness, response patterns. The basic shape of the data.', when: 'Always — before any inferential test. Spot ceiling effects, skew, and missing-data patterns early.', fit: 'Foundation of the quant track. Every report should include descriptives.' },
+  'v3:descriptives':  { title: 'Descriptives', what: 'Means, standard deviations, distributions, missingness, response patterns. The basic shape of the data.', when: 'Always, before any inferential test. Spot ceiling effects, skew, and missing-data patterns early.', fit: 'Foundation of the quant track. Every report should include descriptives.' },
   'v3:recommended':   { title: 'Recommendations', what: 'Data-aware eligibility: the Studio inspects sample sizes, scale of measurement, and groupings to suggest which inferential tests are defensible on this dataset.', when: 'When you have data but aren\'t sure which test fits. The recommendations are method-rule driven, not AI guesses.', fit: 'Sits between Descriptives and the test-specific tabs.' },
   'v3:ttest':         { title: 't-test', what: 'Compares two groups\' means. Welch\'s t by default (no equal-variance assumption). Independent samples or paired.', when: 'Two groups, one continuous outcome. For three or more groups, use ANOVA instead.', fit: 'Inferential. Pairs with descriptives for the two-group comparison story.' },
   'v3:anova':         { title: 'One-way ANOVA', what: 'Compares three or more groups\' means. Includes eta-squared effect size and pairwise follow-ups.', when: 'Three or more groups, one continuous outcome. The Studio drops groups with N < 3 automatically.', fit: 'Inferential. The natural next step when t-test isn\'t enough.' },
@@ -32012,7 +32012,7 @@ const MM_V3_TEACH = {
   'v3:compare':       { title: 'Group Differences', what: 'A unified comparison view across whatever groups are tagged in the dataset, with effect sizes and confidence intervals.', when: 'When you want to see all the group-level differences in one place instead of one test at a time.', fit: 'Synthesis view for the comparison track.' },
   'v3:relationships': { title: 'Relationships', what: 'Pearson / Spearman correlations and bivariate plots between continuous variables.', when: 'When the question is "do these things move together?" rather than "do these groups differ?"', fit: 'Foundation for the regression track that follows.' },
   'v3:regression':    { title: 'Linear / Logistic', what: 'Linear regression for continuous outcomes; logistic for binary. Coefficient table, fit indices, and predicted-vs-actual plot.', when: 'When one variable predicts another and you want effect direction, magnitude, and significance.', fit: 'Extension of the relationships track. Still in development for some advanced options.' },
-  'v3:mlm':           { title: 'MLM (multilevel)', what: 'Multilevel/hierarchical models — when responses are nested (students in classrooms, employees in departments, repeated measures over time).', when: 'When ignoring nesting would inflate Type I error. Single-level regression is wrong if your data is grouped.', fit: 'Advanced inferential. Still in development.' },
+  'v3:mlm':           { title: 'MLM (multilevel)', what: 'Multilevel/hierarchical models, when responses are nested (students in classrooms, employees in departments, repeated measures over time).', when: 'When ignoring nesting would inflate Type I error. Single-level regression is wrong if your data is grouped.', fit: 'Advanced inferential. Still in development.' },
   'v3:overview':      { title: 'Overview (quant)', what: 'Quick orientation to the full quant suite with the Strength Index and what to run next.', when: 'Whenever you want the bird\'s-eye view before diving into a specific test.', fit: 'Entry point to the quant track.' },
   'score':            { title: 'Score-to-Theme', what: 'Connect a numeric score (e.g., engagement total) to qualitative themes from the same respondents.', when: 'When you have both scores and comments and want to see what kinds of comments low-scorers and high-scorers tend to give.', fit: 'Integration. Only available when the pathway includes both scores and comments.' },
   'alignment':        { title: 'Alignment', what: 'Where do the numbers and narratives agree? Where do they diverge? Alignment-disagreement is often the most interesting finding.', when: 'After both quant and qual analyses have been run.', fit: 'Integration. The heart of why mixed-methods matters.' },
@@ -32023,25 +32023,25 @@ const MM_V3_TEACH = {
   'qual:quotes':      { title: 'Quote Selection', what: 'Pull representative quotes by theme, group, or sentiment to illustrate findings.', when: 'When writing up findings. Good reports anchor each theme with a quote.', fit: 'Reporting prep, after coding.' },
   'qual:sentiment':   { title: 'Sentiment', what: 'Polarity and intensity scoring of open-ended responses.', when: 'When tone matters and themes alone don\'t capture it. Sentiment is a supplemental layer, not a replacement for thematic coding.', fit: 'Add-on to the qual track.' },
   'qual:intercoder':  { title: 'Intercoder Check', what: 'When multiple coders work the same data, compute agreement statistics (Krippendorff\'s α, Cohen\'s κ).', when: 'Any time multiple coders are involved. Required for defensible qualitative claims in many fields.', fit: 'Quality assurance for the qual track. Still in development for some agreement metrics.' },
-  'qual:strength':    { title: 'Theme Strength', what: 'Frequency, coverage, and uniqueness of each theme — how strongly the data supports each one.', when: 'After coding, before writing up. Strong themes belong in the headline; weak themes get a footnote or get dropped.', fit: 'Quality check for the qual track.' },
+  'qual:strength':    { title: 'Theme Strength', what: 'Frequency, coverage, and uniqueness of each theme, how strongly the data supports each one.', when: 'After coding, before writing up. Strong themes belong in the headline; weak themes get a footnote or get dropped.', fit: 'Quality check for the qual track.' },
   'qual:compare':     { title: 'Code Comparison', what: 'How themes show up across groups, time points, or design conditions.', when: 'When the qual story might differ between subgroups (e.g., themes managers raise vs. themes employees raise).', fit: 'Group-comparison view for the qual track.' },
   'qual:map':         { title: 'Theme Map', what: 'Network or hierarchy visualization of how themes relate to each other.', when: 'When you want to see the architecture of the themes rather than just a list.', fit: 'Synthesis view for the qual track.' },
 
   // ---------- Integrate ----------
-  'joint':       { title: 'Joint Display', what: 'A side-by-side table or matrix showing quant findings next to qual themes — same rows, both kinds of evidence.', when: 'Once both tracks have results to bring together. This is the core integration artifact in mixed methods.', fit: 'Integration. The first place to bring the two tracks into conversation.' },
+  'joint':       { title: 'Joint Display', what: 'A side-by-side table or matrix showing quant findings next to qual themes, same rows, both kinds of evidence.', when: 'Once both tracks have results to bring together. This is the core integration artifact in mixed methods.', fit: 'Integration. The first place to bring the two tracks into conversation.' },
   'integration': { title: 'Integration', what: 'Where do quant and qual converge, diverge, or expand on each other? Convergence builds confidence; divergence is the most interesting finding.', when: 'After both tracks have stable findings.', fit: 'Integration. The conceptual heart of mixed methods, not just a step.' },
-  'strength':    { title: 'Strength Check', what: 'Confidence assessment for each integrated finding — what\'s defensible, what\'s tentative, what needs more data.', when: 'Before writing the report. The Studio flags findings that lean on weak evidence.', fit: 'Integration. The "can we say this?" gate before the report.' },
-  'matrix':      { title: 'Matrix', what: 'Cross-tab of themes by groups with quant overlays — e.g., theme prevalence by department with engagement-score means.', when: 'When the integration story involves subgroups.', fit: 'Integration. Specialized joint display for subgroup analysis.' },
+  'strength':    { title: 'Strength Check', what: 'Confidence assessment for each integrated finding, what\'s defensible, what\'s tentative, what needs more data.', when: 'Before writing the report. The Studio flags findings that lean on weak evidence.', fit: 'Integration. The "can we say this?" gate before the report.' },
+  'matrix':      { title: 'Matrix', what: 'Cross-tab of themes by groups with quant overlays, e.g., theme prevalence by department with engagement-score means.', when: 'When the integration story involves subgroups.', fit: 'Integration. Specialized joint display for subgroup analysis.' },
 
   // ---------- Defend the Report ----------
-  'outputs':         { title: 'Your outputs', what: 'Every file this project can produce in one place — Word and PDF reports, coded variable datasets, joint display, matrix. Download or open the workspace that built each one.', when: 'Any time you want to see what is available to take away or send to someone.', fit: 'Entry point to the Defend stage. Trust in the decision starts with knowing what you can hand off.' },
+  'outputs':         { title: 'Your outputs', what: 'Every file this project can produce in one place, Word and PDF reports, coded variable datasets, joint display, matrix. Download or open the workspace that built each one.', when: 'Any time you want to see what is available to take away or send to someone.', fit: 'Entry point to the Defend stage. Trust in the decision starts with knowing what you can hand off.' },
   'report':          { title: 'Report', what: 'Assemble the writeup. The Studio drafts paragraphs grounded in your actual findings; you edit, keep, or replace.', when: 'When the integrated findings are stable and you\'re ready to communicate them.', fit: 'Final step. Lives at the end of the workflow.' },
-  'strength_report': { title: 'Strength + Report', what: 'A report variant that includes a strength panel — what\'s defensible, what\'s not, and what would need more data.', when: 'When the audience needs to know how much weight each finding can carry.', fit: 'Final step. Use this version for any high-stakes audience.' },
+  'strength_report': { title: 'Strength + Report', what: 'A report variant that includes a strength panel, what\'s defensible, what\'s not, and what would need more data.', when: 'When the audience needs to know how much weight each finding can carry.', fit: 'Final step. Use this version for any high-stakes audience.' },
 };
 
 // Render teaching content for a sidebar item in the right-side ReliCheck
 // Guidance pane. Called when a user clicks any sidebar entry on the
-// landing page — there's no project yet, so we explain rather than navigate.
+// landing page, there's no project yet, so we explain rather than navigate.
 function mmLandingShowTeach(container, key, label) {
   const teach = MM_V3_TEACH[key];
   const titleEl = container.querySelector('#mmV3GTitle');
@@ -32102,7 +32102,7 @@ function mmLandingPaintLeftNav(container, design) {
 async function mmRenderLanding(container) {
   // Landing uses the same three-column V3 shell as project pages so the
   // methodological structure (Workflow / Quan / Qual / Integrate / Report)
-  // is always visible — the sidebar is part of the Studio's teaching
+  // is always visible, the sidebar is part of the Studio's teaching
   // surface, not just navigation. Without a project, sidebar clicks show
   // hand-authored teaching content in the right Guidance pane via
   // mmLandingShowTeach. The Methods Design dropdown is a *preview* that
@@ -32112,7 +32112,7 @@ async function mmRenderLanding(container) {
   const mmLogoSrc = 'MM-Logo.png';
 
   // Center column content. This is the original landing content (six-stop
-  // banner, quick actions, recent projects, recent activity) — preserved
+  // banner, quick actions, recent projects, recent activity), preserved
   // so users still see the dashboard. It now lives inside the V3 shell's
   // center column instead of taking up the full width.
   const centerHTML =
@@ -32237,7 +32237,7 @@ async function mmRenderLanding(container) {
             '<div class="mm-v3-g-eyebrow">ReliCheck Guidance</div>' +
             '<div class="mm-v3-g-title" id="mmV3GTitle">Welcome to the Studio</div>' +
             '<div class="mm-v3-g-body" id="mmV3GBody">' +
-              '<p style="margin:0 0 10px;font-size:14px;line-height:1.5;">Mixed-methods research brings numbers and narratives into one structured analysis. The Studio guides you from data to defensible conclusions, with method rules — not AI — in the driver\'s seat.</p>' +
+              '<p style="margin:0 0 10px;font-size:14px;line-height:1.5;">Mixed-methods research brings numbers and narratives into one structured analysis. The Studio guides you from data to defensible conclusions, with method rules, not AI, in the driver\'s seat.</p>' +
               '<p style="margin:0 0 10px;font-size:14px;line-height:1.5;"><strong>Click any item in the sidebar</strong> to learn what it does, when to use it, and where it fits in your design.</p>' +
               '<p style="margin:0;font-size:14px;line-height:1.5;">Use the <em>Preview a design</em> dropdown at the top of the sidebar to see how the order of analyses changes between Explanatory, Exploratory, and Convergent designs.</p>' +
             '</div>' +
@@ -32247,11 +32247,11 @@ async function mmRenderLanding(container) {
       '</div>' +
     '</div>';
 
-  // Paint the sidebar (default to Convergent — its sidebar order is the
+  // Paint the sidebar (default to Convergent, its sidebar order is the
   // neutral case, equal weight to quan and qual).
   mmLandingPaintLeftNav(container, 'design_c');
 
-  // Design preview dropdown — flips section order so the user can see
+  // Design preview dropdown, flips section order so the user can see
   // exactly how the workflow changes between designs without committing.
   const designSelect = container.querySelector('#mmV3DesignSelect');
   if (designSelect) {
@@ -32451,7 +32451,7 @@ function mmWizardDraw(container) {
     '<div class="mm-shell">' +
       '<div style="margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">' +
         '<a href="#/mm" class="mm-link" style="color:#5a6470;font-size:13px;">&larr; Back to Studio</a>' +
-        // Express mode — for experienced researchers who already know what
+        // Express mode, for experienced researchers who already know what
         // they want to run. Skips the framing wizard, defaults to Convergent
         // Parallel (the most permissive design), and drops the user into the
         // project shell. The Methods Design selector at the top of the
@@ -32479,7 +32479,7 @@ function mmWizardDraw(container) {
       '</div>' +
       '<div class="card" style="padding:0;overflow:hidden;">' +
         // Step title strip inside the card. Uses Inter (inherits from body)
-        // and sentence-case bold — matches the v3 shell aesthetic instead
+        // and sentence-case bold, matches the v3 shell aesthetic instead
         // of the older Fraunces serif treatment.
         '<div style="padding:18px 24px 12px;border-bottom:1px solid #f0f2f4;background:#fafbfc;">' +
           '<h1 style="font-size:18px;font-weight:600;margin:0;color:#1a1f2b;">' + MM.esc(STOP_DEFS[step - 1].title) + '</h1>' +
@@ -32521,7 +32521,7 @@ function mmWizardDraw(container) {
       MM.wizard.step--;
       // When unwinding into Step 2, land at its final sub-step so the user
       // returns to "Confirm what we found" rather than back to the intake
-      // tabs — they already picked the data on the way in.
+      // tabs, they already picked the data on the way in.
       if (MM.wizard.step === 2) MM.wizard.dataSubStep = 2;
       mmWizardSaveState();
       mmWizardDraw(container);
@@ -32561,7 +32561,7 @@ async function mmWizardExpressSkip(container) {
       express_skipped: 1,
     });
   } catch (e) {
-    // Server may not accept express_skipped yet — retry without the flag.
+    // Server may not accept express_skipped yet, retry without the flag.
     try {
       await api.mmFraming({
         project_id: w.projectId,
@@ -33056,7 +33056,7 @@ async function mmWizardIntakeSurvey(pane) {
     if (!s) { hintEl.textContent = ''; return; }
     const rc = (s.response_count != null) ? Number(s.response_count) : null;
     if (rc === 0) {
-      hintEl.innerHTML = '<span style="color:#a33;">This survey has 0 responses in the responses table. If the main app shows responses for this survey, the data may live in a dataset rather than a survey — use the Upload data path instead.</span>';
+      hintEl.innerHTML = '<span style="color:#a33;">This survey has 0 responses in the responses table. If the main app shows responses for this survey, the data may live in a dataset rather than a survey, use the Upload data path instead.</span>';
     } else if (rc != null) {
       hintEl.textContent = rc + ' response' + (rc === 1 ? '' : 's') + ' available to pull on the next screen.';
     } else {
@@ -33209,7 +33209,7 @@ function mmWizardStep4Upload(body) {
   }
 
   // Compute per-column hints (distinct value count, sample values) so the
-  // user has context when picking a role. This is data-aware — the same
+  // user has context when picking a role. This is data-aware, the same
   // pass that inferColumnMeta makes, surfaced for human review.
   const hints = parsed.headers.map((name, i) => {
     const distinct = new Set();
@@ -33267,7 +33267,7 @@ function mmWizardStep4Upload(body) {
   }).join('');
 
   body.innerHTML =
-    '<p style="color:#5a6470;margin:0 0 12px;">Here is what we found. <strong>We made guesses</strong> based on each column\'s values — please confirm or change them. The Studio will use these roles for every analysis downstream.</p>' +
+    '<p style="color:#5a6470;margin:0 0 12px;">Here is what we found. <strong>We made guesses</strong> based on each column\'s values, please confirm or change them. The Studio will use these roles for every analysis downstream.</p>' +
     '<div class="card" style="padding:18px;">' +
       '<h3 style="margin:0 0 6px;font-size:16px;">' + MM.esc(parsed.filename || 'Uploaded file') + '</h3>' +
       '<p style="margin:0 0 14px;color:#5a6470;font-size:13px;">' + MM.esc(summaryParts.join(' · ')) + '</p>' +
@@ -33886,7 +33886,7 @@ async function mmRenderProject(container, id) {
   // The first attempt sometimes fails when PHP-FPM opcache is mid-refresh
   // (we saw this during the May 2026 incident: API returned a transient
   // 500 with the Ionos parking page as body). Retry once after a short
-  // wait before showing an error. Also sanitize the error message — if
+  // wait before showing an error. Also sanitize the error message, if
   // the body looks like HTML, don't dump it into the UI.
   const sanitizeErr = (msg) => {
     msg = String(msg || '');
@@ -33930,7 +33930,7 @@ async function mmRenderProject(container, id) {
   //   2. Quan reliability / descriptives not refreshing after the user
   //      added new responses (state.analyzeCache served the prior
   //      computation indefinitely).
-  // We tolerate failures — the rest of the project shell still works
+  // We tolerate failures, the rest of the project shell still works
   // even if these refresh calls don't land.
   try {
     const proj = MM.state.current || {};
@@ -33938,7 +33938,7 @@ async function mmRenderProject(container, id) {
     if (proj.dataset_id) linkedIds.push(String(proj.dataset_id));
     if (proj.survey_id)  linkedIds.push(String(proj.survey_id));
     if (linkedIds.length) {
-      // Best-effort parallel fetch — don't block the project shell on
+      // Best-effort parallel fetch, don't block the project shell on
       // these. If either errors, we keep whatever state.surveys already
       // held (the user still sees the project, just may hit the same
       // "Project not found" we're trying to fix).
@@ -33963,7 +33963,7 @@ async function mmRenderProject(container, id) {
         linkedIds.forEach(idStr => { delete state.analyzeCache[idStr]; });
       }
     }
-  } catch (_) { /* tolerate — the project shell still renders */ }
+  } catch (_) { /* tolerate, the project shell still renders */ }
 
   // Phase 170 v2: if the project is mid-wizard, drop the user back into the
   // wizard at the saved step. Legacy projects (backfilled to skipped_legacy)
@@ -34037,7 +34037,7 @@ async function mmRenderProject(container, id) {
 
   // Phase 180: v3 shell gate. ?v3=1 in the URL or localStorage.mmStudio.v3=1
   // routes to the new five-zone v3 shell. Same data, same APIs, same
-  // mmTab*() renderers — only the chrome changes. Default off until v3 is
+  // mmTab*() renderers, only the chrome changes. Default off until v3 is
   // verified against live projects.
   if (mmV3ShellEnabled()) {
     return mmRenderProjectShellV3(container);
@@ -34294,7 +34294,7 @@ function mmRenderProjectShell(container) {
 }
 
 // ============================================================
-// Phase 180 — v3 Studio shell
+// Phase 180, v3 Studio shell
 // ============================================================
 // Five-zone layout: black icon rail + white workflow sidebar + top
 // methods ribbon + center analysis area + right guidance panel.
@@ -34378,7 +34378,7 @@ const MM_V3_NAV = {
     { key: 'score',            label: 'Score-to-Theme', pathwayOnly: 'scores_plus_comments' },
     { key: 'alignment',        label: 'Alignment',      pathwayOnly: 'scores_plus_comments' },
   ],
-  // Qual sub-tools — full list ported from App 2.0 surface.
+  // Qual sub-tools, full list ported from App 2.0 surface.
   // "Overview" leads (replaces the old duplicate "Qual Analysis" label).
   qual: [
     { key: 'qual',            label: 'Overview' },
@@ -34424,7 +34424,7 @@ const MM_V3_SECTION_FOR_KEY = (function () {
 // Build the workspace crumb HTML for a given workspace key. Two segments:
 // the section name (Quan / Qual / Integrate / Defend / Workflow) and the
 // sidebar label. A previous version added a third "detail" segment that
-// just reworded the label ("Overview · Quant Bird's-Eye View") — dropped
+// just reworded the label ("Overview · Quant Bird's-Eye View"), dropped
 // because it was noise without information.
 function mmV3BuildCrumb(key, label) {
   const meta = MM_V3_SECTION_FOR_KEY[key];
@@ -34435,20 +34435,20 @@ function mmV3BuildCrumb(key, label) {
 }
 
 // Trust journey: map every workspace key to one of four stages. The
-// platform's pitch is "trust at each stage" — Questions (data quality and
+// platform's pitch is "trust at each stage", Questions (data quality and
 // instrument design) → Analysis (reliability, validity, tests) →
 // Interpretation (joint, integration, alignment) → Decision (defensibility,
 // report). The pill strip in the workspace head highlights the active
 // stage and lets the user jump to each stage's lead workspace.
 const MM_V3_TRUST_STAGE_FOR_KEY = {
-  // Stage 1 — Questions: the instrument and the data itself.
+  // Stage 1, Questions: the instrument and the data itself.
   'data':            'questions',
   'wiz:data-kind':   'questions',
   'wiz:intent':      'questions',
   'wiz:design':      'questions',
   'builder':         'questions',
   'dataset':         'questions',
-  // Stage 2 — Analysis: numbers and themes.
+  // Stage 2, Analysis: numbers and themes.
   'v3:survey':        'analysis',
   'v3:overview':      'analysis',
   'v3:descriptives':  'analysis',
@@ -34471,20 +34471,20 @@ const MM_V3_TRUST_STAGE_FOR_KEY = {
   'qual:strength':    'analysis',
   'qual:compare':     'analysis',
   'qual:map':         'analysis',
-  // Stage 3 — Interpretation: putting quant and qual into conversation.
+  // Stage 3, Interpretation: putting quant and qual into conversation.
   'joint':            'interpretation',
   'integration':      'interpretation',
   'matrix':           'interpretation',
   'score':            'interpretation',
   'alignment':        'interpretation',
-  // Stage 4 — Decision: defensibility and the final report.
+  // Stage 4, Decision: defensibility and the final report.
   'outputs':          'decision',
   'strength':         'decision',
   'report':           'decision',
   'strength_report':  'decision',
 };
 
-// Each stage has a lead workspace — the place the strip routes to when
+// Each stage has a lead workspace, the place the strip routes to when
 // a user clicks the stage pill. Picked to be the workspace most central
 // to that stage of the trust journey.
 const MM_V3_TRUST_STAGE_LEAD = {
@@ -34559,12 +34559,12 @@ function mmEnsureV3Styles() {
     '.mm-v3-design-pill:hover { background:var(--v3-border-soft); }',
     '.mm-v3-design-pill .caret { font-size:10px; color:var(--v3-primary); }',
     '.mm-v3-design-pick select { position:absolute; left:0; bottom:0; width:100%; height:calc(100% - 14px); opacity:0; cursor:pointer; border:0; }',
-    /* Top-left brand block — logo only. Methods Design moved into a
+    /* Top-left brand block, logo only. Methods Design moved into a
        "shoulder" tile inside the workflow sidebar so it aligns with the
        workspace crumb row, not stacked under the logo. */
     '.mm-v3-topbar-left { display:flex; align-items:center; }',
     '.mm-v3-topbar-logo { height:56px; width:auto; display:block; }',
-    /* Methods Design tile — light orange box that lives at the top of the
+    /* Methods Design tile, light orange box that lives at the top of the
        inner left sidebar, on the same vertical band as the workspace head. */
     '.mm-v3-design-tile { background:#fff1ea; border:1px solid #fde2d7; border-radius:10px; padding:12px 14px; margin:14px 12px 16px; }',
     /* Three design cards stack vertically inside the 200px sidebar so the
@@ -34593,7 +34593,7 @@ function mmEnsureV3Styles() {
     '.mm-v3-tour-next { background:var(--v3-primary); border-color:var(--v3-primary); color:#fff; }',
     '.mm-v3-tour-next:hover { background:var(--v3-primary-2); }',
 
-    /* === Strength Index ring — sits at the far left of the workspace head.
+    /* === Strength Index ring, sits at the far left of the workspace head.
        Click opens the full breakdown in the middle workspace via
        mmV3OpenWorkspace(v3:overview). Empty state shows a dashed track
        and "--"; the harvest pass paints the arc once the analytics
@@ -34620,7 +34620,7 @@ function mmEnsureV3Styles() {
     '.mm-v3-design-tile select { position:absolute; opacity:0; pointer-events:none; }',
     '.mm-v3-design-tile .mm-v3-design-pick { position:relative; }',
     '.mm-v3-design-tile select { position:absolute; left:0; bottom:0; width:100%; height:calc(100% - 14px); opacity:0; cursor:pointer; pointer-events:auto; border:0; }',
-    /* Workflow ribbon — flex:1 plus justify-content:center centers it in the
+    /* Workflow ribbon, flex:1 plus justify-content:center centers it in the
        middle of the topbar between the brand block and the project label. */
     '.mm-v3-ribbon { display:flex; align-items:center; justify-content:center; gap:2px; flex:1; overflow-x:auto; min-width:0; }',
     '.mm-v3-ribbon-step { padding:6px 12px; border-radius:999px; font-size:12.5px; color:var(--v3-text-mute); white-space:nowrap; }',
@@ -34694,12 +34694,12 @@ function mmEnsureV3Styles() {
     '.mm-v3-leftnav-section.workflow{ color:#64748b; }',
     '.mm-v3-nav-divider { height:1px; background:var(--v3-border); margin:12px 14px; }',
 
-    /* Center workspace — delegates to mmRenderTab via #mmTabBody. */
+    /* Center workspace, delegates to mmRenderTab via #mmTabBody. */
     '.mm-v3-workspace { padding:18px 22px 80px; min-width:0; min-height:0; height:100%; overflow-y:auto; overflow-x:hidden; background:var(--v3-bg); position:relative; }',
     '.mm-v3-workspace-head { margin-bottom:14px; display:flex; flex-direction:column; gap:10px; }',
     '.mm-v3-head-top { display:flex; align-items:center; gap:14px; flex-wrap:wrap; }',
     '.mm-v3-crumb { font-size:13px; color:var(--v3-text-mute); line-height:1.5; flex:1 1 auto; min-width:0; }',
-    /* === Trust journey strip — Questions › Analysis › Interpretation
+    /* === Trust journey strip, Questions › Analysis › Interpretation
        › Decision. Current stage in primary color, earlier stages marked
        visited with a check, upcoming stages muted. Clicking a stage jumps
        to its lead workspace. === */
@@ -34728,7 +34728,7 @@ function mmEnsureV3Styles() {
     '.mm-v3-g-title { font-size:15px; font-weight:600; margin-bottom:14px; color:var(--v3-text); }',
     '.mm-v3-g-body { font-size:13px; line-height:1.55; color:var(--v3-text); }',
     '.mm-v3-g-body p { margin:0 0 10px; }',
-    /* AI Summary section — secondary, collapsed by default. Methodology
+    /* AI Summary section, secondary, collapsed by default. Methodology
        teaching is the foreground; AI narration sits below as supplemental
        content the user opts into. */
     '.mm-v3-g-ai { margin-top:18px; padding-top:12px; border-top:1px solid var(--v3-border-soft); }',
@@ -34802,13 +34802,13 @@ function mmRenderProjectShellV3(container) {
     MM.state.framing = { chosen_design: null, backend_stage: 'needs_design' };
   });
 
-  // Logo path — try MM-Logo.png at the repo root (used by the v3 prototype).
+  // Logo path, try MM-Logo.png at the repo root (used by the v3 prototype).
   const logoSrc = 'logo-brand.png';
   const mmLogoSrc = 'MM-Logo.png';
 
   container.innerHTML =
     '<div class="mm-v3-root" id="mmV3Root">' +
-      // No v3 black rail here — the host app already renders its own
+      // No v3 black rail here, the host app already renders its own
       // collapsible icon rail to the left of #content. The v3 shell only
       // contributes the workflow sidebar + topbar + center + guidance.
 
@@ -34836,7 +34836,7 @@ function mmRenderProjectShellV3(container) {
           '<aside class="mm-v3-leftnav" id="mmV3LeftNav">' +
             // Methods Design tile lives in a "shoulder" above the workflow
             // sections, on the same vertical band as the workspace crumb.
-            // Methods design is a high-leverage choice — it flips the
+            // Methods design is a high-leverage choice, it flips the
             // sidebar order and shapes the workflow ribbon. Render all three
             // options as compact cards (not a dropdown) so the comparison is
             // visible at a glance and switching is one click, not two.
@@ -34844,18 +34844,18 @@ function mmRenderProjectShellV3(container) {
               '<div class="mm-v3-design-pick">' +
                 '<span class="mm-v3-design-eyebrow">Methods design</span>' +
                 '<div class="mm-v3-design-cards" id="mmV3DesignCards" role="radiogroup" aria-label="Methods design">' +
-                  '<button type="button" class="mm-v3-design-card" data-design="design_a" role="radio" aria-checked="false" title="Explanatory Sequential — Quan → Qual: run the quantitative analysis first, then use qualitative work to explain the numbers.">' +
+                  '<button type="button" class="mm-v3-design-card" data-design="design_a" role="radio" aria-checked="false" title="Explanatory Sequential, Quan → Qual: run the quantitative analysis first, then use qualitative work to explain the numbers.">' +
                     '<span class="mm-v3-design-card-name">Explanatory</span>' +
                   '</button>' +
-                  '<button type="button" class="mm-v3-design-card" data-design="design_b" role="radio" aria-checked="false" title="Exploratory Sequential — Qual → Quan: build themes from the qualitative data first, then test them quantitatively.">' +
+                  '<button type="button" class="mm-v3-design-card" data-design="design_b" role="radio" aria-checked="false" title="Exploratory Sequential, Qual → Quan: build themes from the qualitative data first, then test them quantitatively.">' +
                     '<span class="mm-v3-design-card-name">Exploratory</span>' +
                   '</button>' +
-                  '<button type="button" class="mm-v3-design-card" data-design="design_c" role="radio" aria-checked="false" title="Convergent Parallel — Quan + Qual: run both tracks at the same time and compare findings side-by-side.">' +
+                  '<button type="button" class="mm-v3-design-card" data-design="design_c" role="radio" aria-checked="false" title="Convergent Parallel, Quan + Qual: run both tracks at the same time and compare findings side-by-side.">' +
                     '<span class="mm-v3-design-card-name">Convergent</span>' +
                   '</button>' +
                 '</div>' +
                 // Catch-up hint surfaces when the user entered via express
-                // mode — the design is a default, not a deliberate pick.
+                // mode, the design is a default, not a deliberate pick.
                 '<div id="mmV3ExpressHint" style="display:none;font-size:10.5px;color:#4338ca;margin-top:6px;line-height:1.4;">Express default. <a href="#" id="mmV3RefineFraming" style="color:#4338ca;text-decoration:underline;">Refine your framing &rarr;</a></div>' +
               '</div>' +
             '</div>' +
@@ -34880,31 +34880,31 @@ function mmRenderProjectShellV3(container) {
                   '</span>' +
                 '</button>' +
               '</div>' +
-              // Trust journey strip — Questions › Analysis › Interpretation
+              // Trust journey strip, Questions › Analysis › Interpretation
               // › Decision. The platform's whole pitch is "trust at each
               // stage"; this strip makes the journey visible so the user
               // always knows which trust stage the active workspace
               // contributes to. Painted by mmV3PaintTrustStrip on every
               // workspace switch.
               '<div class="mm-v3-trust-strip" id="mmV3TrustStrip" role="navigation" aria-label="Trust journey">' +
-                '<button type="button" class="mm-v3-trust-stage" data-trust="questions" title="Trust in the questions — instrument design, data quality, column roles">' +
+                '<button type="button" class="mm-v3-trust-stage" data-trust="questions" title="Trust in the questions, instrument design, data quality, column roles">' +
                   '<span class="num">1</span><span class="lbl">Questions</span>' +
                 '</button>' +
                 '<span class="sep" aria-hidden="true">&rsaquo;</span>' +
-                '<button type="button" class="mm-v3-trust-stage" data-trust="analysis" title="Trust in the analysis — reliability, validity, descriptives, inferential tests">' +
+                '<button type="button" class="mm-v3-trust-stage" data-trust="analysis" title="Trust in the analysis, reliability, validity, descriptives, inferential tests">' +
                   '<span class="num">2</span><span class="lbl">Analysis</span>' +
                 '</button>' +
                 '<span class="sep" aria-hidden="true">&rsaquo;</span>' +
-                '<button type="button" class="mm-v3-trust-stage" data-trust="interpretation" title="Trust in the interpretation — joint display, integration, alignment of quant + qual">' +
+                '<button type="button" class="mm-v3-trust-stage" data-trust="interpretation" title="Trust in the interpretation, joint display, integration, alignment of quant + qual">' +
                   '<span class="num">3</span><span class="lbl">Interpretation</span>' +
                 '</button>' +
                 '<span class="sep" aria-hidden="true">&rsaquo;</span>' +
-                '<button type="button" class="mm-v3-trust-stage" data-trust="decision" title="Trust in the decision — defensibility, strength check, final report">' +
+                '<button type="button" class="mm-v3-trust-stage" data-trust="decision" title="Trust in the decision, defensibility, strength check, final report">' +
                   '<span class="num">4</span><span class="lbl">Decision</span>' +
                 '</button>' +
               '</div>' +
             '</div>' +
-            // First-view hint banner — reminds the user to verify column
+            // First-view hint banner, reminds the user to verify column
             // types before trusting downstream analyses. Dismissed once
             // and remembered per project, so it doesn't nag on every load.
             (p.dataset_id ? '<div id="mmV3ColRolesHint" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:#fffbe6;border:1px solid #f3d97a;border-radius:8px;font-size:13px;color:#5a4500;margin-bottom:12px;">' +
@@ -34949,7 +34949,7 @@ function mmRenderProjectShellV3(container) {
   const root = container.querySelector('#mmV3Root');
   const studio = container.querySelector('#mmV3Studio');
 
-  // "Edit column roles" link in the topbar — opens the in-place editor
+  // "Edit column roles" link in the topbar, opens the in-place editor
   // so testers can fix stale classifications without re-uploading. On
   // save we bust the analyze cache and re-open the current workspace so
   // the dropdowns reflect the new types.
@@ -34968,7 +34968,7 @@ function mmRenderProjectShellV3(container) {
     editColsLink.addEventListener('click', (e) => { e.preventDefault(); openEditCols(); });
   }
 
-  // Strength Index ring — click opens the Overview workspace where the
+  // Strength Index ring, click opens the Overview workspace where the
   // full SSI breakdown lives (same as clicking the sidebar entry). Score
   // is harvested opportunistically from the analytics dashboard DOM and
   // mirrored into the SVG arc + center number; until then the ring shows
@@ -34997,13 +34997,13 @@ function mmRenderProjectShellV3(container) {
       ssiChip.classList.add('has-score', 'tone-' + toneFor(score));
       ssiChip.setAttribute('title', 'Strength Index: ' + score + ' / 100' + (status ? ' (' + status + ')' : '') + '. Click for the full breakdown.');
     };
-    // Cached score per project — restored immediately on render so the
+    // Cached score per project, restored immediately on render so the
     // ring shows the last-known value rather than blanking on every nav.
     let cached = null;
     try { cached = JSON.parse(localStorage.getItem('mm_v3_ssi_' + p.id) || 'null'); } catch (_) {}
     if (cached && Number.isFinite(cached.score)) paintRing(cached.score, cached.status);
     // Off-screen compute. Previous version relied on the user visiting the
-    // Strength tab so .ssi-total would render in the dashboard — but most
+    // Strength tab so .ssi-total would render in the dashboard, but most
     // Quan workspaces route to other sub-tabs and never produce the node.
     // Instead we call loadAnalyzeData + renderSSICard directly into a
     // detached host, harvest the score from its DOM, and discard the host.
@@ -35021,7 +35021,7 @@ function mmRenderProjectShellV3(container) {
           try { renderSSICard(hidden, cache.full, cache.responses); } catch (_) {}
           // renderSSICard writes innerHTML synchronously, so the score
           // node is available immediately. The "not enough data" branch
-          // renders `--` instead of a number — treat that as no score.
+          // renders `--` instead of a number, treat that as no score.
           const nEl = hidden.querySelector('.ssi-ring .num .n');
           const raw = nEl ? parseInt(String(nEl.textContent || '').replace(/[^0-9]/g, ''), 10) : NaN;
           if (Number.isFinite(raw) && raw > 0) {
@@ -35069,7 +35069,7 @@ function mmRenderProjectShellV3(container) {
   });
   applyGuidance();
 
-  // AI Summary collapse toggle. Closed by default so methodology leads —
+  // AI Summary collapse toggle. Closed by default so methodology leads,
   // user has to opt in to see AI narration. State is not persisted across
   // workspace switches because each workspace re-paints fresh content.
   const aiToggle = container.querySelector('#mmV3GAiToggle');
@@ -35082,7 +35082,7 @@ function mmRenderProjectShellV3(container) {
     });
   }
 
-  // Trust-journey strip — clicking a stage navigates to that stage's lead
+  // Trust-journey strip, clicking a stage navigates to that stage's lead
   // workspace (Questions → Data Upload, Analysis → Overview, etc.). Lets
   // the user move through the trust journey explicitly rather than
   // hunting in the sidebar.
@@ -35120,7 +35120,7 @@ function mmRenderProjectShellV3(container) {
       if (refine) refine.addEventListener('click', (e) => {
         e.preventDefault();
         // Walk the user back to the framing step of the wizard without
-        // losing their data or design — the wizard already knows how to
+        // losing their data or design, the wizard already knows how to
         // resume mid-flow.
         api.mmFraming({ project_id: p.id, advance_wizard_step: 4, framing_status: 'in_progress' })
           .then(() => { try { sessionStorage.removeItem('mm_express_skipped_' + p.id); } catch (_) {} navigate('mm', String(p.id)); })
@@ -35185,7 +35185,7 @@ function mmV3PaintDesign(container, design) {
 
 // First-time-user tour. Walks new users through the V3 shell's five
 // load-bearing UX objects so the layout reads correctly on first contact.
-// No external dependency — uses a single overlay, a spotlight rectangle,
+// No external dependency, uses a single overlay, a spotlight rectangle,
 // and a popover, repositioned per step. Esc, click outside the popover,
 // or clicking "Skip tour" exits.
 function mmV3StartTour(container) {
@@ -35195,10 +35195,10 @@ function mmV3StartTour(container) {
 
   const steps = [
     { selector: '#mmV3Ribbon',         placement: 'bottom', title: 'Your workflow ribbon', body: 'This is your roadmap. Setup → Data Check → Quan → Qual → Integrate → Defend the Report. It shows where you are in the mixed-methods process at all times.' },
-    { selector: '#mmV3LeftNavBody',    placement: 'right',  title: 'The methodological sidebar', body: 'Every workspace is grouped under the section it belongs to (Workflow, Quan, Qual, Integrate, Defend). Click any item to open it — and hover for a one-line description.' },
+    { selector: '#mmV3LeftNavBody',    placement: 'right',  title: 'The methodological sidebar', body: 'Every workspace is grouped under the section it belongs to (Workflow, Quan, Qual, Integrate, Defend). Click any item to open it, and hover for a one-line description.' },
     { selector: '#mmV3Guidance',       placement: 'left',   title: 'Guidance pane', body: 'Hand-authored explanations and ReliCheck Intelligence narration live here. Switch workspaces and the right pane follows along with the matching teaching content.' },
     { selector: '#mmV3DesignCards',    placement: 'right',  title: 'Choose your methods design', body: 'Explanatory (Quan → Qual), Exploratory (Qual → Quan), or Convergent (both at once). Picking a design flips the sidebar order so the lead track is always on top.' },
-    { selector: '[data-mm-v3-key="data"]', placement: 'right', title: 'Start with Data Upload', body: 'When you’re ready, open Data Upload in the Workflow section. ReliCheck will infer column roles and surface what the data can support — every other workspace branches off from there.' },
+    { selector: '[data-mm-v3-key="data"]', placement: 'right', title: 'Start with Data Upload', body: 'When you’re ready, open Data Upload in the Workflow section. ReliCheck will infer column roles and surface what the data can support, every other workspace branches off from there.' },
   ];
 
   const overlay = document.createElement('div');
@@ -35247,7 +35247,7 @@ function mmV3StartTour(container) {
     backBtn.disabled = (idx === 0);
     nextBtn.textContent = (idx === steps.length - 1) ? 'Done' : 'Next →';
     if (!targetEl) {
-      // Target missing (e.g. sidebar not painted yet) — center the popover
+      // Target missing (e.g. sidebar not painted yet), center the popover
       // and skip the spotlight so the tour still reads correctly.
       spot.style.display = 'none';
       pop.style.left = '50%';
@@ -35316,13 +35316,13 @@ function mmV3PaintLeftNav(container, project) {
   const section = (title, items, cls) => {
     const rows = items.map(e => {
       if (e.pathwayOnly && e.pathwayOnly !== pathway) return '';
-      // Status dot — small trailing colored bubble. Falls back to a legacy
+      // Status dot, small trailing colored bubble. Falls back to a legacy
       // pill if a caller still passes recommended/beta flags.
       let trailing = '';
       if (e.status) {
         const tipMap = {
           green:  'Ready to run on this dataset',
-          yellow: 'Partial — needs more data or further setup',
+          yellow: 'Partial, needs more data or further setup',
           red:    'Cannot run on this dataset',
           gray:   'Not yet eligible for this design',
           dotted: 'Needs data before this can be evaluated',
@@ -35370,7 +35370,7 @@ function mmV3PaintLeftNav(container, project) {
     section('Integrate', MM_V3_NAV.connect, 'connect') +
     '<div class="mm-v3-nav-divider"></div>' +
     section('Defend the Report', MM_V3_NAV.report, 'report');
-  // Status-dot legend — small expandable key so the dot vocabulary is
+  // Status-dot legend, small expandable key so the dot vocabulary is
   // discoverable instead of mystery iconography.
   html +=
     '<div class="mm-v3-status-legend">' +
@@ -35428,26 +35428,26 @@ const MM_V3_VIRTUAL_KEYS = {
   'v3:compare':       { tab: 'quant', sub: 'compare' },
   'v3:relationships': { tab: 'quant', sub: 'relationships' },
   'v3:chi-square':    { tab: 'quant', sub: 'chi' },
-  // Inferential test direct-launches — open the quant suite and scroll to the
+  // Inferential test direct-launches, open the quant suite and scroll to the
   // Recommended panel where the eligibility cards live.
   'v3:ttest':         { tab: 'quant', sub: 'strength', scrollTo: 'mmRecPanel' },
   'v3:anova':         { tab: 'quant', sub: 'strength', scrollTo: 'mmRecPanel' },
-  // Regression / MLM — App 2.0 surfaces these under Predictors.
+  // Regression / MLM, App 2.0 surfaces these under Predictors.
   'v3:regression':    { tab: 'quant', sub: 'predictors' },
   'v3:mlm':           { tab: 'quant', sub: 'predictors' },
   'v3:predictors':    { tab: 'quant', sub: 'predictors' },
   'v3:recommended':   { tab: 'quant', sub: 'strength', scrollTo: 'mmRecPanel' },
-  // Qual sub-tools — most route to the codebook surface; sentiment/quotes
+  // Qual sub-tools, most route to the codebook surface; sentiment/quotes
   // open the qual analysis surface (these are sections inside mmTabQualAnalysis).
   'qual:quotes':      { tab: 'qual' },
   'qual:sentiment':   { tab: 'qual' },
   'qual:intercoder':  { tab: 'qual:intercoder' },
-  // Phase 180 — these three now have their own renderers in mmRenderTab,
+  // Phase 180, these three now have their own renderers in mmRenderTab,
   // so pass the key straight through.
   'qual:strength':    { tab: 'qual:strength' },
   'qual:compare':     { tab: 'qual:compare' },
   'qual:map':         { tab: 'qual:map' },
-  // Wizard re-entry — read-only summary cards of what the user picked.
+  // Wizard re-entry, read-only summary cards of what the user picked.
   'wiz:data-kind':    { card: 'data-kind' },
   'wiz:intent':       { card: 'intent' },
   'wiz:design':       { card: 'design' },
@@ -35499,7 +35499,7 @@ function mmV3OpenWorkspace(container, key, label) {
   }
 
   if (virtual) {
-    // Wizard cards — pickable form or read-only summary, depending on
+    // Wizard cards, pickable form or read-only summary, depending on
     // whether the framing for that step has already been saved.
     // (Kept for backward compatibility; primary path is the modal above.)
     if (virtual.card) {
@@ -35525,7 +35525,7 @@ function mmV3OpenWorkspace(container, key, label) {
     }
   }
 
-  // Qual Overview cleanup — mmTabQualAnalysis renders a single page that
+  // Qual Overview cleanup, mmTabQualAnalysis renders a single page that
   // includes the overview cards AND mounts the full Codebook + Sentiment +
   // Quotes workspaces inline beneath. In v3 those have their own sidebar
   // entries, so hide the inline mounts when the user opens the Overview.
@@ -35541,7 +35541,7 @@ function mmV3OpenWorkspace(container, key, label) {
       });
     }, 50);
   } else if (key === 'themes' || (typeof key === 'string' && key.indexOf('qual:') === 0)) {
-    // A specific qual sub-tool was picked — ensure all hosts are visible
+    // A specific qual sub-tool was picked, ensure all hosts are visible
     // and scroll to the right one.
     setTimeout(() => {
       const body = container.querySelector('#mmTabBody');
@@ -35562,7 +35562,7 @@ function mmV3OpenWorkspace(container, key, label) {
   }
 
   // If the virtual key requested a scroll target (e.g. Recommended for this
-  // data → #mmRecPanel), poll for the anchor — the quant suite's loadAnalyzeData
+  // data → #mmRecPanel), poll for the anchor, the quant suite's loadAnalyzeData
   // is async so the strip may take a moment to appear.
   if (virtual && virtual.scrollTo) {
     const anchorId = virtual.scrollTo;
@@ -35808,7 +35808,7 @@ function mmV3OpenWizardModal(startStep) {
     else if (!(fr.data_kinds && fr.data_kinds.length)) step = 2;
     else if (!(fr.intent_purposes && fr.intent_purposes.length)) step = 3;
     else if (!fr.chosen_design) step = 4;
-    else step = 1; // everything done — let the user revisit upload
+    else step = 1; // everything done, let the user revisit upload
   }
 
   _mmV3WizState = {
@@ -35817,7 +35817,7 @@ function mmV3OpenWizardModal(startStep) {
     importedAtOpen: ((MM.state.counts || {}).responses || 0)
   };
 
-  // Mount the overlay (idempotent — kill any existing instance first).
+  // Mount the overlay (idempotent, kill any existing instance first).
   const existing = document.getElementById('mmV3WizOverlay');
   if (existing) existing.remove();
   const overlay = document.createElement('div');
@@ -36114,7 +36114,7 @@ function mmV3RenderJumpStrip(container, currentKey) {
 function mmV3StartNarratorHoist(container) {
   if (_mmV3NarratorObserver) return;
   const tabBody = container.querySelector('#mmTabBody');
-  // Narrator cards and jump strips are AI-generated artifacts — they belong
+  // Narrator cards and jump strips are AI-generated artifacts, they belong
   // in the secondary "AI Summary" block, not the primary Methodology body.
   // This keeps methodology teaching as the foreground content and AI
   // narration as supplemental (collapsed by default).
@@ -36175,11 +36175,11 @@ function mmV3PaintGuidance(container, key, label) {
     'v3:relationships': { what: 'Pairwise Pearson correlations across continuous variables.', next: 'Look at top pairs by strength; flag the surprising ones.' },
     'v3:chi-square':    { what: 'Association between two categorical variables with χ², p, and Cramér\'s V.', next: 'Inspect the standardized residuals to see where the association sits.' },
     'v3:predictors':    { what: 'Regression models. Locked until N ≥ 200.', next: 'Collect more responses, then return here to fit a model.' },
-    'v3:recommended':   { what: 'The four canonical tests — t-test, ANOVA, Pearson r, chi-square — with eligibility computed from your dataset. Green = will run on your data; Red = cannot; Orange = recommended for your design.', next: 'Pick the green or orange test that best fits your research question and click Run.' },
+    'v3:recommended':   { what: 'The four canonical tests, t-test, ANOVA, Pearson r, chi-square, with eligibility computed from your dataset. Green = will run on your data; Red = cannot; Orange = recommended for your design.', next: 'Pick the green or orange test that best fits your research question and click Run.' },
     'v3:ttest':         { what: "Welch's two-sample t-test for comparing means between exactly two groups.", next: 'Pick a 2-level grouping variable and a numeric outcome.' },
     'v3:anova':         { what: 'One-way ANOVA for comparing means across 3+ groups.', next: 'Pick a grouping variable with 3+ levels and a numeric outcome.' },
     'v3:regression':    { what: 'Linear regression for continuous outcomes; logistic regression for binary outcomes. Needs N ≥ 200 for stable estimates.', next: 'Pick an outcome and at least one predictor; the model fits with bootstrapped CIs.' },
-    'v3:mlm':           { what: 'Multilevel modeling for nested data — respondents within departments, students within classrooms, etc.', next: 'Pick a grouping variable as Level 2 and at least one Level-1 predictor.' },
+    'v3:mlm':           { what: 'Multilevel modeling for nested data, respondents within departments, students within classrooms, etc.', next: 'Pick a grouping variable as Level 2 and at least one Level-1 predictor.' },
     'wiz:data-kind':    { what: 'Read-only summary of the data-kinds you chose in the wizard.', next: 'Re-open the wizard if you need to revise.' },
     'wiz:intent':       { what: 'Read-only summary of the study intents you chose in the wizard.', next: 'Re-open the wizard if you need to revise.' },
     'wiz:design':       { what: 'Read-only summary of the mixed-methods design you chose.', next: 'Use the methods design pill in the top bar to change designs without re-running the wizard.' },
@@ -36325,7 +36325,7 @@ function mmStopStructure(body) {
           '<div>' + renderChips(fr.intent_purposes, intentLabel) + '</div></div>' +
         '<div><div style="font-size:11px;color:#5a6470;text-transform:none;letter-spacing:0.04em;margin-bottom:6px;">Dataset state</div>' +
           '<div style="font-size:14px;color:#1a1f2b;">' + (c.responses || 0) + ' responses loaded. ' + (c.categories || 0) + ' categories.' +
-          (c.responses ? '' : ' <span style="color:#a33;">No data yet — use the Builder in Analyze to load some.</span>') +
+          (c.responses ? '' : ' <span style="color:#a33;">No data yet, use the Builder in Analyze to load some.</span>') +
           '</div></div>' +
       '</div>' +
       '<div style="margin-top:18px;"><a href="#" class="btn ghost" data-mm-edit-wizard="structure" style="font-size:13px;">Edit in wizard</a></div>' +
@@ -37071,7 +37071,7 @@ function mmRenderTab(key) {
   if (key === 'quant')           return mmTabQuantAnalysis(body);
   if (key === 'qual')            return mmTabQualAnalysis(body);
   if (key === 'strength_report') return mmTabStrengthAndReport(body);
-  // Phase 180 — qual sub-tools that compute over existing data.
+  // Phase 180, qual sub-tools that compute over existing data.
   if (key === 'qual:strength')   return mmTabQualThemeStrength(body);
   if (key === 'qual:compare')    return mmTabQualCodeComparison(body);
   if (key === 'qual:map')        return mmTabQualThemeMap(body);
@@ -37426,7 +37426,7 @@ function mmIntakePaste(pane) {
 }
 
 /* ============================================================
-   Qualitative-to-Quantitative Builder — 3-step internal wizard.
+   Qualitative-to-Quantitative Builder, 3-step internal wizard.
    Hosted inside Step 2 as one card. Steps:
      A. Mode (Hybrid / Auto-Structure / Guided)
      B. Settings (target categories, seeds, outcome focus)
@@ -37646,7 +37646,7 @@ async function mmSuggestThemesFromResponses(projectId, opts) {
     return { themes: [], error: 'Need at least 3 responses with substantive text (10+ chars) to suggest themes.' };
   }
 
-  // 2. Stopword list. Conservative — common English function words plus
+  // 2. Stopword list. Conservative, common English function words plus
   // a few domain-neutral filler words. Researchers can override later.
   const STOP = new Set([
     'the','a','an','and','or','but','if','of','in','on','at','to','for','with','from','by','as','is','was','are','were','be','been','being','it','its','they','them','their','there','this','that','these','those','i','me','my','we','our','us','you','your','he','him','his','she','her','what','which','who','whom','when','where','why','how','all','some','any','no','not','none','more','most','other','such','only','own','same','so','than','too','very','can','will','just','should','now','do','does','did','have','has','had','about','also','into','out','up','down','over','under','again','then','here','still','because','while','than','very','really','quite','much','many','few','lot','one','two','three','first','second','last','well','good','bad','say','says','said','get','got','make','made','go','went','come','came','take','took','see','saw','know','knew','think','thought','want','wanted','need','needed','use','used','feel','felt','look','looked','seem','seemed','time','times','way','ways','thing','things','people','person','someone','everyone','anyone','nobody','something','anything','everything','nothing','yes','yeah','ok','okay','sure','maybe','perhaps','probably','definitely','always','never','sometimes','often','usually','rarely','am','iam','dont','doesnt','didnt','isnt','arent','wasnt','werent','wont','wouldnt','shouldnt','couldnt','hasnt','havent','hadnt','im','ive','id','ill','youre','youve','youll','youd','hes','shes','its','were','weve','well','wed','theyre','theyve','theyll','theyd'
@@ -37746,7 +37746,7 @@ async function mmSuggestThemesFromResponses(projectId, opts) {
 }
 
 // ============================================================
-// Phase 181 — Blind coding surface for non-owner coders.
+// Phase 181, Blind coding surface for non-owner coders.
 // Renders when MM.state.current.mm_role === 'coder'. Hides every other
 // coder's assignments so the second coder's judgments stay independent
 // (intercoder agreement assumes blind coding). Writes via the row-level
@@ -37775,7 +37775,7 @@ async function mmTabCodebookCoder(host) {
     host.innerHTML = '<div class="card" style="padding:24px;color:#a33;">Could not load responses: ' + MM.esc(e.message || 'unknown error') + '</div>';
     return;
   }
-  // My own codings — per theme, but filtered to my coder_id. Backend filter
+  // My own codings, per theme, but filtered to my coder_id. Backend filter
   // happens in coder-set-coding.php's read sibling once it exists; for now we
   // pull the codings under each theme and trust the server to scope to my role.
   // (When the row-level read endpoint ships, swap this for one call.)
@@ -37791,7 +37791,7 @@ async function mmTabCodebookCoder(host) {
         if (cid === null) return; // can't attribute; skip from "my" view
         // The current user's id isn't on MM.state.current today; the safest
         // proxy is "this is the owner running as coder" which doesn't apply
-        // here — for blind coding the front-end relies on what the server
+        // here, for blind coding the front-end relies on what the server
         // attributes to us. Until a /api/mm/me.php exists, we treat every
         // row returned for this project as visible-but-unowned and only set
         // myCoded when the user explicitly clicks (optimistic local).
@@ -37799,7 +37799,7 @@ async function mmTabCodebookCoder(host) {
     } catch (_) {}
   }
 
-  // Pagination — 20 responses per page so 500-row projects stay usable.
+  // Pagination, 20 responses per page so 500-row projects stay usable.
   const PAGE_SIZE = 20;
   let page = 0;
   const totalPages = Math.max(1, Math.ceil(responses.length / PAGE_SIZE));
@@ -37810,7 +37810,7 @@ async function mmTabCodebookCoder(host) {
         '<h2 style="margin:0;font-family:inherit;font-size:22px;color:#1a1f2b;">Blind coding</h2>' +
         '<span style="background:#fff1ea;color:#a04518;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;text-transform:none;letter-spacing:0.04em;">Coder mode</span>' +
       '</div>' +
-      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.5;">You\'re coding as a second coder on this project. The owner\'s and other coders\' choices are hidden so your judgments stay independent — that\'s what makes Cohen\'s &kappa; and Krippendorff\'s &alpha; meaningful. Click a theme button to apply or clear your own code for each response. Your codings save automatically.</p>' +
+      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.5;">You\'re coding as a second coder on this project. The owner\'s and other coders\' choices are hidden so your judgments stay independent, that\'s what makes Cohen\'s &kappa; and Krippendorff\'s &alpha; meaningful. Click a theme button to apply or clear your own code for each response. Your codings save automatically.</p>' +
     '</div>';
   }
 
@@ -37899,7 +37899,7 @@ async function mmTabCodebookCoder(host) {
           });
         } catch (e) {
           if (wasMine) myCoded[rid].add(tid); else myCoded[rid].delete(tid);
-          if (typeof showToast === 'function') showToast(e.message || 'Save failed — change reverted.');
+          if (typeof showToast === 'function') showToast(e.message || 'Save failed, change reverted.');
           // Re-render to reflect rollback.
           const cardEl2 = host.querySelector('[data-blind-response="' + rid + '"]');
           const newCard2 = (() => {
@@ -37944,7 +37944,7 @@ async function mmTabCodebookCoder(host) {
           await api.mmCoderSetCoding({ project_id: p.id, response_id: rid, category_id: tid, action: action });
         } catch (e) {
           if (wasMine) myCoded[rid].add(tid); else myCoded[rid].delete(tid);
-          if (typeof showToast === 'function') showToast(e.message || 'Save failed — change reverted.');
+          if (typeof showToast === 'function') showToast(e.message || 'Save failed, change reverted.');
         }
       });
     });
@@ -38178,7 +38178,7 @@ async function mmTabCodebook(host) {
   // selectCodebookTheme, renderLeft/Center/Right, and loadEvidence are all
   // declared). Calling them earlier in the body would throw a temporal-
   // dead-zone ReferenceError on any const-declared helper and leave the
-  // Evidence panel blank — that was the 2026-05-22 stuck-loader bug.
+  // Evidence panel blank, that was the 2026-05-22 stuck-loader bug.
 
   // ----- LEFT: theme list -----
   function renderLeft() {
@@ -38316,7 +38316,7 @@ async function mmTabCodebook(host) {
         try { console.error('mmCodebookSave failed', { status: e.status, code: e.code, url: e.url, message: e.message, raw: e.raw }); } catch (_) {}
         const statusPart = e.status ? (' [' + e.status + (e.code ? ' ' + e.code : '') + ']') : '';
         const rawHint = (!e.message || e.message === 'Request failed') && e.status === 500
-          ? ' Your edits were not saved. Please copy your text before refreshing — refreshing will lose this edit.'
+          ? ' Your edits were not saved. Please copy your text before refreshing, refreshing will lose this edit.'
           : '';
         setSaveStatus('Save failed' + statusPart, '#a33');
         showToast('Save failed' + statusPart + ': ' + (e.message || 'server save endpoint failed') + rawHint);
@@ -38562,7 +38562,7 @@ async function mmTabCodebook(host) {
       el.textContent = 'request sent · ' + elapsed + 's elapsed';
       if (Date.now() - loadStart > 5000) {
         const msg = rowsHost.querySelector('#mmCbEvLoadMsg');
-        if (msg) msg.textContent = 'Still loading — server is taking longer than usual.';
+        if (msg) msg.textContent = 'Still loading, server is taking longer than usual.';
       }
     }, 250);
     // Hard 15-second timeout so the drawer never hangs forever.
@@ -38575,7 +38575,7 @@ async function mmTabCodebook(host) {
       rowsHost.innerHTML =
         '<div style="color:#a33;font-size:13px;padding:10px 12px;background:#fdecec;border:1px solid #f5c2c2;border-radius:6px;">' +
           '<div style="font-weight:600;margin-bottom:4px;">Evidence took too long to load.</div>' +
-          '<div>The server did not respond within 15 seconds. This usually means the project has no coded responses for this theme yet — click "Apply themes to responses" above to code them. If the problem persists, the server endpoint may be slow or unreachable.</div>' +
+          '<div>The server did not respond within 15 seconds. This usually means the project has no coded responses for this theme yet, click "Apply themes to responses" above to code them. If the problem persists, the server endpoint may be slow or unreachable.</div>' +
         '</div>';
     }, timeoutMs);
     try {
@@ -38604,7 +38604,7 @@ async function mmTabCodebook(host) {
             '<span><strong style="color:#1a1f2b;">' + MM.esc(row.respondent_ref) + '</strong>' +
               (row.numeric_value !== null ? ' &middot; score ' + row.numeric_value : '') +
               (row.group_value ? ' &middot; ' + MM.esc(row.group_value) : '') + '</span>' +
-            '<span style="color:' + sentColor + ';">' + MM.esc(row.sentiment || '—') + '</span>' +
+            '<span style="color:' + sentColor + ';">' + MM.esc(row.sentiment || ', ') + '</span>' +
           '</div>' +
           '<div style="font-size:13px;color:#1a1f2b;line-height:1.45;margin-bottom:6px;overflow-wrap:anywhere;">' + MM.esc(row.text) + '</div>' +
           '<div style="display:flex;gap:6px;font-size:11px;">' +
@@ -39125,7 +39125,7 @@ async function mmTabDataset(body) {
 
   // Server requires at least one category before allowing a dataset build
   // (api/mm/dataset.php line 100). Probe up front so we never render a
-  // Build dataset button that the server will refuse — and so the user
+  // Build dataset button that the server will refuse, and so the user
   // gets a friendly, one-click path to where the work actually starts.
   let catCount = 0;
   try {
@@ -40317,7 +40317,7 @@ async function mmTabQuantAnalysis(body) {
   // shell is empty so the user can navigate forward.
   const isFullSurvey = !!(analyticsSurveyId || analyticsDatasetId);
 
-  // Empty state — no linked survey, no linked dataset, no mm_text_responses
+  // Empty state, no linked survey, no linked dataset, no mm_text_responses
   // rows. A brand-new project lands here and previously saw a near-empty
   // middle workspace with no clear next step. Render a single CTA card
   // pointing at Data Upload and return early.
@@ -40474,10 +40474,10 @@ async function mmTabQuantAnalysis(body) {
         readyOneLine: openCols > 0
           ? (openCols + ' open-ended item' + (openCols === 1 ? '' : 's') + ' in your linked source.')
           : (textRowCount + ' text response' + (textRowCount === 1 ? '' : 's') + ' available to code.'),
-        blockedOneLine: 'No open-ended data — study is quant-only.',
+        blockedOneLine: 'No open-ended data, study is quant-only.',
         fullDetail: hasQualText
           ? 'Your project has qualitative material to code. Open the Qual Analysis tab to build a codebook, code responses, and surface themes that integrate with the quantitative findings.'
-          : 'A mixed-methods project needs both quantitative and qualitative data. Your linked source has ' + effLikert + ' Likert item' + (effLikert === 1 ? '' : 's') + ' but no open-ended responses. Without qualitative data, the Joint Display, Evidence Matrix, and integration paragraphs in the final report will be empty — what you have is a quantitative study, not a mixed-methods one. Add at least one open-ended question or column to make this a defensible mixed-methods project.'
+          : 'A mixed-methods project needs both quantitative and qualitative data. Your linked source has ' + effLikert + ' Likert item' + (effLikert === 1 ? '' : 's') + ' but no open-ended responses. Without qualitative data, the Joint Display, Evidence Matrix, and integration paragraphs in the final report will be empty, what you have is a quantitative study, not a mixed-methods one. Add at least one open-ended question or column to make this a defensible mixed-methods project.'
       };
     })()
   ];
@@ -40522,7 +40522,7 @@ async function mmTabQuantAnalysis(body) {
              '<div class="mm-idx-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px;">' + cards + '</div>';
   })();
 
-  // Reliability foundation card — Step 1, ALWAYS rendered before the
+  // Reliability foundation card, Step 1, ALWAYS rendered before the
   // "what your data supports" card. Three honest states based on the
   // eligibility scalars we have at this point in the render
   // (linkedLikert, linkedResponses).
@@ -40807,7 +40807,7 @@ async function mmTabQuantAnalysis(body) {
     }
     return '';
   };
-  // Continuation block — sits inside the same #mmSupportPanel card the teaching
+  // Continuation block, sits inside the same #mmSupportPanel card the teaching
   // index opened above. Divider line, eyebrow label, then the four eligibility-
   // driven test cards. The wrapping card is closed once at the end of testsHtml.
   let testsHtml = '<div id="mmRecPanel" style="border-top:1px solid #f0f2f4;padding-top:14px;margin-top:2px;">' +
@@ -40858,7 +40858,7 @@ async function mmTabQuantAnalysis(body) {
   testsHtml += '</div></div></div>';
 
   // Step 1: ALL survey analysis (foundation strip + the full embedded
-  // ReliCheck analytics dashboard — reliability, validity, item-level
+  // ReliCheck analytics dashboard, reliability, validity, item-level
   // diagnostics, descriptives, factor structure). The instrument has to be
   // validated before anything in Step 2 means anything.
   // Step 2: what the validated data can support + recommended inferential
@@ -40908,7 +40908,7 @@ async function mmTabQuantAnalysis(body) {
       '</div>';
   }
 
-  // (Removed) Sticky Survey Strength Foundation bar at the bottom — the
+  // (Removed) Sticky Survey Strength Foundation bar at the bottom, the
   // Strength Index ring in the workspace head already conveys the same
   // status at a glance, and the bar was visual noise on every Quan
   // workspace. Clicking the ring still opens the full foundation
@@ -40918,7 +40918,7 @@ async function mmTabQuantAnalysis(body) {
 
   // Per-task visibility. Reads the v3 sidebar key the user clicked and
   // shows only the section(s) relevant to that task. Mirrors how Qual
-  // workspaces work — one click, one focused workspace.
+  // workspaces work, one click, one focused workspace.
   (function applyQuantSubVisibility() {
     const key = (typeof _mmV3CurrentKey === 'string' ? _mmV3CurrentKey : '') || '';
     // Sub-key → which sections + which test cards to show.
@@ -40997,7 +40997,7 @@ async function mmTabQuantAnalysis(body) {
             dashHost.querySelectorAll('.analyze-title-row').forEach(el => { el.style.display = 'none'; });
             // 2. Hide non-quant tabs.
             // Phase 180: also hide Descriptives / Compare / Pre-Post from the
-            // top tab strip — those surfaces are reached through the v3 inner
+            // top tab strip, those surfaces are reached through the v3 inner
             // sidebar instead, so showing them here would duplicate navigation.
             const hideKeys = { 'openended': 1, 'trends': 1, 'ipm': 1,
                                'descriptives': 1, 'compare': 1, 'prepost': 1 };
@@ -41029,7 +41029,7 @@ async function mmTabQuantAnalysis(body) {
   }
 
   // Collapse/expand the full diagnostics dashboard. Default open so existing
-  // users don't lose context, but the page can now breathe — one click hides
+  // users don't lose context, but the page can now breathe, one click hides
   // the dense reliability/validity/item tables and the foundation summary +
   // Step 2 cards remain the focus.
   const dashToggle = body.querySelector('#mmQuantDashToggle');
@@ -41846,13 +41846,13 @@ async function mmTabQuantAnalysis(body) {
           MM.mmConfirm(detail, { confirmLabel: 'Got it', cancelLabel: 'Close' });
         } else {
           // Defensive fallback if the helper isn't loaded for some reason.
-          alert(detail.replace(/&mdash;/g, '—').replace(/&times;/g, '×').replace(/&ge;/g, '≥'));
+          alert(detail.replace(/&mdash;/g, ', ').replace(/&times;/g, '×').replace(/&ge;/g, '≥'));
         }
       }
     });
   });
 
-  // Reliability strip "Open Reliability →" button — jumps to the matching
+  // Reliability strip "Open Reliability →" button, jumps to the matching
   // analytics tab inside the embedded dashboard, same pattern as a teaching
   // card click. Works for any future data-mm-open-tab="<key>" trigger.
   body.querySelectorAll('[data-mm-open-tab]').forEach(btn => {
@@ -42413,7 +42413,7 @@ async function mmTabQualAnalysis(body) {
     }
   } catch (_) {}
 
-  // Empty state — no open-ended responses. Detect whether the project
+  // Empty state, no open-ended responses. Detect whether the project
   // already has quant data linked; if so, frame this as a balance
   // problem (study is currently quant-only and is not yet mixed
   // methods) rather than a generic "upload data" CTA.
@@ -42446,7 +42446,7 @@ async function mmTabQualAnalysis(body) {
                '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.55;">Your data has ' + MM.esc(quantSummary) + ', but no open-ended responses yet. <strong>A defensible mixed-methods study needs both.</strong> Without qualitative data, the integration, joint display, and matrix sections of the report will be empty.</p>' +
              '</div>' +
            '</div>' +
-           '<p style="margin:0 0 14px;color:#3a4252;font-size:13px;line-height:1.55;">Add at least one open-ended column (free-text responses, interview notes, comments) so the qualitative track has material to code. If your study is truly quan-only, that\'s a methodologically different design — the MM Studio is the wrong workspace; use ReliCheck Survey Analysis instead.</p>' +
+           '<p style="margin:0 0 14px;color:#3a4252;font-size:13px;line-height:1.55;">Add at least one open-ended column (free-text responses, interview notes, comments) so the qualitative track has material to code. If your study is truly quan-only, that\'s a methodologically different design, the MM Studio is the wrong workspace; use ReliCheck Survey Analysis instead.</p>' +
            '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
              '<button type="button" class="btn primary" data-mm-empty-cta="data" style="padding:9px 18px;font-size:13.5px;">Add qualitative data &rarr;</button>' +
              '<button type="button" class="btn ghost" data-mm-empty-cta="quant" style="padding:9px 18px;font-size:13.5px;">Continue with quant only</button>' +
@@ -42455,7 +42455,7 @@ async function mmTabQualAnalysis(body) {
       : ('<div class="card" style="padding:36px 32px;text-align:center;max-width:520px;margin:24px auto;">' +
            '<div style="font-size:38px;line-height:1;margin-bottom:14px;" aria-hidden="true">&#128221;</div>' +
            '<h2 style="margin:0 0 8px;font-size:18px;font-weight:600;color:var(--v3-text,#1a1f2b);">No qualitative data yet</h2>' +
-           '<p style="margin:0 0 18px;color:#5a6470;font-size:13.5px;line-height:1.55;">A mixed-methods study has two legs — numbers and narrative. Upload a CSV with text columns, link a survey with open-ended items, or paste rows to give the qualitative track something to code.</p>' +
+           '<p style="margin:0 0 18px;color:#5a6470;font-size:13.5px;line-height:1.55;">A mixed-methods study has two legs, numbers and narrative. Upload a CSV with text columns, link a survey with open-ended items, or paste rows to give the qualitative track something to code.</p>' +
            '<button type="button" class="btn primary" data-mm-empty-cta="data" style="padding:9px 18px;font-size:13.5px;">Open Data Upload &rarr;</button>' +
          '</div>');
 
@@ -42648,7 +42648,7 @@ async function mmTabQualAnalysis(body) {
   // recommendation becomes noise around a single decision the user has
   // to make first. Once materialized, the tab re-renders normally.
   // Tag each Qual section with data-mm-qual-section so the per-task pass
-  // below can show only the one the user clicked — same pattern as the
+  // below can show only the one the user clicked, same pattern as the
   // Quan workspace. The "overview" key (qual) shows everything; quotes
   // and sentiment show only their host.
   body.innerHTML =
@@ -42663,7 +42663,7 @@ async function mmTabQualAnalysis(body) {
          '<div id="mmQualSentimentHost" data-mm-qual-section="sentiment" style="margin-bottom:14px;"></div>' +
          '<div id="mmQualQuotesHost"    data-mm-qual-section="quotes"    style="margin-bottom:14px;"></div>'));
 
-  // Per-task visibility — mirrors the Quan refactor. Each Qual sidebar
+  // Per-task visibility, mirrors the Quan refactor. Each Qual sidebar
   // key shows only its section in the middle.
   (function applyQualSubVisibility() {
     if (needsTextMaterialization) return;
@@ -43066,7 +43066,7 @@ async function mmQualRenderQuotes(host, rows, cats, codedByTheme, p) {
           '<h3 style="margin:0;font-family:inherit;font-size:18px;color:#1a1f2b;">Quote selection</h3>' +
           '<button class="btn ghost" id="mmQualCopyQuotes" style="font-size:12px;padding:6px 12px;">Copy selected quotes</button>' +
         '</div>' +
-        '<p style="margin:0;color:#5a6470;font-size:12px;">For each theme, the highest-confidence coded responses surface first. Check the ones you want to use — your selections are saved automatically and flow into the Joint Display and the Report.</p>' +
+        '<p style="margin:0;color:#5a6470;font-size:12px;">For each theme, the highest-confidence coded responses surface first. Check the ones you want to use, your selections are saved automatically and flow into the Joint Display and the Report.</p>' +
       '</div>' +
       blocks.join('') +
     '</div>';
@@ -43144,7 +43144,7 @@ function mmTabStrengthAndReport(body) {
 }
 
 /* ============================================================
-   Phase 180 — Qual sub-tools that compute over existing coded data.
+   Phase 180, Qual sub-tools that compute over existing coded data.
 
    Theme Strength: per-theme score combining coverage (% of responses
      coded under the theme), exemplar density (high-confidence picks),
@@ -43159,7 +43159,7 @@ function mmTabStrengthAndReport(body) {
      respondent_ref has been coded under more than one theme. Heatmap
      surfaces the theme clusters worth a deeper read.
 
-   All three use api.mmListCategories + api.mmListCodedResponses — data
+   All three use api.mmListCategories + api.mmListCodedResponses, data
    we already pull. No backend changes.
    ============================================================ */
 
@@ -43381,7 +43381,7 @@ async function mmTabQualCodeComparison(body) {
   }).sort((a, b) => b.divergence - a.divergence);
 
   // APA-style cross-tabulation. Previous version used stacked bars per
-  // theme — pretty but unusable in a manuscript. The table format pairs
+  // theme, pretty but unusable in a manuscript. The table format pairs
   // counts and percentages in each cell, which is the convention for
   // crosstabs in social-science research. Themes still sort by
   // divergence so the most lopsided distributions read first.
@@ -43412,7 +43412,7 @@ async function mmTabQualCodeComparison(body) {
   body.innerHTML =
     '<div style="margin-bottom:14px;">' +
       '<h2 style="margin:0 0 6px;font-family:inherit;font-size:22px;color:#1a1f2b;">Code Comparison</h2>' +
-      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.5;">How each theme distributes across your respondent groups. Themes ranked by <strong>divergence</strong> from the overall coded-response share — the higher the divergence, the more lopsided the theme.</p>' +
+      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.5;">How each theme distributes across your respondent groups. Themes ranked by <strong>divergence</strong> from the overall coded-response share, the higher the divergence, the more lopsided the theme.</p>' +
     '</div>' +
     '<div id="mmCodeCompareNarratorHost"></div>' +
     '<div class="card" style="padding:18px 20px;">' +
@@ -43648,7 +43648,7 @@ async function mmTabQualIntercoder(body) {
           'Both computations live in this file already (<code>mmComputeCohensKappa</code>, <code>mmComputeKrippendorffsAlpha</code>) and will run automatically the moment a second coder\'s data exists.' +
         '</div>' +
       '</div>' +
-      // Coders & invites panel — populated by mmCoderInviteList. Lives
+      // Coders & invites panel, populated by mmCoderInviteList. Lives
       // below the prereq card so even with no coders yet the owner sees
       // the empty state and the Invite button above stays the obvious CTA.
       '<div id="mmIntercoderManageHost" style="margin-top:14px;"></div>';
@@ -43668,7 +43668,7 @@ async function mmTabQualIntercoder(body) {
     return;
   }
 
-  // ---- Multi-coder data present — compute real agreement ----
+  // ---- Multi-coder data present, compute real agreement ----
   // Build per-response coder→theme map.
   // responseAssignments[respondentRef][coderId] = themeId
   const responseAssignments = {};
@@ -43776,7 +43776,7 @@ async function mmV3LoadInterCoderList(body, projectId) {
             '<div style="font-weight:600;color:#1a1f2b;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + MM.esc(c.name || '(no name)') + (isOwner ? ' <span style="font-size:10px;background:#fff1ea;color:#a04518;padding:2px 6px;border-radius:999px;font-weight:700;text-transform:none;letter-spacing:0.04em;">Owner</span>' : '') + '</div>' +
             '<div style="font-size:11.5px;color:#5a6470;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + MM.esc(c.email || '') + '</div>' +
           '</div>' +
-          '<div style="font-size:11px;color:#5a6470;text-align:right;">added ' + (c.added_at ? new Date(c.added_at + 'Z').toLocaleDateString() : '—') + '</div>' +
+          '<div style="font-size:11px;color:#5a6470;text-align:right;">added ' + (c.added_at ? new Date(c.added_at + 'Z').toLocaleDateString() : ', ') + '</div>' +
           '<div style="text-align:right;">' + removeBtn + '</div>' +
         '</div>';
       }).join('');
@@ -43790,7 +43790,7 @@ async function mmV3LoadInterCoderList(body, projectId) {
             '<div style="font-weight:600;color:#1a1f2b;font-size:13.5px;">' + MM.esc(inv.email || '(no email noted)') + '</div>' +
             '<div style="font-size:11.5px;color:#5a6470;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + MM.esc(inv.url) + '</div>' +
           '</div>' +
-          '<div style="font-size:11px;color:#5a6470;text-align:right;">' + (inv.created_at ? new Date(inv.created_at + 'Z').toLocaleDateString() : '—') + '</div>' +
+          '<div style="font-size:11px;color:#5a6470;text-align:right;">' + (inv.created_at ? new Date(inv.created_at + 'Z').toLocaleDateString() : ', ') + '</div>' +
           '<div style="display:flex;gap:6px;justify-content:flex-end;">' +
             '<button class="btn ghost" data-mm-invite-copy="' + inv.id + '" data-mm-invite-url="' + MM.esc(inv.url) + '" style="padding:5px 10px;font-size:12px;">Copy link</button>' +
             '<button class="btn ghost" data-mm-invite-revoke="' + inv.id + '" style="padding:5px 10px;font-size:12px;">Revoke</button>' +
@@ -43861,9 +43861,9 @@ function mmV3OpenInviteCoderModal(projectId) {
       '</div>' +
       '<div class="mm-v3-wiz-body" id="mmV3InviteBody">' +
         '<p style="margin:0 0 14px;color:#5a6470;font-size:13px;line-height:1.55;">Generate a one-time link you can share however you like (email, Slack, in person). The recipient must already have a ReliCheck account; the link bounces them through login if they\'re not signed in. Once they accept, they gain blind coding access to this project and their codings appear in the agreement metrics.</p>' +
-        '<label style="display:block;font-size:11px;font-weight:700;color:#5a6470;text-transform:none;letter-spacing:0.05em;margin-bottom:6px;">Coder email (optional — for your records)</label>' +
+        '<label style="display:block;font-size:11px;font-weight:700;color:#5a6470;text-transform:none;letter-spacing:0.05em;margin-bottom:6px;">Coder email (optional, for your records)</label>' +
         '<input type="email" id="mmV3InviteEmail" placeholder="coder@university.edu" style="width:100%;padding:10px 12px;border:1px solid #d3d8de;border-radius:8px;font-size:14px;box-sizing:border-box;" />' +
-        '<p style="margin:6px 0 0;color:#8b95a3;font-size:12px;">Email is stored for your reference only — no email is sent. You\'ll copy the link in the next step.</p>' +
+        '<p style="margin:6px 0 0;color:#8b95a3;font-size:12px;">Email is stored for your reference only, no email is sent. You\'ll copy the link in the next step.</p>' +
       '</div>' +
       '<div class="mm-v3-wiz-foot">' +
         '<button class="btn ghost" id="mmV3InviteCancel" type="button">Cancel</button>' +
@@ -43901,7 +43901,7 @@ function mmV3OpenInviteCoderModal(projectId) {
     body.innerHTML =
       '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#f4fbf6;border:1px solid #c8e6c9;border-radius:8px;font-size:13px;margin-bottom:14px;">' +
         '<span style="width:22px;height:22px;border-radius:999px;background:#1f7a3a;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">&#10003;</span>' +
-        '<div><strong style="color:#0f5128;">Invitation link created.</strong> Share it with your coder however you like — the link is single-use after acceptance.</div>' +
+        '<div><strong style="color:#0f5128;">Invitation link created.</strong> Share it with your coder however you like, the link is single-use after acceptance.</div>' +
       '</div>' +
       '<label style="display:block;font-size:11px;font-weight:700;color:#5a6470;text-transform:none;letter-spacing:0.05em;margin-bottom:6px;">Shareable link</label>' +
       '<div style="display:flex;gap:8px;">' +
@@ -44214,7 +44214,7 @@ function mmTabJointDisplay(body) {
       }
     }));
 
-    // ReliCheck Intelligence narrator — auto-hoisted into the right
+    // ReliCheck Intelligence narrator, auto-hoisted into the right
     // guidance panel by the v3 shell's MutationObserver.
     if (typeof insertTabNarratorCard === 'function' && payload && payload.rows) {
       const snapshot = {
@@ -44442,7 +44442,7 @@ function mmTabIntegration(body) {
       }
     }));
 
-    // ReliCheck Intelligence narrator — summarizes the integrated paragraphs
+    // ReliCheck Intelligence narrator, summarizes the integrated paragraphs
     // as a coherent whole. Auto-hoisted by the v3 MutationObserver.
     if (typeof insertTabNarratorCard === 'function' && payload && payload.rows) {
       const userEdited = (payload.rows || []).filter(r => r.source === 'user').length;
@@ -44892,7 +44892,7 @@ function mmTabMatrix(body) {
 }
 
 // =====================================================================
-// Outputs hub — the single surface where users find everything their
+// Outputs hub, the single surface where users find everything their
 // project produced. Cards per artifact (Report, Coded Variables, Joint
 // Display, Matrix, Strength Index) with direct downloads where possible
 // and "Open workspace" routes where the user has to do more work first.
@@ -44936,7 +44936,7 @@ function mmTabOutputs(body) {
       '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.55;">Everything this project can produce, in one place. Download what is ready, or open the workspace that builds each artifact.</p>' +
     '</div>' +
     '<div id="mmOutputsGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;">' +
-      // Report (Word + PDF) — always offered; server endpoint handles
+      // Report (Word + PDF), always offered; server endpoint handles
       // empty/partial state by generating what's available.
       card({
         key: 'report',
@@ -44948,7 +44948,7 @@ function mmTabOutputs(body) {
           '<button class="btn"         data-mm-out="report-pdf">Download PDF</button>' +
           '<button class="btn ghost"   data-mm-out="report-open">Open editor &rarr;</button>',
       }) +
-      // Coded Variables — depends on MM.state.dataset being built. Route
+      // Coded Variables, depends on MM.state.dataset being built. Route
       // to the workspace if not built; surface direct downloads when it is.
       card({
         key: 'dataset',
@@ -44965,7 +44965,7 @@ function mmTabOutputs(body) {
              '<button class="btn ghost"   data-mm-out="dataset-open">Open builder &rarr;</button>')
           : '<button class="btn primary" data-mm-out="dataset-open">Open builder &rarr;</button>',
       }) +
-      // Joint Display — table that pairs quant findings with qual themes.
+      // Joint Display, table that pairs quant findings with qual themes.
       card({
         key: 'joint',
         title: 'Joint display',
@@ -44975,7 +44975,7 @@ function mmTabOutputs(body) {
           '<button class="btn primary" data-mm-out="joint-csv">Download CSV</button>' +
           '<button class="btn ghost"   data-mm-out="joint-open">Open joint display &rarr;</button>',
       }) +
-      // Matrix — evidence matrix.
+      // Matrix, evidence matrix.
       card({
         key: 'matrix',
         title: 'Evidence matrix',
@@ -44985,7 +44985,7 @@ function mmTabOutputs(body) {
           '<button class="btn primary" data-mm-out="matrix-csv">Download CSV</button>' +
           '<button class="btn ghost"   data-mm-out="matrix-open">Open matrix &rarr;</button>',
       }) +
-      // Strength Index — opens the breakdown workspace.
+      // Strength Index, opens the breakdown workspace.
       card({
         key: 'ssi',
         title: 'Strength Index breakdown',
@@ -45033,7 +45033,7 @@ function mmTabOutputs(body) {
         if (action === 'dataset-open') return routeTo('dataset', 'Coded Variables');
         if (action === 'dataset-csv' || action === 'dataset-xlsx' || action === 'dataset-spss') {
           // The dataset download logic lives inside mmTabDataset's button
-          // handlers — route there and trigger the matching one. Routing
+          // handlers, route there and trigger the matching one. Routing
           // also restores MM.state.dataset in case the user nuked it.
           routeTo('dataset', 'Coded Variables');
           setTimeout(() => {
@@ -45071,7 +45071,7 @@ function mmTabOutputs(body) {
   });
 }
 
-// Shared helper — convert an array of plain row objects into a CSV string
+// Shared helper, convert an array of plain row objects into a CSV string
 // and trigger a client-side download. Used by the Outputs hub for Joint
 // Display and Matrix exports.
 function mmDownloadCsv(filename, rows) {
@@ -45093,7 +45093,7 @@ function mmDownloadCsv(filename, rows) {
 
 
 // =====================================================================
-// Mixed-Methods Report — data-driven, AI-optional.
+// Mixed-Methods Report, data-driven, AI-optional.
 //
 // The previous implementation routed every section through server-side
 // generation that mixed deterministic TEMPLATE fills with AI-required
@@ -45102,7 +45102,7 @@ function mmDownloadCsv(filename, rows) {
 //
 // This version builds the report client-side from data the Studio
 // already has access to. Numbers, tables, themes, joint display,
-// strength index — all deterministic. AI is exposed as a single opt-in
+// strength index, all deterministic. AI is exposed as a single opt-in
 // "Draft executive summary" button at the top. Word and PDF are
 // rendered from the same HTML the user sees in the workspace, so
 // "what you see is what gets exported".
@@ -45114,7 +45114,7 @@ async function mmTabReport(body) {
   body.innerHTML =
     '<div style="margin-bottom:18px;">' +
       '<h2 style="margin:0 0 6px;font-size:20px;font-weight:600;color:#1a1f2b;">Mixed-methods report</h2>' +
-      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.55;">Assembled from this project’s data — setup, quant results, qual results, integration, and the Strength Index breakdown. Everything below is deterministic. The executive summary at the top is optional and only fills if you ask ReliCheck Intelligence to draft it.</p>' +
+      '<p style="margin:0;color:#5a6470;font-size:13px;line-height:1.55;">Assembled from this project’s data, setup, quant results, qual results, integration, and the Strength Index breakdown. Everything below is deterministic. The executive summary at the top is optional and only fills if you ask ReliCheck Intelligence to draft it.</p>' +
     '</div>' +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:18px;padding:12px 14px;background:#fafbfc;border:1px solid #e2e6ea;border-radius:8px;">' +
       '<button class="btn primary" id="mmReportBuild">Build report</button>' +
@@ -45218,7 +45218,7 @@ async function mmTabReport(body) {
       reportData = await mmFetchReportData(p);
       mmReportProgress.step('Assembling sections and interpretation prose...');
       body.querySelector('#mmReportPreview').innerHTML = mmRenderReportSections(p, reportData);
-      mmReportProgress.done('Report built — scroll the preview, or click Download Word / Download PDF.');
+      mmReportProgress.done('Report built, scroll the preview, or click Download Word / Download PDF.');
       setMsg('Report built. Click Download Word or Download PDF to export.');
     } catch (e) {
       mmReportProgress.fail((e && e.message) || 'Could not build the report.');
@@ -45258,7 +45258,7 @@ async function mmTabReport(body) {
       const existing = preview.querySelector('section[data-mm-report-section="summary"]');
       if (existing) existing.outerHTML = block;
       else          preview.insertAdjacentHTML('afterbegin', block);
-      mmReportProgress.done('Executive summary drafted — edit it inline if needed, then export.');
+      mmReportProgress.done('Executive summary drafted, edit it inline if needed, then export.');
       setMsg('Executive summary drafted. Edit it inline if needed, then export.');
     } catch (e) {
       mmReportProgress.fail((e && e.message) || 'AI draft failed. The rest of the report still works without it.');
@@ -45277,7 +45277,7 @@ async function mmTabReport(body) {
     // index.iife.js and index.umd.js ship). Fall through a chain of
     // CDN URLs so the export still works if one host is blocked. The
     // IIFE bundle exposes `var docx = ...` globally; the UMD bundle
-    // attaches to window.docx — both populate the same window.docx
+    // attaches to window.docx, both populate the same window.docx
     // namespace that mmBuildReportDocx reads from.
     // Local-first. Self-hosted docx@8.5.0 IIFE lives in /lib/ on the
     // same origin as the app. Bypasses CSP, ad blockers, corporate
@@ -45292,7 +45292,7 @@ async function mmTabReport(body) {
       'https://cdn.jsdelivr.net/npm/[email protected]/build/index.umd.js',
       'https://cdn.jsdelivr.net/npm/[email protected]/build/index.umd.js',
     ];
-    // loadScriptOnce has no timeout — a stalled CDN response leaves the
+    // loadScriptOnce has no timeout, a stalled CDN response leaves the
     // Promise forever pending. Wrap each attempt in a hard 10s deadline
     // so we fall through to the next CDN instead of locking the user in
     // the progress modal indefinitely.
@@ -45329,7 +45329,7 @@ async function mmTabReport(body) {
       return;
     }
     try {
-      mmReportProgress.step('Building native Word XML — paragraphs, tables, headings...');
+      mmReportProgress.step('Building native Word XML, paragraphs, tables, headings...');
       setMsg('Building Word document...');
       const doc = mmBuildReportDocx(p, reportData);
       mmReportProgress.step('Packing the .docx file...');
@@ -45355,7 +45355,7 @@ async function mmTabReport(body) {
     try {
       await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js');
       if (typeof html2pdf === 'undefined') throw new Error('PDF library failed to load. Check pop-up/ad blockers.');
-      mmReportProgress.step('Rendering the report to PDF — this can take 10–30 seconds for long reports...');
+      mmReportProgress.step('Rendering the report to PDF, this can take 10–30 seconds for long reports...');
       setMsg('Rendering PDF...');
       const previewEl = body.querySelector('#mmReportPreview');
       // Clone to avoid mutating the visible preview, set print-ready width.
@@ -45382,7 +45382,7 @@ async function mmTabReport(body) {
   body.querySelector('#mmReportBuild').click();
 }
 
-// Fetch every piece of data the report needs. Each fetch is tolerant —
+// Fetch every piece of data the report needs. Each fetch is tolerant,
 // failures degrade to "section unavailable" rather than blocking the
 // whole report. Result is a flat object that mmRenderReportSections
 // reads from.
@@ -45407,7 +45407,7 @@ async function mmFetchReportData(p) {
   // in localStorage as one project-scoped map by mmSetSelectedQuote.
   try { out.selectedQuotes = mmGetSelectedQuotes(p.id).byTheme || {}; } catch (_) {}
 
-  // Framing — design + intents + data kinds.
+  // Framing, design + intents + data kinds.
   try {
     const fr = await api.mmFramingGet(p.id);
     out.framing = (fr && fr.framing) || null;
@@ -45433,7 +45433,7 @@ async function mmFetchReportData(p) {
     }
   }
 
-  // Joint display + matrix — tolerated if empty.
+  // Joint display + matrix, tolerated if empty.
   try {
     const r = await api.mmJointDisplay(p.id);
     out.jointRows = (r && r.rows) ? r.rows : [];
@@ -45518,7 +45518,7 @@ async function mmFetchReportData(p) {
 }
 
 // Compose the report HTML from fetched data. Every section renders even
-// when its data is missing — empty sections show a clear placeholder so
+// when its data is missing, empty sections show a clear placeholder so
 // the reader knows what's intentionally absent vs. what's been computed.
 function mmRenderReportSections(p, d) {
   const esc = MM.esc;
@@ -45535,7 +45535,7 @@ function mmRenderReportSections(p, d) {
   let out = '';
 
   // ----- Header -----
-  // Fix 5 — headline paragraph below title and metadata.
+  // Fix 5, headline paragraph below title and metadata.
   const headlineText = mmReportHeadline(d);
   out +=
     '<header style="margin-bottom:28px;">' +
@@ -45550,7 +45550,7 @@ function mmRenderReportSections(p, d) {
     '</header>';
 
   // ----- 1. Setup and Methods -----
-  // Single flowing paragraph with bold lead labels — reads like a methods
+  // Single flowing paragraph with bold lead labels, reads like a methods
   // section, not a vertical list. Mirrors what mmBuildReportDocx emits.
   out += '<section data-mm-report-section="setup" style="margin-bottom:28px;">';
   out += '<h2 style="margin:0 0 10px;font-size:18px;font-weight:600;color:#1a1f2b;border-bottom:1px solid #e2e6ea;padding-bottom:6px;">1. Setup and methods</h2>';
@@ -45577,8 +45577,8 @@ function mmRenderReportSections(p, d) {
     out += muted('No quantitative data is linked to this project yet, or the linked source does not include Likert-scale items. Link a survey or dataset with three or more Likert items to populate this section.');
   } else {
     const q = d.quant;
-    // Fix 3 — Reliability sub-heading + interpretation. No redundant
-    // "Reliability." lead label here — the Heading 3 already names it.
+    // Fix 3, Reliability sub-heading + interpretation. No redundant
+    // "Reliability." lead label here, the Heading 3 already names it.
     out += '<h3 style="margin:0 0 6px;font-size:14px;font-weight:600;color:#1a1f2b;">Reliability</h3>';
     out += '<p>' +
       'Cronbach’s α = ' + fmt(q.alpha) +
@@ -45610,7 +45610,7 @@ function mmRenderReportSections(p, d) {
   out += '<section data-mm-report-section="qual" style="margin-bottom:28px;">';
   out += '<h2 style="margin:0 0 10px;font-size:18px;font-weight:600;color:#1a1f2b;border-bottom:1px solid #e2e6ea;padding-bottom:6px;">3. Qualitative results</h2>';
   if (!d.themes.length) {
-    // Fix 2 — gate-and-annotate.
+    // Fix 2, gate-and-annotate.
     const gap = mmReportGapPattern('qual', d);
     out += '<p><strong>Status.</strong> ' + esc(gap.status) + '</p>';
     out += '<p><strong>Why this matters here.</strong> ' + esc(gap.why) + '</p>';
@@ -45652,7 +45652,7 @@ function mmRenderReportSections(p, d) {
         out += '<ul style="margin:0 0 10px 18px;padding:0;">';
         tq.items.forEach(e => {
           const ref = (e.respondentRef || e.respondent_ref || '').toString().trim();
-          const refTxt = ref ? ' <span style="color:#5a6470;font-size:12px;">— ' + esc(ref) + '</span>' : '';
+          const refTxt = ref ? ' <span style="color:#5a6470;font-size:12px;">, ' + esc(ref) + '</span>' : '';
           out += '<li style="margin:0 0 4px;color:#3a4252;">“' + esc((e.text || '').trim()) + '”' + refTxt + '</li>';
         });
         out += '</ul>';
@@ -45675,7 +45675,7 @@ function mmRenderReportSections(p, d) {
     });
     out += '</tbody></table>';
   } else {
-    // Fix 2 — gate-and-annotate.
+    // Fix 2, gate-and-annotate.
     const gap = mmReportGapPattern('joint', d);
     out += '<p><strong>Status.</strong> ' + esc(gap.status) + '</p>';
     out += '<p><strong>Why this matters here.</strong> ' + esc(gap.why) + '</p>';
@@ -45700,7 +45700,7 @@ function mmRenderReportSections(p, d) {
     });
     out += '</tbody></table>';
   } else {
-    // Fix 2 — gate-and-annotate.
+    // Fix 2, gate-and-annotate.
     const gap = mmReportGapPattern('matrix', d);
     out += '<p><strong>Status.</strong> ' + esc(gap.status) + '</p>';
     out += '<p><strong>Why this matters here.</strong> ' + esc(gap.why) + '</p>';
@@ -45714,7 +45714,7 @@ function mmRenderReportSections(p, d) {
       (d.ssi.status ? '(' + esc(d.ssi.status) + ')' : '') + '.</p>';
     if (d.ssi.headline) out += '<p>' + esc(d.ssi.headline) + '</p>';
     if (Object.keys(d.ssi.domains || {}).length) {
-      // Fix 4 — 3-column SSI table with "What the score is telling you".
+      // Fix 4, 3-column SSI table with "What the score is telling you".
       out += '<table><thead><tr><th>Domain</th><th style="text-align:right;">Score</th><th>What the score is telling you</th></tr></thead><tbody>';
       Object.keys(d.ssi.domains).forEach(k => {
         out += '<tr>' +
@@ -45739,7 +45739,7 @@ function mmRenderReportSections(p, d) {
     out += muted('Strength Index is not yet available. It requires three or more Likert items and three or more complete respondents.');
   }
 
-  // Limitations — Fix 2: composed from this study's actual gaps.
+  // Limitations, Fix 2: composed from this study's actual gaps.
   out += '<h3 style="margin:14px 0 6px;font-size:14px;font-weight:600;color:#1a1f2b;">Limitations</h3>';
   out += '<p>' + esc(mmDataAwareLimitations(designKey, d)) + '</p>';
   out += '<p>This report reflects the data and analyses available at the time of generation. Re-run after adding data, coding additional responses, or revising the codebook to update.</p>';
@@ -45752,11 +45752,11 @@ function mmRenderReportSections(p, d) {
 // Shared interpretation engine. Used by both mmRenderReportSections
 // (HTML preview) and mmBuildReportDocx (DOCX export) so the two
 // surfaces never drift. Every function takes data, returns plain
-// text — never HTML or docx primitives. Renderers wrap the text in
+// text, never HTML or docx primitives. Renderers wrap the text in
 // their format-appropriate elements.
 //
 // Pattern: "statistics write the finding, AI improves the explanation."
-// These rules are deterministic — Haiku polish layer can be added on
+// These rules are deterministic, Haiku polish layer can be added on
 // top later for prose smoothing.
 // =====================================================================
 
@@ -45859,7 +45859,7 @@ function mmInterpretAlpha(alpha, k) {
   else if (a >= 0.80) { band = 'strong (0.80–0.89)';   threshold = '0.80'; }
   else if (a >= 0.70) { band = 'acceptable (0.70–0.79)'; threshold = '0.70'; }
   else if (a >= 0.60) { band = 'usable but below the 0.70 threshold conventionally used to support group-level comparisons'; threshold = '0.70'; }
-  else                { band = 'below conventional thresholds — caution warranted before reporting group-level findings'; threshold = '0.70'; }
+  else                { band = 'below conventional thresholds, caution warranted before reporting group-level findings'; threshold = '0.70'; }
   let txt = 'α = ' + fmt(a) + ' falls in the ' + band + '.';
   if (k && k > 0 && k < 5) {
     txt += ' With only ' + k + ' item' + (k === 1 ? '' : 's') + ', α is bounded by the small item count as much as by inter-item correlation; even modestly correlated items can produce α in this range when the scale is short.';
@@ -45916,10 +45916,10 @@ function mmInterpretSsiDomain(domain, scoreStr, d) {
 
   if (dn.indexOf('reliabil') >= 0) {
     const a = d.quant && d.quant.alpha;
-    if (tone === 'strong') return 'Internal consistency is well above the 0.70 threshold; α = ' + (a ? a.toFixed(2) : '—') + ' supports group-level claims.';
-    if (tone === 'usable') return 'α = ' + (a ? a.toFixed(2) : '—') + ' falls in the usable range. Adding one or two well-correlated items, or revising the lowest-loading item, would lift this subscore.';
-    if (tone === 'partial') return 'α = ' + (a ? a.toFixed(2) : '—') + ' is below the 0.70 threshold conventional for group comparisons. The scale is short or items are weakly correlated; lengthening or sharpening item wording would help.';
-    return 'α = ' + (a ? a.toFixed(2) : '—') + ' is well below conventional thresholds. Treat group-level findings as exploratory until the instrument is revised.';
+    if (tone === 'strong') return 'Internal consistency is well above the 0.70 threshold; α = ' + (a ? a.toFixed(2) : ', ') + ' supports group-level claims.';
+    if (tone === 'usable') return 'α = ' + (a ? a.toFixed(2) : ', ') + ' falls in the usable range. Adding one or two well-correlated items, or revising the lowest-loading item, would lift this subscore.';
+    if (tone === 'partial') return 'α = ' + (a ? a.toFixed(2) : ', ') + ' is below the 0.70 threshold conventional for group comparisons. The scale is short or items are weakly correlated; lengthening or sharpening item wording would help.';
+    return 'α = ' + (a ? a.toFixed(2) : ', ') + ' is well below conventional thresholds. Treat group-level findings as exploratory until the instrument is revised.';
   }
   if (dn.indexOf('factor') >= 0) {
     if (tone === 'strong') return 'Factor structure is clean; the items hang together statistically with no obvious cross-loadings.';
@@ -45928,9 +45928,9 @@ function mmInterpretSsiDomain(domain, scoreStr, d) {
     return 'Factor structure is not interpretable from the current data. Likely too few items or too few respondents to estimate a stable solution.';
   }
   if (dn.indexOf('item') >= 0) {
-    if (tone === 'strong') return 'Item design is sound — no flagged items, distributions look healthy, no ceiling/floor concerns.';
+    if (tone === 'strong') return 'Item design is sound, no flagged items, distributions look healthy, no ceiling/floor concerns.';
     if (tone === 'usable') return 'Most items are well-designed; one or two may show ceiling effects or low item-total correlation. The Per-item descriptives table above shows where.';
-    return 'Several items have design issues — ceiling/floor effects, low item-total correlation, or skew. Review the descriptives table above for which items to revise.';
+    return 'Several items have design issues, ceiling/floor effects, low item-total correlation, or skew. Review the descriptives table above for which items to revise.';
   }
   if (dn.indexOf('response') >= 0) {
     if (tone === 'strong') return 'Sample size and completion rate support the analyses run. No power concerns at this stage.';
@@ -45938,19 +45938,19 @@ function mmInterpretSsiDomain(domain, scoreStr, d) {
     return 'Sample size is the limiting factor here. Add respondents before drawing strong conclusions from inferential tests.';
   }
   if (dn.indexOf('open') >= 0) {
-    if (tone === 'strong') return 'Open-ended engagement is strong — enough text to support thematic analysis and triangulation.';
+    if (tone === 'strong') return 'Open-ended engagement is strong, enough text to support thematic analysis and triangulation.';
     if (tone === 'usable') return 'Open-ended engagement is adequate but uneven; some prompts received many responses, others few.';
     return 'Open-ended engagement is low. The qualitative track in this study is currently the weakest leg of the design.';
   }
   if (dn.indexOf('action') >= 0) {
-    if (tone === 'strong') return 'Findings carry clear implications for action — the report identifies who should do what next.';
+    if (tone === 'strong') return 'Findings carry clear implications for action, the report identifies who should do what next.';
     if (tone === 'usable') return 'Some findings are actionable; others are descriptive only. Adding a recommended-action column to the matrix would lift this subscore.';
     return 'Findings are descriptive but not yet actionable. The Evidence Matrix is the place to turn what the data shows into what to do about it.';
   }
   return '';
 }
 
-// Headline paragraph for the cover block. Composed from data — names the
+// Headline paragraph for the cover block. Composed from data, names the
 // principal finding, the principal constraint, and the Strength Index
 // band in 2–3 sentences.
 function mmReportHeadline(d) {
@@ -45986,7 +45986,7 @@ function mmReportHeadline(d) {
 
   // Strength Index band
   if (ssi && Number.isFinite(ssi.total)) {
-    parts.push('The Strength Index lands at ' + ssi.total + ' / 100' + (ssi.status ? ' (' + ssi.status + ')' : '') + ' — see Section 4 for the per-domain breakdown.');
+    parts.push('The Strength Index lands at ' + ssi.total + ' / 100' + (ssi.status ? ' (' + ssi.status + ')' : '') + ', see Section 4 for the per-domain breakdown.');
   }
   return parts.join(' ');
 }
@@ -46064,7 +46064,7 @@ function mmBuildReportDocx(p, d) {
     Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
   } = D;
 
-  const fmt = (v, dec) => (v == null || !Number.isFinite(Number(v))) ? '—' : Number(v).toFixed(dec == null ? 2 : dec);
+  const fmt = (v, dec) => (v == null || !Number.isFinite(Number(v))) ? ', ' : Number(v).toFixed(dec == null ? 2 : dec);
   const asText = (s) => String(s == null ? '' : s);
 
   // Paragraph constructors.
@@ -46116,7 +46116,7 @@ function mmBuildReportDocx(p, d) {
   children.push(para(meta));
   if (p.description) children.push(para(p.description));
 
-  // Fix 5 — Headline paragraph. Principal finding + principal constraint
+  // Fix 5, Headline paragraph. Principal finding + principal constraint
   // + Strength Index band in 2–3 sentences. Reader gets the report's
   // gist in 50 words before reading 500.
   const headline = mmReportHeadline(d);
@@ -46132,7 +46132,7 @@ function mmBuildReportDocx(p, d) {
   const designLabel = designLabels[designKey] || designKey;
 
   // ---- 1. Setup and methods ----
-  // Single flowing paragraph with bold lead labels — reads like a methods
+  // Single flowing paragraph with bold lead labels, reads like a methods
   // section, not a vertical list of database fields. Previous version
   // emitted four separate one-sentence paragraphs (Design / Data kinds
   // / Research intents / Sample) which looked fragmented in Word.
@@ -46168,10 +46168,10 @@ function mmBuildReportDocx(p, d) {
     children.push(para_italic('No quantitative data is linked to this project yet, or the linked source does not include Likert-scale items. Link a survey or dataset with three or more Likert items to populate this section.'));
   } else {
     const q = d.quant;
-    // Fix 3 — Reliability now has its own sub-heading and is followed by
+    // Fix 3, Reliability now has its own sub-heading and is followed by
     // a data-driven interpretation sentence that names the conventional
     // threshold and the three-item-scale caveat when applicable. No
-    // redundant "Reliability." lead label here — the Heading 3 above
+    // redundant "Reliability." lead label here, the Heading 3 above
     // already names the section.
     children.push(h3('Reliability'));
     const reliabilityBody = "Cronbach's α = " + fmt(q.alpha)
@@ -46185,7 +46185,7 @@ function mmBuildReportDocx(p, d) {
       children.push(h3('Per-item descriptives'));
       const rows = q.descriptives.map(r => [r.label, fmt(r.mean), fmt(r.sd), asText(r.n)]);
       children.push(buildTable(['Item', 'Mean', 'SD', 'N'], rows));
-      // Fix 3 — interpretation of the item-mean distribution
+      // Fix 3, interpretation of the item-mean distribution
       const meansInterp = mmInterpretItemMeans(q.descriptives);
       if (meansInterp) children.push(para(meansInterp));
     }
@@ -46194,7 +46194,7 @@ function mmBuildReportDocx(p, d) {
   // ---- 3. Qualitative results ----
   children.push(h2('3. Qualitative results'));
   if (!d.themes.length) {
-    // Fix 2 — gate-and-annotate. Status, why-it-matters-for-THIS-report
+    // Fix 2, gate-and-annotate. Status, why-it-matters-for-THIS-report
     // (composed from the actual quant findings), concrete next step.
     const gap = mmReportGapPattern('qual', d);
     children.push(leadSentence('Status.', gap.status));
@@ -46202,7 +46202,7 @@ function mmBuildReportDocx(p, d) {
     children.push(leadSentence('Next step.', gap.nextStep));
   } else {
     children.push(h3('Codebook'));
-    const rows = d.themes.map(c => [c.name || '—', c.description || '', asText(d.codedCounts[c.id] || 0)]);
+    const rows = d.themes.map(c => [c.name || ', ', c.description || '', asText(d.codedCounts[c.id] || 0)]);
     children.push(buildTable(['Theme', 'Definition', 'Coded'], rows));
 
     const selByTheme = d.selectedQuotes || {};
@@ -46220,12 +46220,12 @@ function mmBuildReportDocx(p, d) {
         if (!tq.items.length) return;
         const tagText = tq.source === 'selected' ? ' (researcher-selected)' : ' (top-confidence sample)';
         children.push(new Paragraph({ children: [
-          new TextRun({ text: (c.name || '—') + '.', bold: true }),
+          new TextRun({ text: (c.name || ', ') + '.', bold: true }),
           new TextRun({ text: tagText, italics: true }),
         ] }));
         tq.items.forEach(e => {
           const ref = (e.respondentRef || e.respondent_ref || '').toString().trim();
-          const txt = '“' + (e.text || '').trim() + '”' + (ref ? ' — ' + ref : '');
+          const txt = '“' + (e.text || '').trim() + '”' + (ref ? ', ' + ref : '');
           children.push(para_italic(txt));
         });
       });
@@ -46241,7 +46241,7 @@ function mmBuildReportDocx(p, d) {
     const rows = d.jointRows.map(r => keys.map(k => asText(r[k])));
     children.push(buildTable(keys, rows));
   } else {
-    // Fix 2 — gate-and-annotate for the joint display.
+    // Fix 2, gate-and-annotate for the joint display.
     const gap = mmReportGapPattern('joint', d);
     children.push(leadSentence('Status.', gap.status));
     children.push(leadSentence('Why this matters here.', gap.why));
@@ -46256,7 +46256,7 @@ function mmBuildReportDocx(p, d) {
     ]);
     children.push(buildTable(['Measure', 'Quant', 'Theme evidence', 'Sentiment', 'Interpretation', 'Action'], rows));
   } else {
-    // Fix 2 — gate-and-annotate for the matrix.
+    // Fix 2, gate-and-annotate for the matrix.
     const gap = mmReportGapPattern('matrix', d);
     children.push(leadSentence('Status.', gap.status));
     children.push(leadSentence('Why this matters here.', gap.why));
@@ -46269,7 +46269,7 @@ function mmBuildReportDocx(p, d) {
     if (d.ssi.headline) children.push(para(d.ssi.headline));
     const domainKeys = Object.keys(d.ssi.domains || {});
     if (domainKeys.length) {
-      // Fix 4 — 3-column SSI table with "What the score is telling you".
+      // Fix 4, 3-column SSI table with "What the score is telling you".
       const rows = domainKeys.map(k => [
         k,
         asText(d.ssi.domains[k]),
@@ -46290,13 +46290,13 @@ function mmBuildReportDocx(p, d) {
   }
 
   children.push(h3('Limitations'));
-  // Fix 2 — limitations composed from the actual data, not a generic
+  // Fix 2, limitations composed from the actual data, not a generic
   // design-specific boilerplate paragraph.
   children.push(para(mmDataAwareLimitations(designKey, d)));
   children.push(para('This report reflects the data and analyses available at the time of generation. Re-run after adding data, coding additional responses, or revising the codebook to update.'));
 
   return new Document({
-    creator: 'ReliCheck — Mixed-Methods Studio',
+    creator: 'ReliCheck, Mixed-Methods Studio',
     title: p.title || 'Mixed-methods report',
     description: 'Mixed-methods report generated by the ReliCheck Mixed-Methods Studio',
     // Document defaults: Calibri 11 body with 1.15 line spacing matches
@@ -47147,7 +47147,7 @@ function mmShowNotesPanel(projectId, sectionKey, initialNotes, onCountChange) {
 })();
 
 // ============================================================
-// Main app sidebar — collapsible
+// Main app sidebar, collapsible
 // On first load, wrap each .nav-item's label text in a <span class="nav-item-label">
 // so CSS can hide it when collapsed. Add data-label for hover tooltips. Wire the
 // toggle button and remember the user's choice in localStorage.
@@ -47235,7 +47235,7 @@ function mmShowNotesPanel(projectId, sectionKey, initialNotes, onCountChange) {
         if (e.key === 'Escape') closeAll(null);
       });
 
-      // Trigger highlighting — mark trigger.has-active whenever the
+      // Trigger highlighting, mark trigger.has-active whenever the
       // current hash route falls under that dropdown\'s data-routes
       // list. Runs on boot AND on every hashchange so the highlight
       // tracks navigation in real time.

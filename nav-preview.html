@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReliCheck nav, layout comparison</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* === Tokens lifted from app-2026.html so the preview matches === */
+  :root {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --panel-2: #fafbff;
+    --border: #e6eaf2;
+    --border-strong: #d3d9e6;
+    --text: #0b1733;
+    --text-soft: #4a5578;
+    --text-mute: #6b7691;
+    --primary: #e85d3a;
+    --primary-dark: #cc4a2a;
+    --primary-soft: #fdeee9;
+    --accent: #e85d3a;
+    --accent-tint: #fff7f3;
+    --navy: #0b1733;
+    --navy-2: #142348;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #eef1f7; font-family: 'Inter', system-ui, sans-serif; color: var(--text); }
+
+  .page {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  .page-head { padding: 12px 0 28px; }
+  .page-head h1 { font: 700 26px/1.2 'Inter'; margin: 0 0 6px; }
+  .page-head p  { font: 400 14px/1.55 'Inter'; color: var(--text-soft); margin: 0; max-width: 760px; }
+
+  .comparison {
+    display: flex;
+    flex-direction: column;
+    gap: 36px;
+  }
+
+  .mock {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(11,23,51,0.04), 0 8px 24px rgba(11,23,51,0.06);
+  }
+  .mock-label {
+    padding: 10px 16px;
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    font: 600 12px/1.2 'Inter';
+    color: var(--text-mute);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mock-label .pill {
+    font: 600 10px/1 'Inter';
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: var(--accent-tint);
+    color: var(--primary);
+    border: 1px solid var(--primary-soft);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  /* =================================================================
+     OPTION 0, Current (black left sidebar), for reference only
+     ================================================================= */
+  .mock-current {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    min-height: 360px;
+  }
+  .mock-current .sidebar {
+    background: var(--navy);
+    color: #cfd6df;
+    padding: 16px 0;
+  }
+  .mock-current .sidebar-brand {
+    padding: 4px 22px 14px;
+    border-bottom: 1px solid var(--navy-2);
+    margin-bottom: 8px;
+    font: 700 18px/1.2 'Inter';
+    color: #fff;
+  }
+  .mock-current .sidebar-brand span { font: 500 10px/1 'Inter'; color: var(--primary); margin-left: 6px; vertical-align: super; }
+  .mock-current .sidebar-section {
+    font: 700 11px/1 'Inter';
+    letter-spacing: 0.08em;
+    color: #7d8a9b;
+    padding: 14px 22px 6px;
+  }
+  .mock-current .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 22px; font: 500 14px/1 'Inter'; color: #cfd6df;
+    cursor: pointer; text-decoration: none;
+  }
+  .mock-current .nav-item.on { background: var(--navy-2); color: #fff; border-left: 3px solid var(--primary); padding-left: 19px; }
+  .mock-current .nav-item:hover:not(.on) { background: rgba(255,255,255,0.05); color: #fff; }
+  .mock-current .nav-item .ico { width: 16px; height: 16px; opacity: 0.7; }
+
+  .mock-current .body { padding: 0; background: var(--bg); }
+  .mock-current .crumbs {
+    padding: 14px 22px;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mock-current .crumbs strong { font: 600 14px/1 'Inter'; }
+  .mock-current .crumbs .right { display: flex; gap: 10px; }
+  .mock-current .crumbs .av { width: 32px; height: 32px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font: 700 12px/1 'Inter'; }
+  .mock-current .crumbs .btn { width: 32px; height: 32px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-mute); display: inline-flex; align-items: center; justify-content: center; font: 600 12px/1 'Inter'; }
+  .sample-page { padding: 28px 22px; }
+  .sample-page h2 { font: 600 20px/1.2 'Inter'; margin: 0 0 8px; }
+  .sample-page p  { font: 400 13.5px/1.55 'Inter'; color: var(--text-soft); margin: 0 0 16px; max-width: 640px; }
+  .sample-page .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .sample-page .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    font: 500 13px/1.4 'Inter';
+    color: var(--text);
+  }
+  .sample-page .card .lab { font: 600 10px/1 'Inter'; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 6px; }
+
+  /* =================================================================
+     OPTION A, Stacked rows: top nav + thin crumbs row
+     ================================================================= */
+  .mock-a { min-height: 360px; }
+  .topnav-a {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 0 22px;
+    height: 56px;
+  }
+  .topnav-a .brand { font: 700 18px/1 'Inter'; color: var(--text); display: inline-flex; align-items: center; gap: 6px; }
+  .topnav-a .brand .tag { font: 500 10px/1 'Inter'; color: var(--primary); background: var(--primary-soft); padding: 3px 6px; border-radius: 4px; }
+  .topnav-a nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex: 1;
+  }
+  .topnav-a nav a {
+    padding: 8px 14px;
+    font: 500 13.5px/1 'Inter';
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background .12s, color .12s;
+  }
+  .topnav-a nav a:hover { color: var(--text); background: var(--accent-tint); }
+  .topnav-a nav a.on { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+  .topnav-a nav a.more { color: var(--text-mute); }
+  .topnav-a .right { display: flex; align-items: center; gap: 10px; }
+  .topnav-a .right .btn { width: 32px; height: 32px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-mute); display: inline-flex; align-items: center; justify-content: center; font: 600 12px/1 'Inter'; }
+  .topnav-a .right .av  { width: 32px; height: 32px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font: 700 12px/1 'Inter'; }
+  .crumbs-a {
+    background: var(--panel-2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 22px;
+    font: 500 12.5px/1 'Inter';
+    color: var(--text-mute);
+  }
+  .crumbs-a strong { color: var(--text); font-weight: 600; }
+  .crumbs-a .sep { margin: 0 8px; color: var(--border-strong); }
+
+  /* =================================================================
+     OPTION B, Merged single row (taller, contains crumbs)
+     ================================================================= */
+  .mock-b { min-height: 360px; }
+  .topnav-b {
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 22px;
+    padding: 12px 22px;
+    min-height: 64px;
+  }
+  .topnav-b .brand-col { display: flex; flex-direction: column; gap: 4px; }
+  .topnav-b .brand     { font: 700 16px/1 'Inter'; display: inline-flex; align-items: center; gap: 6px; }
+  .topnav-b .brand .tag{ font: 500 9px/1 'Inter'; color: var(--primary); background: var(--primary-soft); padding: 2px 5px; border-radius: 3px; }
+  .topnav-b .crumbs    { font: 500 11.5px/1 'Inter'; color: var(--text-mute); }
+  .topnav-b .crumbs strong { color: var(--text); font-weight: 600; }
+  .topnav-b .crumbs .sep   { margin: 0 6px; color: var(--border-strong); }
+  .topnav-b nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+  }
+  .topnav-b nav a {
+    padding: 7px 12px;
+    font: 500 13px/1 'Inter';
+    color: var(--text-soft);
+    text-decoration: none;
+    border-radius: 8px;
+  }
+  .topnav-b nav a:hover { color: var(--text); background: var(--accent-tint); }
+  .topnav-b nav a.on    { color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+  .topnav-b nav a.more  { color: var(--text-mute); }
+  .topnav-b .right { display: flex; align-items: center; gap: 10px; }
+  .topnav-b .right .btn { width: 32px; height: 32px; border-radius: 8px; background: var(--panel-2); border: 1px solid var(--border); color: var(--text-mute); display: inline-flex; align-items: center; justify-content: center; font: 600 12px/1 'Inter'; }
+  .topnav-b .right .av  { width: 32px; height: 32px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); display: inline-flex; align-items: center; justify-content: center; font: 700 12px/1 'Inter'; }
+
+  /* =================================================================
+     Shared sample content
+     ================================================================= */
+  .sample-page-light { padding: 28px 22px; background: var(--bg); }
+  .sample-page-light h2 { font: 600 20px/1.2 'Inter'; margin: 0 0 8px; }
+  .sample-page-light p  { font: 400 13.5px/1.55 'Inter'; color: var(--text-soft); margin: 0 0 16px; max-width: 640px; }
+  .sample-page-light .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sample-page-light .card  { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px; font: 500 13px/1.4 'Inter'; }
+  .sample-page-light .card .lab { font: 600 10px/1 'Inter'; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-mute); margin-bottom: 6px; }
+
+  .legend {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font: 400 13px/1.55 'Inter';
+    color: var(--text-soft);
+  }
+  .legend strong { color: var(--text); font-weight: 600; }
+  .legend ul { margin: 8px 0 0; padding-left: 20px; }
+  .legend li { margin-bottom: 4px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="page-head">
+    <h1>Top-nav layout comparison</h1>
+    <p>Same nav items, same colors. Pick the one that feels closer to what you want, and I'll roll it into the live <code>app-2026.html</code> shell. The current black left sidebar is shown first for reference.</p>
+  </div>
+
+  <div class="comparison">
+
+    <!-- ============================================================ -->
+    <!-- 0. CURRENT, black left sidebar                              -->
+    <!-- ============================================================ -->
+    <div class="mock">
+      <div class="mock-label"><span>Reference &mdash; current state (black left sidebar)</span><span class="pill">what we have now</span></div>
+      <div class="mock-current">
+        <aside class="sidebar">
+          <div class="sidebar-brand">ReliCheck <span>2.0</span></div>
+          <a class="nav-item on">Home</a>
+          <a class="nav-item">Projects</a>
+          <a class="nav-item">Datasets</a>
+          <a class="nav-item">Tests</a>
+          <a class="nav-item">Create / Upload</a>
+          <a class="nav-item">Builder</a>
+          <a class="nav-item">Analyze</a>
+          <a class="nav-item">Distribute</a>
+          <a class="nav-item">Reports</a>
+          <div class="sidebar-section">Tools</div>
+          <a class="nav-item">Templates</a>
+          <a class="nav-item">ReliCheck Intelligence</a>
+        </aside>
+        <div class="body">
+          <div class="crumbs">
+            <strong>Home</strong>
+            <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+          </div>
+          <div class="sample-page">
+            <h2>Good morning, Don.</h2>
+            <p>What would you like to work on today?</p>
+            <div class="cards">
+              <div class="card"><div class="lab">Quick</div>+ New project</div>
+              <div class="card"><div class="lab">Recent</div>Workplace Equity Survey</div>
+              <div class="card"><div class="lab">Usage</div>3 of 10 projects</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- A. Stacked rows (Apple developer-site style)                 -->
+    <!-- ============================================================ -->
+    <div class="mock">
+      <div class="mock-label"><span>Option A &mdash; stacked rows (recommended)</span><span class="pill">two thin bars on top</span></div>
+      <div class="mock-a">
+        <div class="topnav-a">
+          <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+          <nav>
+            <a class="on">Home</a>
+            <a>Projects</a>
+            <a>Builder</a>
+            <a>Analyze</a>
+            <a>Distribute</a>
+            <a>Reports</a>
+            <a class="more">More &#9662;</a>
+          </nav>
+          <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+        </div>
+        <div class="crumbs-a"><strong>Home</strong></div>
+        <div class="sample-page-light">
+          <h2>Good morning, Don.</h2>
+          <p>What would you like to work on today?</p>
+          <div class="cards">
+            <div class="card"><div class="lab">Quick</div>+ New project</div>
+            <div class="card"><div class="lab">Recent</div>Workplace Equity Survey</div>
+            <div class="card"><div class="lab">Usage</div>3 of 10 projects</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- B. Merged single row                                         -->
+    <!-- ============================================================ -->
+    <div class="mock">
+      <div class="mock-label"><span>Option B &mdash; merged single row</span><span class="pill">one taller bar</span></div>
+      <div class="mock-b">
+        <div class="topnav-b">
+          <div class="brand-col">
+            <div class="brand">ReliCheck <span class="tag">2.0</span></div>
+            <div class="crumbs"><strong>Home</strong></div>
+          </div>
+          <nav>
+            <a class="on">Home</a>
+            <a>Projects</a>
+            <a>Builder</a>
+            <a>Analyze</a>
+            <a>Distribute</a>
+            <a>Reports</a>
+            <a class="more">More &#9662;</a>
+          </nav>
+          <div class="right"><span class="btn">S</span><span class="btn">N</span><span class="av">DE</span></div>
+        </div>
+        <div class="sample-page-light">
+          <h2>Good morning, Don.</h2>
+          <p>What would you like to work on today?</p>
+          <div class="cards">
+            <div class="card"><div class="lab">Quick</div>+ New project</div>
+            <div class="card"><div class="lab">Recent</div>Workplace Equity Survey</div>
+            <div class="card"><div class="lab">Usage</div>3 of 10 projects</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="legend">
+    <strong>What both options share:</strong>
+    <ul>
+      <li>White background, navy text, coral accent (matches the rest of the marketing site)</li>
+      <li>Primary 6 nav items inline: Home, Projects, Builder, Analyze, Distribute, Reports</li>
+      <li>A &ldquo;More &#9662;&rdquo; dropdown holds Tests, Datasets, Templates, ReliCheck Intelligence, MM Studio, Webhooks, Panels, Suites, Team, Manager, Account, Help</li>
+      <li>Search / notifications / avatar pinned to the right</li>
+      <li>Active route gets a soft coral pill</li>
+    </ul>
+    <p style="margin: 12px 0 0; color: var(--text-mute); font-size: 12.5px;">Tell me <strong>A</strong> or <strong>B</strong>, and whether you want to swap any of the &ldquo;primary 6&rdquo; for items currently behind the More menu.</p>
+  </div>
+
+</div>
+</body>
+</html>
