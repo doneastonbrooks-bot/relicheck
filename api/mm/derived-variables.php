@@ -33,6 +33,31 @@ $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
 
+// Self-bootstrap the storage table on first call so the schema migration
+// does not need to be applied manually. CREATE TABLE IF NOT EXISTS is
+// idempotent; subsequent calls are no-ops. The DDL here must match the
+// migration file at db/schema_phase180_derived_variables.sql.
+try {
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS mm_derived_variables (
+            id             BIGINT NOT NULL AUTO_INCREMENT,
+            project_id     INT NOT NULL,
+            name           VARCHAR(120) NOT NULL,
+            op             VARCHAR(20) NOT NULL,
+            spec_json      JSON NOT NULL,
+            values_json    JSON NOT NULL,
+            created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_project_name (project_id, name),
+            KEY idx_project (project_id)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci'
+    );
+} catch (Throwable $e) {
+    // Non-fatal: if CREATE TABLE fails for any reason (permissions, race),
+    // subsequent queries will surface a clearer error.
+}
+
 // ---------- GET: list ----------
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $projectId = (int)($_GET['project_id'] ?? 0);
