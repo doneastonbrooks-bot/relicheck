@@ -5725,38 +5725,38 @@
         </div>
       </div>
 
-      <!-- SUITES — what you are working on (cross-survey collections) -->
-      <div class="nav-drop" data-drop="suites" data-routes="suites">
+      <!-- SERIES (was Suites): what you are working on -->
+      <div class="nav-drop" data-drop="series" data-routes="suites">
         <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
-          Suites <span class="chev" aria-hidden="true">&#9662;</span>
+          Series <span class="chev" aria-hidden="true">&#9662;</span>
         </button>
         <div class="nav-drop-panel" role="menu">
-          <div class="nav-drop-eyebrow">Linked surveys</div>
+          <div class="nav-drop-eyebrow">Linked surveys for longitudinal work</div>
           <a class="nav-item nav-drop-item" data-route="suites" role="menuitem">
-            <div class="dropt">All suites</div>
-            <div class="dropb">Browse the suites in your workspace.</div>
+            <div class="dropt">All series</div>
+            <div class="dropb">Browse the survey series in your workspace.</div>
           </a>
           <a class="nav-item nav-drop-item" data-suites-action="new" role="menuitem">
-            <div class="dropt">+ New suite</div>
+            <div class="dropt">+ New series</div>
             <div class="dropb">Group related surveys for longitudinal or multi-instrument work.</div>
           </a>
         </div>
       </div>
 
-      <!-- RESOURCES — tools that span studios -->
-      <div class="nav-drop" data-drop="resources" data-routes="ai templates help">
+      <!-- LIBRARY (was Resources): tools and references that span studios -->
+      <div class="nav-drop" data-drop="library" data-routes="ai templates help">
         <button type="button" class="nav-drop-trigger" aria-haspopup="true" aria-expanded="false">
-          Resources <span class="chev" aria-hidden="true">&#9662;</span>
+          Library <span class="chev" aria-hidden="true">&#9662;</span>
         </button>
         <div class="nav-drop-panel" role="menu">
-          <div class="nav-drop-eyebrow">Tools that span studios</div>
-          <a class="nav-item nav-drop-item" data-route="ai" role="menuitem">
-            <div class="dropt">ReliCheck Intelligence</div>
-            <div class="dropb">AI helpers, narration, draft paragraphs.</div>
-          </a>
+          <div class="nav-drop-eyebrow">Curated references and shared tools</div>
           <a class="nav-item nav-drop-item" data-route="templates" role="menuitem">
             <div class="dropt">Templates</div>
             <div class="dropb">Validated scales and starter surveys.</div>
+          </a>
+          <a class="nav-item nav-drop-item" data-route="ai" role="menuitem">
+            <div class="dropt">ReliCheck Intelligence</div>
+            <div class="dropb">AI helpers, narration, draft paragraphs.</div>
           </a>
           <a class="nav-item nav-drop-item" data-route="help" role="menuitem">
             <div class="dropt">Help center</div>
@@ -11585,7 +11585,7 @@ const routes = {
   datasets:  { title: 'Datasets',       render: renderDatasets },
   webhooks:  { title: 'Webhooks',       render: renderWebhooks },
   panels:    { title: 'Panels (360)',   render: renderPanels },
-  suites:    { title: 'Suites',         render: renderSuites },
+  suites:    { title: 'Series',         render: renderSuites },
   create:    { title: 'Create / Upload',render: renderCreateUpload },
   'upload-dataset': { title: 'Upload dataset', render: renderUploadDataset },
   analyze:   { title: 'Analyze',        render: renderAnalyze },
@@ -11684,7 +11684,7 @@ function render() {
     } else if (r === 'panels' && p) {
       crumbs.innerHTML = '<a data-route="panels">Panels</a><span class="sep">&rsaquo;</span><strong>Panel</strong>';
     } else if (r === 'suites' && p) {
-      crumbs.innerHTML = '<a data-route="suites">Suites</a><span class="sep">&rsaquo;</span><strong>Suite</strong>';
+      crumbs.innerHTML = '<a data-route="suites">Series</a><span class="sep">&rsaquo;</span><strong>Series detail</strong>';
     } else if (r === 'manager') {
       crumbs.innerHTML = '<strong>Manager Dashboard</strong>';
     } else if (r === 'settings' && p) {
@@ -30302,8 +30302,8 @@ async function renderSuitesList(root) {
   root.innerHTML =
     '<div class="page-head">' +
       '<div>' +
-        '<h1>Suites</h1>' +
-        '<div class="sub">Workflow packages with curated templates: 360, HR, Pulse, Program Eval, Education, Researcher, CX.</div>' +
+        '<h1>Series</h1>' +
+        '<div class="sub">Linked surveys for longitudinal or multi-instrument work. Workflow packages with curated templates: 360, HR, Pulse, Program Eval, Education, Researcher, CX.</div>' +
       '</div>' +
     '</div>' +
     '<div id="stListBody"><div class="loading-row"><div class="spinner"></div></div></div>';
@@ -30369,7 +30369,7 @@ async function renderSuiteDetail(root, suiteId) {
   const color = suite.color || 'var(--brand)';
 
   const crumbs = $('#crumbs');
-  if (crumbs) crumbs.innerHTML = '<a data-route="suites">Suites</a><span class="sep">&rsaquo;</span><strong>' + escapeHtml(suite.name) + '</strong>';
+  if (crumbs) crumbs.innerHTML = '<a data-route="suites">Series</a><span class="sep">&rsaquo;</span><strong>' + escapeHtml(suite.name) + '</strong>';
 
   root.innerHTML =
     '<div class="page-head">' +
