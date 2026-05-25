@@ -40286,7 +40286,9 @@ async function mmTabCodebook(host) {
   // ----- LEFT: theme list -----
   function renderLeft() {
     const left = host.querySelector('#mmCbLeft');
-    const cards = state.entries.map(e => {
+    // Render one theme card. Same shape as before — just extracted so the
+    // grouped layout below can reuse it.
+    const themeCard = (e) => {
       const isSel = e.category_id === state.selectedId;
       const sm = e.sentiment_mix || {positive:0,neutral:0,negative:0,mixed:0};
       const sentBar = mmCbSentMicroBar(sm);
@@ -40304,11 +40306,50 @@ async function mmTabCodebook(host) {
         '</div>' +
         sentBar +
       '</div>';
-    }).join('');
+    };
+
+    // Group by question. Themes generated via themes-per-question.php carry
+    // question_id + question_text; project-wide legacy themes don't and get
+    // grouped together under "All responses".
+    const groups = new Map();
+    state.entries.forEach(e => {
+      const qKey = (e.question_id != null) ? String(e.question_id) : '__all__';
+      if (!groups.has(qKey)) {
+        groups.set(qKey, {
+          qid: e.question_id,
+          qLabel: e.question_id != null
+            ? (e.question_text || e.question_qid || ('Question ' + e.question_id))
+            : 'All responses',
+          themes: []
+        });
+      }
+      groups.get(qKey).themes.push(e);
+    });
+
+    let cardsHtml = '';
+    if (groups.size <= 1) {
+      // Single-question (or legacy whole-project) — render flat, no headers.
+      const only = groups.values().next().value;
+      if (only) cardsHtml = only.themes.map(themeCard).join('');
+    } else {
+      // Multi-question — show a header for each, then its themes.
+      groups.forEach(g => {
+        cardsHtml +=
+          '<div style="margin:6px 0 6px;padding-bottom:4px;border-bottom:1px solid #e2e6ea;">' +
+            '<div style="font-size:11px;font-weight:700;color:#5a6470;text-transform:uppercase;letter-spacing:0.06em;">' +
+              MM.esc(g.qLabel) +
+            '</div>' +
+            '<div style="font-size:11px;color:#8a93a0;margin-top:1px;">' +
+              g.themes.length + ' theme' + (g.themes.length === 1 ? '' : 's') +
+            '</div>' +
+          '</div>' +
+          g.themes.map(themeCard).join('');
+      });
+    }
     const addBtn = '<button class="btn ghost" id="mmCbAddTheme" style="width:100%;margin-top:6px;font-size:13px;">+ New theme</button>';
     left.innerHTML =
       '<div style="font-size:11px;color:#5a6470;text-transform:none;letter-spacing:0.04em;margin-bottom:8px;">Themes</div>' +
-      cards +
+      cardsHtml +
       addBtn;
     left.querySelectorAll('.mm-cb-theme').forEach(card => card.addEventListener('click', () => {
       const cid = parseInt(card.getAttribute('data-cid'), 10);
