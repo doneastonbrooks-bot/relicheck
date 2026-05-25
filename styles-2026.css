@@ -2031,11 +2031,18 @@ p  { margin: 0 0 1em; color: var(--ink-7); }
     radial-gradient(600px 280px at -10% 110%, rgba(31, 158, 155, 0.05), transparent 70%),
     var(--bg);
 }
+/* Single-card centered layout on a warm amber page. Auth-aside is
+   hidden so the existing markup stays intact while the new layout
+   uses only auth-main + auth-card. */
+body.auth-page {
+  background: #f4a847;
+  min-height: 100vh;
+}
 .auth-topbar {
   display: flex; align-items: center; justify-content: space-between;
   padding: var(--s-5) var(--gutter);
-  border-bottom: 1px solid var(--line);
-  background: rgba(255,255,255,0.7);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: rgba(255,255,255,0.85);
   backdrop-filter: saturate(180%) blur(12px);
   -webkit-backdrop-filter: saturate(180%) blur(12px);
 }
@@ -2044,22 +2051,13 @@ p  { margin: 0 0 1em; color: var(--ink-7); }
 .auth-topbar a:hover { color: var(--ink-9); text-decoration: none; }
 .auth-split {
   flex: 1;
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--s-12) var(--gutter) var(--s-16);
   min-height: 0;
 }
-@media (max-width: 1023px) {
-  .auth-split { grid-template-columns: 1fr; }
-  .auth-aside { display: none; }
-}
-.auth-aside {
-  background: linear-gradient(180deg, var(--navy) 0%, var(--navy-3) 100%);
-  color: rgba(255,255,255,0.78);
-  padding: var(--s-16) var(--s-12);
-  display: flex; flex-direction: column; justify-content: center;
-  position: relative;
-  overflow: hidden;
-}
+.auth-aside { display: none; }
 .auth-aside::before {
   content: "";
   position: absolute; inset: 0;
@@ -2165,18 +2163,28 @@ p  { margin: 0 0 1em; color: var(--ink-7); }
 
 .auth-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: var(--s-12) var(--gutter);
+  padding: var(--s-12) var(--gutter) var(--s-16);
+  flex: 1;
+  width: 100%;
 }
+/* Centered card on the orange page. Wider than the old form-only
+   card so it can hold the WELCOME BACK / GET STARTED kicker,
+   the serif headline, and the supporting copy above the form.
+   Coral border + heavy layered shadow lifts the card off the
+   amber background. */
 .auth-card {
   width: 100%;
-  max-width: 440px;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow-lg);
-  padding: clamp(28px, 4vw, 40px);
+  max-width: 520px;
+  background: #fff;
+  border: 2px solid #e85d3a;
+  border-radius: 18px;
+  box-shadow:
+    0 30px 80px rgba(11,23,51,0.20),
+    0 12px 32px rgba(11,23,51,0.10),
+    0 4px 8px rgba(11,23,51,0.06);
+  padding: clamp(32px, 4vw, 48px);
   position: relative;
 }
 .auth-card .top-link {
@@ -2186,10 +2194,40 @@ p  { margin: 0 0 1em; color: var(--ink-7); }
   color: var(--ink-5);
 }
 .auth-card .top-link a { font-weight: var(--fw-semibold); margin-left: 4px; }
-.auth-card h1 {
-  font-size: var(--text-3xl);
-  margin: 0 0 var(--s-2);
+/* Kicker, headline, and supporting copy now live inside the card,
+   above the form, so the centered layout still carries the studio
+   identity language the navy aside used to. */
+.auth-card .auth-kicker {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e85d3a;
+  margin: 0 0 var(--s-3);
+}
+.auth-card .auth-headline {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.4vw, 36px);
+  line-height: 1.1;
   letter-spacing: -0.02em;
+  color: var(--ink-9);
+  margin: 0 0 var(--s-3);
+  font-weight: var(--fw-semibold);
+}
+.auth-card .auth-lede {
+  font-size: var(--text-base);
+  color: var(--ink-6);
+  margin: 0 0 var(--s-6);
+  line-height: 1.55;
+}
+.auth-card h1 {
+  font-size: var(--text-2xl);
+  margin: 0 0 var(--s-2);
+  letter-spacing: -0.01em;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  margin-top: var(--s-2);
 }
 .auth-card .sub { color: var(--ink-6); font-size: var(--text-base); margin: 0 0 var(--s-6); }
 
