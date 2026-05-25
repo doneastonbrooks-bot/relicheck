@@ -20,23 +20,25 @@
 <div class="auth-split">
 <aside class="auth-aside">
   <span class="kicker">Get started</span>
-  <h2>Surveys with reliability built in.</h2>
-  <p class="lede">Free to start. Bring your own questions or pick a validated template. Reliability statistics and report-writing are included from day one.</p>
+  <h2>Start with evidence you can trust.</h2>
+  <p class="lede">Create surveys, tests, and mixed-methods studies with reliability built in, so every insight you share stands on solid ground.</p>
   <div class="auth-aside-figure">
-    <div class="uv-card">
-      <h6>Live right now</h6>
+    <div class="uv-card coral">
+      <div class="uv-ico coral"><svg viewBox="0 0 24 24"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v6h6"/><path d="M9 14h6M9 17h6M9 11h3"/></svg></div>
       <div class="v">3 surveys</div>
-      <div class="meta">247 new responses since you last logged in</div>
-      <div class="uv-bar"><span style="width:74%"></span></div>
+      <div class="uv-eyebrow">Live</div>
+      <div class="meta">247 new responses</div>
     </div>
-    <div class="uv-card">
-      <h6>Latest reliability check</h6>
+    <div class="uv-card purple">
+      <div class="uv-ico purple">α</div>
       <div class="v">α = 0.89</div>
+      <div class="uv-eyebrow">Latest check</div>
       <div class="meta">Q2 NPS pulse · 12 items · holding strong</div>
     </div>
-    <div class="uv-card">
-      <h6>Waiting on you</h6>
+    <div class="uv-card teal">
+      <div class="uv-ico teal"><svg viewBox="0 0 24 24"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-8"/><path d="M22 20H2"/></svg></div>
       <div class="v">2 reports</div>
+      <div class="uv-eyebrow">Waiting on you</div>
       <div class="meta">Climate 2026 ready for sign-off</div>
     </div>
   </div>
@@ -74,6 +76,22 @@
             <label for="confirm">Confirm password</label>
             <input type="password" id="confirm" name="confirm" autocomplete="new-password" required />
             <div class="err">Passwords don't match.</div>
+          </div>
+
+          <!-- Promo / beta code. Optional. Collapsed by default so the
+               field doesn't crowd the form for the common no-code path;
+               click the toggle to reveal. If the URL already carried a
+               ?promo=CODE the field auto-expands and pre-fills below. -->
+          <div class="field" id="f-promo" style="margin-top:-4px;">
+            <button type="button" id="promo-toggle" class="link-button" style="background:none;border:none;color:#1f6feb;font-size:13px;padding:0;cursor:pointer;text-align:left;text-decoration:underline;">
+              Have a promo or beta code?
+            </button>
+            <div id="promo-input-wrap" style="display:none;margin-top:8px;">
+              <label for="promo" style="font-size:13px;">Promo code (optional)</label>
+              <input type="text" id="promo" name="promo" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. BETA-MMSTUDIO-2026A" style="text-transform:uppercase;letter-spacing:0.02em;" />
+              <div class="hint">Letters, numbers, dashes, and underscores only. 3–40 characters. Applied after your account is created.</div>
+              <div class="err">Code format looks wrong, letters, numbers, dashes, underscores only.</div>
+            </div>
           </div>
 
           <div class="row-between">
@@ -121,23 +139,73 @@
         banner.textContent = text;
       }
 
-      // ?promo=CODE on the URL pre-fills a promo to be redeemed right after
-      // signup. Validate the format here so we never echo arbitrary URL input
-      // back into the page. The actual existence / validity check happens
-      // server-side at /api/promo/redeem.php.
+      // Promo / beta code. Two entry paths:
+      //   1. ?promo=CODE on the URL (existing), auto-pre-fills the field
+      //      and expands the input so the user can see what was applied
+      //      and edit if needed.
+      //   2. The user clicks "Have a promo or beta code?" and types the
+      //      code into the field. Both routes feed the same pendingPromo
+      //      variable, which redeemPendingPromo() posts to /api/promo/
+      //      redeem.php after the account is created.
+      // Format validation is client-side hygiene; the server still does
+      // the canonical existence check.
       const promoBanner = document.getElementById('promo-banner');
+      const promoToggle = document.getElementById('promo-toggle');
+      const promoInputWrap = document.getElementById('promo-input-wrap');
+      const promoInput = document.getElementById('promo');
+      const promoFieldWrap = document.getElementById('f-promo');
       const _signupQp = new URLSearchParams(location.search);
       let pendingPromo = '';
-      (function readPromo() {
-        const raw = (_signupQp.get('promo') || '').toUpperCase().trim();
-        const cleaned = raw.replace(/[^A-Z0-9_-]/g, '');
-        if (cleaned.length >= 3 && cleaned.length <= 40) {
+
+      const sanitizePromo = (raw) =>
+        String(raw || '').toUpperCase().trim().replace(/[^A-Z0-9_-]/g, '');
+      const isValidPromoFormat = (code) =>
+        typeof code === 'string' && code.length >= 3 && code.length <= 40;
+
+      const showPromoInput = () => {
+        promoInputWrap.style.display = '';
+        promoToggle.style.display = 'none';
+        try { promoInput.focus(); } catch (_) {}
+      };
+
+      const updatePromoBannerFromField = () => {
+        const cleaned = sanitizePromo(promoInput.value);
+        // Mirror the cleaned value back into the input so the user sees
+        // what the server will actually receive.
+        if (cleaned !== promoInput.value) promoInput.value = cleaned;
+        if (isValidPromoFormat(cleaned)) {
           pendingPromo = cleaned;
           promoBanner.style.display = '';
           promoBanner.className = 'banner show success';
           promoBanner.textContent = 'Promo code ' + pendingPromo + ' will be applied after you create your account.';
+          promoFieldWrap.classList.remove('invalid');
+        } else if (cleaned.length === 0) {
+          pendingPromo = '';
+          promoBanner.style.display = 'none';
+          promoBanner.textContent = '';
+          promoFieldWrap.classList.remove('invalid');
+        } else {
+          // Has content but too short / too long. Don't error harshly while
+          // they're still typing, only mark invalid on submit.
+          pendingPromo = '';
+          promoBanner.style.display = 'none';
+          promoBanner.textContent = '';
+        }
+      };
+
+      // URL pre-fill. Expands the field automatically so what's about to
+      // be applied is visible (and editable) before signup.
+      (function readPromoFromUrl() {
+        const cleaned = sanitizePromo(_signupQp.get('promo'));
+        if (isValidPromoFormat(cleaned)) {
+          showPromoInput();
+          promoInput.value = cleaned;
+          updatePromoBannerFromField();
         }
       })();
+
+      promoToggle.addEventListener('click', showPromoInput);
+      promoInput.addEventListener('input', updatePromoBannerFromField);
 
       // ?plan=researcher|professional|business pre-selects a paid plan. After
       // signup we drop a sessionStorage flag that app-2026.html picks up on
@@ -228,6 +296,21 @@
         if (!terms) {
           showBanner('error', 'Please agree to the Terms & Privacy Policy to continue.');
           return;
+        }
+        // Promo field is OPTIONAL. Empty = fine. Non-empty but malformed
+        // = block the submit so the user doesn't lose their typo'd code
+        // when the page reloads after signup.
+        const promoRaw = (promoInput.value || '').trim();
+        if (promoRaw.length > 0) {
+          const cleaned = sanitizePromo(promoRaw);
+          if (!isValidPromoFormat(cleaned)) {
+            promoFieldWrap.classList.add('invalid');
+            showPromoInput();
+            showBanner('error', 'Promo code format looks wrong, letters, numbers, dashes, underscores only, 3–40 characters. Clear the field if you don\'t have one.');
+            errors.push('promo');
+          } else {
+            pendingPromo = cleaned;
+          }
         }
         if (errors.length) {
           showBanner('error', 'Please fix the highlighted fields and try again.');
