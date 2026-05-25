@@ -5689,15 +5689,18 @@
        The .nav-item class on dropdown items is kept so the existing
        per-route active highlighter ($all(.nav-item)) still works. -->
   <aside class="sidebar" aria-label="Site navigation">
-    <a href="#/home" class="sidebar-brand" data-route="home" aria-label="ReliCheck home">
+    <a href="#/welcome" class="sidebar-brand" data-route="welcome" aria-label="ReliCheck home">
       <img src="/logo-brand.svg" alt="ReliCheck" class="brand-logo" />
       <span class="tag" aria-hidden="true">2.0</span>
     </a>
     <nav role="navigation" aria-label="Top menu">
 
-      <!-- HOME — explicit top-level link (the brand is also clickable,
-           but the wordmark isn\'t self-evidently a button to everyone). -->
-      <a class="nav-item nav-toplink" data-route="home" role="link">Home</a>
+      <!-- HOME: explicit top-level link to the welcome picker. The
+           brand wordmark also routes here. "Home" now means the
+           studio picker, not the Survey Studio dashboard. To reach
+           Survey Studio, use the Studios dropdown or pick the
+           Survey Studio card from /#/welcome. -->
+      <a class="nav-item nav-toplink" data-route="welcome" role="link">Home</a>
 
       <!-- STUDIOS — where you work -->
       <div class="nav-drop" data-drop="studios" data-routes="home projects builder analyze distribute reports mm tests panels">
