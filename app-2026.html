@@ -42939,12 +42939,41 @@ async function mmTabQuantAnalysis(body) {
           distinct: distinct
         };
       });
+      // Phase 180b: append the project's derived variables to colsAll so
+      // they show up in every analysis dropdown as if they were original
+      // columns. Each derived variable gets idx 'dv:<id>' (string) to
+      // distinguish from integer column indexes. Their pre-computed
+      // values array is stashed on the prep so outcomeValues() can read
+      // it without re-fetching.
+      const derivedByKey = {};
+      try {
+        const dvResp = await api.mmListDerivedVariables(MM.state.current.id);
+        const dvList = (dvResp && Array.isArray(dvResp.variables)) ? dvResp.variables : [];
+        dvList.forEach(v => {
+          const distinctSet = new Set();
+          (v.values || []).forEach(x => { if (x !== null) distinctSet.add(Number(x)); });
+          const key = 'dv:' + v.id;
+          derivedByKey[key] = v;
+          colsAll.push({
+            idx: key,
+            label: v.name + ' (computed)',
+            type: 'derived',
+            isLikert: false,
+            isDerived: true,
+            distinct: distinctSet.size
+          });
+        });
+      } catch (_) { /* If the endpoint fails, leave the dropdowns as they were. */ }
       return {
         responses: responses,
         qs: qs,
         cellAt: cellAt,
         likertIdx: likertIdx,
         colsAll: colsAll,
+        // Phase 180b: derived variables, keyed by 'dv:<id>'. outcomeValues
+        // reads from .values[rowIndex] when the picker hands back a key
+        // in this format.
+        derivedByKey: derivedByKey,
         outcomeLabel: likertIdx.length > 1 ? 'mean of Likert items' : (likertIdx.length === 1 ? labelOf(likertIdx[0]) : null),
         twoGroup:   twoGroup   ? { label: twoGroup.label, idx: twoGroup.idx,   data: buildGroups(twoGroup)   } : null,
         multiGroup: multiGroup ? { label: multiGroup.label, idx: multiGroup.idx, data: buildGroups(multiGroup) } : null,
@@ -44185,8 +44214,10 @@ async function mmTabQuantAnalysis(body) {
       const found = prep.colsAll.find(c => String(c.idx) === String(idx));
       return found ? found.label : ('col_' + idx);
     };
-    // Build outcome value array using either a single Likert column or the
-    // mean-of-all-Likert sentinel.
+    // Build outcome value array using either a single Likert column, the
+    // mean-of-all-Likert sentinel, or a saved derived variable. Phase 180b
+    // adds the 'dv:<id>' path so derived variables behave exactly like
+    // original columns in every analysis runner.
     const outcomeValues = (yKey) => {
       if (!prep || !prep.responses) return [];
       if (yKey === '__MEAN__') {
@@ -44196,11 +44227,41 @@ async function mmTabQuantAnalysis(body) {
           return vs.length ? vs.reduce((a,b)=>a+b,0) / vs.length : null;
         });
       }
+      // Derived variable: look up pre-computed values. The values array
+      // is parallel-indexed to the dataset rows, which match
+      // prep.responses index order (both come from the same dataset.data
+      // array via adaptDatasetToResponses).
+      if (typeof yKey === 'string' && yKey.indexOf('dv:') === 0) {
+        const dv = prep.derivedByKey && prep.derivedByKey[yKey];
+        if (!dv) return prep.responses.map(() => null);
+        const values = Array.isArray(dv.values) ? dv.values : [];
+        return prep.responses.map((_r, i) => {
+          const v = values[i];
+          if (v === null || v === undefined) return null;
+          const n = Number(v);
+          return Number.isFinite(n) ? n : null;
+        });
+      }
       const idx = parseInt(yKey, 10);
       return prep.responses.map(r => { const n = Number(prep.cellAt(r, idx)); return Number.isFinite(n) ? n : null; });
     };
     const groupValues = (gIdx) => {
       if (!prep || !prep.responses) return [];
+      // Derived variables can also serve as grouping columns (e.g. a
+      // recoded category). Phase 1 only ships mean/sum so categorical
+      // derived variables are not a real case yet, but support the path
+      // so Phase 2 'recode' / 'bin' just works without revisiting this.
+      if (typeof gIdx === 'string' && gIdx.indexOf('dv:') === 0) {
+        const dv = prep.derivedByKey && prep.derivedByKey[gIdx];
+        if (!dv) return prep.responses.map(() => null);
+        const values = Array.isArray(dv.values) ? dv.values : [];
+        return prep.responses.map((_r, i) => {
+          const v = values[i];
+          if (v === null || v === undefined) return null;
+          const s = String(v).trim();
+          return s === '' ? null : s;
+        });
+      }
       const i = parseInt(gIdx, 10);
       return prep.responses.map(r => {
         const v = prep.cellAt(r, i);
