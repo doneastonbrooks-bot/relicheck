@@ -43225,62 +43225,223 @@ async function mmTabQuantAnalysis(body) {
       .map((q, i) => ({ id: q && q.id ? q.id : ('col_' + i), label: (q && (q.label || q.prompt || q.text)) || ('col_' + i), type: (q && q.type) || 'open' }))
       .filter(it => it.type === 'likert');
 
+    // Available source columns for single-column operations (recode, bin,
+    // standardize). Includes Likert items by default; the bin and
+    // standardize forms surface a useful subset.
+    const allCols = (Array.isArray(qs) ? qs : [])
+      .map((q, i) => ({ id: q && q.id ? q.id : ('col_' + i), label: (q && (q.label || q.prompt || q.text)) || ('col_' + i), type: (q && q.type) || 'open' }))
+      .filter(it => it.type === 'likert' || it.type === 'single' || it.type === 'multi');
+
+    // Short human-readable summary of a variable's spec, used in the list view.
+    const summarizeSpec = (v) => {
+      const op = v.op;
+      const s = v.spec || {};
+      if (op === 'mean' || op === 'sum') {
+        return op + ' of ' + (Array.isArray(s.items) ? s.items.length : 0) + ' item' + (Array.isArray(s.items) && s.items.length === 1 ? '' : 's');
+      }
+      if (op === 'recode')      return 'recode of ' + MM.esc(s.source || '?');
+      if (op === 'bin')         return 'bin of ' + MM.esc(s.source || '?') + ' into ' + (Array.isArray(s.labels) ? s.labels.length : 0) + ' groups';
+      if (op === 'standardize') return (s.method === 't' ? 'T-score' : 'z-score') + ' of ' + MM.esc(s.source || '?');
+      return op;
+    };
+
     const render = (vars) => {
       const list = (vars && Array.isArray(vars)) ? vars : [];
       const listHtml = list.length === 0
-        ? '<div style="color:#5a6470;font-size:13px;padding:8px 0;"><em>No computed variables yet. Use the form below to create a composite score (mean or sum) from your Likert items.</em></div>'
+        ? '<div style="color:#5a6470;font-size:13px;padding:8px 0;"><em>No computed variables yet. Use the form below to compute a composite score, recode a variable, bin a continuous variable, or standardize values.</em></div>'
         : '<ul style="list-style:none;padding:0;margin:0 0 10px;">' + list.map(v => {
             const nMissing = (v.values || []).filter(x => x === null).length;
             const nTotal = (v.values || []).length;
             const nGood = nTotal - nMissing;
-            const itemsLabel = (v.spec && Array.isArray(v.spec.items)) ? v.spec.items.join(', ') : '';
+            const summary = summarizeSpec(v);
+            // Detail line: items list (mean/sum) or source column (recode/bin/standardize)
+            let detail = '';
+            if ((v.op === 'mean' || v.op === 'sum') && v.spec && Array.isArray(v.spec.items)) {
+              detail = 'Items: ' + v.spec.items.join(', ');
+            } else if (v.spec && v.spec.source) {
+              detail = 'Source: ' + v.spec.source;
+              if (v.op === 'bin' && Array.isArray(v.spec.cutpoints)) {
+                detail += ' · cutpoints: ' + v.spec.cutpoints.join(', ');
+              }
+            }
             return '<li style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid #e2e6ea;border-radius:6px;margin-bottom:6px;background:#fafbfc;">' +
               '<div style="min-width:0;flex:1;">' +
-                '<div style="font-weight:600;color:#1a1f2b;font-size:13px;">' + MM.esc(v.name) + ' <span style="font-weight:400;color:#5a6470;font-size:11px;">(' + MM.esc(v.op) + ' of ' + (v.spec && v.spec.items ? v.spec.items.length : 0) + ' items)</span></div>' +
+                '<div style="font-weight:600;color:#1a1f2b;font-size:13px;">' + MM.esc(v.name) + ' <span style="font-weight:400;color:#5a6470;font-size:11px;">(' + summary + ')</span></div>' +
                 '<div style="color:#5a6470;font-size:11px;margin-top:2px;">Computed for ' + nGood + ' / ' + nTotal + ' respondents' + (nMissing > 0 ? ' (' + nMissing + ' missing)' : '') + '</div>' +
-                (itemsLabel ? '<div style="color:#8a93a0;font-size:11px;margin-top:2px;">Items: ' + MM.esc(itemsLabel) + '</div>' : '') +
+                (detail ? '<div style="color:#8a93a0;font-size:11px;margin-top:2px;">' + MM.esc(detail) + '</div>' : '') +
               '</div>' +
               '<button type="button" data-mm-cv-del="' + v.id + '" style="font-size:11px;padding:4px 10px;border:1px solid #d3d8de;border-radius:5px;background:#fff;color:#a33;cursor:pointer;white-space:nowrap;">Delete</button>' +
             '</li>';
           }).join('') + '</ul>';
 
-      // Create form: name + op + item checkboxes.
-      const itemRows = likertItems.length === 0
+      // Op-specific sub-forms — composed inline so the panel can render
+      // the right inputs without juggling separate templates.
+      const itemRowsHtml = likertItems.length === 0
         ? '<div style="color:#a33;font-size:12px;">No Likert items found in this dataset. Composite scores need at least 2 Likert items.</div>'
         : likertItems.map(it => '<label style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:1px solid #e2e6ea;border-radius:5px;background:#fff;font-size:12px;margin:0 6px 6px 0;cursor:pointer;">' +
             '<input type="checkbox" data-mm-cv-item value="' + MM.esc(it.id) + '" />' +
             '<span>' + MM.esc(it.label) + '</span>' +
           '</label>').join('');
 
+      const sourceOptions = (filterFn) => {
+        const filtered = (filterFn ? allCols.filter(filterFn) : allCols);
+        if (filtered.length === 0) return '<option value="">(no eligible columns)</option>';
+        return filtered.map(c => '<option value="' + MM.esc(c.id) + '">' + MM.esc(c.label) + ' (' + MM.esc(c.type) + ')</option>').join('');
+      };
+
+      // Mean/sum form
+      const formMeanSum =
+        '<div data-mm-cv-form="composite" style="display:none;">' +
+          '<div style="font-size:11px;font-weight:600;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Source items (pick 2 or more)</div>' +
+          '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + itemRowsHtml + '</div>' +
+        '</div>';
+
+      // Recode form
+      const formRecode =
+        '<div data-mm-cv-form="recode" style="display:none;">' +
+          '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;">' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Source column</span>' +
+              '<select id="mmCvRecodeSrc" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:220px;">' + sourceOptions(c => c.type === 'likert' || c.type === 'single') + '</select>' +
+            '</label>' +
+            '<button type="button" id="mmCvRecodeReverse5" class="btn ghost" style="font-size:11px;padding:5px 10px;">Reverse 5-point Likert</button>' +
+            '<button type="button" id="mmCvRecodeReverse7" class="btn ghost" style="font-size:11px;padding:5px 10px;">Reverse 7-point Likert</button>' +
+          '</div>' +
+          '<div style="font-size:11px;font-weight:600;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Mapping (old &rarr; new)</div>' +
+          '<div id="mmCvRecodeMap" style="margin-bottom:6px;"></div>' +
+          '<button type="button" id="mmCvRecodeAdd" class="btn ghost" style="font-size:11px;padding:4px 10px;">+ Add row</button>' +
+        '</div>';
+
+      // Bin form
+      const formBin =
+        '<div data-mm-cv-form="bin" style="display:none;">' +
+          '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;">' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Source column</span>' +
+              '<select id="mmCvBinSrc" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:220px;">' + sourceOptions(c => c.type === 'likert' || c.type === 'single' || c.type === 'multi') + '</select>' +
+            '</label>' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Cutpoints (comma-separated)</span>' +
+              '<input type="text" id="mmCvBinCuts" placeholder="e.g. 2, 4" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:180px;" />' +
+            '</label>' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Labels (one more than cuts)</span>' +
+              '<input type="text" id="mmCvBinLabels" placeholder="e.g. low, mid, high" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:200px;" />' +
+            '</label>' +
+          '</div>' +
+          '<div style="color:#5a6470;font-size:11px;">Example: cutpoints "2, 4" + labels "low, mid, high" puts values &lt; 2 into low, 2&ndash;3.99 into mid, &gt;= 4 into high.</div>' +
+        '</div>';
+
+      // Standardize form
+      const formStandardize =
+        '<div data-mm-cv-form="standardize" style="display:none;">' +
+          '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:8px;flex-wrap:wrap;">' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Source column</span>' +
+              '<select id="mmCvStdSrc" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:220px;">' + sourceOptions(c => c.type === 'likert' || c.type === 'single') + '</select>' +
+            '</label>' +
+            '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+              '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Method</span>' +
+              '<select id="mmCvStdMethod" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;">' +
+                '<option value="z">z-score (mean=0, sd=1)</option>' +
+                '<option value="t">T-score (mean=50, sd=10)</option>' +
+              '</select>' +
+            '</label>' +
+          '</div>' +
+        '</div>';
+
       host.innerHTML =
         '<div class="card" style="padding:14px 16px;">' +
           '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap;">' +
             '<h3 style="margin:0;font-family:inherit;font-size:16px;">Computed variables</h3>' +
-            '<span style="font-size:11px;color:#5a6470;">Composite scores you create here are saved to the project and appear in every analysis below.</span>' +
+            '<span style="font-size:11px;color:#5a6470;">Created here are saved to the project and appear in every analysis dropdown below.</span>' +
           '</div>' +
           listHtml +
-          (likertItems.length >= 2
-            ? '<div style="border-top:1px solid #f0f2f4;padding-top:10px;margin-top:8px;">' +
-                '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">' +
-                  '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
-                    '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Name</span>' +
-                    '<input type="text" id="mmCvName" placeholder="e.g. Engagement_Total" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:200px;" />' +
-                  '</label>' +
-                  '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
-                    '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Operation</span>' +
-                    '<select id="mmCvOp" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;">' +
-                      '<option value="mean">Mean</option>' +
-                      '<option value="sum">Sum</option>' +
-                    '</select>' +
-                  '</label>' +
-                  '<button type="button" id="mmCvCreate" class="btn primary" style="font-size:13px;padding:7px 14px;">Save composite</button>' +
-                '</div>' +
-                '<div style="font-size:11px;font-weight:600;color:#5a6470;text-transform:uppercase;letter-spacing:0.04em;margin-bottom:4px;">Source items (pick 2 or more)</div>' +
-                '<div style="display:flex;flex-wrap:wrap;margin-bottom:6px;">' + itemRows + '</div>' +
-                '<div id="mmCvStatus" style="font-size:12px;color:#5a6470;margin-top:6px;"></div>' +
-              '</div>'
-            : '') +
+          '<div style="border-top:1px solid #f0f2f4;padding-top:10px;margin-top:8px;">' +
+            '<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px;">' +
+              '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+                '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Name</span>' +
+                '<input type="text" id="mmCvName" placeholder="e.g. Engagement_Total" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;min-width:200px;" />' +
+              '</label>' +
+              '<label style="display:flex;flex-direction:column;font-size:11px;color:#5a6470;">' +
+                '<span style="font-weight:600;text-transform:uppercase;letter-spacing:0.04em;">Operation</span>' +
+                '<select id="mmCvOp" style="padding:6px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:13px;">' +
+                  '<option value="mean">Mean (composite score)</option>' +
+                  '<option value="sum">Sum (composite score)</option>' +
+                  '<option value="recode">Recode (e.g. reverse-code)</option>' +
+                  '<option value="bin">Bin (numeric to categorical)</option>' +
+                  '<option value="standardize">Standardize (z / T-score)</option>' +
+                '</select>' +
+              '</label>' +
+              '<button type="button" id="mmCvCreate" class="btn primary" style="font-size:13px;padding:7px 14px;">Save variable</button>' +
+            '</div>' +
+            formMeanSum + formRecode + formBin + formStandardize +
+            '<div id="mmCvStatus" style="font-size:12px;color:#5a6470;margin-top:6px;"></div>' +
+          '</div>' +
         '</div>';
+
+      // Show the form section that matches the currently selected op.
+      const showOpForm = () => {
+        const op = host.querySelector('#mmCvOp').value;
+        const formKey = (op === 'mean' || op === 'sum') ? 'composite' : op;
+        host.querySelectorAll('[data-mm-cv-form]').forEach(el => {
+          el.style.display = el.getAttribute('data-mm-cv-form') === formKey ? '' : 'none';
+        });
+      };
+      const opSelect = host.querySelector('#mmCvOp');
+      if (opSelect) opSelect.addEventListener('change', showOpForm);
+      showOpForm();
+
+      // Recode: render the mapping table. Each row is {old, new} pair.
+      const recodeMapHost = host.querySelector('#mmCvRecodeMap');
+      let recodeRows = [{ old: '', new: '' }, { old: '', new: '' }];
+      const renderRecodeMap = () => {
+        if (!recodeMapHost) return;
+        recodeMapHost.innerHTML = recodeRows.map((r, i) =>
+          '<div style="display:flex;gap:8px;align-items:center;margin-bottom:4px;">' +
+            '<input type="text" data-mm-cv-old="' + i + '" placeholder="old" value="' + MM.esc(String(r.old)) + '" style="width:90px;padding:5px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:12px;" />' +
+            '<span style="color:#5a6470;">&rarr;</span>' +
+            '<input type="text" data-mm-cv-new="' + i + '" placeholder="new" value="' + MM.esc(String(r.new)) + '" style="width:90px;padding:5px 8px;border:1px solid #d3d8de;border-radius:5px;font-size:12px;" />' +
+            (recodeRows.length > 1 ? '<button type="button" data-mm-cv-rm="' + i + '" style="font-size:11px;padding:2px 8px;border:1px solid #d3d8de;border-radius:5px;background:#fff;color:#a33;cursor:pointer;">&times;</button>' : '') +
+          '</div>'
+        ).join('');
+        recodeMapHost.querySelectorAll('[data-mm-cv-old]').forEach(el => {
+          el.addEventListener('input', () => { recodeRows[parseInt(el.getAttribute('data-mm-cv-old'), 10)].old = el.value; });
+        });
+        recodeMapHost.querySelectorAll('[data-mm-cv-new]').forEach(el => {
+          el.addEventListener('input', () => { recodeRows[parseInt(el.getAttribute('data-mm-cv-new'), 10)].new = el.value; });
+        });
+        recodeMapHost.querySelectorAll('[data-mm-cv-rm]').forEach(el => {
+          el.addEventListener('click', () => {
+            recodeRows.splice(parseInt(el.getAttribute('data-mm-cv-rm'), 10), 1);
+            renderRecodeMap();
+          });
+        });
+      };
+      renderRecodeMap();
+
+      const addRowBtn = host.querySelector('#mmCvRecodeAdd');
+      if (addRowBtn) addRowBtn.addEventListener('click', () => {
+        recodeRows.push({ old: '', new: '' });
+        renderRecodeMap();
+      });
+      // Reverse-Likert presets.
+      const reverse5 = host.querySelector('#mmCvRecodeReverse5');
+      if (reverse5) reverse5.addEventListener('click', () => {
+        recodeRows = [
+          { old: '1', new: '5' }, { old: '2', new: '4' }, { old: '3', new: '3' },
+          { old: '4', new: '2' }, { old: '5', new: '1' }
+        ];
+        renderRecodeMap();
+      });
+      const reverse7 = host.querySelector('#mmCvRecodeReverse7');
+      if (reverse7) reverse7.addEventListener('click', () => {
+        recodeRows = [
+          { old: '1', new: '7' }, { old: '2', new: '6' }, { old: '3', new: '5' }, { old: '4', new: '4' },
+          { old: '5', new: '3' }, { old: '6', new: '2' }, { old: '7', new: '1' }
+        ];
+        renderRecodeMap();
+      });
 
       // Wire delete buttons.
       host.querySelectorAll('[data-mm-cv-del]').forEach(btn => {
@@ -43291,7 +43452,6 @@ async function mmTabQuantAnalysis(body) {
           btn.disabled = true; btn.textContent = 'Deleting...';
           try {
             await api.mmDeleteDerivedVariable(p.id, id);
-            // Re-fetch + render.
             const r = await api.mmListDerivedVariables(p.id);
             render(r.variables || []);
           } catch (e) {
@@ -43301,6 +43461,59 @@ async function mmTabQuantAnalysis(body) {
         });
       });
 
+      // Build the spec from the active sub-form's fields.
+      const buildSpecFor = (op) => {
+        if (op === 'mean' || op === 'sum') {
+          const items = Array.from(host.querySelectorAll('[data-mm-cv-item]:checked')).map(c => c.value);
+          return { items: items };
+        }
+        if (op === 'recode') {
+          const src = host.querySelector('#mmCvRecodeSrc').value;
+          const map = {};
+          recodeRows.forEach(r => {
+            const k = String(r.old).trim();
+            if (k === '') return;
+            const vStr = String(r.new).trim();
+            if (vStr === '') return;
+            const asNum = Number(vStr);
+            map[k] = Number.isFinite(asNum) && /^-?\d+(\.\d+)?$/.test(vStr) ? asNum : vStr;
+          });
+          return { source: src, mapping: map };
+        }
+        if (op === 'bin') {
+          const src = host.querySelector('#mmCvBinSrc').value;
+          const cuts = host.querySelector('#mmCvBinCuts').value.split(',').map(s => Number(s.trim())).filter(n => Number.isFinite(n));
+          const labels = host.querySelector('#mmCvBinLabels').value.split(',').map(s => s.trim()).filter(s => s !== '');
+          return { source: src, cutpoints: cuts, labels: labels };
+        }
+        if (op === 'standardize') {
+          return {
+            source: host.querySelector('#mmCvStdSrc').value,
+            method: host.querySelector('#mmCvStdMethod').value
+          };
+        }
+        return {};
+      };
+
+      // Pre-flight validation per op so the server isn't hit with junk.
+      const validateSpec = (op, spec) => {
+        if (op === 'mean' || op === 'sum') {
+          if (!spec.items || spec.items.length < 2) return 'Pick at least 2 source items.';
+        } else if (op === 'recode') {
+          if (!spec.source) return 'Choose a source column to recode.';
+          if (!spec.mapping || Object.keys(spec.mapping).length === 0) return 'Add at least one old → new row.';
+        } else if (op === 'bin') {
+          if (!spec.source) return 'Choose a source column to bin.';
+          if (!spec.cutpoints || spec.cutpoints.length < 1) return 'Enter at least one cutpoint (e.g. "2.5").';
+          if (!spec.labels || spec.labels.length !== spec.cutpoints.length + 1) {
+            return 'Need exactly one more label than cutpoints. With ' + spec.cutpoints.length + ' cutpoint(s), supply ' + (spec.cutpoints.length + 1) + ' labels.';
+          }
+        } else if (op === 'standardize') {
+          if (!spec.source) return 'Choose a source column to standardize.';
+        }
+        return null;
+      };
+
       // Wire create button.
       const createBtn = host.querySelector('#mmCvCreate');
       const statusEl  = host.querySelector('#mmCvStatus');
@@ -43308,20 +43521,21 @@ async function mmTabQuantAnalysis(body) {
         createBtn.addEventListener('click', async () => {
           const name = (host.querySelector('#mmCvName').value || '').trim();
           const op   = host.querySelector('#mmCvOp').value;
-          const items = Array.from(host.querySelectorAll('[data-mm-cv-item]:checked')).map(c => c.value);
           if (!name) { statusEl.innerHTML = '<span style="color:#a33;">Please enter a name.</span>'; return; }
           if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(name)) {
             statusEl.innerHTML = '<span style="color:#a33;">Names must start with a letter and contain only letters, numbers, and underscores (no spaces).</span>';
             return;
           }
-          if (items.length < 2) { statusEl.innerHTML = '<span style="color:#a33;">Pick at least 2 source items.</span>'; return; }
+          const spec = buildSpecFor(op);
+          const specErr = validateSpec(op, spec);
+          if (specErr) { statusEl.innerHTML = '<span style="color:#a33;">' + MM.esc(specErr) + '</span>'; return; }
           createBtn.disabled = true;
           statusEl.innerHTML = 'Computing and saving...';
           try {
-            const r = await api.mmCreateDerivedVariable(p.id, name, op, { items: items });
+            const r = await api.mmCreateDerivedVariable(p.id, name, op, spec);
             statusEl.innerHTML = '<span style="color:#1f6f3a;">Saved. Computed for ' + r.n_computed + ' / ' + (r.n_computed + r.n_missing) + ' respondents.</span>';
-            const list = await api.mmListDerivedVariables(p.id);
-            render(list.variables || []);
+            const listResp = await api.mmListDerivedVariables(p.id);
+            render(listResp.variables || []);
           } catch (e) {
             createBtn.disabled = false;
             statusEl.innerHTML = '<span style="color:#a33;">' + MM.esc(e.message || 'Could not save.') + '</span>';

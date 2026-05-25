@@ -116,19 +116,9 @@ if ($name === '') fail('bad_input', 'A variable name is required.');
 if (!preg_match('/^[A-Za-z][A-Za-z0-9_]*$/', $name)) {
     fail('bad_input', "Variable name must start with a letter and contain only letters, numbers, and underscores (no spaces or special characters).");
 }
-if (!in_array($op, ['mean', 'sum'], true)) {
-    fail('bad_input', "Operation '$op' is not supported yet. Phase 1 ships 'mean' and 'sum'; the others come in Phase 2.");
-}
-
-$items = isset($spec['items']) && is_array($spec['items']) ? $spec['items'] : [];
-$items = array_values(array_filter(array_map(function ($it) {
-    return is_string($it) ? clean_string($it, 80) : '';
-}, $items)));
-if (count($items) < 2) {
-    fail('bad_input', "A composite ($op) needs at least 2 source items.");
-}
-if (count($items) > 50) {
-    fail('bad_input', "Too many source items (max 50).");
+$VALID_OPS = ['mean', 'sum', 'recode', 'bin', 'standardize'];
+if (!in_array($op, $VALID_OPS, true)) {
+    fail('bad_input', "Operation '$op' is not supported. Valid: " . implode(', ', $VALID_OPS) . '.');
 }
 
 // Find the project's dataset to read source-column data from.
@@ -152,9 +142,8 @@ if (!is_array($cols) || !is_array($rows)) {
     fail('bad_dataset', 'Dataset is missing column metadata or data.');
 }
 
-// Resolve each requested item to its column index. The frontend sends
-// column IDs in the form 'col_<i>' that adaptDatasetToSurvey uses; we
-// accept both 'col_<i>' and bare column names for flexibility.
+// Resolve column names (or 'col_<i>') to dataset row indexes. Accepts
+// both forms for caller flexibility.
 $idxByName = [];
 foreach ($cols as $i => $c) {
     if (is_array($c) && isset($c['name'])) {
@@ -162,43 +151,151 @@ foreach ($cols as $i => $c) {
     }
     $idxByName['col_' . $i] = $i;
 }
-$itemIndexes = [];
-foreach ($items as $it) {
-    if (!array_key_exists($it, $idxByName)) {
-        fail('bad_input', "Source item '$it' was not found in the linked dataset.");
+$resolveCol = function ($name) use ($idxByName) {
+    if (!array_key_exists($name, $idxByName)) {
+        fail('bad_input', "Source column '$name' was not found in the linked dataset.");
     }
-    $itemIndexes[] = $idxByName[$it];
-}
+    return $idxByName[$name];
+};
 
-// Compute per-row values. Missing values are skipped; if fewer than half
-// the items have a numeric value on a given row, the composite is null
-// (rather than misleadingly averaging a small subset).
+// Read a numeric cell from a row, returning null on missing or non-numeric.
+$readNumeric = function ($row, $idx) {
+    if (!is_array($row) || !array_key_exists($idx, $row)) return null;
+    $v = $row[$idx];
+    if ($v === null || $v === '') return null;
+    if (!is_numeric($v)) return null;
+    return (float)$v;
+};
+
 $values = [];
-$minRequired = (int)ceil(count($itemIndexes) / 2);
-foreach ($rows as $row) {
-    if (!is_array($row)) { $values[] = null; continue; }
-    $count = 0;
-    $sum   = 0.0;
-    foreach ($itemIndexes as $idx) {
-        if (!array_key_exists($idx, $row)) continue;
-        $v = $row[$idx];
-        if ($v === null || $v === '') continue;
-        if (!is_numeric($v)) continue;
-        $sum += (float)$v;
-        $count++;
+$specClean = [];
+
+if ($op === 'mean' || $op === 'sum') {
+    $items = isset($spec['items']) && is_array($spec['items']) ? $spec['items'] : [];
+    $items = array_values(array_filter(array_map(function ($it) {
+        return is_string($it) ? clean_string($it, 80) : '';
+    }, $items)));
+    if (count($items) < 2) fail('bad_input', "A composite ($op) needs at least 2 source items.");
+    if (count($items) > 50) fail('bad_input', 'Too many source items (max 50).');
+    $itemIndexes = array_map($resolveCol, $items);
+    // If fewer than half the items have a numeric value, the composite
+    // is null on that row (rather than misleadingly aggregating a small
+    // subset). Standard practice in scale construction.
+    $minRequired = (int)ceil(count($itemIndexes) / 2);
+    foreach ($rows as $row) {
+        if (!is_array($row)) { $values[] = null; continue; }
+        $count = 0; $sum = 0.0;
+        foreach ($itemIndexes as $idx) {
+            $n = $readNumeric($row, $idx);
+            if ($n === null) continue;
+            $sum += $n; $count++;
+        }
+        if ($count < $minRequired) {
+            $values[] = null;
+        } elseif ($op === 'mean') {
+            $values[] = $sum / $count;
+        } else {
+            $values[] = $sum;
+        }
     }
-    if ($count < $minRequired) {
-        $values[] = null;
-    } elseif ($op === 'mean') {
-        $values[] = $sum / $count;
-    } else { // sum
-        $values[] = $sum;
+    $specClean = ['items' => $items];
+
+} elseif ($op === 'recode') {
+    $src = clean_string((string)($spec['source'] ?? ''), 80);
+    if ($src === '') fail('bad_input', "Recode needs a 'source' column name.");
+    $srcIdx = $resolveCol($src);
+    $mapping = isset($spec['mapping']) && is_array($spec['mapping']) ? $spec['mapping'] : [];
+    if (empty($mapping)) fail('bad_input', "Recode needs a 'mapping' object of old=>new values.");
+    // Normalize: keys are strings (JSON), values can be numeric or string.
+    // We compare against the raw cell stringified.
+    $normMap = [];
+    foreach ($mapping as $k => $v) {
+        $kStr = (string)$k;
+        // Allow numeric new values (most common for Likert reverse) and
+        // short string labels for collapse-categories recodes.
+        if (is_numeric($v)) {
+            $normMap[$kStr] = (float)$v;
+        } elseif (is_string($v)) {
+            $normMap[$kStr] = clean_string($v, 80);
+        } else {
+            $normMap[$kStr] = null;
+        }
     }
+    foreach ($rows as $row) {
+        if (!is_array($row) || !array_key_exists($srcIdx, $row)) { $values[] = null; continue; }
+        $raw = $row[$srcIdx];
+        if ($raw === null || $raw === '') { $values[] = null; continue; }
+        $key = is_float($raw) && floor($raw) === $raw ? (string)(int)$raw : (string)$raw;
+        if (!array_key_exists($key, $normMap)) {
+            // Value not in the mapping. Null it out so the user knows
+            // their mapping is incomplete (vs. silently dropping).
+            $values[] = null;
+            continue;
+        }
+        $values[] = $normMap[$key];
+    }
+    $specClean = ['source' => $src, 'mapping' => $normMap];
+
+} elseif ($op === 'bin') {
+    $src = clean_string((string)($spec['source'] ?? ''), 80);
+    if ($src === '') fail('bad_input', "Bin needs a 'source' column name.");
+    $srcIdx = $resolveCol($src);
+    $cuts = isset($spec['cutpoints']) && is_array($spec['cutpoints']) ? $spec['cutpoints'] : [];
+    $labels = isset($spec['labels']) && is_array($spec['labels']) ? $spec['labels'] : [];
+    if (count($cuts) < 1) fail('bad_input', "Bin needs at least 1 cutpoint.");
+    if (count($labels) !== count($cuts) + 1) {
+        fail('bad_input', 'Bin needs exactly one more label than cutpoints (e.g. 3 cutpoints => 4 labels).');
+    }
+    $numCuts = array_map('floatval', $cuts);
+    // Sanity: cutpoints must be strictly ascending.
+    for ($i = 1; $i < count($numCuts); $i++) {
+        if ($numCuts[$i] <= $numCuts[$i - 1]) {
+            fail('bad_input', 'Cutpoints must be in strictly ascending order.');
+        }
+    }
+    $cleanLabels = array_map(function ($l) { return is_string($l) ? clean_string($l, 80) : ''; }, $labels);
+    foreach ($rows as $row) {
+        $n = $readNumeric($row, $srcIdx);
+        if ($n === null) { $values[] = null; continue; }
+        $bin = count($numCuts); // values >= last cutpoint go to the last bin
+        for ($i = 0; $i < count($numCuts); $i++) {
+            if ($n < $numCuts[$i]) { $bin = $i; break; }
+        }
+        $values[] = $cleanLabels[$bin] !== '' ? $cleanLabels[$bin] : ('bin_' . $bin);
+    }
+    $specClean = ['source' => $src, 'cutpoints' => $numCuts, 'labels' => $cleanLabels];
+
+} elseif ($op === 'standardize') {
+    $src = clean_string((string)($spec['source'] ?? ''), 80);
+    if ($src === '') fail('bad_input', "Standardize needs a 'source' column name.");
+    $srcIdx = $resolveCol($src);
+    $method = clean_string((string)($spec['method'] ?? 'z'), 8);
+    if (!in_array($method, ['z', 't'], true)) fail('bad_input', "Standardize 'method' must be 'z' or 't'.");
+    // First pass: compute mean + sd of the source column over non-null rows.
+    $raw = [];
+    foreach ($rows as $row) {
+        $n = $readNumeric($row, $srcIdx);
+        if ($n !== null) $raw[] = $n;
+    }
+    $n = count($raw);
+    if ($n < 2) fail('insufficient_data', 'Standardize needs at least 2 non-null source values.');
+    $mean = array_sum($raw) / $n;
+    $sumSq = 0.0;
+    foreach ($raw as $v) { $sumSq += ($v - $mean) * ($v - $mean); }
+    $sd = sqrt($sumSq / ($n - 1));
+    if ($sd <= 0) fail('insufficient_data', 'Source has zero variance, cannot standardize.');
+    // Second pass: emit z-score (or T-score) per row.
+    foreach ($rows as $row) {
+        $v = $readNumeric($row, $srcIdx);
+        if ($v === null) { $values[] = null; continue; }
+        $z = ($v - $mean) / $sd;
+        $values[] = ($method === 't') ? (10 * $z + 50) : $z;
+    }
+    $specClean = ['source' => $src, 'method' => $method, 'sd' => $sd, 'mean' => $mean];
 }
 
 // Persist. ON DUPLICATE KEY (uq_project_name) updates the values so a
 // recomputed variable replaces the old version cleanly.
-$specClean = ['items' => $items];
 $specJson  = json_encode($specClean, JSON_UNESCAPED_UNICODE);
 $valuesJson = json_encode($values, JSON_UNESCAPED_UNICODE);
 if ($specJson === false || $valuesJson === false) {
