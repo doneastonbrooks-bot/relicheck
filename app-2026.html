@@ -16045,7 +16045,8 @@ function swEnsureLandingStyles() {
     // row. Per-studio accent reaches the card via data-studio.
     '.sw-welcome { max-width:1100px; margin:0 auto; padding:96px 32px 72px; text-align:center; }',
     '.sw-welcome-title { font:700 96px/1.02 Fraunces,serif; color:var(--text); letter-spacing:-0.03em; margin:0 0 18px; }',
-    '.sw-welcome-sub { font:600 40px/1.15 Fraunces,serif; color:var(--text); letter-spacing:-0.02em; margin:0 0 60px; }',
+    '.sw-welcome-sub { font:600 40px/1.15 Fraunces,serif; color:var(--text); letter-spacing:-0.02em; margin:0 0 18px; }',
+    '.sw-welcome-tag { font:400 16px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:640px; margin:0 auto 60px; }',
     '.sw-welcome-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }',
     '.sw-welcome-card[data-studio="survey"]   { --wc-accent:#e85d3a; --wc-accent-soft:#fdeee9; --wc-accent-tint:#fff7f3; }',
     '.sw-welcome-card[data-studio="mm"]       { --wc-accent:#7c3aed; --wc-accent-soft:#f0e7ff; --wc-accent-tint:#faf6ff; }',
@@ -16063,7 +16064,8 @@ function swEnsureLandingStyles() {
     '@media (max-width:900px) {' +
       '.sw-welcome { padding:64px 20px 48px; }' +
       '.sw-welcome-title { font-size:60px; letter-spacing:-0.025em; }' +
-      '.sw-welcome-sub { font-size:28px; margin-bottom:40px; }' +
+      '.sw-welcome-sub { font-size:28px; margin-bottom:12px; }' +
+      '.sw-welcome-tag { font-size:15px; margin-bottom:40px; }' +
       '.sw-welcome-grid { grid-template-columns:repeat(2,1fr); }' +
     '}',
   ].join('\n');
@@ -16090,6 +16092,7 @@ function swBuildWelcomeHTML(opts) {
     '<section class="sw-welcome">' +
       '<h1 class="sw-welcome-title">Welcome, ' + escapeHtml(name) + '.</h1>' +
       '<p class="sw-welcome-sub">What would you like to work on today?</p>' +
+      '<p class="sw-welcome-tag">Turn surveys, evidence, and mixed-methods insight into decisions you can trust.</p>' +
       '<div class="sw-welcome-grid">' +
         card({
           studio: 'survey', route: 'home',
