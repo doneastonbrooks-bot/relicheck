@@ -5718,7 +5718,7 @@
             <div class="dropb">When the numbers do not tell the whole story.</div>
           </a>
           <a class="nav-item nav-drop-item" data-route="tests" data-studio="testitem" role="menuitem">
-            <div class="dropt">Test &amp; Item Analysis <span class="nav-badge muted">early</span></div>
+            <div class="dropt">Item Analysis Studio <span class="nav-badge muted">early</span></div>
             <div class="dropb">Classical and IRT psychometrics for instruments.</div>
           </a>
           <a class="nav-item nav-drop-item" data-route="panels" data-studio="360" role="menuitem">
@@ -12121,7 +12121,7 @@ async function renderTests(root, param) {
       '<div class="page-head">' +
         '<div>' +
           '<h1>Tests</h1>' +
-          '<div class="sub">Early access &mdash; multiple-choice tests with answer keys. Reliability, item difficulty, distractor analysis, skill heatmap.</div>' +
+          '<div class="sub">Early access, multiple-choice tests with answer keys. Reliability, item difficulty, distractor analysis, skill heatmap.</div>' +
         '</div>' +
         '<div class="page-actions">' +
           '<button class="btn ghost" id="btnBuildTest" type="button">Build a test</button>' +
@@ -16049,7 +16049,14 @@ function swEnsureLandingStyles() {
     '.sw-welcome { max-width:1100px; margin:0 auto; padding:96px 32px 72px; text-align:center; }',
     '.sw-welcome-title { font:700 96px/1.02 Fraunces,serif; color:var(--text); letter-spacing:-0.03em; margin:0 0 18px; }',
     '.sw-welcome-sub { font:600 40px/1.15 Fraunces,serif; color:var(--text); letter-spacing:-0.02em; margin:0 0 18px; }',
-    '.sw-welcome-tag { font:400 16px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:640px; margin:0 auto 60px; }',
+    '.sw-welcome-tag { font:400 16px/1.5 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:640px; margin:0 auto 24px; }',
+    // Pick-up-where-you-left-off link. Sits below the tagline as a
+    // quiet contextual shortcut. Hidden when state.surveys is empty.
+    '.sw-welcome-pickup { display:inline-flex; align-items:center; gap:8px; padding:10px 18px; margin:0 auto 60px; font:500 14px/1 Inter,system-ui,sans-serif; color:var(--text); background:#fff; border:1px solid var(--border); border-radius:999px; text-decoration:none; cursor:pointer; transition:border-color .12s, background .12s; }',
+    '.sw-welcome-pickup:hover { background:var(--accent-tint); border-color:var(--accent); }',
+    '.sw-welcome-pickup .pu-eye { font:600 10.5px/1 Inter,system-ui,sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-mute); }',
+    '.sw-welcome-pickup .pu-name { font-weight:600; color:var(--text); max-width:280px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }',
+    '.sw-welcome-pickup .pu-arrow { color:var(--accent); font-weight:600; }',
     '.sw-welcome-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }',
     '.sw-welcome-card[data-studio="survey"]   { --wc-accent:#e85d3a; --wc-accent-soft:#fdeee9; --wc-accent-tint:#fff7f3; }',
     '.sw-welcome-card[data-studio="mm"]       { --wc-accent:#7c3aed; --wc-accent-soft:#f0e7ff; --wc-accent-tint:#faf6ff; }',
@@ -16064,11 +16071,18 @@ function swEnsureLandingStyles() {
     '.sw-welcome-card p { font:600 13px/1 Inter,system-ui,sans-serif; color:var(--wc-accent); margin:0; letter-spacing:0.08em; text-transform:uppercase; }',
     '.sw-welcome-card .wc-badge { position:absolute; top:14px; right:14px; font:700 9.5px/1 Inter,sans-serif; padding:3px 7px; border-radius:999px; letter-spacing:0.08em; text-transform:uppercase; background:var(--wc-accent-soft); color:var(--wc-accent); border:1px solid var(--wc-accent); }',
     '.sw-welcome-card .wc-badge.muted { background:var(--bg-soft, var(--bg)); color:var(--text-mute); border-color:var(--border-strong); }',
+    // Coming-soon cards sit at lower opacity, do not lift on hover, and
+    // use the default cursor so the user can read at a glance which
+    // studios are shippable today and which are on the roadmap.
+    '.sw-welcome-card.coming-soon { opacity:0.62; cursor:default; }',
+    '.sw-welcome-card.coming-soon:hover { transform:none; border-color:var(--border); box-shadow:none; opacity:0.78; }',
+    '.sw-welcome-card.coming-soon:hover .sw-welcome-card-ico { background:var(--wc-accent-tint); }',
     '@media (max-width:900px) {' +
       '.sw-welcome { padding:64px 20px 48px; }' +
       '.sw-welcome-title { font-size:60px; letter-spacing:-0.025em; }' +
       '.sw-welcome-sub { font-size:28px; margin-bottom:12px; }' +
-      '.sw-welcome-tag { font-size:15px; margin-bottom:40px; }' +
+      '.sw-welcome-tag { font-size:15px; margin-bottom:16px; }' +
+      '.sw-welcome-pickup { margin-bottom:32px; padding:8px 14px; font-size:13px; }' +
       '.sw-welcome-grid { grid-template-columns:repeat(2,1fr); }' +
     '}',
   ].join('\n');
@@ -16080,11 +16094,32 @@ function swEnsureLandingStyles() {
 // landings with a single grown-up moment of choice.
 function swBuildWelcomeHTML(opts) {
   const name = opts.name || 'there';
+  const recent = opts.recent || null;
+  // Pick-up link, only rendered when there is a recent project to
+  // anchor to. Routing depends on the kind: MM projects open inside
+  // the MM Studio; surveys and datasets open in Analyze.
+  let pickupHtml = '';
+  if (recent && recent.id) {
+    const route = recent.kind === 'mm' ? 'mm' : 'analyze';
+    const targetId = recent.kind === 'mm' ? recent.mmId : recent.id;
+    const safeName = escapeHtml(recent.title || 'your last project');
+    pickupHtml =
+      '<a class="sw-welcome-pickup" data-route="' + route + '" data-id="' + escapeHtml(String(targetId)) + '">' +
+        '<span class="pu-eye">Pick up where you left off</span>' +
+        '<span class="pu-name">' + safeName + '</span>' +
+        '<span class="pu-arrow">&rarr;</span>' +
+      '</a>';
+  }
   const card = (cfg) => {
     const badgeHtml = cfg.badge
       ? '<span class="wc-badge ' + (cfg.badgeMuted ? 'muted' : '') + '">' + cfg.badge + '</span>'
       : '';
-    return '<a class="sw-welcome-card" data-studio="' + cfg.studio + '" data-route="' + cfg.route + '">' +
+    // Coming-soon cards get a class that dims opacity, kills hover lift,
+    // and swaps the cursor. The route is still attached so the user can
+    // open the existing early-access page if they want, but the visual
+    // hierarchy makes clear which studios are shippable today.
+    const stateClass = cfg.badgeMuted ? ' coming-soon' : '';
+    return '<a class="sw-welcome-card' + stateClass + '" data-studio="' + cfg.studio + '" data-route="' + cfg.route + '">' +
       badgeHtml +
       '<div class="sw-welcome-card-ico">' + cfg.icon + '</div>' +
       '<h2>' + cfg.title + '</h2>' +
@@ -16096,6 +16131,7 @@ function swBuildWelcomeHTML(opts) {
       '<h1 class="sw-welcome-title">Welcome, ' + escapeHtml(name) + '.</h1>' +
       '<p class="sw-welcome-sub">What would you like to work on today?</p>' +
       '<p class="sw-welcome-tag">Turn surveys, evidence, and mixed-methods insight into decisions you can trust.</p>' +
+      pickupHtml +
       '<div class="sw-welcome-grid">' +
         card({
           studio: 'survey', route: 'home',
@@ -16109,13 +16145,13 @@ function swBuildWelcomeHTML(opts) {
         }) +
         card({
           studio: 'testitem', route: 'tests',
-          title: 'Test &amp; Item Analysis', word: 'Diagnose',
+          title: 'Item Analysis Studio', word: 'Diagnose',
           badge: 'Coming soon', badgeMuted: true,
           icon: '<svg viewBox="0 0 24 24"><path d="M9 3h6v4l4 4-4 4v6H9v-6l-4-4 4-4z"/></svg>',
         }) +
         card({
           studio: '360', route: 'panels',
-          title: '360 Studio', word: 'Coach',
+          title: '360 Studio', word: 'Develop',
           badge: 'Coming soon', badgeMuted: true,
           icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>',
         }) +
@@ -16126,7 +16162,25 @@ function swBuildWelcomeHTML(opts) {
 function renderWelcome(root) {
   swEnsureLandingStyles();
   const name = firstName(state.user && state.user.name) || 'there';
-  root.innerHTML = swBuildWelcomeHTML({ name: name });
+  // Find the most-recently-updated project (any kind) so the picker
+  // can offer a one-click "pick up where you left off" shortcut. The
+  // pickup link is rendered only when there is at least one project;
+  // otherwise the picker stays a clean fresh-start screen.
+  const surveys = Array.isArray(state.surveys) ? state.surveys : [];
+  const sorted = surveys
+    .filter(s => s && !s.archived_at && s.updated_at)
+    .sort(function (a, b) { return new Date(b.updated_at) - new Date(a.updated_at); });
+  const top = sorted[0] || null;
+  let recent = null;
+  if (top) {
+    recent = {
+      title: top.title,
+      kind:  top._kind || (top.mm_project_id ? 'mm' : 'survey'),
+      id:    top.id,
+      mmId:  top._mmId || null,
+    };
+  }
+  root.innerHTML = swBuildWelcomeHTML({ name: name, recent: recent });
 }
 
 // Mixed-Methods Studio landing, purple palette, BETA badge, Venn
@@ -16144,7 +16198,7 @@ function swBuildMMLandingHTML(opts) {
         '<div class="la-text">' +
           '<h2 class="la-title">Mixed-Methods Studio <span class="la-badge">BETA</span></h2>' +
           '<h3 class="la-sub">When the numbers don&rsquo;t tell the whole story.</h3>' +
-          '<p class="la-body">Pair quantitative scores with qualitative voice. Three classic designs &mdash; Explanatory, Exploratory, Convergent &mdash; with the workflow scaffolding and joint displays you&rsquo;d build by hand.</p>' +
+          '<p class="la-body">Pair quantitative scores with qualitative voice. Three classic designs, Explanatory, Exploratory, Convergent, with the workflow scaffolding and joint displays you&rsquo;d build by hand.</p>' +
           '<a class="la-cta" data-mm-action="new">+ Start a mixed-methods project <span class="arr">&rarr;</span></a>' +
         '</div>' +
         '<div class="la-graphic">' +
@@ -16202,10 +16256,10 @@ function swBuildTestLandingHTML(opts) {
       '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
       '<div class="la-hero">' +
         '<div class="la-text">' +
-          '<h2 class="la-title">Test &amp; Item Analysis <span class="la-badge muted">Coming Soon</span></h2>' +
+          '<h2 class="la-title">Item Analysis Studio <span class="la-badge muted">Coming Soon</span></h2>' +
           '<h3 class="la-sub">Before you trust the score, check the instrument.</h3>' +
-          '<p class="la-body">Classical statistics and item-response theory side by side &mdash; difficulty, discrimination, distractor analysis, 1PL/2PL/3PL models, and information curves. Catch the items dragging your test before they reach a student.</p>' +
-          '<a class="la-cta disabled" aria-disabled="true">Coming soon &mdash; early access below</a>' +
+          '<p class="la-body">Classical statistics and item-response theory side by side: difficulty, discrimination, distractor analysis, 1PL/2PL/3PL models, and information curves. Catch the items dragging your test before they reach a student.</p>' +
+          '<a class="la-cta disabled" aria-disabled="true">Coming soon, early access below</a>' +
         '</div>' +
         '<div class="la-graphic">' +
           '<svg viewBox="0 0 220 200" aria-hidden="true">' +
@@ -16266,7 +16320,7 @@ function swBuildPanelLandingHTML(opts) {
           '<h2 class="la-title">360 Studio <span class="la-badge muted">Coming Soon</span></h2>' +
           '<h3 class="la-sub">When feedback should drive growth, not judgment.</h3>' +
           '<p class="la-body">Self, peer, manager, and direct-report perspectives in one defensible view. Built-in rater-count gating so a thin response doesn&rsquo;t pretend to be a full picture.</p>' +
-          '<a class="la-cta disabled" aria-disabled="true">Coming soon &mdash; early access below</a>' +
+          '<a class="la-cta disabled" aria-disabled="true">Coming soon, early access below</a>' +
         '</div>' +
         '<div class="la-graphic">' +
           '<svg viewBox="0 0 220 200" aria-hidden="true">' +
@@ -16330,7 +16384,7 @@ function swBuildSurveyLandingHTML(opts) {
         '<div class="la-text">' +
           '<h2 class="la-title">Survey Studio</h2>' +
           '<h3 class="la-sub">Evidence you can defend.</h3>' +
-          '<p class="la-body">Build, send, and analyze surveys end-to-end &mdash; with reliability, validity, and a Strength Index built in so every claim you make rests on evidence reviewers will trust.</p>' +
+          '<p class="la-body">Build, send, and analyze surveys end-to-end, with reliability, validity, and a Strength Index built in so every claim you make rests on evidence reviewers will trust.</p>' +
           '<a class="la-cta" data-route="create">+ Start a new survey <span class="arr">&rarr;</span></a>' +
         '</div>' +
         '<div class="la-graphic">' +
@@ -25620,11 +25674,11 @@ async function renderManager(root) {
           compositeCell = '<span style="font-variant-numeric:tabular-nums;font-weight:700;font-size:14px;color:var(--text);">' + comp.composite.toFixed(2) + '</span> <span style="color:var(--text-mute);font-size:14px;">/ ' + comp.points + '</span>';
         } else {
           bandCell = '<span style="color:var(--text-mute);font-size:14px;">No Likert data</span>';
-          compositeCell = '<span style="color:var(--text-mute);font-size:14px;">&mdash;</span>';
+          compositeCell = '<span style="color:var(--text-mute);font-size:14px;">, </span>';
         }
         actionCell = '<button class="btn ghost" style="font-size:14px;padding:5px 12px;" data-mgr-analyze="' + id + '">Analyze</button>';
       } else {
-        bandCell = '<span style="color:var(--text-mute);font-size:14px;">&mdash;</span>';
+        bandCell = '<span style="color:var(--text-mute);font-size:14px;">, </span>';
         compositeCell = '<button class="btn ghost" style="font-size:14px;padding:5px 12px;" data-mgr-load="' + id + '">Compute</button>';
         actionCell = '<button class="btn ghost" style="font-size:14px;padding:5px 12px;" data-mgr-analyze="' + id + '">Analyze</button>';
       }
@@ -25969,8 +26023,8 @@ function renderMgrGroupRollupsCard(root, survey, responses) {
         '</div>' +
         '<div style="background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;text-align:center;">' +
           '<div style="font-size:14px;color:var(--text-mute);text-transform:none;letter-spacing:0.05em;font-weight:700;">Lowest alpha</div>' +
-          '<div style="font-family:inherit;font-size:26px;font-weight:700;color:' + (lowestRow && lowestRow.alpha < threshold ? colBad : colGood) + ';margin-top:2px;">' + (lowestRow ? lowestRow.alpha.toFixed(3) : '&mdash;') + '</div>' +
-          '<div style="font-size:14px;color:var(--text-soft);">' + (lowestRow ? escapeHtml(lowestRow.label) : '&mdash;') + '</div>' +
+          '<div style="font-family:inherit;font-size:26px;font-weight:700;color:' + (lowestRow && lowestRow.alpha < threshold ? colBad : colGood) + ';margin-top:2px;">' + (lowestRow ? lowestRow.alpha.toFixed(3) : ', ') + '</div>' +
+          '<div style="font-size:14px;color:var(--text-soft);">' + (lowestRow ? escapeHtml(lowestRow.label) : ', ') + '</div>' +
         '</div>' +
       '</div>' +
       '<div style="background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:14px;">' +
@@ -29950,7 +30004,7 @@ async function renderPanelsList(root) {
       '<div class="page-head">' +
         '<div>' +
           '<h1>360 Panels</h1>' +
-          '<div class="sub">Early access &mdash; manager 360s, leadership development, peer feedback. Each panel binds a survey to subjects and their evaluators.</div>' +
+          '<div class="sub">Early access, manager 360s, leadership development, peer feedback. Each panel binds a survey to subjects and their evaluators.</div>' +
         '</div>' +
         '<div class="page-actions">' +
           '<button class="btn primary" id="pnGoTo360Suite" type="button">From the 360 suite</button>' +
@@ -33093,7 +33147,7 @@ async function mmWizardIntakeDataset(pane) {
     return title + ' (' + parts.join(', ') + ')';
   };
   pane.innerHTML =
-    '<p style="color:#5a6470;font-size:13px;margin:0 0 8px;">Pick the dataset to use. The Studio analyzes it as-is, the same way the main app does. No reformatting, no flattening &mdash; multi-Likert columns stay intact for Reliability and Validity.</p>' +
+    '<p style="color:#5a6470;font-size:13px;margin:0 0 8px;">Pick the dataset to use. The Studio analyzes it as-is, the same way the main app does. No reformatting, no flattening, multi-Likert columns stay intact for Reliability and Validity.</p>' +
     '<select id="mmWizDatasetPick" style="padding:8px;border:1px solid #d3d8de;border-radius:6px;min-width:320px;max-width:100%;">' +
       '<option value="">(choose...)</option>' +
       datasets.map(d => '<option value="' + MM.esc(d.id) + '"' + (String(MM.wizard.linkDatasetId) === String(d.id) ? ' selected' : '') + '>' + MM.esc(optLabel(d)) + '</option>').join('') +
@@ -35377,7 +35431,7 @@ function mmV3PaintLeftNav(container, project) {
       '<button type="button" class="mm-v3-status-legend-toggle" id="mmV3LegendToggle" aria-expanded="false">Status dots &middot; what they mean</button>' +
       '<div class="mm-v3-status-legend-list" id="mmV3LegendList">' +
         '<div class="mm-v3-status-legend-row"><span class="status green"></span><span>Ready to run on this dataset</span></div>' +
-        '<div class="mm-v3-status-legend-row"><span class="status yellow"></span><span>Partial &mdash; needs more data or setup</span></div>' +
+        '<div class="mm-v3-status-legend-row"><span class="status yellow"></span><span>Partial, needs more data or setup</span></div>' +
         '<div class="mm-v3-status-legend-row"><span class="status dotted"></span><span>Needs data before this can be evaluated</span></div>' +
         '<div class="mm-v3-status-legend-row"><span class="status gray"></span><span>Not yet eligible for this design</span></div>' +
         '<div class="mm-v3-status-legend-row"><span class="status red"></span><span>Cannot run on this dataset</span></div>' +
@@ -36664,7 +36718,7 @@ function mmAnalyzeShellHtml(ORDER, headline) {
     '<div style="background:#fafbfc;border:1px solid #e2e6ea;border-radius:10px;padding:12px 14px;margin-bottom:14px;">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
         '<div style="font-size:12px;font-weight:600;color:#1a1f2b;text-transform:none;letter-spacing:0.04em;">Recommended order</div>' +
-        '<div style="font-size:13px;color:#1f3aa3;"><strong>Next:</strong> ' + MM.esc(firstUnvisited.label) + ' &mdash; ' + firstUnvisited.why + '</div>' +
+        '<div style="font-size:13px;color:#1f3aa3;"><strong>Next:</strong> ' + MM.esc(firstUnvisited.label) + ', ' + firstUnvisited.why + '</div>' +
       '</div>' +
       '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">' + chips + '</div>' +
     '</div>' +
@@ -36894,7 +36948,7 @@ function mmStep3Analyze(body) {
     return '<div style="background:#fafbfc;border:1px solid #e2e6ea;border-radius:10px;padding:12px 14px;margin-bottom:14px;">' +
              '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;flex-wrap:wrap;">' +
                '<div style="font-size:12px;font-weight:600;color:#1a1f2b;text-transform:none;letter-spacing:0.04em;">Recommended order</div>' +
-               '<div style="font-size:13px;color:#1f3aa3;"><strong>Next:</strong> ' + MM.esc(firstUnvisited.label) + ' &mdash; ' + firstUnvisited.why + '</div>' +
+               '<div style="font-size:13px;color:#1f3aa3;"><strong>Next:</strong> ' + MM.esc(firstUnvisited.label) + ', ' + firstUnvisited.why + '</div>' +
              '</div>' +
              '<div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">' + chips + '</div>' +
            '</div>';
@@ -39138,7 +39192,7 @@ async function mmTabDataset(body) {
     const myStep = dctx.stepByTab && dctx.stepByTab['dataset'] ? dctx.stepByTab['dataset'] : { stepNum: null };
     const designLabel = dctx.designLabel || 'Convergent';
     const headline = myStep.stepNum
-      ? ('Coded variables table &mdash; Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
+      ? ('Coded variables table, Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
       : 'Coded variables table';
     body.innerHTML =
       '<div class="card" style="padding:28px;">' +
@@ -39513,7 +39567,7 @@ async function mmTabAnalysis(body) {
   if (isNumbersFirst) {
     body.innerHTML =
       '<div class="card mm-analysis-card" style="padding:24px;">' +
-        '<h3 style="margin-top:0;">Numbers &mdash; Step 1 of the Explanatory sequence</h3>' +
+        '<h3 style="margin-top:0;">Numbers, Step 1 of the Explanatory sequence</h3>' +
         '<p style="color:#3a4252;font-size:14px;line-height:1.55;margin:6px 0 12px;">' +
           'Start with the quantitative findings. Studio reads the variable roles you set in Step 2 (Structure Data) and proposes the right statistical test for each Predictor by Outcome pair (chi-square, t-test, ANOVA, Pearson r). Once you have your numbers, the next sub-tab uses themes to explain what you found.' +
         '</p>' +
@@ -39540,7 +39594,7 @@ async function mmTabAnalysis(body) {
 
   if (!hasDataset) {
     const headline = myStep.stepNum
-      ? ('Numbers &mdash; Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
+      ? ('Numbers, Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
       : 'Quantitative support analysis';
     const helperLine = (designLabel === 'Exploratory')
       ? 'In the Exploratory sequence, you build the codebook first, then turn it into measurable variables, then test those variables here. Once your Coded Variables table is built, this page becomes your testing workshop.'
@@ -39566,7 +39620,7 @@ async function mmTabAnalysis(body) {
   // Standard headline for the Exploratory/Convergent with-dataset path: the
   // Numbers tab is a later step that runs against the Coded Variables table.
   const stdHeadline = myStep.stepNum
-    ? ('Numbers &mdash; Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
+    ? ('Numbers, Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
     : 'Quantitative support analysis';
   body.innerHTML =
     '<div class="card mm-analysis-card" style="padding:24px;">' +
@@ -39762,7 +39816,7 @@ async function mmTabQuantAnalysis(body) {
   const design = (MM.state.framing && MM.state.framing.chosen_design) || 'design_c';
 
   const headline = myStep.stepNum
-    ? ('Quant Analysis &mdash; Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
+    ? ('Quant Analysis, Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
     : 'Quant Analysis';
 
   // Phase 178h: unified flow. EVERY MM project gets the full ReliCheck
@@ -41846,7 +41900,7 @@ async function mmTabQuantAnalysis(body) {
           MM.mmConfirm(detail, { confirmLabel: 'Got it', cancelLabel: 'Close' });
         } else {
           // Defensive fallback if the helper isn't loaded for some reason.
-          alert(detail.replace(/&mdash;/g, ', ').replace(/&times;/g, '×').replace(/&ge;/g, '≥'));
+          alert(detail.replace(/, /g, ', ').replace(/&times;/g, '×').replace(/&ge;/g, '≥'));
         }
       }
     });
@@ -42320,7 +42374,7 @@ function mmReliabilityTeachingCard(body, ctx) {
     (sublineHtml || '') +
     '<div class="card" style="padding:28px;margin-top:14px;">' +
       '<div style="font-size:11px;font-weight:700;color:#5a6470;letter-spacing:0.05em;text-transform:none;margin-bottom:8px;">Not yet computable</div>' +
-      '<h3 style="margin:0 0 10px;font-family:inherit;font-size:18px;color:#1a1f2b;">What this data can support &mdash; reliability</h3>' +
+      '<h3 style="margin:0 0 10px;font-family:inherit;font-size:18px;color:#1a1f2b;">What this data can support, reliability</h3>' +
       '<p style="margin:0 0 12px;color:#3a4252;font-size:14px;line-height:1.6;">' + foundLine + '</p>' +
       '<p style="margin:0 0 4px;color:#5a6470;font-size:13px;line-height:1.65;">' + whyLine + '</p>' +
       actions +
@@ -42367,7 +42421,7 @@ async function mmTabQualAnalysis(body) {
   const design = (MM.state.framing && MM.state.framing.chosen_design) || 'design_c';
 
   const headline = myStep.stepNum
-    ? ('Qual Analysis &mdash; Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
+    ? ('Qual Analysis, Step ' + myStep.stepNum + ' of the ' + designLabel + ' sequence')
     : 'Qual Analysis';
 
   // Design-specific eyebrow.
