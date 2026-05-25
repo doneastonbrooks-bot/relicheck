@@ -1132,20 +1132,33 @@
     .acct-body { display: flex; flex-direction: column; gap: 20px; }
 
     .acct-plan {
-      background: linear-gradient(135deg, #1a1f33 0%, #2a3354 100%);
-      color: #ffffff;
-      border-radius: 12px;
-      padding: 24px 26px;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-tint, #fff7f3) 100%);
+      color: var(--text);
+      border: 1px solid var(--accent-soft, #fde2d7);
+      border-radius: 14px;
+      padding: 26px 28px;
       display: grid;
       grid-template-columns: 1fr auto;
       gap: 18px;
       align-items: center;
+      box-shadow:
+        0 20px 48px rgba(11,23,51,0.08),
+        0 6px 16px rgba(11,23,51,0.05);
     }
     @media (max-width: 720px) { .acct-plan { grid-template-columns: 1fr; } }
     .acct-plan .lab {
-      font-size: 14px; letter-spacing: 0.08em; text-transform: none;
-      color: #fbbf85; font-weight: 700;
+      font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--primary); font-weight: 700;
     }
+    .acct-plan h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin: 4px 0 6px;
+    }
+    .acct-plan p { color: var(--text-soft); font-size: 14.5px; margin: 0; }
     /* Phase 154c: per-plan card inside the in-app upgrade modal. */
     .acct-plan-pick {
       border: 1px solid var(--border);
@@ -1634,8 +1647,9 @@
       display: flex; gap: 10px; flex-wrap: wrap;
     }
     .tpl-featured {
-      background: linear-gradient(135deg, #1a1f33 0%, #2a3354 100%);
-      color: #ffffff;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent-tint, #fff7f3) 100%);
+      color: var(--text);
+      border: 1px solid var(--accent-soft, #fde2d7);
       border-radius: 14px;
       padding: 28px 32px;
       display: grid;
@@ -1643,35 +1657,41 @@
       gap: 24px;
       align-items: center;
       margin-bottom: 22px;
+      box-shadow:
+        0 20px 48px rgba(11,23,51,0.08),
+        0 6px 16px rgba(11,23,51,0.05);
     }
     @media (max-width: 720px) { .tpl-featured { grid-template-columns: 1fr; } }
     .tpl-featured .tag {
-      font-size: 14px; font-weight: 700; letter-spacing: 0.08em;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.10em;
       color: var(--primary);
+      text-transform: uppercase;
     }
     .tpl-featured h2 {
-      font-family: inherit; font-size: 22px;
-      margin: 6px 0 10px 0; line-height: 1.2;
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      margin: 6px 0 10px 0;
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      font-weight: 600;
+      color: var(--text);
     }
-    .tpl-featured p { margin: 0 0 14px 0; color: #c5cbd4; font-size: 14px; }
+    .tpl-featured p { margin: 0 0 14px 0; color: var(--text-soft); font-size: 14.5px; line-height: 1.55; }
     .tpl-featured .stats {
-      display: flex; gap: 18px; font-size: 14px; color: #c5cbd4;
+      display: flex; gap: 18px; font-size: 13.5px; color: var(--text-soft);
       flex-wrap: wrap;
     }
     .tpl-featured .stats strong {
-      color: #ffffff; font-family: inherit; font-size: 16px; font-weight: 700;
+      color: var(--text); font-family: inherit; font-size: 15px; font-weight: 700;
     }
-    .tpl-featured .actions { display: flex; gap: 8px; margin-top: 12px; }
-    .tpl-featured .actions .btn.ghost {
-      background: rgba(255,255,255,0.10); color: #ffffff;
-      border-color: rgba(255,255,255,0.20);
-    }
-    .tpl-featured .actions .btn.ghost:hover { background: rgba(255,255,255,0.20); }
+    .tpl-featured .actions { display: flex; gap: 8px; margin-top: 14px; }
     .tpl-featured .diamond {
       text-align: center;
-      font-family: inherit;
-      font-size: 56px; font-weight: 700;
-      color: rgba(232,93,58,0.40);
+      font-family: 'Fraunces', serif;
+      font-size: 72px;
+      font-weight: 700;
+      color: var(--primary);
+      opacity: 0.18;
       line-height: 1;
     }
 
@@ -24800,7 +24820,16 @@ function renderAccountBody(root, tier) {
   const teamUsed     = usage.seats_used           || 0;
   const teamCap      = limits.max_team_seats || (features.team_sharing | 0);
 
+  swEnsureLandingStyles();
   root.innerHTML =
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">Account.<br>Your plan, your team, your settings.</h1>' +
+          '<p class="sw-page-sub">Manage your subscription, profile, security, integrations, and workspace from one place.</p>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
     '<div class="acct-layout">' +
       '<aside class="acct-nav">' +
         '<h2>Account</h2>' +
@@ -24825,9 +24854,11 @@ function renderAccountBody(root, tier) {
             '<div class="lab">CURRENT PLAN</div>' +
             '<h3>' + escapeHtml(planLabel) + '</h3>' +
             '<p>' +
-              (limits.max_surveys === -1 ? 'Unlimited' : (limits.max_surveys || '-')) + ' projects' +
+              // Use fmtCap so PHP_INT_MAX (the unlimited sentinel) renders
+              // as "unlimited" rather than a 19-digit number.
+              fmtCap(limits.max_surveys) + ' projects' +
               ' . ' +
-              (limits.max_team_seats === -1 ? 'Unlimited team seats' :
+              (isUnlimitedCap(limits.max_team_seats) ? 'unlimited team seats' :
                 ((teamCap | 0) > 0 ? teamCap + ' team seats' : 'solo workspace')) +
             '</p>' +
           '</div>' +
@@ -26533,12 +26564,17 @@ function renderAITools(root) {
   }));
   const totalCount = sectionCounts.reduce((s, x) => s + x.count, 0);
 
+  swEnsureLandingStyles();
   root.innerHTML =
-    '<div class="ai-hero">' +
-      '<span class="tag">' + totalCount + ' INTELLIGENCE TOOLS</span>' +
-      '<h1>ReliCheck Intelligence, built into every step.</h1>' +
-      '<p>Generate items, group constructs, narrate dashboards, draft reports. Use any tool standalone, or let them surface contextually inside the builder and analytics.</p>' +
-    '</div>' +
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<p class="sw-page-eyebrow">' + totalCount + ' Intelligence tools</p>' +
+          '<h1 class="sw-page-title">ReliCheck Intelligence,<br>built into every step.</h1>' +
+          '<p class="sw-page-sub">Generate items, group constructs, narrate dashboards, draft reports. Use any tool standalone, or let them surface contextually inside the builder and analytics.</p>' +
+        '</div>' +
+      '</div>' +
+    '</section>' +
 
     '<div class="ai-filters">' +
       '<span class="ai-chip' + (cur === 'all' ? ' on' : '') + '" data-filter="all">All<span class="ct">' + totalCount + '</span></span>' +
@@ -26616,17 +26652,20 @@ function drawAISections() {
    Each card creates the survey via API and routes to the Builder.
    ============================================================ */
 async function renderTemplates(root) {
+  swEnsureLandingStyles();
   // Skeleton + loading state.
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>Templates</h1>' +
-        '<div class="sub">Validated scales and ready-made surveys. Start with one, edit anything, keep the citation.</div>' +
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">Templates.<br>Start where the work has been done.</h1>' +
+          '<p class="sw-page-sub">Validated scales and ready-made surveys. Start with one, edit anything, keep the citation.</p>' +
+        '</div>' +
+        '<div class="sw-page-actions">' +
+          '<button class="btn ghost" id="tplAiRecommend" type="button">AI: Find me a scale</button>' +
+        '</div>' +
       '</div>' +
-      '<div class="page-actions">' +
-        '<button class="btn ghost" id="tplAiRecommend" type="button">AI: Find me a scale</button>' +
-      '</div>' +
-    '</div>' +
+    '</section>' +
     '<div id="tplBody"><div class="loading-row"><div class="spinner"></div><div>Loading templates...</div></div></div>';
 
   const aiBtn = root.querySelector('#tplAiRecommend');
@@ -30551,13 +30590,16 @@ async function renderSuites(root, suiteId) {
 }
 
 async function renderSuitesList(root) {
+  swEnsureLandingStyles();
   root.innerHTML =
-    '<div class="page-head">' +
-      '<div>' +
-        '<h1>Series</h1>' +
-        '<div class="sub">Linked surveys for longitudinal or multi-instrument work. Workflow packages with curated templates: 360, HR, Pulse, Program Eval, Education, Researcher, CX.</div>' +
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">Series.<br>Linked surveys, side by side.</h1>' +
+          '<p class="sw-page-sub">Workflow packages with curated templates for 360, HR, Pulse, Program Eval, Education, Researcher, and CX. Bundle the surveys, run the waves, and let ReliCheck thread the analytics across them.</p>' +
+        '</div>' +
       '</div>' +
-    '</div>' +
+    '</section>' +
     '<div id="stListBody"><div class="loading-row"><div class="spinner"></div></div></div>';
 
   let suites = [];
