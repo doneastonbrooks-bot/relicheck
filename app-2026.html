@@ -248,6 +248,21 @@
       margin-left: 0;
       letter-spacing: 0.04em;
     }
+    /* Welcome route neutralization. On /#/welcome the user is not in a
+       studio yet, so the topnav drops its coral accent: the brand tag,
+       the Home pill, and any dropdown trigger that would normally light
+       coral all show in neutral gray. The chrome stays neutral until
+       the user picks a studio. */
+    .app[data-current-route="welcome"] .sidebar-brand .tag {
+      background: var(--bg-soft, var(--bg)); color: var(--text-mute);
+    }
+    .app[data-current-route="welcome"] .nav-toplink.active {
+      background: var(--bg-soft, var(--bg)); color: var(--text); font-weight: 600;
+    }
+    .app[data-current-route="welcome"] .nav-drop-trigger.has-active,
+    .app[data-current-route="welcome"] .nav-drop[data-open="1"] .nav-drop-trigger {
+      background: var(--bg-soft, var(--bg)); color: var(--text);
+    }
     /* Section dividers are vertical-mode concepts. Hidden in topnav. */
     .sidebar-section { display: none; }
     .sidebar-foot { display: none; }
@@ -11659,6 +11674,24 @@ function render() {
   if (activeNav) {
     try { activeNav.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }); } catch (_) {}
   }
+  // Tag .app with the current route so the CSS can neutralize topnav
+  // accents on /#/welcome (the picker has no studio identity yet).
+  const appEl = document.querySelector('.app');
+  if (appEl) appEl.setAttribute('data-current-route', r);
+  // Relabel the topnav Home link to reflect the studio the user is
+  // currently inside. The link still routes to /#/welcome; the label
+  // becomes a quiet orientation cue ("you are in Survey Studio").
+  const STUDIO_LABEL_FOR = {
+    welcome: 'Home',
+    home: 'Survey Studio', projects: 'Survey Studio', builder: 'Survey Studio',
+    analyze: 'Survey Studio', distribute: 'Survey Studio', reports: 'Survey Studio',
+    create: 'Survey Studio', 'upload-dataset': 'Survey Studio',
+    mm: 'Mixed-Methods Studio',
+    tests: 'Item Analysis Studio',
+    panels: '360 Studio',
+  };
+  const homeLink = document.querySelector('.nav-toplink[data-route="welcome"]');
+  if (homeLink) homeLink.textContent = STUDIO_LABEL_FOR[r] || 'Home';
   // Update breadcrumbs.
   const crumbs = $('#crumbs');
   if (crumbs) {
