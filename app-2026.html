@@ -11806,11 +11806,12 @@ async function renderHome(root) {
   const active  = surveys.filter(s => (s.status || '').toLowerCase() !== 'draft').length;
   const responses = surveys.reduce((sum, s) => sum + (Number(s.response_count) || 0), 0);
 
-  // Survey Studio landing hero on top, then the existing customizable
-  // home dashboard grid below it. Sw-shell is intentionally NOT used on
-  // Home — the landing is the front door and the grid is the daily-work
-  // surface that scrolls into view beneath it. The landing CSS uses a
-  // negative top/side margin so it bleeds to the edges of #content.
+  // Survey Studio landing hero on top, then the dashboard grid below it.
+  // No sw-shell on Home — the landing is the front door and the grid is
+  // the daily-work surface that scrolls into view beneath it. The landing
+  // CSS uses negative top/side margins so it bleeds to the edges of
+  // #content. The customize-layout bar was removed — this is THE layout.
+  state.homeEditMode = false;
   swEnsureBuilderShellStyles();
   swEnsureLandingStyles();
   root.innerHTML =
@@ -11818,18 +11819,9 @@ async function renderHome(root) {
       name: name,
       counts: { active: active, drafts: drafts, responses: responses },
     }) +
-    '<div class="home-customize-bar">' +
-      (state.homeEditMode
-        ? '<button type="button" class="btn ghost small" id="btnHomeReset">Reset to default</button>'
-        : '') +
-      '<button type="button" class="btn ghost small" id="btnHomeCustomize">' +
-        (state.homeEditMode ? 'Done customizing' : 'Customize layout') +
-      '</button>' +
-    '</div>' +
-    '<div class="home-grid' + (state.homeEditMode ? ' edit' : '') + '" id="homeGrid"></div>';
+    '<div class="home-grid" id="homeGrid"></div>';
 
   drawHomeGrid();
-  wireHomeCustomize();
 }
 
 function drawHomeGrid() {
@@ -15983,6 +15975,10 @@ function swEnsureLandingStyles() {
     '.sw-landing .la-hero { position:relative; display:grid; grid-template-columns:1fr 360px; gap:28px; align-items:center; padding:80px 64px 32px; min-height:320px; z-index:2; }',
     '.sw-landing .la-text { z-index:2; }',
     '.sw-landing .la-eyebrow { font:500 14px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); margin:0 0 6px; opacity:0; animation:laFade 600ms ease forwards 100ms; }',
+    // Personal welcome — anchored to the top-right of the landing card
+    // so it greets without taking up hero real estate. Fades in like the
+    // eyebrow used to.
+    '.sw-landing .la-welcome { position:absolute; top:18px; right:24px; z-index:3; font:500 13px/1.2 Inter,system-ui,sans-serif; color:var(--text-soft); padding:6px 12px; background:rgba(255,255,255,0.7); border:1px solid var(--border); border-radius:999px; backdrop-filter:saturate(180%) blur(8px); -webkit-backdrop-filter:saturate(180%) blur(8px); opacity:0; animation:laFade 600ms ease forwards 100ms; }',
     '.sw-landing .la-title { font:600 44px/1 Fraunces,serif; color:var(--la-accent); margin:0 0 4px; letter-spacing:-0.02em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 200ms; }',
     '.sw-landing .la-sub { font:600 28px/1.15 Fraunces,serif; color:var(--text); margin:0 0 18px; letter-spacing:-0.01em; opacity:0; transform:translateY(8px); animation:laRise 700ms cubic-bezier(.2,.7,.2,1) forwards 320ms; }',
     '.sw-landing .la-body { font:400 14.5px/1.6 Inter,system-ui,sans-serif; color:var(--text-soft); max-width:460px; margin:0 0 22px; opacity:0; animation:laFade 700ms ease forwards 480ms; }',
@@ -16032,9 +16028,9 @@ function swBuildSurveyLandingHTML(opts) {
     '<section class="sw-landing" data-studio="survey">' +
       '<div class="la-blob"><div class="la-blob-icon"><svg viewBox="0 0 24 24"><path d="M3 11L12 4l9 7"/><path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9"/></svg></div></div>' +
       '<span class="la-wm wm1">S</span><span class="la-wm wm2">S</span><span class="la-wm wm3">S</span><span class="la-wm wm4">S</span>' +
+      '<div class="la-welcome">Welcome back, ' + escapeHtml(name) + '.</div>' +
       '<div class="la-hero">' +
         '<div class="la-text">' +
-          '<p class="la-eyebrow">Welcome back, ' + escapeHtml(name) + '.</p>' +
           '<h2 class="la-title">Survey Studio</h2>' +
           '<h3 class="la-sub">Evidence you can defend.</h3>' +
           '<p class="la-body">Build, send, and analyze surveys end-to-end &mdash; with reliability, validity, and a Strength Index built in so every claim you make rests on evidence reviewers will trust.</p>' +
