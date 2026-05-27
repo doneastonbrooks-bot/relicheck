@@ -1,0 +1,493 @@
+/* ReliCheck Reporting Suite
+ * -------------------------------------------------------------------
+ * Same visual rhythm as interpretation: cards stack, Fraunces headers,
+ * brand-token tinting. Distinct treatments per lens: Builder has
+ * editable rows + controls; the section lenses are prose-led;
+ * Tables & Figures is table-heavy; Export is a download-card grid.
+ */
+
+.rep-app {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* =============================== Source ribbon =============================== */
+
+.rep-source {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  background: var(--bg-tint, #fafbfd);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.rep-source-pip {
+  width: 10px; height: 10px; border-radius: 999px;
+  flex-shrink: 0;
+}
+.rep-source[data-source="empty"] .rep-source-pip { background: var(--ink-6, #8a93a5); }
+.rep-source[data-source="ready"] .rep-source-pip {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.rep-source-label { font-weight: 600; color: var(--ink-2); }
+.rep-source-meta  { color: var(--ink-5); }
+.rep-source-cta {
+  margin-left: auto;
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* =============================== Empty =============================== */
+
+.rep-empty {
+  padding: 28px;
+  background: #fff;
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+.rep-empty h4 {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-1, #1c2238);
+  margin: 0 0 8px;
+}
+.rep-empty p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  max-width: 64ch;
+}
+.rep-flat {
+  margin: 0;
+  padding: 16px 20px;
+  background: var(--bg-tint, #fafbfd);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 13.5px;
+  color: var(--ink-4);
+  line-height: 1.55;
+}
+.rep-block-h {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+  margin: 0;
+}
+
+/* =============================== Builder =============================== */
+
+.rep-builder-head {
+  display: grid;
+  grid-template-columns: 1fr max-content;
+  gap: 16px;
+  align-items: end;
+  padding: 16px 22px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.rep-title-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rep-title-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ink-1, #1c2238);
+  background: #fff;
+}
+.rep-title-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.rep-builder-meta {
+  font-size: 12.5px;
+  color: var(--ink-5);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+.rep-builder-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rep-preview-btn {
+  margin-left: auto;
+  text-decoration: none;
+}
+.rep-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.rep-block-row {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 14px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: opacity 0.15s var(--ease);
+}
+.rep-block-row[data-included="false"] {
+  opacity: 0.55;
+  background: var(--bg-tint, #fafbfd);
+}
+.rep-block-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rep-block-include {
+  accent-color: var(--accent);
+}
+.rep-block-btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: #fff;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease);
+}
+.rep-block-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.rep-block-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.rep-block-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.rep-block-eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-5);
+}
+.rep-block-summary {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.45;
+}
+
+/* =============================== Section lenses (Exec / Method / Recs) =============================== */
+
+.rep-section {
+  padding: 22px 26px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.rep-section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.rep-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-4);
+}
+.rep-eyebrow .pip {
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.rep-section h3 {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--ink-1, #1c2238);
+  margin: 0;
+  line-height: 1.25;
+}
+.rep-section-sub {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-4);
+  max-width: 64ch;
+  line-height: 1.55;
+}
+.rep-section-foot {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.rep-prose p {
+  margin: 0 0 12px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+.rep-prose p:last-child { margin-bottom: 0; }
+.rep-prose strong { font-weight: 600; color: var(--ink-1, #1c2238); }
+
+/* =============================== Findings =============================== */
+
+.rep-findings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.rep-finding {
+  padding: 18px 20px;
+  background: var(--bg-tint, #fafbfd);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.rep-finding-eyebrow {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-5);
+  margin-bottom: 4px;
+}
+.rep-finding-headline {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-1, #1c2238);
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+.rep-finding-context {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: var(--ink-4);
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+.rep-finding-interp {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.55;
+}
+.rep-finding-note {
+  padding: 14px 20px;
+  background: #fff;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 12px 12px 0;
+}
+.rep-finding-note p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+/* =============================== Tables & Figures =============================== */
+
+.rep-tables {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.rep-table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rep-table-caption {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+}
+.rep-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 13.5px;
+}
+.rep-table th,
+.rep-table td {
+  padding: 9px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+.rep-table thead th {
+  background: var(--bg-tint, #fafbfd);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-5);
+}
+.rep-table tbody tr:last-child td,
+.rep-table tbody tr:last-child th { border-bottom: none; }
+.rep-table th.rowhead {
+  background: var(--bg-tint, #fafbfd);
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+/* =============================== Recommendations =============================== */
+
+.rep-recommendations {
+  margin: 0;
+  padding: 0 0 0 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rep-recommendations li {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+/* =============================== Export =============================== */
+
+.rep-export-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.rep-export-card {
+  appearance: none;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rep-export-card:hover {
+  border-color: var(--accent);
+  background: var(--accent-tint, #fff7f3);
+  transform: translateY(-1px);
+}
+.rep-export-name {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink-1, #1c2238);
+}
+.rep-export-sub {
+  font-size: 13px;
+  color: var(--ink-5);
+  line-height: 1.45;
+}
+.rep-export-foot {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-5);
+  font-style: italic;
+}
+
+/* =============================== Appendix =============================== */
+
+.rep-appendix {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.rep-appendix-row {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.rep-appendix-row summary {
+  display: grid;
+  grid-template-columns: max-content max-content 1fr;
+  gap: 14px;
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  user-select: none;
+  align-items: center;
+}
+.rep-appendix-row summary::-webkit-details-marker { display: none; }
+.rep-appendix-num {
+  font-family: 'Fraunces', 'Georgia', serif;
+  font-weight: 600;
+  color: var(--accent);
+  width: 32px;
+}
+.rep-appendix-name { font-weight: 600; color: var(--ink-1, #1c2238); }
+.rep-appendix-summary { color: var(--ink-5); }
+.rep-appendix-pre {
+  margin: 0;
+  padding: 14px 18px;
+  background: #0e1320;
+  color: #d6dde9;
+  font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-x: auto;
+  max-height: 460px;
+}
+
+/* =============================== Responsive =============================== */
+
+@media (max-width: 900px) {
+  .rep-builder-head { grid-template-columns: 1fr; }
+  .rep-export-grid  { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rep-block-row    { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .rep-export-grid  { grid-template-columns: 1fr; }
+  .rep-builder-actions .rep-preview-btn { margin-left: 0; }
+}
+
+/* =============================== Print =============================== */
+
+@media print {
+  .rep-source, .rep-builder-actions, .rep-builder-head, .rep-block-controls,
+  .rep-export-grid, .rep-export-foot, .rep-section-foot, .rep-empty {
+    display: none !important;
+  }
+  .rep-section {
+    box-shadow: none;
+    border: none;
+    padding: 0;
+    background: #fff;
+  }
+  .rep-finding {
+    page-break-inside: avoid;
+    background: #fff;
+    border: none;
+    padding: 6px 0 14px;
+  }
+  .rep-table-wrap, .rep-appendix-row { page-break-inside: avoid; }
+  .rep-appendix-pre { background: #f8f9fc; color: #1c2238; }
+}

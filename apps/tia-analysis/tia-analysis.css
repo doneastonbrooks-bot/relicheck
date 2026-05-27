@@ -1,0 +1,72 @@
+/* ReliCheck TIA Analysis */
+
+.tia-app { display: flex; flex-direction: column; gap: 18px; }
+
+.tia-source {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 16px; border: 1px solid var(--line); background: var(--bg-tint, #fafbfd);
+  border-radius: 999px; font-size: 13px;
+}
+.tia-source-pip { width: 8px; height: 8px; border-radius: 999px; flex-shrink: 0; background: var(--ink-6, #8a93a5); }
+.tia-source[data-source="uploaded"] .tia-source-pip { background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.tia-source-label { font-weight: 600; color: var(--ink-2); }
+.tia-source-meta  { color: var(--ink-5); }
+
+.tia-empty { padding: 24px; background: #fff; border: 1px dashed var(--line); border-radius: 14px; text-align: center; color: var(--ink-4); }
+.tia-flat { margin: 0; padding: 16px 20px; background: var(--bg-tint, #fafbfd); border: 1px dashed var(--line); border-radius: 12px; font-size: 13.5px; color: var(--ink-4); }
+
+.tia-setup { padding: 18px 22px; background: #fff; border: 1px solid var(--line); border-radius: 14px; display: flex; flex-direction: column; gap: 12px; }
+.tia-lens-setup { display: flex; flex-direction: column; gap: 12px; }
+.tia-field { display: flex; flex-direction: column; gap: 5px; }
+.tia-label { display: flex; flex-direction: column; gap: 2px; font-size: 13px; }
+.tia-label-text { font-weight: 600; color: var(--ink-2); }
+.tia-label-hint { font-size: 11.5px; color: var(--ink-5); }
+.tia-select { appearance: none; -webkit-appearance: none; background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 9px 36px 9px 14px; font-size: 14px; color: var(--ink-2); cursor: pointer; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2367707d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; }
+.tia-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+
+.tia-results { padding: 22px 26px 18px; background: linear-gradient(180deg, var(--accent-tint, #fff7f3) 0%, #fff 70%); border: 1px solid var(--line); border-radius: 16px; }
+.tia-head { margin-bottom: 14px; }
+.tia-eyebrow { display: inline-flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-4); margin-bottom: 6px; }
+.tia-eyebrow .pip { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.tia-results h3 { font-family: 'Fraunces', 'Georgia', serif; font-size: 22px; font-weight: 600; color: var(--ink-1, #1c2238); margin: 0 0 4px; line-height: 1.3; }
+.tia-sub { margin: 0; font-size: 13px; color: var(--ink-4); }
+.tia-foot { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.tia-block-h { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-4); margin: 0 0 8px; }
+.tia-interp { margin: 6px 0 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.tia-detail-note { margin: 12px 0 0; font-size: 13px; color: var(--ink-3); line-height: 1.55; max-width: 68ch; }
+.tia-body { display: flex; flex-direction: column; gap: 12px; }
+
+.tia-stat-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.tia-stat { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; background: #fff; border: 1px solid var(--line); border-radius: 10px; }
+.tia-stat label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-5); }
+.tia-stat .v { font-family: 'Fraunces', 'Georgia', serif; font-size: 22px; font-weight: 600; color: var(--ink-2); line-height: 1.15; }
+
+.tia-pip-pill { display: inline-flex; align-items: center; padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.tia-pip-pill[data-tone="strong"] { background: #e8f5ed; color: #1e6e44; }
+.tia-pip-pill[data-tone="ok"]     { background: #eaf2fd; color: #1c4b8a; }
+.tia-pip-pill[data-tone="warn"]   { background: #fcefda; color: #8a5a14; }
+.tia-pip-pill[data-tone="alert"]  { background: #faece8; color: #c2492f; }
+.tia-pip-pill[data-tone="muted"]  { background: #eef0f4; color: var(--ink-5); }
+
+.tia-num { text-align: right; font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
+.tia-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; font-size: 13.5px; }
+.tia-table th, .tia-table td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--line); }
+.tia-table thead th { background: var(--bg-tint, #fafbfd); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-5); }
+.tia-table tbody tr:last-child td { border-bottom: none; }
+.tia-table tr[data-tone="strong"] { background: #f4fbf680; }
+.tia-table tr[data-tone="warn"]   { background: #fcefda40; }
+.tia-table tr[data-tone="alert"]  { background: #faece840; }
+.tia-bar { width: 100%; height: 8px; background: var(--bg-tint, #fafbfd); border-radius: 999px; overflow: hidden; }
+.tia-bar > span { display: block; height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s var(--ease); }
+.tia-key-mark { color: #2f9461; font-weight: 700; }
+.tia-da-card { padding: 14px 16px; background: #fff; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; }
+.tia-da-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.tia-da-head h4 { font-family: 'Fraunces', 'Georgia', serif; font-size: 16px; font-weight: 600; margin: 0; color: var(--ink-1, #1c2238); }
+.tia-da-key { font-size: 12.5px; color: var(--ink-5); font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace; }
+.tia-table-da { font-size: 13px; }
+
+@media (max-width: 720px) {
+  .tia-stat-strip { grid-template-columns: 1fr; }
+  .tia-table th, .tia-table td { padding: 6px 8px; font-size: 12.5px; }
+}
+@media print { .tia-source, .tia-setup { display: none; } .tia-results { box-shadow: none; } .tia-table, .tia-da-card { page-break-inside: avoid; } }

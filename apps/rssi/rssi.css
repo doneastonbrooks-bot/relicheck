@@ -1,0 +1,756 @@
+/* =============================================================================
+   rssi.css — ReliCheck Strength Survey Index (RSSI) App
+   Standalone report page. Scoped to .rssi-app to avoid leaking to other pages.
+   Source: /RSSI App/ReliCheck Survey Strength Index.html (Apple iPadOS design).
+   ============================================================================= */
+
+/* -------------------- Tokens (scoped) -------------------- */
+.rssi-app {
+  --bg: #FBFBFD;
+  --surface: #FFFFFF;
+  --surface-muted: #F5F5F7;
+  --hairline: rgba(0, 0, 0, 0.06);
+  --hairline-strong: rgba(0, 0, 0, 0.10);
+  --text: #1D1D1F;
+  --text-2: #6E6E73;
+  --text-3: #8E8E93;
+  --blue: #007AFF;
+  --blue-hover: #0A6FE8;
+  --blue-tint: rgba(0, 122, 255, 0.08);
+  --blue-tint-2: rgba(0, 122, 255, 0.14);
+  --blue-soft-bg: #F1F6FF;
+  --good: #34C759;
+  --fair: #FF9F0A;
+  --weak: #FF3B30;
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 1px rgba(16, 24, 40, 0.03);
+  --shadow-md: 0 2px 4px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.04);
+  --radius-lg: 20px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  letter-spacing: -0.005em;
+}
+
+.rssi-app * { box-sizing: border-box; }
+.rssi-app a { color: inherit; text-decoration: none; }
+
+/* -------------------- Shell -------------------- */
+.rssi-app .app {
+  display: grid;
+  grid-template-columns: 264px 1fr 340px;
+  min-height: 100vh;
+}
+
+/* -------------------- Sidebar -------------------- */
+.rssi-app .sidebar {
+  background: #F7F7F9;
+  border-right: 1px solid var(--hairline);
+  padding: 18px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.rssi-app .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 0;
+}
+
+/* Logo-only brand: the wordmark image stands alone (no separate text label) */
+.rssi-app .brand.brand-logo-only {
+  display: block;
+  padding: 6px 4px 4px;
+}
+.rssi-app .brand-logo-full {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Locked-corner ReliCheck wordmark.
+   Subtle, greyed-out, fixed to the top-right of every RSSI page so the
+   parent platform brand is always visible without competing with the
+   RSSI sidebar's own logo. */
+.rssi-corner-brand {
+  position: fixed;
+  top: 18px;
+  right: 22px;
+  z-index: 50;
+  height: 32px;
+  opacity: 0.65;
+  filter: grayscale(100%);
+  pointer-events: none; /* purely decorative */
+  user-select: none;
+  transition: opacity 0.2s;
+  background: rgba(255, 255, 255, 0.75); /* faint backdrop so it stays legible on any background */
+  border-radius: 8px;
+  padding: 4px 10px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+.rssi-corner-brand img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+/* Hide when printing — the print footer already credits ReliCheck */
+@media print {
+  .rssi-corner-brand { display: none !important; }
+}
+.rssi-app .brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(160deg, #2D8DFF 0%, #006FE6 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 80, 180, 0.25);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+}
+.rssi-app .brand-mark img { width: 100%; height: 100%; object-fit: cover; }
+.rssi-app .brand-text .title { font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+.rssi-app .brand-text .sub { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+
+.rssi-app .search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #EDEDF0;
+  border-radius: 9px;
+  padding: 7px 10px;
+  color: var(--text-3);
+  font-size: 13px;
+}
+.rssi-app .search svg { width: 14px; height: 14px; flex: none; }
+.rssi-app .search .kbd {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+
+.rssi-app .nav-group { display: flex; flex-direction: column; gap: 1px; }
+.rssi-app .nav-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  padding: 8px 10px 6px;
+}
+.rssi-app .nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13.5px;
+  user-select: none;
+}
+.rssi-app .nav-item:hover { background: rgba(0, 0, 0, 0.035); }
+.rssi-app .nav-item.active {
+  background: var(--blue-tint);
+  color: var(--blue);
+  font-weight: 600;
+}
+.rssi-app .nav-item .ico {
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  color: var(--text-2);
+}
+.rssi-app .nav-item.active .ico { color: var(--blue); }
+.rssi-app .nav-item .count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-3);
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.rssi-app .nav-item.active .count { background: var(--blue-tint-2); color: var(--blue); }
+
+.rssi-app .sidebar-footer { margin-top: auto; display: flex; flex-direction: column; gap: 10px; }
+.rssi-app .project-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: var(--shadow-sm);
+}
+.rssi-app .project-card .label {
+  font-size: 10.5px;
+  color: var(--text-3);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.rssi-app .project-card .name { font-size: 13px; font-weight: 600; margin-top: 3px; letter-spacing: -0.01em; }
+.rssi-app .project-card .meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.rssi-app .project-card .switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* -------------------- Main column -------------------- */
+.rssi-app .main { padding: 22px 28px 60px; min-width: 0; }
+
+.rssi-app .topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.rssi-app .crumbs { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-2); }
+.rssi-app .crumbs .sep { color: var(--text-3); }
+.rssi-app .crumbs .here { color: var(--text); }
+.rssi-app .topbar-actions { display: flex; align-items: center; gap: 8px; }
+.rssi-app .icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.rssi-app .icon-btn:hover { background: rgba(0, 0, 0, 0.04); color: var(--text); }
+
+.rssi-app .title-row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 6px 0 22px;
+}
+.rssi-app .h1 {
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 0;
+}
+.rssi-app .subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-2);
+}
+.rssi-app .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-3); }
+.rssi-app .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: var(--surface-muted);
+  color: var(--text-2);
+  border: 1px solid var(--hairline);
+}
+.rssi-app .pill-blue { background: var(--blue-tint); color: var(--blue); border-color: transparent; }
+
+.rssi-app .actions { display: flex; gap: 8px; }
+.rssi-app .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  font-family: inherit;
+}
+.rssi-app .btn:hover { background: #F7F7F9; }
+.rssi-app .btn-primary {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+  box-shadow: 0 1px 2px rgba(0, 80, 180, 0.25);
+}
+.rssi-app .btn-primary:hover { background: var(--blue-hover); border-color: var(--blue-hover); }
+.rssi-app .btn-ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.rssi-app .btn-ghost:hover { background: rgba(0, 0, 0, 0.04); }
+
+/* -------------------- Cards -------------------- */
+.rssi-app .card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Hero score card */
+.rssi-app .hero {
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+.rssi-app .hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(620px 220px at -10% -20%, rgba(0, 122, 255, 0.06), transparent 60%);
+  pointer-events: none;
+}
+.rssi-app .ring-wrap { position: relative; width: 200px; height: 200px; }
+.rssi-app .ring-wrap svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+.rssi-app .ring-bg { stroke: #EAEAEE; }
+.rssi-app .ring-fg { stroke: var(--blue); stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.rssi-app .ring-center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.rssi-app .ring-center .score {
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(180deg, #0A6FE8 0%, #2D8DFF 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.rssi-app .ring-center .out-of { font-size: 12.5px; color: var(--text-3); margin-top: 4px; }
+.rssi-app .ring-center .badge {
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--blue);
+  background: var(--blue-tint);
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.rssi-app .hero-copy h2 { margin: 0 0 8px; font-size: 22px; font-weight: 600; letter-spacing: -0.02em; }
+.rssi-app .hero-copy p { margin: 0; color: var(--text-2); font-size: 14.5px; line-height: 1.55; max-width: 56ch; }
+.rssi-app .hero-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+.rssi-app .hero-meta .item { display: inline-flex; align-items: center; gap: 6px; }
+.rssi-app .hero-meta .item strong { color: var(--text); font-weight: 600; }
+
+.rssi-app .tier { grid-column: 1 / -1; margin-top: 22px; }
+.rssi-app .tier-track {
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #FF6B6B 0%, #FFB23B 28%, #FFD60A 50%, #34C759 72%, #007AFF 100%);
+  opacity: 0.85;
+  position: relative;
+}
+.rssi-app .tier-marker {
+  position: absolute;
+  top: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  border: 3px solid var(--blue);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 1px 4px rgba(0, 80, 180, 0.35);
+  transition: left 0.6s ease;
+}
+.rssi-app .tier-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 11.5px;
+  color: var(--text-3);
+  font-weight: 500;
+}
+.rssi-app .tier-labels .here { color: var(--blue); font-weight: 600; }
+
+/* -------------------- Section headers -------------------- */
+.rssi-app .section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 28px 2px 12px;
+}
+.rssi-app .section-head h3 { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; margin: 0; }
+.rssi-app .section-head .link { color: var(--blue); font-size: 12.5px; font-weight: 500; cursor: pointer; }
+.rssi-app .section-sub { font-size: 12.5px; color: var(--text-2); margin: 2px 2px 0; }
+
+/* Dimension grid */
+.rssi-app .dim-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+
+/* ─────────────────────────────────────────────
+   Mini graph dimension cards (compact, live-updating)
+   ───────────────────────────────────────────── */
+.rssi-app .dim-mini {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 12px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  cursor: pointer;
+  min-width: 0;
+}
+.rssi-app .dim-mini:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--hairline-strong);
+}
+.rssi-app .dim-mini-ring {
+  position: relative;
+  width: 52px; height: 52px;
+  margin-bottom: 6px;
+}
+.rssi-app .dim-mini-ring svg { display: block; width: 100%; height: 100%; }
+.rssi-app .dim-mini-num {
+  position: absolute; inset: 0;
+  display: grid; place-items: center;
+  font-size: 15px; font-weight: 700; letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+}
+.rssi-app .dim-mini-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  line-height: 1.2;
+  margin-bottom: 4px;
+  min-height: 26px;
+  display: flex; align-items: center;
+}
+.rssi-app .dim-mini-status {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.rssi-app .dim-mini-status.status-strong { background: rgba(52, 199, 89, 0.12);  color: #1A7E36; }
+.rssi-app .dim-mini-status.status-good   { background: rgba(0, 122, 255, 0.10);  color: #1A6FD9; }
+.rssi-app .dim-mini-status.status-fair   { background: rgba(255, 159, 10, 0.14); color: #B26A00; }
+.rssi-app .dim-mini-status.status-weak   { background: rgba(255, 59, 48, 0.12);  color: #B82318; }
+.rssi-app .dim-mini-status.status-skipped { background: #F0F1F3; color: #8E8E93; }
+
+/* Responsive: collapse to 3 then 2 columns */
+@media (max-width: 1100px) { .rssi-app .dim-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 640px)  { .rssi-app .dim-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.rssi-app .dim {
+  padding: 16px 16px 14px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.rssi-app .dim:hover { border-color: var(--hairline-strong); box-shadow: var(--shadow-md); }
+.rssi-app .dim-top { display: flex; align-items: center; gap: 10px; }
+.rssi-app .dim-ico {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  background: var(--blue-tint);
+  color: var(--blue);
+}
+.rssi-app .dim-name { font-size: 13.5px; font-weight: 600; letter-spacing: -0.005em; }
+.rssi-app .dim-score-row { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; }
+.rssi-app .dim-score { font-size: 28px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
+.rssi-app .dim-out { font-size: 12px; color: var(--text-3); }
+.rssi-app .dim-status {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.rssi-app .status-strong { color: #1A7E36; background: rgba(52, 199, 89, 0.12); }
+.rssi-app .status-good   { color: #1A6FD9; background: rgba(0, 122, 255, 0.10); }
+.rssi-app .status-fair   { color: #B26A00; background: rgba(255, 159, 10, 0.14); }
+.rssi-app .status-weak   { color: #B82318; background: rgba(255, 59, 48, 0.12); }
+
+.rssi-app .dim-bar {
+  margin-top: 12px;
+  height: 4px;
+  background: #EEF0F3;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.rssi-app .dim-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2D8DFF, #007AFF);
+  transition: width 0.6s ease;
+}
+.rssi-app .dim-note { margin-top: 10px; color: var(--text-2); font-size: 12.5px; line-height: 1.45; }
+.rssi-app .dim-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+  font-size: 12px;
+  color: var(--text-3);
+}
+.rssi-app .dim-foot .view { color: var(--blue); font-weight: 500; }
+
+/* Issues list */
+.rssi-app .issues { padding: 6px 6px; }
+.rssi-app .issue {
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+}
+.rssi-app .issue + .issue { border-top: 1px solid var(--hairline); border-radius: 0; }
+.rssi-app .issue:hover { background: #FAFAFC; }
+.rssi-app .sev { width: 10px; height: 10px; border-radius: 50%; box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.10); }
+.rssi-app .sev-high { background: #FF3B30; box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.12); }
+.rssi-app .sev-med  { background: #FF9F0A; box-shadow: 0 0 0 4px rgba(255, 159, 10, 0.14); }
+.rssi-app .sev-low  { background: #34C759; box-shadow: 0 0 0 4px rgba(52, 199, 89, 0.12); }
+.rssi-app .issue-title { font-size: 13.5px; font-weight: 600; letter-spacing: -0.005em; }
+.rssi-app .issue-sub { font-size: 12.5px; color: var(--text-2); margin-top: 2px; }
+.rssi-app .issue-scope { font-size: 12px; color: var(--text-3); }
+.rssi-app .issue-fix {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--blue);
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.rssi-app .issue-fix:hover { background: var(--blue-tint); }
+
+/* -------------------- Right panel -------------------- */
+.rssi-app .rail {
+  border-left: 1px solid var(--hairline);
+  background: var(--bg);
+  padding: 22px 22px 60px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+}
+.rssi-app .rail h4 { margin: 0 0 6px; font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: -0.005em; }
+.rssi-app .rail .block {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+}
+.rssi-app .rail .block .lead { font-size: 13px; color: var(--text-2); line-height: 1.55; }
+.rssi-app .priority { display: flex; gap: 12px; padding: 10px 0; }
+.rssi-app .priority + .priority { border-top: 1px solid var(--hairline); }
+.rssi-app .pri-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex: none;
+  display: grid;
+  place-items: center;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--blue-tint);
+  color: var(--blue);
+}
+.rssi-app .pri-title { font-size: 13px; font-weight: 600; letter-spacing: -0.005em; }
+.rssi-app .pri-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; line-height: 1.45; }
+.rssi-app .pri-meta { font-size: 11.5px; color: var(--text-3); margin-top: 4px; }
+
+.rssi-app .rail .block.cta-block {
+  background: linear-gradient(165deg, #0A6FE8 0%, #2D8DFF 100%);
+  color: white;
+  border: 0;
+  box-shadow: 0 4px 16px rgba(0, 80, 180, 0.22), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+.rssi-app .rail .cta-block h4 { color: white; font-size: 14px; }
+.rssi-app .rail .cta-block .lead { color: rgba(255, 255, 255, 0.85); font-size: 12.5px; }
+.rssi-app .cta-btn {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(255, 255, 255, 0.16);
+  color: white;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  text-decoration: none;
+}
+.rssi-app .cta-btn:hover { background: rgba(255, 255, 255, 0.22); }
+.rssi-app .cta-link {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rssi-app .tl-row { display: flex; gap: 10px; padding: 8px 0; align-items: flex-start; }
+.rssi-app .tl-row + .tl-row { border-top: 1px solid var(--hairline); }
+.rssi-app .tl-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--blue);
+  margin-top: 7px;
+  flex: none;
+  box-shadow: 0 0 0 3px var(--blue-tint);
+}
+.rssi-app .tl-bullet.muted { background: #C7C7CC; box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04); }
+.rssi-app .tl-title { font-size: 12.5px; font-weight: 600; }
+.rssi-app .tl-sub { font-size: 11.5px; color: var(--text-3); margin-top: 1px; }
+.rssi-app .delta-up { color: var(--good); font-weight: 600; }
+
+/* Sample-data banner */
+.rssi-app .sample-banner {
+  margin: 0 0 16px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: #FFFBEB;
+  border: 1px solid #FDE68A;
+  color: #92400E;
+  font-size: 13px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.rssi-app .sample-banner a { color: #B45309; font-weight: 600; text-decoration: underline; }
+
+/* ============================================================================
+   PRINT — Cmd+P → polished single-page PDF deliverable.
+   Hide sidebar + rail + topbar buttons + interactive bits. Use light tones,
+   no shadows, no hover effects, no truncation.
+   ============================================================================ */
+@media print {
+  @page { size: letter portrait; margin: 14mm 12mm; }
+
+  html, body { background: #fff !important; }
+
+  /* Hide the platform shell (if RSSI ever loads inside it) */
+  .platform-shell-header, .platform-shell-footer,
+  .ps-topbar, .ps-userbar, .ps-preview-strip { display: none !important; }
+
+  .rssi-app .sidebar,
+  .rssi-app .rail,
+  .rssi-app .topbar-actions,
+  .rssi-app .icon-btn,
+  .rssi-app .btn,
+  .rssi-app .section-head .link,
+  .rssi-app .dim-foot .view,
+  .rssi-app .issue-fix,
+  .rssi-app .switch,
+  .rssi-app .search,
+  .rssi-app .sample-banner { display: none !important; }
+
+  .rssi-app .app {
+    grid-template-columns: 1fr !important;
+    min-height: auto !important;
+  }
+  .rssi-app .main { padding: 0 !important; }
+
+  .rssi-app .card,
+  .rssi-app .hero,
+  .rssi-app .dim {
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  .rssi-app .h1 { font-size: 24px !important; }
+  .rssi-app .ring-center .score { color: #0A6FE8 !important; -webkit-text-fill-color: #0A6FE8 !important; }
+  .rssi-app .ring-fg { stroke: #0A6FE8 !important; }
+
+  /* Add an explicit "Generated on" footer at the end */
+  .rssi-print-footer {
+    display: block !important;
+    margin-top: 18px;
+    padding-top: 10px;
+    border-top: 1px solid #ccc;
+    font-size: 11px;
+    color: #6E6E73;
+    text-align: center;
+  }
+}
+
+.rssi-print-footer { display: none; }
+
+/* -------------------- Responsive: collapse rail on narrow screens -------------------- */
+@media (max-width: 1280px) {
+  .rssi-app .app { grid-template-columns: 240px 1fr 300px; }
+}
+@media (max-width: 1100px) {
+  .rssi-app .app { grid-template-columns: 220px 1fr; }
+  .rssi-app .rail { display: none; }
+}
+@media (max-width: 800px) {
+  .rssi-app .app { grid-template-columns: 1fr; }
+  .rssi-app .sidebar { display: none; }
+  .rssi-app .hero { grid-template-columns: 1fr; text-align: center; }
+  .rssi-app .ring-wrap { margin: 0 auto; }
+}

@@ -1,0 +1,375 @@
+/* Test Data Upload app
+   ------------------------------------------------------------------
+   Three-step UI for test/item data. Reuses upload chrome from the
+   survey upload (drop zone, paste panel, var-table, checkbox style)
+   via the same class names. Adds the key-table for step 3.
+
+   This file is loaded INSTEAD OF /apps/data-upload/data-upload.css
+   on test-upload pages. The shared rules below are duplicated so the
+   apps remain isolated; updating one does not implicitly update the
+   other (use a conscious copy when chrome should stay in sync).
+   ------------------------------------------------------------------ */
+
+.upload-app{
+  display: flex; flex-direction: column;
+  gap: 28px;
+  padding-bottom: 24px;
+}
+
+/* ----- Step shell ----- */
+.upload-step-head{
+  display: flex; align-items: flex-start; gap: 14px;
+  margin-bottom: 18px;
+}
+.step-num{
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--ink-4);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 500;
+  border: 1px solid var(--line);
+}
+.upload-step.is-current .step-num{
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.upload-step-head h2{
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px; letter-spacing: -.018em;
+  color: var(--ink-1);
+  line-height: 1.15;
+}
+.upload-step-head p{
+  margin: 0;
+  font-size: 14px; line-height: 1.55;
+  color: var(--ink-4);
+  max-width: 640px;
+}
+
+/* ----- Drop zone ----- */
+.upload-dropzone{
+  position: relative;
+  border: 2px dashed var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(600px 200px at 50% 0%, var(--accent-tint), transparent 70%),
+    #fff;
+  padding: 56px 32px 28px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+  transition: border-color .2s var(--ease), background-color .2s var(--ease), transform .2s var(--ease);
+  cursor: default;
+  outline: 0;
+}
+.upload-dropzone:focus-visible{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.upload-dropzone.is-dragover{
+  border-color: var(--accent);
+  border-style: solid;
+  background:
+    radial-gradient(600px 240px at 50% 0%, var(--accent-soft), transparent 70%),
+    #fff;
+  transform: scale(1.005);
+}
+.upload-ico{
+  width: 56px; height: 56px;
+  color: var(--accent);
+  margin-bottom: 14px;
+  opacity: .92;
+}
+.dropzone-primary{
+  margin: 0 0 4px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 20px; letter-spacing: -.014em;
+  color: var(--ink-1);
+}
+.dropzone-meta{
+  margin: 0 0 24px;
+  font-size: 13px; color: var(--ink-5);
+}
+.dropzone-actions{
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap; justify-content: center;
+}
+.dropzone-actions .action-sep{
+  font-size: 13px; color: var(--ink-6);
+}
+.dropzone-actions .file-pick{ position: relative; cursor: pointer; }
+
+.upload-sample-link{
+  background: transparent; border: 0; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 500;
+  color: var(--ink-5);
+  padding: 6px 8px; border-radius: 8px;
+  margin-left: 4px;
+  transition: color .15s var(--ease), background .15s var(--ease);
+}
+.upload-sample-link:hover{ color: var(--ink-2); background: var(--bg-soft); }
+
+/* ----- Paste panel ----- */
+.upload-paste{
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-1);
+}
+.paste-label{
+  display: block;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-2);
+  margin-bottom: 8px;
+}
+.upload-paste textarea{
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-tint);
+  border-radius: var(--r-md);
+  font: inherit;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px; line-height: 1.5;
+  color: var(--ink-2);
+  resize: vertical;
+  min-height: 160px;
+  outline: 0;
+  transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.upload-paste textarea:focus{
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.paste-actions{
+  display: flex; gap: 8px; justify-content: flex-end;
+  margin-top: 14px;
+}
+
+/* ----- Status line ----- */
+.upload-status{
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #e6f6ef;
+  border: 1px solid #cbecdc;
+  border-radius: 999px;
+  color: #0a6b4a;
+  font-size: 13.5px; font-weight: 500;
+}
+.upload-status svg{ flex-shrink: 0; }
+.upload-replace-link{
+  margin-left: auto;
+  background: transparent; border: 0; cursor: pointer;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: #0a6b4a;
+  padding: 4px 10px; border-radius: 999px;
+  transition: background .15s var(--ease);
+}
+.upload-replace-link:hover{ background: #cbecdc; }
+
+/* ----- Step 2: var table (test variant has 6 type columns) ----- */
+.var-table{
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  overflow-x: auto;
+}
+.var-row{
+  display: grid;
+  grid-template-columns:
+    minmax(180px, 1.3fr)   /* Column name */
+    minmax(180px, 1.5fr)   /* Sample */
+    80px 100px 90px 130px 110px 100px; /* type columns */
+  align-items: center;
+  min-width: 1080px;
+}
+.var-row-head{
+  background: var(--bg-tint);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-5);
+}
+.var-row-head .var-col{ padding: 12px 14px; }
+.var-rows .var-row{ border-top: 1px solid var(--line-soft); }
+.var-rows .var-row:first-child{ border-top: 0; }
+.var-rows .var-row:hover{ background: var(--bg-tint); }
+.var-col{ padding: 12px 14px; min-width: 0; }
+.var-col-name{
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.var-col-sample{
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px; color: var(--ink-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.var-col-type{ display: flex; justify-content: center; }
+
+/* ----- Custom checkbox ----- */
+.var-check{
+  display: inline-flex; align-items: center;
+  cursor: pointer; user-select: none;
+}
+.var-check input{ position: absolute; opacity: 0; width: 0; height: 0; }
+.var-check .check-box{
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background .15s var(--ease), border-color .15s var(--ease), box-shadow .15s var(--ease);
+}
+.var-check:hover .check-box{ border-color: #b8c1d0; }
+.var-check input:focus-visible + .check-box{
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.var-check .check-box svg{
+  width: 14px; height: 14px; color: #fff;
+  opacity: 0; transform: scale(.6);
+  transition: opacity .15s var(--ease), transform .15s var(--ease);
+}
+.var-check input:checked + .check-box{
+  background: var(--accent); border-color: var(--accent);
+}
+.var-check input:checked + .check-box svg{ opacity: 1; transform: scale(1); }
+
+/* ----- Step actions bar ----- */
+.upload-step-actions{
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 18px;
+}
+.upload-step-meta{
+  margin-left: auto;
+  font-size: 13px; color: var(--ink-5);
+}
+
+/* ============================================================
+   TEST-SPECIFIC: Step 3 answer key table
+   ============================================================ */
+
+.key-table{
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  overflow-x: auto;
+}
+.key-row{
+  display: grid;
+  grid-template-columns:
+    minmax(120px, 0.9fr)   /* Item name */
+    minmax(180px, 1.6fr)   /* Sample student answers */
+    minmax(140px, 1fr)     /* Correct answer */
+    100px                  /* Max points */
+    minmax(160px, 1.1fr);  /* Item type segmented control */
+  align-items: center;
+  min-width: 880px;
+}
+.key-row-head{
+  background: var(--bg-tint);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-5);
+}
+.key-row-head .key-col{ padding: 12px 14px; }
+.key-rows .key-row{ border-top: 1px solid var(--line-soft); }
+.key-rows .key-row:first-child{ border-top: 0; }
+.key-rows .key-row:hover{ background: var(--bg-tint); }
+.key-col{ padding: 12px 14px; min-width: 0; }
+.key-col-name{
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px; font-weight: 600;
+  color: var(--ink-1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.key-col-sample{
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12.5px; color: var(--ink-4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.key-input{
+  width: 100%;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  background: var(--bg-tint);
+  border-radius: 999px;
+  font: inherit;
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--ink-1);
+  outline: 0;
+  transition: border-color .15s var(--ease), background .15s var(--ease), box-shadow .15s var(--ease);
+}
+.key-input:hover{ background: #fff; border-color: #d8dde7; }
+.key-input:focus{
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.key-input-points{
+  width: 64px;
+  text-align: center;
+}
+
+/* Segmented control for item type */
+.seg-control{
+  display: inline-flex;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 1px;
+}
+.seg-control button{
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px; font-weight: 600;
+  color: var(--ink-5);
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s var(--ease), color .15s var(--ease);
+}
+.seg-control button:hover{ color: var(--ink-2); }
+.seg-control button.is-on{
+  background: #fff;
+  color: var(--ink-1);
+  box-shadow: 0 1px 1px rgba(15,19,34,.06);
+}
+
+/* Compact on narrow studio centers */
+@media (max-width: 1100px){
+  .var-row{
+    grid-template-columns:
+      minmax(160px, 1.2fr) minmax(160px, 1fr)
+      72px 90px 80px 120px 100px 92px;
+    min-width: 980px;
+  }
+  .key-row{
+    grid-template-columns:
+      minmax(100px, .8fr) minmax(160px, 1.4fr)
+      minmax(120px, .9fr) 90px minmax(140px, 1fr);
+    min-width: 820px;
+  }
+}
