@@ -50,13 +50,20 @@ function dts_build_questions_and_index(array $columnMeta, array $rows): array
         $prompt = (string)($c['name'] ?? ('Column ' . ($i + 1)));
 
         if ($type === 'likert') {
-            $questions[] = [
+            $q = [
                 'id'       => $qid,
                 'type'     => 'likert',
                 'prompt'   => $prompt,
                 'required' => false,
                 'reverse'  => !empty($c['reverse']),
             ];
+            // Propagate column_meta.construct into the survey question so the
+            // downstream _build_dataset.php transform emits v.construct on the
+            // engine's variables[] shape. Same trim-and-omit-when-empty contract
+            // _build_dataset.php uses for q.construct. KNOWN_ISSUES.md §4 #1b.
+            $construct = isset($c['construct']) ? trim((string)$c['construct']) : '';
+            if ($construct !== '') $q['construct'] = $construct;
+            $questions[] = $q;
             $colIndex[] = ['i' => (int)$i, 'qid' => $qid, 'type' => 'likert'];
         } elseif ($type === 'single') {
             // Auto-derive option list from unique values in the column.
