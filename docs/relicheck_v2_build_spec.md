@@ -51,7 +51,9 @@ These eight domains are the single source of truth. Use them in the left nav, th
 | 7 | Factor Readiness | KMO, Bartlett's test of sphericity, and correlation-matrix determinant | Section 4F |
 | 8 | Response Scale Review | Likert design (anchor count, midpoint, symmetry, single-format-per-scale, per-item response-distribution shape) and respondent behavior (completion rate, missingness rate, straight-lining rate) | Section 4G |
 
-Open-ended items are scored under Item / Prompt Quality, not as a separate domain. Actionability is removed from the RSSI entirely. Reporting Readiness is a separate report-side panel, never part of the eight-domain composite (see Section 11).
+Open-ended items are scored under Item / Prompt Quality, not as a separate domain. Actionability is removed from the RSSI entirely. Reporting Readiness is a separate report-side panel, owned and rendered by the invoking surface (not the module); the module emits the indicator data per Section 8.
+
+**Canonical-formula note for cutover.** The comment at the top of `strength-index.php` reads "the 6-domain weighted composite is canonical and must NOT be altered." That comment is deliberately superseded by v2's eight-domain three-lens composite (Sections 3.2 and 3.3) and must be updated during the cutover. Any code or doc that asserts a 6-domain canonical formula is referring to v1 and is out of date.
 
 If the v1 codebase contains labels such as "Scale Strength," "Survey Structure," "Question Quality," "Reliability Readiness," "Validity Alignment," or "Response Risk," map them to the eight canonical domains above. Do not preserve v1 labels in v2.
 
@@ -111,7 +113,7 @@ Add additional pairings for other lens-disagreement patterns; surface them as th
 
 Validity (Section 4A) splits into three equally-weighted sub-components: convergent validity (20 pts of 60), discriminant validity via HTMT (20 pts of 60), and criterion validity (20 pts of 60). The 60-point raw total rescales to a 0–100 sub-score by multiplying by 100/60 = 1.667.
 
-When criterion data is absent (no `criterion_column` is configured, per Section 13):
+When criterion data is absent (no `criterion_column` is configured, per Section 10):
 
 - The criterion sub-component is skipped, not zero-filled. The raw total becomes a 40-point scale (convergent + discriminant) rescaling to a 0–100 sub-score by multiplying by 100/40 = 2.5, with a hard cap of 60 applied so the absence of criterion evidence cannot produce an indistinguishable headline from a fully-evidenced instrument.
 - The cap is surfaced on the Validity-Forward lens score with a "limited evidence" indicator.
@@ -163,7 +165,7 @@ Raw total: 60 with criterion, 40 without. Rescale to 0–100 per Section 3.6. Th
 
 ## 4B. Construct Alignment domain sub-scoring
 
-The Construct Alignment domain produces a 0–100 sub-score. Unit of analysis is the per-scale confirmatory factor model declared by the user in the Setup Wizard (Section 8 step 2). Total 25 raw points; rescale ×4.
+The Construct Alignment domain produces a 0–100 sub-score. Unit of analysis is the per-scale confirmatory factor model declared in the input schema (Section 10) by the invoking surface. Total 25 raw points; rescale ×4.
 
 | Subcomponent | Points (of 25) | How to compute |
 |---|---|---|
@@ -172,7 +174,7 @@ The Construct Alignment domain produces a 0–100 sub-score. Unit of analysis is
 | Cross-loadings | 5 | Fit an exploratory model with k = number of declared scales factors and oblique rotation. Flag any item whose secondary loading is within 0.20 of its primary and both ≥ 0.30. Start at 5, deduct 1 pt per cross-loaded item, clamped to [0, 5]. |
 | Model fit | 5 | Use the per-scale CFA fit indices. Award 5 pts when every scale's CFI ≥ 0.95 and RMSEA ≤ 0.06. Award 3 pts when every scale's CFI ≥ 0.90 and RMSEA ≤ 0.08. Award 0 otherwise. Single-item and two-item scales are excluded from this check (fit indices are not defined). |
 
-When CFA fails to converge for a scale, fall back to EFA with one factor and surface a warning flag, per Section 14.
+When CFA fails to converge for a scale, fall back to EFA with one factor and surface a warning flag, per Section 11.
 
 ---
 
@@ -237,7 +239,7 @@ The Scale Structure domain produces a 0–100 sub-score. Unit of analysis is the
 |---|---|---|
 | Item count per scale | 5 | For each scale: 5 pts when 4 ≤ k ≤ 8; 3 pts when k = 3; 2 pts when k = 9–15; 1 pt when k = 2; 0 pts when k = 1 or k > 15. Average across scales. |
 | Reverse-coded balance | 3 | For each scale with k ≥ 4: 3 pts when at least one reverse-coded item is present (per Setup Wizard step 3 flags), else 0. For scales with k < 4, the check does not apply and the 3 pts are awarded by default. Average across scales. |
-| Response-format uniformity | 3 | For each scale: 3 pts when all items share the same response format (same Likert range, same anchor count), else 0. Per Section 15, mixed formats within a scale already surface as a configuration error; this sub-component awards the corresponding 3 pts as a domain-level signal. Average across scales. |
+| Response-format uniformity | 3 | For each scale: 3 pts when all items share the same response format (same Likert range, same anchor count), else 0. Per Section 12, mixed formats within a scale already surface as a configuration error; this sub-component awards the corresponding 3 pts as a domain-level signal. Average across scales. |
 | Scale-level missingness pattern | 2 | For each scale: 2 pts when no respondent has all items missing within the scale; 1 pt when 1–5% do; 0 pts when > 5% do. Average across scales. |
 | Survey-level item-count health | 2 | 2 pts when 5 ≤ total Likert items ≤ 30; 1 pt when total is 4 or 31–40; 0 pts when total < 4 or > 40. (This replaces v1's k<5 / k>30 logic from Actionability.) |
 
@@ -268,7 +270,7 @@ The Response Scale Review domain produces a 0–100 sub-score. Two halves: Liker
 | Anchor count | 3 | 5- or 7-point scale → 3; 4 or 6 → 2; 3 or 10+ → 1; 2 → 0. Per scale, averaged. |
 | Midpoint presence | 2 | Odd number of anchors (allows neutral midpoint) → 2; even → 1. Per scale, averaged. |
 | Anchor symmetry | 2 | When anchor labels are configured: balanced positive/negative endpoints → 2; unbalanced → 0. When anchor labels are absent: award 2 by default. Per scale, averaged. |
-| Single-format-per-scale | 2 | All items in a scale share the same response range → 2; otherwise → 0. (Mixed formats already surface as a configuration error per Section 15; this sub-component records the result at the domain level.) Per scale, averaged. |
+| Single-format-per-scale | 2 | All items in a scale share the same response range → 2; otherwise → 0. (Mixed formats already surface as a configuration error per Section 12; this sub-component records the result at the domain level.) Per scale, averaged. |
 | Response-distribution shape | 3 | For each Likert item, count the proportion picking the modal anchor. Flag items where the modal proportion ≥ 0.60. Start at 3, deduct 0.5 pt per flagged item, clamped to [0, 3]. |
 
 ### Respondent behavior (8 pts)
@@ -279,177 +281,149 @@ The Response Scale Review domain produces a 0–100 sub-score. Two halves: Liker
 | Item missingness rate | 3 | ≤ 5% overall missing cells → 3; 5–10% → 2; 10–20% → 1; > 20% → 0. |
 | Straight-lining rate | 2 | Computed *per scale*, not across the full Likert matrix. Average per-scale straight-line rate ≤ 2% → 2; 2–5% → 1; > 5% → 0. (v1 computed this across all items, which false-positives on single-scale surveys; v2 fixes this.) |
 
-Sample size does **not** enter this score. It is surfaced as a warning per Section 15 ("low N") but does not deduct points.
+Sample size does **not** enter this score. It is surfaced as a warning per Section 12 ("low N") but does not deduct points.
 
 ---
 
-## 5. User journey
+## 5. Module Boundary
 
-### Stage 1 — Entry
-Global "New Survey Analysis" action on the main dashboard. The user uploads a CSV or connects an integration. ReliCheck parses the file and detects column types as a starting guess.
+The RSSI module is a **pure function** from a prepared dataset and configuration to a structured result object. Everything else is the invoking surface's job.
 
-### Stage 2 — Setup (first-run only)
-Three steps, none skippable, gated:
+### 5.1 Inputs the module receives
 
-1. Confirm item structure. For each column: Likert, open-ended, demographic, or excluded. ReliCheck pre-fills a guess; the user corrects.
-2. Group items into scales. The user assigns items to constructs. ReliCheck can suggest groupings via cluster analysis. The user owns the final map.
-3. Flag reverse-coded items. Plain-language prompt: "Which items are worded so that 'strongly agree' means something *negative* about the construct?"
+The module reads — and only reads — what the data contract in Section 10 specifies:
 
-When all three steps are complete, the user lands on the Hub.
+- A **response matrix** (rows × item IDs).
+- An **item schema** with per-item metadata: item ID, scale or construct membership, response format, Likert range, reverse-coded flag, and the `is_demographic` flag when applicable.
+- A **configuration object**: missing-data policy, minimum-N threshold, chosen lens, optional `criterion_column`, optional `demographic_columns`.
 
-### Stage 3 — Hub
-The home base. Detailed in Section 7.
+If any required field is absent or malformed, the module fails fast with a structured error. It does not prompt the user, it does not guess, it does not fall back to "all Likert items as one scale" (the v1 bug).
 
-### Stage 4 — Domain detail
-Eight pages, one per domain. The user reaches them from the Hub cards, the left nav, or the Issues to Fix list. Detailed in Section 9.
+### 5.2 Outputs the module returns
 
-### Stage 5 — Report
-Single exportable view, web and PDF. Detailed in Section 11.
+Exactly the structured object in Section 10 (Output). Every field needed to render a Hub, render a Domain detail page, generate a Report, store a version, or compare two versions is present in that object. Rendering, persistence, comparison UI, and navigation are all surface concerns that read from this object.
 
----
+### 5.3 What the module explicitly does not do
 
-## 6. Screens (seven primary types)
+The following are platform / invoking-surface concerns and are out of scope for this spec:
 
-1. Main dashboard (list of surveys + new survey action)
-2. Upload screen
-3. Setup wizard (three steps, gated)
-4. Hub (survey home page)
-5. Domain detail page template, instantiated eight times
-6. Report view with PDF export
-7. Version comparison view
+- **Authentication and project ownership.** Handled by the surface that invokes the module (`rssi-upload.php`, `strength-index.php`, etc.).
+- **File ingest and parsing.** CSV / XLSX parsing, column-type auto-detection, encoding decisions. The module receives a prepared dataset, not a file.
+- **Setup Wizard surfaces.** The wizard that walks a user through confirming item structure, grouping items into scales, and flagging reverse-coded items is the platform's responsibility. Its *output* — a populated item schema — is the module's input.
+- **Hub layout, navigation, screen chrome, settings panels.** The module emits the data; the surface renders it however its product design calls for.
+- **Versioning storage, comparison UI, "scores updated" notifications, auto-recompute triggers on schema edits.** The module emits a complete versionable object (Section 9); persistence and version-diffing are platform concerns.
+- **Report page rendering, PDF export, copy-to-clipboard affordances.** The module emits the data (Section 8); the surface renders the report.
+- **Interactive item-toggle UI.** The module exposes a recompute interface (Section 7) that takes a subset of active items and returns updated reliability statistics; the toggling UI is surface-rendered.
 
-Settings live as a persistent affordance, not as a primary screen.
+When in doubt: if it can be answered by reading or writing the Section 10 contract, it is module work. If it requires DOM, layout, navigation, or persistence decisions, it is platform work.
 
 ---
 
-## 7. The Hub
+## 6. Engine Consolidation
 
-Top to bottom, four regions.
+Two engines compute RSSI-related math in the v1 tree:
 
-### Region 1 — Headline (top ~20%)
+1. **`apps/strength-index/strength-index.js`** — server-rendered via `apps/strength-index/render.php`, consumed by the in-studio `strength-index.php` mount through `_studio_mount.php` and the `api/surveys/_build_dataset.php` transform.
+2. **`apps/rssi/rssi-reliability.js`** (with `apps/rssi/rssi-analyses.js`, `apps/rssi/rssi-upload.js`, `apps/rssi/rssi.js`) — client-side, consumed by the standalone RSSI app (`rssi.php`, `rssi-upload.php`, `rssi-report.php`).
 
-- Three gauges side by side. The chosen lens is the large center gauge; the other two are smaller side gauges with labels.
-- Below the gauges: the disagreement readout sentence, only when spread > 10 points.
-- Top-right corner of the region: survey name, current version number, last-recomputed timestamp, and a "Compare to previous version" link.
-- A small "switch lens" affordance lets the user change which lens is the headline.
+The two engines re-implement overlapping math (Cronbach's α, item-rest correlations, α-if-deleted) in parallel. v2 retires this duplication.
 
-### Region 2 — Issues to Fix (~25%)
+**Canonical engine for v2: `apps/strength-index/strength-index.js`.** All sub-scoring described in Sections 4 and 4A–4G lives here. The functions in `apps/rssi/rssi-reliability.js` and `apps/rssi/rssi-analyses.js` are either absorbed into the canonical engine or deleted during cutover, whichever fits each function. After cutover:
 
-- Severity-ordered (high, medium, low), then chronological within severity.
-- Each item shows: a short plain-language description of the problem, which domain it lives in, severity badge, and a "Fix this" link to the relevant domain detail page.
-- When lift can be calculated by hypothetically applying the fix and recomputing, show the lift as "Est. lift +N." Lifts must be computed, never guessed.
-- When there are no issues: a single-line confirmation reading "No outstanding issues. Survey is ready for use." Collapse the region's vertical space accordingly.
+- Both surfaces (the standalone `rssi.php` / `rssi-upload.php` / `rssi-report.php` trio **and** the in-studio `strength-index.php` mount) consume the canonical engine and inherit every improvement.
+- The standalone surface's client-side parse loop (`apps/rssi/rssi-upload.js`) is reduced to the part the platform needs for that surface (CSV/XLSX → dataset shape), and the scoring half is removed.
+- `rssi-reliability.js`'s interactive-toggle math survives, but as the engine's recompute interface (Section 7), not as a parallel implementation.
 
-### Region 3 — Domain Cards (~55%)
-
-- Eight cards in a 4×2 grid on desktop, 2×4 on medium screens, 1×8 on mobile.
-- Each card shows: domain name, current sub-score (e.g., "82 / 100"), a color frame (green ≥ 80, yellow 60–79, red < 60), a one-sentence summary, and a change indicator when the score has shifted since the previous version.
-- Card click navigates to that domain's detail page.
-
-### Region 4 — Metadata (collapsed by default)
-
-- N respondents, N items, N scales detected, missing-data rate, current lens, current missing-data policy.
-- Reveals on click. Closed for most users.
+The eight Instrument Quality mount files at the repo root (`reliability.php`, `validity.php`, `construct-alignment.php`, `item-quality.php`, `bias-clarity.php`, `scale-structure.php`, `factor-readiness.php`, `response-scale.php`) are production surfaces for the broader Instrument Quality studio. They are **out of scope** for this spec and are not edited by v2 cutover work.
 
 ---
 
-## 8. Setup wizard
+## 7. Reliability domain computation (interactive toggle interface)
 
-Three sequential steps, no skip, no save-and-exit until complete (save-and-exit can come post-v2).
+The Reliability domain carries the v1 product's defining feature: the user can toggle individual items in or out of a scale and watch reliability statistics recompute. The interactive *UI* is rendered by the invoking surface; the *computation* is the module's job.
 
-### Step 1 — Confirm item structure
-- Show all columns with detected type (Likert, open-ended, demographic, excluded).
-- User corrects.
-- Validation: at least one Likert column must exist, or the wizard refuses to proceed.
+### 7.1 Standard run
 
-### Step 2 — Group items into scales
-- Suggest groupings via correlation clustering or column-name heuristics (e.g., "COMM1, COMM2, COMM3" → Communication scale).
-- User assigns, renames, splits, merges.
-- Validation: every Likert item must belong to exactly one scale, or be explicitly excluded from scoring.
+Per the inputs in Section 5.1, the module computes Reliability sub-scoring (Section 4) once per analysis run. Every scale yields:
 
-### Step 3 — Flag reverse-coded items
-- Plain-language prompt with examples.
-- ReliCheck can suggest reverse-coded items by detecting negative correlations against scale total.
-- User confirms or corrects.
-- Validation: after marking, no item in any scale may have a negative corrected item-rest correlation. If one remains, surface a warning and force the user to either flip it or exclude it.
+- Cronbach's α, with 95% bootstrap CI when N ≥ 100.
+- McDonald's ω total, with 95% bootstrap CI when N ≥ 100.
+- α–ω agreement gap.
+- Corrected item-rest correlation per item.
+- α-if-deleted per item (the α the scale would have if that item were removed).
+- ω-if-deleted per item, computed on demand (see 7.3).
+- Inter-item correlation matrix (for the redundancy check).
+- Per-item: mean, SD, missing rate, flag tone, plain-language interpretation.
 
-After Step 3 passes validation, the user lands on the Hub and the first analysis run executes.
+These are emitted in the scales and items arrays of Section 10's output.
 
----
+### 7.2 Recompute interface
 
-## 9. Domain detail page template
+The module exposes a `reliability.recompute(scale_id, active_item_ids[])` callable that:
 
-Eight pages share this layout. Section 10 covers the one exception (Reliability, which carries the interactive item analysis).
+- Takes a scale and a subset of item IDs marked active by the user (the unchecked items are excluded from this recompute, *not* from the underlying analysis version).
+- Returns the same fields as 7.1 for the reduced scale: α, ω (computed when feasible), α-if-deleted for each remaining item, lift relative to the original scale's α.
+- Completes in under 100 ms for k ≤ 50 and N ≤ 5,000 (α only); ω may take longer and the module exposes a separate `reliability.recompute_omega(...)` that the surface can call on demand.
+- Does not mutate the underlying analysis version. The toggle state is exploratory. Only an explicit "lock in" action by the invoking surface promotes the toggle state to a new version (Section 9).
 
-Top to bottom:
+### 7.3 What the module does *not* do here
 
-1. **Header.** Domain name, current sub-score, color frame, one-sentence summary.
-2. **What this domain measures.** Two sentences of plain language. Static copy per domain, written by the project owner.
-3. **Sub-component breakdown.** Each sub-component (e.g., for Reliability: α, ω, agreement, item-rest, redundancy), its score, and a status indicator.
-4. **Flagged items or scales.** Tabular list of every item or scale contributing a problem to this domain, with plain-language explanations.
-5. **Recommended actions.** Bullet list of specific fixes, each with a "Fix this" link if the fix is actionable in-product (e.g., toggling a reverse-coded flag) or instructions if the fix is editorial.
-6. **Technical detail toggle.** Collapsed by default. Reveals statistical specifics for methodologists: formulas, exact values, citations.
+- It does not render the toggle table, the α-if-deleted highlight, the "vs. original +0.000" comparison readout, the scale selector dropdown, or the Reset / Download buttons.
+- It does not store toggle state between calls. The invoking surface owns toggle state.
+- It does not decide when ω is "too slow to compute live." The module exposes both the live recompute (α) and the on-demand recompute (ω); the surface chooses when to call which.
 
 ---
 
-## 10. Reliability domain detail (the killer feature)
+## 8. Output emission for the report
 
-The Reliability page carries the interactive item analysis from v1. Preserve and refine.
+The module does not own a Report page. The standalone surface's `rssi-report.php` and the in-studio mount's render layer consume the Section 10 output and assemble the rendered report. The module's responsibility is to emit every datum the surface needs.
 
-Required elements:
+### 8.1 Data the module emits for the report
 
-- Header showing Cronbach's α for the currently selected scale, color-coded (red < 0.60, yellow 0.60–0.79, green ≥ 0.80), labeled with the qualitative band ("Low," "Acceptable," "Good," "Excellent").
-- Comparison readout: "vs. original +0.000" updates as the user toggles items off, showing the lift gained by exclusion.
-- Items table with columns: USE (checkbox), ITEM, N, MEAN, SD, ITEM-TOTAL R, α IF DELETED.
-- Green highlight on the α IF DELETED column for items whose removal would raise α.
-- "Reset to original" button.
-- "Download" affordance for the table.
-- Live recompute on every toggle, with no page reload.
+Already specified in Section 10's output schema; calling out the report-bound subset for clarity:
 
-Add for v2:
+- `rssi.psychometric_core`, `rssi.respondent_centered`, `rssi.validity_forward` — the three lens scores.
+- `rssi.headline_lens` — the lens the surface should render largest.
+- `rssi.disagreement_readout` — the one-sentence interpretation when spread > 10 points, else null.
+- `rssi.validity_forward_capped` — boolean, true when the criterion sub-component was skipped (Section 3.6).
+- `domains.*` — all eight domain sub-scores with sub-component breakdowns and flags.
+- `issues[]` — severity-ordered list of fixable issues with computed (never guessed) `estimated_lift`.
+- `reporting_readiness` — the five-indicator panel data (sample size, missingness, three-lens completeness, provenance, methods paragraph status), each as a status pill value. The module computes the indicator states; the surface renders the pills and the "Report ready" / "Report not ready" headline.
+- `interpretation.summary` and `interpretation.recommendations[]` — plain-language strings.
+- `methods_paragraph` — the auto-generated paragraph (sample size, scale counts, α, ω, fit indices) the user can copy directly into a research paper. The module composes this string; the surface offers the copy-to-clipboard affordance.
+- `rssi_weights_version`, `computed_at`, `version_id`, `analyst_id` — provenance fields the surface stamps onto the rendered report.
 
-- A scale selector at the top when more than one scale exists in the survey.
-- A "lock in changes" affordance that promotes the current toggle state to a new analysis version (rather than only existing as exploration).
-- A McDonald's ω readout alongside α, computed live where feasible. When live recompute of ω is too slow, recompute on demand via a "Recalculate ω" button.
+### 8.2 What the module does *not* do here
 
----
-
-## 11. Report view
-
-A single, printable, exportable page that pulls together:
-
-- The three-lens RSSI scores with the chosen lens as the headline.
-- The disagreement readout (when active).
-- All eight domain sub-scores in a compact grid.
-- The top five issues from the Issues to Fix list.
-- A separate **Reporting Readiness** panel (formerly Actionability in v1; now extracted from the RSSI entirely). This panel describes whether the report itself is presentable, separate from instrument quality. It is never part of the eight-domain composite. Five sub-indicators, each rendered as a status pill (✓ / ⚠ / ✗) on the panel:
-  1. **Sample size adequacy.** ✓ when N ≥ 100; ⚠ when 30 ≤ N < 100; ✗ when N < 30.
-  2. **Missingness rate.** ✓ when overall missing cells ≤ 5%; ⚠ when 5–20%; ✗ when > 20%.
-  3. **Three-lens completeness.** ✓ when all three lens scores are computed and none is capped; ⚠ when any lens is capped (e.g., Validity-Forward without criterion data); ✗ when any lens failed to compute.
-  4. **Provenance.** ✓ when the version stamp, the RSSI weights version, and the analyst identifier are all populated; ✗ otherwise.
-  5. **Methods paragraph.** ✓ when the auto-generated methods paragraph (sample size, scale counts, α, ω, fit indices) is present and non-empty; ✗ otherwise.
-
-  When all five are ✓, the panel shows "Report ready." When any indicator is ✗, the panel shows "Report not ready" with a one-line explanation of the blocker. The Reporting Readiness panel never produces a numeric score that contributes to the RSSI.
-- A methods-section paragraph the user can copy directly into a research paper, auto-generated from the analysis (sample size, scale counts, α, ω, fit indices).
-- The version number, the analyst, and the timestamp.
-
-Export formats: web view, PDF, copy-to-clipboard for the methods paragraph.
+- It does not produce HTML, PDF, or any rendered form. It emits structured data only.
+- It does not own export formats, page layout, color frames, or the "Print / Save PDF" affordance.
+- It does not decide which lens to render as the headline beyond emitting `rssi.headline_lens` as the recommendation; the surface may override based on user preference.
 
 ---
 
-## 12. Versioning
+## 9. Versioning emission
 
-Every analysis run creates a new version. Versions are immutable.
+Every analysis run is versionable. The module emits a complete object suitable for the invoking platform to store as an immutable version row. Storage, version IDs, comparison UI, version selection, "scores updated" notifications, and auto-recompute triggers are all platform concerns.
 
-- Version IDs are sequential per survey: v1, v2, v3...
-- Every version stores: input data hash, scale and reverse-coding configuration, lens weights version, all eight sub-scores, all three RSSI scores, every flagged item or scale, the analyst, and the timestamp.
-- Auto-recompute triggers a new version whenever the user changes scale assignments, reverse-coding flags, or excluded items.
-- The "scores updated" notification surfaces after auto-recompute with a link to view the diff.
-- Version comparison is a separate page (Screen 7), not inline on the Hub.
+### 9.1 Fields the module emits for versioning
+
+- `input_data_hash` — a stable hash of the response matrix + item schema + configuration object. Two identical inputs hash identically; one changed reverse-coded flag changes the hash.
+- `rssi_weights_version` — the canonical weights-config version (e.g., `"v2.0"`).
+- `rssi_schema_version` — the canonical output-schema version. Distinct from weights so a weights-only revision and a schema-only revision are independently traceable.
+- `computed_at` — ISO timestamp.
+- `analyst_id` — passed through from the configuration object.
+- Every score and flag in Section 10's output is by construction part of the version.
+
+### 9.2 What the module does *not* do here
+
+- It does not assign `version_id`. The platform assigns sequential IDs per survey (`v1`, `v2`, ...) at storage time.
+- It does not store, compare, or diff versions. The platform owns persistence and the version-comparison surface.
+- It does not detect "the schema changed, rerun now." The platform observes schema edits and invokes the module fresh; the module is stateless across calls.
+- It does not surface "scores updated" notifications. The platform decides what to notify and when.
 
 ---
 
-## 13. Data contracts
+## 10. Data contracts
 
 ### Input
 
@@ -457,7 +431,9 @@ The analysis module accepts:
 
 - A response matrix: rows are respondents, columns are item IDs.
 - An item schema: per-item metadata including item ID, scale or construct membership, response format (Likert, binary, continuous, open-ended), Likert range, and a reverse-coded flag.
-- A configuration object: missing-data policy (`listwise`, `pairwise`, `mean_impute`, `mice`), minimum N warning threshold (default 100), language for the user-facing report, the chosen lens, optional `criterion_column` (the item ID of a column to treat as a criterion variable for criterion validity, per Section 4A; when omitted, the Validity criterion sub-component is skipped and the Validity-Forward cap engages per Section 3.6), and optional `demographic_columns` (list of item IDs to use for the DIF proxy in Section 4D; when empty, the Bias & Clarity fairness sub-component is skipped). The user identifies `criterion_column` and `demographic_columns` during the Setup Wizard.
+- A configuration object: missing-data policy (`listwise`, `pairwise`, `mean_impute`, `mice`), minimum N warning threshold (default 100), language for the user-facing report, the chosen lens, optional `criterion_column` (the item ID of a column to treat as a criterion variable for criterion validity, per Section 4A; when omitted, the Validity criterion sub-component is skipped and the Validity-Forward cap engages per Section 3.6), optional `demographic_columns` (list of item IDs to use for the DIF proxy in Section 4D; when empty, the Bias & Clarity fairness sub-component is skipped), and `analyst_id` (passed through to the output's provenance fields, per Section 9). `criterion_column`, `demographic_columns`, and the per-item reverse-coded flags are populated by the invoking surface (typically through a Setup Wizard that the platform owns); the module reads them from the schema and does not collect them itself.
+
+**Note on `datasets.column_meta.reverse`.** The platform's existing `datasets` table already has a `reverse?` field on `column_meta` (see [db/schema_phase7.sql](../db/schema_phase7.sql)). The module's item schema is the canonical place reverse-coding flags are *read from*; whatever surface populates the schema (Setup Wizard, evidence-intake config, or another mechanism) is free to source those flags from `column_meta.reverse` when present. The module does not require flags to come from a specific column; it requires only that the schema it receives is complete and correct.
 
 ### Output
 
@@ -503,7 +479,7 @@ A structured object:
 
 ---
 
-## 14. Statistical methods
+## 11. Statistical methods
 
 - Treat Likert items as ordinal by default. Use polychoric correlations for the ω factor model on fully ordinal scales. Allow a config override to force Pearson.
 - For α: standard formula `α = (k / (k − 1)) * (1 − Σvar_i / var_total)`.
@@ -517,7 +493,7 @@ A structured object:
 
 ---
 
-## 15. Edge cases
+## 12. Edge cases
 
 - Scale with one item: α and ω undefined. Report null and warn "Single-item scale; reliability not estimable."
 - Scale with two items: report Spearman-Brown corrected reliability alongside α; note the small-k caveat.
@@ -532,7 +508,7 @@ A structured object:
 
 ---
 
-## 16. Tests
+## 13. Tests
 
 Use the repo's existing test runner. Cover:
 
@@ -553,7 +529,7 @@ Commit at least three fixture datasets: a strong-survey case, a weak-survey case
 
 ---
 
-## 17. What to do when blocked
+## 14. What to do when blocked
 
 Pause and ask before:
 
@@ -567,12 +543,17 @@ When in doubt, surface the question rather than guess. v1 already shipped one ma
 
 ---
 
-## 18. Deliverables
+## 15. Deliverables
 
-- Refactored analysis module producing the data contract in Section 13.
-- Seven primary screens (Section 6) built or refactored to match this brief.
-- The setup wizard (Section 8) with all three validation gates.
-- The version system (Section 12).
-- Test suite (Section 16) including three fixture datasets.
-- A developer note at the top of the analysis module listing every formula, threshold, weight, and library version pinned.
-- An exported `RSSI_WEIGHTS_VERSION` and `RSSI_SCHEMA_VERSION` so saved versions remain traceable to the exact scoring revision that produced them.
+Scope: this list is the **module's** deliverables. UI screens, the Setup Wizard, the Hub, version-storage tables, and the report-rendering layer are platform deliverables and are tracked elsewhere.
+
+- Refactored analysis engine in `apps/strength-index/strength-index.js` (per Section 6) producing the data contract in Section 10.
+- All eight domain sub-scoring implementations (Sections 4 and 4A–4G), pinned to the canonical weight tables and point bands.
+- The three-lens RSSI computation (Section 3.3) and disagreement readout lookup (Section 3.5).
+- The Reliability recompute interface (Section 7) usable by an invoking surface to drive interactive item-toggle UI.
+- The output emission contract for the report and for versioning (Sections 8 and 9).
+- Retirement or absorption of `apps/rssi/rssi-reliability.js` and `apps/rssi/rssi-analyses.js` into the canonical engine per Section 6, with both consuming surfaces (the standalone RSSI app and the in-studio `strength-index.php` mount) wired to the single engine.
+- Update of the `strength-index.php` "6-domain canonical" comment per Section 2.
+- Test suite (Section 13) including the three fixture datasets: a strong-survey case, a weak-survey case, and the sample-data-360-leadership regression fixture.
+- A developer note at the top of the engine module listing every formula, threshold, weight, and library version pinned.
+- Exported `RSSI_WEIGHTS_VERSION` and `RSSI_SCHEMA_VERSION` so saved versions remain traceable to the exact scoring revision that produced them.
