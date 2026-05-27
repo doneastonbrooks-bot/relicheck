@@ -119,6 +119,8 @@ When criterion data is absent (no `criterion_column` is configured, per Section 
 - The cap is surfaced on the Validity-Forward lens score with a "limited evidence" indicator.
 - The Validity-Forward score is never silently lowered below the other two lenses without an explanation; the disagreement readout (Section 3.5) absorbs the case where the cap drives Validity-Forward more than 10 points below the others.
 
+**Known issue — sentence 3 won't reliably fire from the cap alone under the current weight vectors.** Working the geometry: the cap lowers the underlying Validity sub-score, which feeds Psychometric Core at weight 22, Respondent-Centered at weight 15, and Validity-Forward at weight 22. Because PC and VF weight Validity *equally*, the cap drops them by equal absolute amounts; it drops RC less. So the cap drives PC and VF *together* below RC, not VF differentially below both others. The §3.5 third diagnostic sentence ("Validity-Forward much lower than the other two") therefore won't fire from the cap in isolation — it requires additional downward pressure on VF-favored domains (Construct Alignment, Bias & Clarity) to push VF below both others by > 10 points. Revisit during the next weight-tuning conversation: either adjust the weight vectors so VF differentiates from PC on Validity weight, or revise sentence 3 to describe the cap-driven "PC and VF both fall, RC holds" pattern. Captured in [KNOWN_ISSUES.md](../KNOWN_ISSUES.md).
+
 ---
 
 ## 4. Reliability domain sub-scoring (fully specified)

@@ -544,6 +544,225 @@
     };
   }
 
+  // ====================================================================
+  // THREE-LENS RSSI CONFIGURATION (Spec §3.2)
+  // ====================================================================
+  // Versioned weight vectors. Tagged so a saved version always traces
+  // back to the exact scoring revision that produced it (Spec §9, §15).
+  const RSSI_WEIGHTS_VERSION = 'v2.0';
+
+  // Canonical 8-domain key set (Spec §2, §10). The single source of
+  // truth for domain identifiers across the engine and both surfaces.
+  // No alternate names appear in module output.
+  const CANONICAL_DOMAINS = [
+    'reliability', 'validity', 'construct_alignment', 'item_prompt_quality',
+    'bias_clarity', 'scale_structure', 'factor_readiness', 'response_scale_review',
+  ];
+
+  // Spec §3.2 — three weight vectors over the 8 canonical domains.
+  // Each lens column sums to 100. Edit only through a versioned bump.
+  const LENS_WEIGHTS = {
+    psychometric_core: {
+      reliability: 22, validity: 22, construct_alignment: 14, item_prompt_quality: 12,
+      bias_clarity: 8, scale_structure: 6, factor_readiness: 10, response_scale_review: 6,
+    },
+    respondent_centered: {
+      reliability: 15, validity: 15, construct_alignment: 10, item_prompt_quality: 18,
+      bias_clarity: 14, scale_structure: 8, factor_readiness: 8, response_scale_review: 12,
+    },
+    validity_forward: {
+      reliability: 15, validity: 22, construct_alignment: 15, item_prompt_quality: 14,
+      bias_clarity: 10, scale_structure: 6, factor_readiness: 10, response_scale_review: 8,
+    },
+  };
+  const LENS_KEYS = ['psychometric_core', 'respondent_centered', 'validity_forward'];
+
+  // Spec §3.4 — Respondent-Centered is the default headline for new
+  // users; surfaces may override per-survey.
+  const DEFAULT_HEADLINE_LENS = 'respondent_centered';
+
+  // Spec §3.6 — Validity-Forward evidence cap.
+  // When criterion data is absent, the Validity sub-score is capped at
+  // 60 so the absence of criterion evidence cannot produce an
+  // indistinguishable headline from a fully-evidenced instrument.
+  // The cap modifies the underlying sub-score (which feeds all three
+  // lenses), but the "limited evidence" indicator is surfaced only on
+  // the Validity-Forward lens per §3.6.
+  function applyValidityForwardCap(validitySubscore, criterionPresent) {
+    if (validitySubscore == null) return { value: null, capped: false };
+    if (criterionPresent) return { value: validitySubscore, capped: false };
+    if (validitySubscore <= 60) return { value: validitySubscore, capped: true };
+    return { value: 60, capped: true };
+  }
+
+  // Spec §3.5 — disagreement readout lookup. Returns a one-sentence
+  // diagnostic when the spread between the highest and lowest lens
+  // scores exceeds 10 points, else null. Suppressed when any of the 8
+  // canonical domains is skipped — the three baseline sentences are
+  // calibrated for the full 8-domain weight structure (Phase 3
+  // decision: partial-evidence variants are not invented here).
+  const DISAGREEMENT_SENTENCES = {
+    // key: 'highest|lowest'
+    'psychometric_core|respondent_centered':
+      'Your scales are statistically sound, but the items may be hard for respondents to answer clearly. Review item wording before deployment.',
+    'respondent_centered|psychometric_core':
+      'Your items read well, but the underlying scales are not holding together statistically. Consider adding items or refining constructs.',
+    // Spec §3.5 third pattern — V-F much lower than both others. The
+    // lookup key is the lens that is *highest*; we resolve to this
+    // sentence when V-F is the lowest AND the spread between V-F and
+    // the next-lower lens exceeds 10 points (handled at call site).
+    'validity_forward_low':
+      'Your survey is internally consistent, but you may not yet have evidence it measures what you claim. Add criterion data or pilot against an established instrument.',
+  };
+
+  function computeDisagreementReadout(lensScores, skippedDomains) {
+    if (Array.isArray(skippedDomains) && skippedDomains.length > 0) {
+      return null;
+    }
+    const present = LENS_KEYS.filter(function (L) { return lensScores[L] != null; });
+    if (present.length < 2) return null;
+    const sorted = present.slice().sort(function (a, b) { return lensScores[b] - lensScores[a]; });
+    const highest = sorted[0];
+    const lowest  = sorted[sorted.length - 1];
+    const spread  = lensScores[highest] - lensScores[lowest];
+    if (spread <= 10) return null;
+    // §3.5 V-F-low pattern takes precedence when V-F is the lowest by
+    // more than 10 points below BOTH other lenses.
+    if (lowest === 'validity_forward') {
+      const nextLowest = sorted[sorted.length - 2];
+      if (lensScores[nextLowest] - lensScores['validity_forward'] > 10) {
+        return DISAGREEMENT_SENTENCES['validity_forward_low'];
+      }
+    }
+    const key = highest + '|' + lowest;
+    return DISAGREEMENT_SENTENCES[key] || null;
+  }
+
+  // Spec §3.3 — pure lens math from a {domain_key: 0–100 | null} map.
+  // Null sub-scores (the four un-built §4A/4B/4D/4E domains in this
+  // build, or any domain skipped by edge-case logic) are excluded from
+  // the weighted sum and the weights rescale to the present subset.
+  // Returns lens scores rounded to two decimals.
+  function computeLenses(subscores) {
+    const skipped = CANONICAL_DOMAINS.filter(function (d) { return subscores[d] == null; });
+    const out = {
+      psychometric_core: null,
+      respondent_centered: null,
+      validity_forward: null,
+      headline_lens: DEFAULT_HEADLINE_LENS,
+      skipped_domains: skipped,
+    };
+    LENS_KEYS.forEach(function (L) {
+      const w = LENS_WEIGHTS[L];
+      let weighted = 0, totalW = 0;
+      CANONICAL_DOMAINS.forEach(function (d) {
+        if (subscores[d] == null) return;
+        weighted += subscores[d] * w[d];
+        totalW   += w[d];
+      });
+      out[L] = totalW > 0 ? Math.round((weighted / totalW) * 100) / 100 : null;
+    });
+    return out;
+  }
+
+  // Active analysis context. The per-domain compute fns below read
+  // from these bindings; `_resolveCtx(dataset)` repopulates them
+  // before each call to `computeLensesFromDataset`. Declared `let` so
+  // both the IIFE render path and the canonical entry can drive them.
+  let likertVars, categoricalVars, allVars, rowCount;
+
+  function _resolveCtx(ds) {
+    const byType = function (t) {
+      return ds.variables.filter(function (v) { return v.types && v.types.indexOf(t) !== -1; });
+    };
+    likertVars      = byType('likert');
+    categoricalVars = byType('categorical');
+    allVars         = ds.variables;
+    rowCount        = ds.rowCount || (allVars[0] ? allVars[0].values.length : 0);
+  }
+
+  // ====================================================================
+  // CANONICAL LENS ENTRY POINT (Spec §6 single-source-of-truth applied
+  // to the composite path). Both the in-studio mount and the standalone
+  // RSSI surface call this. Identical input → identical output.
+  // ====================================================================
+  function computeLensesFromDataset(ds, config) {
+    config = config || {};
+    const criterionPresent = !!config.criterion_column;
+    const baseOut = {
+      rssi: {
+        psychometric_core: null, respondent_centered: null, validity_forward: null,
+        headline_lens: DEFAULT_HEADLINE_LENS,
+        disagreement_readout: null,
+        validity_forward_capped: false,
+      },
+      domain_subscores: {},
+      domain_details: {},
+      skipped_domains: CANONICAL_DOMAINS.slice(),
+      rssi_weights_version: RSSI_WEIGHTS_VERSION,
+      computed_at: new Date().toISOString(),
+    };
+    if (!ds || !Array.isArray(ds.variables)) {
+      baseOut.error = 'no_dataset';
+      return baseOut;
+    }
+    _resolveCtx(ds);
+
+    // Per-domain compute fns are closures over likertVars/allVars/
+    // rowCount (set by _resolveCtx above). open_ended is folded into
+    // item_prompt_quality per Spec §4C; actionability is removed per
+    // Spec §2. Neither feeds the lens math.
+    const rel = computeReliability();
+    const fs  = computeFactorStructure();
+    const iq  = computeItemQuality();
+    const rq  = computeResponseQuality();
+
+    // Map v1 compute output → canonical 8-domain sub-score map.
+    // The four un-built domains (Spec §4A/4B/4D/4E new construction)
+    // remain null; computeLenses excludes them via skip-and-rescale.
+    const subscores = {
+      reliability:           rel.score,
+      validity:              null,
+      construct_alignment:   null,
+      item_prompt_quality:   iq.score,
+      bias_clarity:          null,
+      scale_structure:       null,
+      factor_readiness:      fs.score,
+      response_scale_review: rq.score,
+    };
+
+    // Spec §3.6 — apply Validity-Forward evidence cap before lens math.
+    // The cap is dormant in this build (validity sub-score is null
+    // until §4A ships); when validity becomes a real number, the cap
+    // automatically engages if config.criterion_column is absent.
+    const cap = applyValidityForwardCap(subscores.validity, criterionPresent);
+    subscores.validity = cap.value;
+
+    const lens = computeLenses(subscores);
+    const readout = computeDisagreementReadout(lens, lens.skipped_domains);
+
+    return {
+      rssi: {
+        psychometric_core:       lens.psychometric_core,
+        respondent_centered:     lens.respondent_centered,
+        validity_forward:        lens.validity_forward,
+        headline_lens:           lens.headline_lens,
+        disagreement_readout:    readout,
+        validity_forward_capped: cap.capped,
+      },
+      domain_subscores: subscores,
+      domain_details: {
+        reliability:           rel,
+        factor_readiness:      fs,
+        item_prompt_quality:   iq,
+        response_scale_review: rq,
+      },
+      skipped_domains: lens.skipped_domains,
+      rssi_weights_version: RSSI_WEIGHTS_VERSION,
+      computed_at: new Date().toISOString(),
+    };
+  }
+
   // Single entry point for retirement-phase work to migrate against.
   window.RSSI_MATH = {
     completeCases:          absorbedCompleteCases,
@@ -554,22 +773,27 @@
     itemRestCorrelations:   absorbedItemRestCorrelations,
     computeReliabilityStatusNarrative,
     computeItemQuality:     canonicalItemQuality,
+    // Three-lens RSSI (Spec §3.2–3.6, §6).
+    RSSI_WEIGHTS_VERSION,
+    CANONICAL_DOMAINS,
+    LENS_WEIGHTS,
+    computeLenses,
+    computeLensesFromDataset,
+    computeDisagreementReadout,
+    applyValidityForwardCap,
   };
 
   // ---------- Dataset gate ----------
-  // Math is exposed above; everything below is the strength-index render
-  // path and requires a resolved dataset.
+  // Math + lens entry exposed above; everything below is the
+  // strength-index render path and requires a resolved dataset.
   if (!dataset || !Array.isArray(dataset.variables)) {
     console.warn('Strength Index: no dataset available');
     return;
   }
-
-  // ---------- Variable groups ----------
-  const byType = (t) => dataset.variables.filter(v => v.types && v.types.indexOf(t) !== -1);
-  const likertVars      = byType('likert');
-  const categoricalVars = byType('categorical');
-  const allVars         = dataset.variables;
-  const rowCount        = dataset.rowCount || (allVars[0] ? allVars[0].values.length : 0);
+  // Variable groups (likertVars, allVars, rowCount, …) are populated
+  // by _resolveCtx() — called inside computeLensesFromDataset below.
+  // The render path runs that single canonical entry, then reads the
+  // resulting domain_details + lens scores.
 
   // ---------- Components ----------
   function computeReliability() {
@@ -628,7 +852,12 @@
     // Requires ≥ 3 items and ≥ 3 respondents (already verified above) to
     // estimate single-factor loadings. When ω cannot be estimated, the
     // domain falls back to α + item-total correlations and surfaces a
-    // warning in the interpretation (per the user's spec).
+    // warning in the interpretation.
+    //
+    // Bands per Spec §4.1 (canonical v2). v1's softer floor (<0.60 → 2)
+    // and intermediate 5-pt step are superseded — an instrument that
+    // fails the 0.60 reliability threshold cannot quietly contribute
+    // points to the headline.
     const omega = (k >= 3) ? mcdonaldOmega(validCols) : null;
     let omegaPts, omegaText, omegaWarning = '';
     if (omega == null) {
@@ -642,23 +871,24 @@
       if      (omega >= 0.90) omegaPts = 10;
       else if (omega >= 0.80) omegaPts = 9;
       else if (omega >= 0.70) omegaPts = 7;
-      else if (omega >= 0.60) omegaPts = 5;
-      else                    omegaPts = 2;
+      else if (omega >= 0.60) omegaPts = 4;
+      else                    omegaPts = 0;
     }
 
     // ----- α-ω agreement (3 pts) -----
+    // Per Spec §4.1, the agreement point is awarded purely on the
+    // absolute gap |α − ω|. v1's "both ≥ 0.80" gate is removed in v2:
+    // the agreement measures whether the two coefficients tell the
+    // same story, independent of magnitude.
     let agreementPts, agreementText;
     if (omega == null) {
       agreementPts = 0;
       agreementText = 'agreement not assessed (no ω)';
     } else {
       const gap = Math.abs(alpha - omega);
-      if (gap <= 0.05 && alpha >= 0.80 && omega >= 0.80) {
+      if (gap <= 0.05) {
         agreementPts = 3;
-        agreementText = 'α and ω agree at high values; reliability holds under the weaker measurement-model assumption';
-      } else if (gap <= 0.05) {
-        agreementPts = 2.5;
-        agreementText = 'α and ω agree';
+        agreementText = 'α and ω agree (gap = ' + gap.toFixed(2) + ')';
       } else if (gap <= 0.10) {
         agreementPts = 1.5;
         agreementText = 'the 1-factor assumption is mildly strained (α-ω gap = ' + gap.toFixed(2) + ')';
@@ -1193,21 +1423,31 @@
   }
 
   // ---------- Composite + interpretation ----------
-  // Six canonical domains; composite is the SUM of raw points (each domain
-  // contributes its raw out of its max; the maxes sum to 100). Verdict bands
-  // come from the canonical formula: Excellent 90+, Strong 80-89, Usable
-  // 70-79, Needs strengthening 60-69, Weak <60.
+  // Single canonical entry. computeLensesFromDataset populates the IIFE
+  // closure vars (likertVars, allVars, rowCount) via _resolveCtx and runs
+  // the v2-mapped per-domain compute fns. The render path below reads
+  // from the returned object; the legacy `components` shape is preserved
+  // so the existing 6 component cards keep rendering until the studio
+  // template is migrated to the canonical 8-domain taxonomy (separate
+  // conversation per Spec §2).
+  const lensResult = computeLensesFromDataset(dataset);
   const components = {
-    reliability:        computeReliability(),       // 25
-    factor_structure:   computeFactorStructure(),   // 20
-    item_quality:       computeItemQuality(),       // 20
-    response_quality:   computeResponseQuality(),   // 15
-    open_ended:         computeOpenEnded(),         // 10
-    actionability:      computeActionability(),     // 10
+    reliability:      lensResult.domain_details.reliability,
+    factor_structure: lensResult.domain_details.factor_readiness,
+    item_quality:     lensResult.domain_details.item_prompt_quality,
+    response_quality: lensResult.domain_details.response_scale_review,
+    // Retired from lens math but still rendered as cards until template
+    // migration. Recomputed off the ctx that _resolveCtx already set.
+    open_ended:       computeOpenEnded(),
+    actionability:    computeActionability(),
   };
 
-  const totalRaw = Object.values(components).reduce((s, c) => s + (c.raw || 0), 0);
-  const strength = clamp(round(totalRaw), 0, 100);
+  // Headline becomes the Respondent-Centered lens (Spec §3.4 default).
+  // The three lens scores live on lensResult.rssi for surfaces that
+  // want to render all of them.
+  const strength = lensResult.rssi.respondent_centered == null
+    ? 0
+    : clamp(round(lensResult.rssi.respondent_centered), 0, 100);
 
   let verdict, note, tone;
   if      (strength >= 90) { verdict = 'Excellent';            tone = 'strong';  note = 'Strong enough to publish and act on.'; }
@@ -1521,6 +1761,12 @@
       reportStatus: reportStatus,
       domains: components,
       priorities: priorities,
+      // Three-lens RSSI output (Spec §3.2–3.3) — same numbers the
+      // standalone surface produces from the same dataset.
+      rssi: lensResult.rssi,
+      domain_subscores: lensResult.domain_subscores,
+      skipped_domains: lensResult.skipped_domains,
+      rssi_weights_version: lensResult.rssi_weights_version,
     };
     if (window.RELICHECK_APP_STATE) {
       window.RELICHECK_APP_STATE.readiness = readiness;
@@ -1685,6 +1931,11 @@
     strength:   strength,
     verdict:    verdict,
     components: components,
+    // Three-lens RSSI output (Spec §3.2–3.3, §6 single source of truth).
+    rssi:                 lensResult.rssi,
+    domain_subscores:     lensResult.domain_subscores,
+    skipped_domains:      lensResult.skipped_domains,
+    rssi_weights_version: lensResult.rssi_weights_version,
     computed_at: new Date().toISOString(),
   };
 

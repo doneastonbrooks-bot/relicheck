@@ -146,233 +146,83 @@
   }
 
   /* ────────────────────────────────────────────────────────────
-   * SIX-DOMAIN STRENGTH INDEX (lightweight standalone scorer)
+   * STANDALONE COMPOSITE — DELEGATED TO CANONICAL ENGINE
    *
-   * This is a simplified version of the math in
-   * /apps/strength-index/strength-index.js — designed to produce
-   * a directionally-correct headline number without dragging in
-   * the full engine. Each component returns 0–100; the composite
-   * is a weighted mean.
+   * Per Spec §6, the canonical psychometrics engine at
+   * /apps/strength-index/strength-index.js exposes
+   * window.RSSI_MATH.computeLensesFromDataset as the single source
+   * of truth for the three-lens RSSI composite. This surface
+   * delegates to it so the standalone and in-studio surfaces
+   * produce byte-for-byte identical lens scores for the same
+   * dataset (Spec §3.2–3.3).
    *
-   * Weights (sum to 100):
-   *   reliability 25, item_quality 20, factor_structure 15,
-   *   response_quality 15, open_ended 10, actionability 15
+   * The legacy six-domain weighted-mean composite that used to
+   * live here (scoreReliability / scoreItemQuality /
+   * scoreFactorStructure / scoreResponseQuality / scoreOpenEnded /
+   * scoreActionability plus their local helpers) is retired.
+   * computeRSSI below is now a thin shim that calls the canonical
+   * engine and rebuilds the legacy v1-labelled `components` map
+   * from canonical sub-scores for the existing rssi.js renderer.
    * ──────────────────────────────────────────────────────────── */
-  function num(v) { const x = parseFloat(v); return isNaN(x) ? null : x; }
-  function nonNull(arr) { return arr.filter(function (v) { return v != null; }); }
-  function mean(arr) { return arr.length ? arr.reduce(function (s, v) { return s + v; }, 0) / arr.length : 0; }
-  function variance(arr) {
-    if (arr.length < 2) return 0;
-    const m = mean(arr);
-    return arr.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / (arr.length - 1);
-  }
-  function pearson(a, b) {
-    const n = Math.min(a.length, b.length);
-    if (n < 3) return 0;
-    let ma = 0, mb = 0;
-    for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; }
-    ma /= n; mb /= n;
-    let cov = 0, va = 0, vb = 0;
-    for (let i = 0; i < n; i++) {
-      cov += (a[i] - ma) * (b[i] - mb);
-      va  += (a[i] - ma) * (a[i] - ma);
-      vb  += (b[i] - mb) * (b[i] - mb);
-    }
-    const denom = Math.sqrt(va * vb);
-    return denom === 0 ? 0 : cov / denom;
-  }
-
-  /* Cronbach alpha across Likert items (using complete cases) */
-  function cronbachAlpha(items) {
-    const k = items.length;
-    if (k < 2) return null;
-    // Complete cases
-    const n = items[0].length;
-    const complete = [];
-    for (let i = 0; i < n; i++) {
-      let ok = true;
-      for (let j = 0; j < k; j++) { if (items[j][i] == null || isNaN(items[j][i])) { ok = false; break; } }
-      if (ok) {
-        const row = [];
-        for (let j = 0; j < k; j++) row.push(items[j][i]);
-        complete.push(row);
-      }
-    }
-    if (complete.length < 5) return null;
-    // Variance of each item + variance of sum
-    const itemVars = [];
-    for (let j = 0; j < k; j++) itemVars.push(variance(complete.map(function (r) { return r[j]; })));
-    const sums = complete.map(function (r) { return r.reduce(function (a, b) { return a + b; }, 0); });
-    const totalVar = variance(sums);
-    if (totalVar === 0) return 0;
-    const itemVarSum = itemVars.reduce(function (a, b) { return a + b; }, 0);
-    return (k / (k - 1)) * (1 - itemVarSum / totalVar);
-  }
-
-  function scoreReliability(likertVars) {
-    if (likertVars.length < 2) return { score: null, note: 'Not enough Likert items to compute reliability.', skip: true };
-    const items = likertVars.map(function (v) { return v.values.map(num); });
-    const alpha = cronbachAlpha(items);
-    if (alpha == null) return { score: null, note: 'Could not compute alpha — too few complete cases.', skip: true };
-    // Map alpha 0..1 to a 0..100 score, weighted toward common thresholds:
-    // alpha 0.90 → 100, 0.80 → 88, 0.70 → 72, 0.60 → 50, < 0.50 → < 30
-    const a = Math.max(0, alpha);
-    const score = Math.round(Math.min(100, Math.max(0, a * 100 * 1.1 - 10)));
-    let note;
-    if (alpha >= 0.85) note = 'Excellent reliability — α = ' + alpha.toFixed(2) + ' across ' + likertVars.length + ' items.';
-    else if (alpha >= 0.7) note = 'Good reliability — α = ' + alpha.toFixed(2) + '. Some scales could be tightened.';
-    else if (alpha >= 0.6) note = 'Marginal reliability — α = ' + alpha.toFixed(2) + '. Consider revising weak items.';
-    else note = 'Low reliability — α = ' + alpha.toFixed(2) + '. The scale is not hanging together; revise items.';
-    return { score: score, note: note, alpha: alpha };
-  }
-
-  function scoreItemQuality(likertVars) {
-    if (likertVars.length === 0) return { score: null, note: 'No Likert items detected.', skip: true };
-    let flags = 0;
-    let total = likertVars.length;
-    let ceilFloor = 0, lowVar = 0, highMiss = 0;
-    likertVars.forEach(function (v) {
-      const vals = v.values.map(num);
-      const nn = nonNull(vals);
-      const missRate = (vals.length - nn.length) / vals.length;
-      if (missRate > 0.10) { flags++; highMiss++; }
-      const m = mean(nn);
-      const sd = Math.sqrt(variance(nn));
-      // ceiling/floor: mean within 0.5 of extremes (assumes 5-point scale)
-      const maxV = Math.max.apply(null, nn);
-      const minV = Math.min.apply(null, nn);
-      if (m >= maxV - 0.5 || m <= minV + 0.5) { flags++; ceilFloor++; }
-      if (sd < 0.6) { flags++; lowVar++; }
-    });
-    const flagRate = flags / (total * 3);
-    const score = Math.round(Math.max(20, 100 - flagRate * 100));
-    const parts = [];
-    if (highMiss)  parts.push(highMiss + ' high-missing');
-    if (ceilFloor) parts.push(ceilFloor + ' ceiling/floor');
-    if (lowVar)    parts.push(lowVar + ' low-variance');
-    const note = parts.length
-      ? 'Item flags: ' + parts.join(', ') + ' of ' + total + ' Likert items.'
-      : 'All ' + total + ' Likert items are within healthy ranges.';
-    return { score: score, note: note };
-  }
-
-  function scoreFactorStructure(likertVars) {
-    if (likertVars.length < 3) return { score: null, note: 'Too few Likert items for factor structure check.', skip: true };
-    // Average pairwise correlation
-    const items = likertVars.map(function (v) { return v.values.map(num); });
-    let sum = 0, count = 0;
-    for (let i = 0; i < items.length; i++) {
-      for (let j = i + 1; j < items.length; j++) {
-        const a = []; const b = [];
-        for (let k = 0; k < items[i].length; k++) {
-          if (items[i][k] != null && items[j][k] != null) { a.push(items[i][k]); b.push(items[j][k]); }
-        }
-        if (a.length > 5) { sum += pearson(a, b); count++; }
-      }
-    }
-    if (count === 0) return { score: null, note: 'Not enough complete data for factor check.', skip: true };
-    const avgR = sum / count;
-    const score = Math.round(Math.min(100, Math.max(0, avgR * 100 * 2)));
-    const note = 'Average inter-item r = ' + avgR.toFixed(2) + ' across ' + likertVars.length + ' items.';
-    return { score: score, note: note };
-  }
-
-  function scoreResponseQuality(dataset) {
-    const allVars = dataset.variables;
-    if (!allVars.length) return { score: 50, note: 'No variables to check.' };
-    // Overall completion rate
-    let totalCells = 0, missing = 0;
-    allVars.forEach(function (v) {
-      v.values.forEach(function (x) {
-        totalCells++;
-        if (x === '' || x == null) missing++;
-      });
-    });
-    const completionRate = totalCells > 0 ? 1 - (missing / totalCells) : 0;
-    const score = Math.round(Math.min(100, completionRate * 110 - 10));
-    let note;
-    if (completionRate >= 0.95) note = 'Excellent completion — ' + Math.round(completionRate * 100) + '%.';
-    else if (completionRate >= 0.85) note = 'Good completion — ' + Math.round(completionRate * 100) + '%.';
-    else if (completionRate >= 0.70) note = 'Moderate completion — ' + Math.round(completionRate * 100) + '% with patches of missingness.';
-    else note = 'Low completion — ' + Math.round(completionRate * 100) + '%. Investigate dropouts.';
-    return { score: Math.max(20, score), note: note };
-  }
-
-  function scoreOpenEnded(dataset) {
-    const openVars = dataset.variables.filter(function (v) { return v.types[0] === 'open'; });
-    if (openVars.length === 0) return { score: 60, note: 'No open-ended questions in this survey.' };
-    let totalResp = 0, totalLen = 0, n = 0;
-    openVars.forEach(function (v) {
-      v.values.forEach(function (x) {
-        if (x && String(x).trim().length > 0) {
-          totalResp++;
-          totalLen += String(x).trim().split(/\s+/).length;
-        }
-        n++;
-      });
-    });
-    const respRate = n > 0 ? totalResp / n : 0;
-    const avgWords = totalResp > 0 ? totalLen / totalResp : 0;
-    const score = Math.round(Math.min(100, respRate * 60 + Math.min(40, avgWords * 2)));
-    const note = openVars.length + ' open-ended item' + (openVars.length === 1 ? '' : 's') + ' · ' + Math.round(respRate * 100) + '% response rate · ' + avgWords.toFixed(1) + ' avg words.';
-    return { score: Math.max(30, score), note: note };
-  }
-
-  function scoreActionability(dataset) {
-    const totalVars = dataset.variables.length;
-    const likertCount = dataset.variables.filter(function (v) { return v.types[0] === 'likert'; }).length;
-    const catCount    = dataset.variables.filter(function (v) { return v.types[0] === 'categorical'; }).length;
-    // Reward surveys with structure: at least some Likert + at least one categorical (for grouping)
-    let score = 60;
-    if (likertCount >= 5) score += 15;
-    if (likertCount >= 10) score += 10;
-    if (catCount >= 1) score += 10;
-    if (totalVars >= 10 && totalVars <= 50) score += 5; // sweet spot for survey length
-    score = Math.min(100, score);
-    const note = totalVars + ' variables (' + likertCount + ' Likert, ' + catCount + ' categorical). ' + (totalVars > 50 ? 'Survey may be too long.' : 'Length is in a healthy range.');
-    return { score: score, note: note };
-  }
 
   /* ────────────────────────────────────────────────────────────
    * Compose the full RSSI score blob.
+   *
+   * Delegates the lens math to the canonical engine
+   * (window.RSSI_MATH.computeLensesFromDataset) per Spec §6. The
+   * standalone surface used to compute its own weighted-mean over
+   * six v1-labelled components; that path is retired. The legacy
+   * `components` map is rebuilt here from canonical sub-scores
+   * for backward-compat with the existing rssi.js renderer (which
+   * still reads the v1 keys), and will be retired once that
+   * renderer is migrated to the canonical 8-domain taxonomy.
    * ──────────────────────────────────────────────────────────── */
   function computeRSSI(dataset) {
     const likertVars = dataset.variables.filter(function (v) { return v.types[0] === 'likert'; });
+    const engine = window.RSSI_MATH && window.RSSI_MATH.computeLensesFromDataset;
+    if (typeof engine !== 'function') {
+      throw new Error('Canonical lens engine not loaded — apps/strength-index/strength-index.js must be included before apps/rssi/rssi-upload.js (Spec §6).');
+    }
+    const lensResult = engine(dataset);
+    const rssi = lensResult.rssi;
+    const d    = lensResult.domain_details || {};
 
-    const reliability      = scoreReliability(likertVars);
-    const itemQuality      = scoreItemQuality(likertVars);
-    const factorStructure  = scoreFactorStructure(likertVars);
-    const responseQuality  = scoreResponseQuality(dataset);
-    const openEnded        = scoreOpenEnded(dataset);
-    const actionability    = scoreActionability(dataset);
-
-    // Component keys + labels match the template sidebar's "Diagnostic" section
-    // exactly, so the sidebar can drive directly off them.
-    const components = {
-      survey_structure:     Object.assign({ label: 'Survey Structure',     weight: 15 }, actionability),
-      question_quality:     Object.assign({ label: 'Question Quality',     weight: 20 }, itemQuality),
-      scale_strength:       Object.assign({ label: 'Scale Strength',       weight: 15 }, factorStructure),
-      reliability_readiness: Object.assign({ label: 'Reliability Readiness', weight: 25 }, reliability),
-      validity_alignment:   Object.assign({ label: 'Validity Alignment',   weight: 15 }, responseQuality),
-      response_risk:        Object.assign({ label: 'Response Risk',        weight: 10 }, openEnded),
-    };
-
-    // Only include components that were actually computed (skip == true means
-    // we lacked the data — those components are reported but excluded from
-    // the headline number rather than dragged-down to a 50 placeholder).
-    let weighted = 0, totalW = 0;
-    Object.keys(components).forEach(function (k) {
-      const c = components[k];
-      if (c.skip || c.score == null) return;
-      weighted += c.score * c.weight;
-      totalW   += c.weight;
-    });
-    const strength = totalW > 0 ? Math.round(weighted / totalW) : 0;
+    // Headline = Respondent-Centered lens (Spec §3.4 default).
+    const strength = rssi.respondent_centered == null
+      ? 0
+      : Math.round(rssi.respondent_centered);
     const verdict = strength >= 85 ? 'Excellent'
                   : strength >= 70 ? 'Strong'
                   : strength >= 55 ? 'Good'
                   : strength >= 40 ? 'Fair'
                   : 'Weak';
+
+    // Backward-compat legacy components map. Each v1 key inherits
+    // its 0–100 score (and note when available) from the canonical
+    // domain it maps to. The four canonical domains not yet built
+    // (validity, construct_alignment, bias_clarity, scale_structure)
+    // surface as `skip: true` so rssi.js excludes them from any
+    // local rollups it still performs.
+    function from(canonical, label, weight) {
+      const det = d[canonical];
+      if (!det || det.score == null) {
+        return { label: label, weight: weight, score: null, note: 'Not yet computed in this build (Spec §' +
+          (canonical === 'validity' ? '4A'
+           : canonical === 'construct_alignment' ? '4B'
+           : canonical === 'bias_clarity' ? '4D'
+           : canonical === 'scale_structure' ? '4E'
+           : '4F') + ').', skip: true };
+      }
+      return { label: label, weight: weight, score: det.score, note: det.note, raw: det.raw, max: det.max, interp: det.interp, tone: det.tone };
+    }
+    const components = {
+      survey_structure:      from('scale_structure',        'Survey Structure',      15),
+      question_quality:      from('item_prompt_quality',    'Question Quality',      20),
+      scale_strength:        from('factor_readiness',       'Scale Strength',        15),
+      reliability_readiness: from('reliability',            'Reliability Readiness', 25),
+      validity_alignment:    from('validity',               'Validity Alignment',    15),
+      response_risk:         from('response_scale_review',  'Response Risk',         10),
+    };
 
     const summary = 'At ' + strength + ', this survey is in ' + verdict.toLowerCase() + ' shape. ' +
       (strength >= 70
@@ -386,13 +236,19 @@
       strength: strength,
       verdict: verdict,
       components: components,
+      // Three-lens RSSI output (Spec §3.2–3.3) — identical to the
+      // in-studio mount's output for the same dataset (Spec §6).
+      rssi:                 rssi,
+      domain_subscores:     lensResult.domain_subscores,
+      skipped_domains:      lensResult.skipped_domains,
+      rssi_weights_version: lensResult.rssi_weights_version,
       dataset: {
         source: dataset.source,
         rowCount: dataset.rowCount,
         itemCount: dataset.variables.length,
         scaleCount: likertVars.length > 0 ? Math.max(1, Math.ceil(likertVars.length / 5)) : 0,
       },
-      computed_at: new Date().toISOString(),
+      computed_at: lensResult.computed_at,
     };
   }
 
