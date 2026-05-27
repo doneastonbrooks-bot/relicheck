@@ -504,7 +504,6 @@ A structured object:
 - Open-ended columns: never enter reliability math. Route only to Item / Prompt Quality.
 - Mixed response formats within a single scale: refuse and surface a configuration error.
 - No criterion data: Validity-Forward lens caps at the evidence available (see Section 3.6).
-- Setup incomplete: hard gate. No scores compute or display until all three setup steps pass validation.
 
 ---
 
@@ -512,7 +511,7 @@ A structured object:
 
 Use the repo's existing test runner. Cover:
 
-1. The eight-domain taxonomy is used consistently in the nav, the Hub cards, the report grid, and the API response. No alternate labels appear anywhere.
+1. The eight-domain taxonomy is used consistently in the module's output object keys (`domains.reliability`, `domains.validity`, …) and any internal labels emitted in `issues[].domain`, `interpretation`, and `methods_paragraph`. No alternate labels appear anywhere in the module's output.
 2. A known-good synthetic dataset (α ≈ 0.85) returns α within ±0.02 and ω within ±0.03.
 3. A scale containing one reverse-coded item produces correct α after the schema flag is honored.
 4. A single-item scale returns nulls and the expected warning, not an exception.
@@ -520,10 +519,9 @@ Use the repo's existing test runner. Cover:
 6. Each of the three lens calculations on a fully populated synthetic case matches a hand-calculated value to the second decimal.
 7. The disagreement readout fires when spread > 10 points and stays silent at spread ≤ 10 points.
 8. The Validity-Forward cap engages when criterion data is absent and shows the "limited evidence" flag.
-9. Setup wizard validation rejects: a survey with no Likert items, a scale with unassigned items, an item with negative item-rest after reverse-coding.
-10. Auto-recompute triggers a new version on each edit, and the previous version remains immutable.
-11. The interactive item analysis recomputes α live on toggle and shows correct "α if deleted" values.
-12. The PDF export of the report renders without missing fields and matches the web view's content.
+9. Input-schema validation: the module rejects with a structured error when (a) the item schema is missing a required `scale_id` on any Likert item, (b) a Likert item is missing its `reverse_coded` flag, or (c) the configuration object references a `criterion_column` or `demographic_columns` id that does not exist in the schema. Validation runs before any scoring begins.
+10. Determinism: identical inputs (same response matrix, same item schema, same configuration object, same `input_data_hash`) produce identical outputs across runs. Random-seeded operations (bootstrap CIs) accept a seed in the configuration object and produce identical resamples for the same seed.
+11. The Reliability recompute interface (Section 7.2) returns correct α-if-deleted values and matches a hand-computed result when an item is toggled out and the scale is recomputed.
 
 Commit at least three fixture datasets: a strong-survey case, a weak-survey case, and the sample-data-360-leadership dataset shown in v1 screenshots (for regression testing the bug found in Section 0).
 
