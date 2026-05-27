@@ -41,3 +41,25 @@ Thumbs.db
 
 # Ionos automatic upload metadata
 .ftpquota
+
+# Claude Code per-developer config
+.clauderc
+.claude/
+
+# Working notes (private, not shared)
+notes/
+
+# Archived / Dropbox-style staging folders (superseded by apps/strength-index/)
+RSSI App/
+Relicheck Studio Web-App/
+
+# Ephemeral drafts (not long-lived references)
+Marketing homepage rewrite.docx
+ReliCheck feedback 2.docx
+
+# Studio reference screenshots (not embedded in product or docs)
+360 Studio.png
+MM Studio.png
+Strength Survey Studio.png
+Survey Studio.png
+TIA Studio.png
