@@ -655,10 +655,188 @@ function mkDataset(items, n) {
     String(ss.breakdown.item_count_per_scale.pts), '2.5');
 }
 
+// ====================================================================
+// PHASE §4F CHECKS — Factor Readiness (Spec §4F: KMO + Bartlett's + det)
+// ====================================================================
+console.log('');
+console.log('--- §4F Factor Readiness ---');
+
+// -- Sanity-check the ported numerical primitives against a 3x3 with
+//    a hand-computable determinant and Bartlett's χ². --
+// R = [[1, 0.5, 0.3], [0.5, 1, 0.2], [0.3, 0.2, 1]]
+// det(R) = 1·(1 - 0.04) - 0.5·(0.5 - 0.06) + 0.3·(0.1 - 0.3)
+//        = 0.96 - 0.22 - 0.06 = 0.68
+// With N=100, k=3:
+//   χ² = -[(99) - (11/6)]·ln(0.68) = -97.16667 · -0.385662 ≈ 37.4674
+//   df = 3·2/2 = 3
+//   p-value at χ²=37.47, df=3 → < 0.001
+{
+  const R = [[1, 0.5, 0.3], [0.5, 1, 0.2], [0.3, 0.2, 1]];
+  const { inv, det } = RSSI_MATH._inverseAndDet(R.map(r => r.slice()));
+  check('§4F sanity: det(R) ≈ 0.68 (hand-computed)',
+    Math.abs(det - 0.68) < 1e-9 ? '=' : 'got ' + det, '=');
+  // Inverse sanity-check: R · R⁻¹ = I (off-diagonals zero).
+  const k = R.length;
+  let maxOffDiag = 0;
+  for (let i = 0; i < k; i++) {
+    for (let j = 0; j < k; j++) {
+      let s = 0;
+      for (let p = 0; p < k; p++) s += R[i][p] * inv[p][j];
+      if (i !== j) maxOffDiag = Math.max(maxOffDiag, Math.abs(s));
+    }
+  }
+  check('§4F sanity: R · R⁻¹ off-diagonals < 1e-10',
+    maxOffDiag < 1e-10 ? '=' : 'maxOff=' + maxOffDiag, '=');
+
+  // Drive the §4F adapter with this matrix at N=100.
+  const fr = RSSI_MATH.factorReadinessFromR(R, 100);
+  check('§4F sanity: det = 0.68 (via adapter)',
+    Math.abs(fr.det - 0.68) < 1e-9 ? '=' : 'got ' + fr.det, '=');
+  check('§4F sanity: bartlett χ² ≈ 37.4674',
+    Math.abs(fr.bartlettChi - 37.4674) < 0.01 ? '=' : 'got ' + fr.bartlettChi, '=');
+  check('§4F sanity: bartlett df = 3', String(fr.bartlettDf), '3');
+  check('§4F sanity: bartlett p < .001', fr.bartlettP < 0.001 ? '=' : 'p=' + fr.bartlettP, '=');
+  // Bartlett at p < .001 → 4 pts. det = 0.68 → 3 pts (≥ 1e-5).
+  // KMO on this matrix is in the "middling" band (≥ 0.70 expected).
+  check('§4F sanity: bartlettPts = 4 (p < .001)', String(fr.bartlettPts), '4');
+  check('§4F sanity: detPts = 3 (det ≥ 1e-5)',    String(fr.detPts),       '3');
+}
+
+// -- Helper: build a correlation matrix at a target average r --
+function corrAtR(k, r) {
+  const M = [];
+  for (let i = 0; i < k; i++) {
+    M.push([]);
+    for (let j = 0; j < k; j++) M[i].push(i === j ? 1 : r);
+  }
+  return M;
+}
+
+// -- Fixture 1: strong factor readiness (high KMO, sig Bartlett, det ok) --
+{
+  const R = corrAtR(5, 0.6); // strongly correlated → high KMO, low det
+  const fr = RSSI_MATH.factorReadinessFromR(R, 200);
+  check('§4F strong: KMO ≥ 0.80 → 8/8',  String(fr.kmoPts),      '8');
+  check('§4F strong: Bartlett p < .001 → 4/4', String(fr.bartlettPts), '4');
+  // det of equicorrelation r=0.6, k=5: (1-r)^(k-1) * (1 + (k-1)r) = 0.4^4 * 3.4 = 0.08704
+  check('§4F strong: det = 0.08704 → 3/3 (≥ 1e-5)', String(fr.detPts), '3');
+  check('§4F strong: raw 15/15 → score 100', String(fr.score), '100');
+}
+
+// -- Fixture 2: poor on KMO+Bartlett axes (near-identity correlation) --
+// R ≈ I → KMO ≈ 0 / null, det ≈ 1, Bartlett p ≈ 1.
+{
+  const R = corrAtR(4, 0.02); // very weakly correlated
+  const fr = RSSI_MATH.factorReadinessFromR(R, 200);
+  // KMO will be tiny here (off-diagonal r² is small) — < 0.60.
+  check('§4F orthogonal: KMO < 0.60 → 0/8', String(fr.kmoPts), '0');
+  // Bartlett p will be high (sphericity holds-ish) → 0/4.
+  check('§4F orthogonal: Bartlett p ≥ .05 → 0/4', String(fr.bartlettPts), '0');
+  // det near 1 → well-conditioned, gets 3/3. This is the spec behavior:
+  // determinant only catches multicollinearity, not orthogonality.
+  check('§4F orthogonal: det near 1 → 3/3 (well-conditioned)', String(fr.detPts), '3');
+  check('§4F orthogonal: raw 3/15 → score 20', String(fr.score), '20');
+}
+
+// -- Fixture 3: near-singular determinant (highly redundant items) --
+{
+  const R = corrAtR(5, 0.97); // extreme multicollinearity
+  const fr = RSSI_MATH.factorReadinessFromR(R, 200);
+  // det = (0.03)^4 * (1 + 4·0.97) = 8.1e-7 * 4.88 ≈ 3.95e-6 → 1/3
+  check('§4F near-singular: detPts = 1 (det in [1e-7, 1e-5))',
+    String(fr.detPts), '1');
+  // KMO on equicorrelation is high → 8/8.
+  check('§4F near-singular: KMO ≥ 0.80 → 8/8', String(fr.kmoPts), '8');
+  check('§4F near-singular: Bartlett p < .001 → 4/4', String(fr.bartlettPts), '4');
+  check('§4F near-singular: raw 13/15 → score 87', String(fr.score), '87');
+}
+
+// -- Fixture 4: deeply singular (k=5 with one column duplicating another) --
+{
+  // Build a true singular R: column 1 = column 0 → R has rank < k.
+  const R = [
+    [1.0, 1.0, 0.4, 0.4, 0.4],
+    [1.0, 1.0, 0.4, 0.4, 0.4],
+    [0.4, 0.4, 1.0, 0.3, 0.3],
+    [0.4, 0.4, 0.3, 1.0, 0.3],
+    [0.4, 0.4, 0.3, 0.3, 1.0],
+  ];
+  const fr = RSSI_MATH.factorReadinessFromR(R, 200);
+  check('§4F singular: det = 0 / inverse null',
+    fr.det === 0 ? '=' : 'det=' + fr.det, '=');
+  check('§4F singular: KMO null → 0/8',          String(fr.kmoPts),      '0');
+  check('§4F singular: Bartlett unavailable → 0/4', String(fr.bartlettPts), '0');
+  check('§4F singular: det 0 → 0/3',             String(fr.detPts),      '0');
+  check('§4F singular: score 0',                 String(fr.score),       '0');
+}
+
+// -- Fixture 5: edge bands (KMO 0.70 / 0.60 / Bartlett bands) --
+// Equicorrelation with r ≈ 0.10, k=8 puts KMO in the 0.70–0.80 band.
+{
+  const R = corrAtR(8, 0.10);
+  const fr = RSSI_MATH.factorReadinessFromR(R, 500);
+  // KMO for equicorrelation with low r typically lands in the middling band
+  // when k is moderate; band-specific assertion uses the actual returned val.
+  check('§4F edge: KMO band assignment honored',
+    fr.kmoPts === (fr.kmo >= 0.80 ? 8 : fr.kmo >= 0.70 ? 6 : fr.kmo >= 0.60 ? 3 : 0) ? '=' : 'kmo=' + fr.kmo + ' pts=' + fr.kmoPts,
+    '=');
+}
+
+// -- Fixture 6: full-pipeline integration test (raw items → engine) --
+// Strong 5-item Likert scale, large N → §4F should score high.
+{
+  function seeded(seed) {
+    let s = seed;
+    return function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  }
+  const rnd = seeded(123);
+  const N = 200;
+  const items = [];
+  for (let q = 0; q < 5; q++) {
+    items.push({ name: 'Q' + (q + 1), label: 'Q' + (q + 1), types: ['likert'], values: [] });
+  }
+  for (let i = 0; i < N; i++) {
+    const trait = 1 + rnd() * 4;
+    items.forEach(function (it, j) {
+      const noise = (rnd() - 0.5) * 0.6;
+      const v = Math.max(1, Math.min(5, Math.round(trait + noise)));
+      it.values.push(v);
+    });
+  }
+  const ds = { source: '§4F integration fixture', rowCount: N, variables: items };
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const fr = out.domain_details.factor_readiness;
+  check('§4F integration: max = 15 (not 20)', String(fr.max), '15');
+  check('§4F integration: breakdown.kmo present',         typeof fr.breakdown.kmo.value,         'number');
+  check('§4F integration: breakdown.bartlett present',    typeof fr.breakdown.bartlett.p,        'number');
+  check('§4F integration: breakdown.determinant present', typeof fr.breakdown.determinant.value, 'number');
+  check('§4F integration: raw ≤ 15',
+    fr.raw <= 15 ? '=' : 'raw=' + fr.raw, '=');
+  check('§4F integration: score in [0, 100]',
+    (fr.score >= 0 && fr.score <= 100) ? '=' : 'score=' + fr.score, '=');
+  // Strong correlated scale → expect high KMO and sig Bartlett.
+  check('§4F integration: KMO awards points (≥ 3)',
+    fr.breakdown.kmo.pts >= 3 ? '=' : 'pts=' + fr.breakdown.kmo.pts, '=');
+  check('§4F integration: Bartlett awards full 4 (p < .001 on N=200)',
+    String(fr.breakdown.bartlett.pts), '4');
+}
+
+// -- Fixture 7: domain skip when too few complete rows --
+{
+  const items = [];
+  for (let q = 0; q < 3; q++) {
+    items.push({ name: 'Q' + q, label: 'Q' + q, types: ['likert'], values: [1, null] });
+  }
+  const ds = { source: '§4F skip fixture', rowCount: 2, variables: items };
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const fr = out.domain_details.factor_readiness;
+  check('§4F skip: insufficient rows → score null', String(fr.score), 'null');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E/§4F all check.');
 }

@@ -173,28 +173,79 @@
     return (sum4 / arr.length) - 3; // excess kurtosis
   }
 
-  // ---------- Matrix inverse (Gauss-Jordan) + KMO ----------
-  function matrixInverse(M) {
+  // ---------- Matrix inverse + determinant (Gauss-Jordan, one pass) ----------
+  // Ported from apps/instrument-quality/instrument-quality.js (inverseAndDet).
+  // Returns { inv, det }. inv is null when the pivot is effectively zero
+  // (singular matrix); det is the signed determinant accumulated from the
+  // pivot trace with row-swap sign tracking. Single source of truth for
+  // §4F (KMO + Bartlett's + determinant) and any future surface needing
+  // both at once.
+  function inverseAndDet(M) {
     const n = M.length;
     const A = M.map((row, i) => {
       const r = row.slice();
       for (let j = 0; j < n; j++) r.push(i === j ? 1 : 0);
       return r;
     });
+    let det = 1, sign = 1;
     for (let i = 0; i < n; i++) {
       let pivot = i;
       for (let k = i + 1; k < n; k++) {
         if (Math.abs(A[k][i]) > Math.abs(A[pivot][i])) pivot = k;
       }
-      if (pivot !== i) { const t = A[i]; A[i] = A[pivot]; A[pivot] = t; }
-      if (Math.abs(A[i][i]) < 1e-10) return null;
+      if (pivot !== i) { const t = A[i]; A[i] = A[pivot]; A[pivot] = t; sign = -sign; }
+      if (Math.abs(A[i][i]) < 1e-12) return { inv: null, det: 0 };
+      det *= A[i][i];
       for (let k = 0; k < n; k++) {
         if (k === i) continue;
         const f = A[k][i] / A[i][i];
         for (let j = 0; j < 2 * n; j++) A[k][j] -= f * A[i][j];
       }
     }
-    return A.map((row, i) => row.slice(n).map(v => v / A[i][i]));
+    const inv = A.map((row, i) => row.slice(n).map(v => v / A[i][i]));
+    return { inv: inv, det: sign * det };
+  }
+
+  // Chi-square p-value via regularized incomplete gamma. Lanczos
+  // log-gamma + Numerical Recipes (Press et al. §6.2) continued-fraction
+  // / series expansion. Used by §4F Bartlett's test of sphericity. Ported
+  // from apps/instrument-quality/instrument-quality.js so the canonical
+  // engine is self-contained; the duplication is tracked in
+  // KNOWN_ISSUES.md for a future shared-math consolidation pass.
+  function logGamma(x) {
+    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091,
+               -1.231739572450155, 0.001208650973866179, -0.000005395239384953];
+    let y = x;
+    let tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let ser = 1.000000000190015;
+    for (let j = 0; j < 6; j++) { y += 1; ser += c[j] / y; }
+    return -tmp + Math.log(2.5066282746310005 * ser / x);
+  }
+  function regGammaP(a, x) {
+    if (x < 0 || a <= 0) return 0;
+    if (x === 0) return 0;
+    if (x < a + 1) {
+      let ap = a, sum = 1 / a, del = sum;
+      for (let n = 1; n < 200; n++) { ap += 1; del *= x / ap; sum += del; if (Math.abs(del) < Math.abs(sum) * 1e-12) break; }
+      return sum * Math.exp(-x + a * Math.log(x) - logGamma(a));
+    }
+    const FPMIN = 1e-300;
+    let b = x + 1 - a, c = 1 / FPMIN, d = 1 / b, h = d;
+    for (let i = 1; i < 200; i++) {
+      const an = -i * (i - a);
+      b += 2;
+      d = an * d + b; if (Math.abs(d) < FPMIN) d = FPMIN;
+      c = b + an / c; if (Math.abs(c) < FPMIN) c = FPMIN;
+      d = 1 / d;
+      const del = d * c; h *= del;
+      if (Math.abs(del - 1) < 1e-12) break;
+    }
+    return 1 - Math.exp(-x + a * Math.log(x) - logGamma(a)) * h;
+  }
+  function chiPValue(x, df) {
+    if (!isFinite(x) || x < 0 || df <= 0) return 1;
+    return 1 - regGammaP(df / 2, x / 2);
   }
 
   // KMO from the correlation matrix. Returns null if the matrix is singular.
@@ -205,7 +256,7 @@
     const k = cols.length;
     if (k < 2) return null;
     const R = correlationMatrix(cols);
-    const Ri = matrixInverse(R);
+    const { inv: Ri } = inverseAndDet(R);
     if (!Ri) return null;
     let sumR2 = 0, sumP2 = 0;
     for (let i = 0; i < k; i++) {
@@ -786,7 +837,71 @@
     computeLensesFromDataset,
     computeDisagreementReadout,
     applyValidityForwardCap,
+    // Spec §4F harness exposure. computeFactorStructure closes over
+    // likertVars/rowCount; expose a thin adapter that accepts a
+    // correlation matrix + N directly so the harness can drive
+    // precisely-tuned edge-band fixtures (the integration path also
+    // covers it via computeLensesFromDataset).
+    factorReadinessFromR: factorReadinessFromR,
+    // Numerical primitives — exported for sanity-checking in the harness.
+    // Duplicated from apps/instrument-quality/instrument-quality.js;
+    // KNOWN_ISSUES.md tracks the future consolidation.
+    _inverseAndDet: inverseAndDet,
+    _chiPValue:     chiPValue,
   };
+
+  // Compute §4F directly from a k×k correlation matrix R and N. Used by
+  // the harness; the engine path computes R from likertVars internally.
+  function factorReadinessFromR(R, N) {
+    const k = R.length;
+    const { inv: Ri, det } = inverseAndDet(R);
+    let kmo = null;
+    if (Ri) {
+      let sumR2 = 0, sumP2 = 0;
+      for (let i = 0; i < k; i++) {
+        for (let j = i + 1; j < k; j++) {
+          const r = R[i][j];
+          const denom = Math.sqrt(Math.abs(Ri[i][i] * Ri[j][j]));
+          const p = denom === 0 ? 0 : -Ri[i][j] / denom;
+          sumR2 += r * r;
+          sumP2 += p * p;
+        }
+      }
+      kmo = (sumR2 + sumP2) === 0 ? null : sumR2 / (sumR2 + sumP2);
+    }
+    let kmoPts;
+    if (kmo == null)           kmoPts = 0;
+    else if (kmo >= 0.80)      kmoPts = 8;
+    else if (kmo >= 0.70)      kmoPts = 6;
+    else if (kmo >= 0.60)      kmoPts = 3;
+    else                       kmoPts = 0;
+
+    let bartlettChi = null, bartlettDf = null, bartlettP = null, bartlettPts;
+    if (det != null && det > 0) {
+      bartlettChi = -((N - 1) - (2 * k + 5) / 6) * Math.log(det);
+      bartlettDf  = k * (k - 1) / 2;
+      bartlettP   = chiPValue(bartlettChi, bartlettDf);
+    }
+    if (bartlettP == null)         bartlettPts = 0;
+    else if (bartlettP < 0.001)    bartlettPts = 4;
+    else if (bartlettP < 0.01)     bartlettPts = 3;
+    else if (bartlettP < 0.05)     bartlettPts = 1;
+    else                           bartlettPts = 0;
+
+    let detPts;
+    if (det == null)               detPts = 0;
+    else if (det >= 1e-5)          detPts = 3;
+    else if (det >= 1e-7)          detPts = 1;
+    else                           detPts = 0;
+
+    const raw = kmoPts + bartlettPts + detPts;
+    return {
+      raw, max: 15, score: clamp(round((raw / 15) * 100), 0, 100),
+      kmo, kmoPts,
+      bartlettChi, bartlettDf, bartlettP, bartlettPts,
+      det, detPts,
+    };
+  }
 
   // ---------- Dataset gate ----------
   // Math + lens entry exposed above; everything below is the
@@ -1199,11 +1314,26 @@
   }
 
   // ====================================================================
-  // FACTOR STRUCTURE (20 pts)
-  // KMO bands + loading-pattern penalties.
+  // FACTOR READINESS — Spec §4F (15 pts total, rescaled ×100/15 → 0–100)
+  //
+  // Three sub-components on the full pooled Likert correlation matrix:
+  //   1. KMO sampling adequacy           8 pts
+  //   2. Bartlett's test of sphericity   4 pts
+  //   3. Correlation-matrix determinant  3 pts
+  //
+  // "Is the data factorable at all?" — distinct from §4B Construct
+  // Alignment which asks whether the user's declared factor structure
+  // holds. v1's weak-loading penalty and basePts fallback are retired;
+  // they belonged to §4B's territory, not §4F's. Singular correlation
+  // matrix scores 0 across all three sub-components (the spec's
+  // "near-singular, multicollinearity risk" outcome).
+  //
+  // Bartlett's correction (Bartlett 1950): χ² = -[(N-1) - (2k+5)/6]·ln(det(R)),
+  // df = k(k-1)/2. Determinant bands and p-value bands taken from the
+  // spec §4F table verbatim.
   // ====================================================================
-  function computeFactorStructure() {
-    const MAX = 20;
+  function computeFactorStructure(config) {
+    const MAX = 15;
     if (likertVars.length < 2) {
       return blankDomain(MAX, 'Needs at least 2 Likert items.', 'warn');
     }
@@ -1213,38 +1343,90 @@
       if (!likertVars.some(v => isMissing(v.values[i]))) validRows.push(i);
     }
     if (validRows.length < 3) {
-      return blankDomain(MAX, 'Not enough complete rows for KMO.', 'warn');
+      return blankDomain(MAX, 'Not enough complete rows for factor readiness.', 'warn');
     }
     const validCols = cols.map(col => validRows.map(i => col[i]));
+    const k = validCols.length;
+    const N = validRows.length;
 
-    const kmo = kmoIndex(validCols);
-    let basePts;
-    if (kmo == null) basePts = 5;
-    else if (kmo >= 0.80) basePts = 18;
-    else if (kmo >= 0.70) basePts = 15;
-    else if (kmo >= 0.60) basePts = 11;
-    else basePts = 5;
+    // Single pass: correlation matrix → inverse + determinant.
+    const R = correlationMatrix(validCols);
+    const { inv: Ri, det } = inverseAndDet(R);
 
-    // Loading-pattern penalties on first-factor loadings.
-    const loadings = firstFactorLoadings(validCols) || [];
-    const weakLoads = loadings.filter(l => Math.abs(l) < 0.40).length;
-    const weakPen = Math.min(weakLoads * 2, 6);
-    // Cross-loading: top two loadings within 0.20 and both >= 0.30. Single-
-    // factor PC can't really show cross-loadings (only one factor); skip.
-    const crossPen = 0;
-    // Single-item factor: in a single-factor model, all items load on one
-    // factor; this penalty applies in multi-factor solutions. Skip in v1.
-    const singletonPen = 0;
+    // KMO sub-component (8 pts). Reuse the inverse we already computed.
+    let kmo = null;
+    if (Ri) {
+      let sumR2 = 0, sumP2 = 0;
+      for (let i = 0; i < k; i++) {
+        for (let j = i + 1; j < k; j++) {
+          const r = R[i][j];
+          const denom = Math.sqrt(Math.abs(Ri[i][i] * Ri[j][j]));
+          const p = denom === 0 ? 0 : -Ri[i][j] / denom;
+          sumR2 += r * r;
+          sumP2 += p * p;
+        }
+      }
+      kmo = (sumR2 + sumP2) === 0 ? null : sumR2 / (sumR2 + sumP2);
+    }
+    let kmoPts;
+    if (kmo == null)           kmoPts = 0;
+    else if (kmo >= 0.80)      kmoPts = 8;
+    else if (kmo >= 0.70)      kmoPts = 6;
+    else if (kmo >= 0.60)      kmoPts = 3;
+    else                       kmoPts = 0;
 
-    const raw = Math.max(0, basePts - weakPen - crossPen - singletonPen);
+    // Bartlett's test (4 pts). χ² = -[(N-1) - (2k+5)/6]·ln(det(R)),
+    // df = k(k-1)/2. Singular or non-positive determinant → cannot
+    // compute → 0 pts (sphericity assumption fails outright).
+    let bartlettChi = null, bartlettDf = null, bartlettP = null, bartlettPts;
+    if (det != null && det > 0) {
+      bartlettChi = -((N - 1) - (2 * k + 5) / 6) * Math.log(det);
+      bartlettDf  = k * (k - 1) / 2;
+      bartlettP   = chiPValue(bartlettChi, bartlettDf);
+    }
+    if (bartlettP == null)         bartlettPts = 0;
+    else if (bartlettP < 0.001)    bartlettPts = 4;
+    else if (bartlettP < 0.01)     bartlettPts = 3;
+    else if (bartlettP < 0.05)     bartlettPts = 1;
+    else                           bartlettPts = 0;
+
+    // Determinant sub-component (3 pts).
+    let detPts;
+    if (det == null)               detPts = 0;
+    else if (det >= 1e-5)          detPts = 3;
+    else if (det >= 1e-7)          detPts = 1;
+    else                           detPts = 0;
+
+    const raw = kmoPts + bartlettPts + detPts;
     const score = clamp(round((raw / MAX) * 100), 0, 100);
-    const kmoText = kmo == null ? '—' : kmo.toFixed(2);
+    const kmoText  = kmo == null ? '—' : kmo.toFixed(2);
+    const detText  = det == null ? '—' : (Math.abs(det) < 1e-3 ? det.toExponential(2) : det.toFixed(4));
+    const bartText = bartlettP == null ? '—'
+                   : bartlettP < 0.001 ? 'p < .001'
+                   : 'p = ' + bartlettP.toFixed(3).replace(/^0/, '');
     return {
       score, raw, max: MAX,
-      note: 'KMO = ' + kmoText + (weakLoads ? ', ' + weakLoads + ' weak loading' + (weakLoads === 1 ? '' : 's') : '') + '  ·  ' + raw + ' / ' + MAX,
-      interp: 'Factor adequacy: KMO = ' + kmoText + '. ' +
-              (weakLoads ? weakLoads + ' item(s) load weakly on the first factor.' : 'All items load adequately on the first factor.'),
+      note: 'KMO = ' + kmoText + ' · Bartlett ' + bartText + ' · det = ' + detText + '  ·  ' + raw + ' / ' + MAX,
+      interp: 'Factor readiness — KMO = ' + kmoText + ' (' + kmoPts + '/8), Bartlett ' + bartText + ' (' + bartlettPts + '/4), determinant = ' + detText + ' (' + detPts + '/3). ' +
+              (Ri == null ? 'Correlation matrix is singular; data does not support factor analysis.'
+                          : kmo != null && kmo >= 0.70 && bartlettP != null && bartlettP < 0.05 && det != null && det >= 1e-5
+                            ? 'All three checks support factor analysis.'
+                            : 'One or more checks fall short of the threshold for factor analysis.'),
       tone: score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'alert',
+      breakdown: {
+        kmo:         { value: kmo,       pts: kmoPts,       max: 8 },
+        bartlett:    { chi: bartlettChi, df: bartlettDf, p: bartlettP, pts: bartlettPts, max: 4 },
+        determinant: { value: det,       pts: detPts,       max: 3 },
+      },
+      diagnostics: {
+        kmo:         kmo,
+        bartlett_chi: bartlettChi,
+        bartlett_df:  bartlettDf,
+        bartlett_p:   bartlettP,
+        determinant:  det,
+        n:            N,
+        k:            k,
+      },
     };
   }
 
@@ -1837,16 +2019,9 @@
           action: 'Increase sample size or revise items that load weakly with the rest. Do not run EFA on this data until KMO ≥ 0.60.',
         });
       }
-      if (Array.isArray(d.crossLoadings) && d.crossLoadings.length) {
-        priorities.push({
-          domain: 'Factor Structure',
-          severity: 'watch',
-          issue: 'Items with cross-loadings',
-          evidence: d.crossLoadings.length + ' item(s) load on more than one factor: ' + d.crossLoadings.slice(0, 4).join(', ') + (d.crossLoadings.length > 4 ? ', …' : ''),
-          meaning: 'These items don\'t cleanly belong to one factor. Either the scale conflates two constructs, or the items need rewording.',
-          action: 'Reword cross-loading items so each targets one construct. If wording is fine, consider whether the scale should be two sub-scales.',
-        });
-      }
+      // §4F no longer emits cross-loading diagnostics — that signal
+      // belongs to §4B Construct Alignment (un-built). When §4B ships,
+      // the cross-loading issue moves there.
     }
 
     // Item Quality flags

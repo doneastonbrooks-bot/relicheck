@@ -263,6 +263,10 @@ The Factor Readiness domain produces a 0–100 sub-score. Total 15 raw points; r
 
 This domain answers whether the data *supports* factor analysis. Whether the user's *declared* factor structure holds is the Construct Alignment domain's job (Section 4B).
 
+**Singular correlation matrix.** When the correlation matrix `R` is singular (inverse fails), KMO is undefined. Treat KMO as 0 pts in this case; the determinant will also be ≈ 0 and Bartlett's χ² cannot be computed from `ln(det)`, so both default to 0 pts as well. The domain returns 0 / 15 with a "correlation matrix is singular" diagnostic — the correct signal: data this collinear cannot be factor-analyzed.
+
+**Skip path.** When fewer than 3 complete rows are available across the pooled Likert matrix, or when there are fewer than 2 Likert items, the whole domain skips (`factor_readiness: null`) and §3.2 skip-and-rescale absorbs the absence. No §4F-specific minimum-N applies above that floor; the three sub-components have different N-sensitivity profiles and a single threshold would be wrong for at least one.
+
 ---
 
 ## 4G. Response Scale Review domain sub-scoring

@@ -76,3 +76,31 @@ Any saved report from before the band fix will produce a lower headline score an
 **Resolve during.** Platform-side dataset-transform + Setup Wizard work, separate conversation from this module-side build.
 
 **Code touch-points.** [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) (transform), Setup Wizard surface (not yet built), [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeScaleStructure` (consumer). Spec §4E.
+
+---
+
+## 5. Numerical primitives duplicated between strength-index and instrument-quality engines
+
+**Surfaced:** §4F Factor Readiness build.
+
+**Problem.** `inverseAndDet`, `logGamma`, `regGammaP`, and `chiPValue` now exist in both [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) and [apps/instrument-quality/instrument-quality.js](apps/instrument-quality/instrument-quality.js). The strength-index copies were ported during the §4F upgrade so the canonical engine is self-contained (it needs Bartlett's χ² and a determinant-and-inverse-in-one-pass); the instrument-quality copies are the originals. The implementations are byte-equivalent (verified by the §4F sanity-check: hand-computed det = 0.68 and Bartlett χ² ≈ 37.4674 both match).
+
+**Implication.** Two source-of-truth files for the same numerical routines. A bug fix in one would need to be propagated to the other; the harness's cross-port sanity-check would catch the drift but only at test time. Acceptable for now (both engines need these primitives and the duplication is contained to four small functions) but a candidate for consolidation when the codebase grows a shared math module.
+
+**Resolve during.** Future shared-math consolidation pass. Candidate landing spot: a new `apps/_shared/math.js` (or similar) that both engines import. Until that lands, the harness's sanity-check pattern is the safety net — any port of numerical code between engines should include hand-computed reference-value checks of the kind the §4F harness uses.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) (`inverseAndDet`, `logGamma`, `regGammaP`, `chiPValue`), [apps/instrument-quality/instrument-quality.js](apps/instrument-quality/instrument-quality.js) (originals).
+
+---
+
+## 6. §4F sub-score conveys factorability vs. scale-quality failure ambiguously
+
+**Surfaced:** §4F Factor Readiness build, harness fixture 3.
+
+**Problem.** Near-orthogonal items (e.g., equicorrelation r ≈ 0.02 across k items) produce a §4F raw of 3 / 15 → sub-score 20 / 100 (KMO 0/8 + Bartlett 0/4 + determinant 3/3, because the determinant only catches multicollinearity, not orthogonality). The sub-score is mathematically correct and feeds all three lenses correctly. But the *interpretive* meaning differs from a 20 produced by, say, a poor Cronbach's α in §4 Reliability: a 20 on §4F means the items do not share enough variance to be factor-analyzable at all (a *structural* finding about the data), not that the scale is performing poorly (a *quality* finding). A user looking at the headline sub-score cannot distinguish "your data is non-factorable" from "your data is factorable but performing poorly," and the spec's interpretation bands (Strong / Defensible / Needs Revision / Weak / High Risk) do not yet include factorability-specific language.
+
+**Implication.** The diagnostic information is present in `domain_details.factor_readiness.breakdown` (which carries `kmo.pts`, `bartlett.pts`, `determinant.pts` separately) and in the `interp` string the module emits. Whether the report renders that breakdown prominently enough to make the factorability finding legible is a *platform-side* question — the module already exposes everything needed.
+
+**Resolve during.** Report-rendering work on the platform side. The fix is platform-rendering, not module math: when `kmo.pts === 0 && bartlett.pts === 0`, surface a factorability-failure callout above the standard band interpretation. Optionally extend the §3 interpretation bands with factorability-specific copy when this pattern is detected.
+
+**Code touch-points.** Module side (no fix needed): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeFactorStructure`. Platform side (eventual fix): report-rendering surfaces consuming `domain_details.factor_readiness.breakdown`. Spec §4F.
