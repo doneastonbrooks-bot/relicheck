@@ -833,10 +833,315 @@ function corrAtR(k, r) {
   check('§4F skip: insufficient rows → score null', String(fr.score), 'null');
 }
 
+// ====================================================================
+// PHASE §4G CHECKS — Response Scale Review (Spec §4G).
+// Two halves: Likert design (12 pts) + respondent behavior (8 pts);
+// total 20 raw → ×5 rescale.
+// ====================================================================
+console.log('');
+console.log('--- §4G Response Scale Review ---');
+
+// Helper: build a Likert var with controlled values + optional metadata.
+function mkLikertG(name, scale, values, opts) {
+  opts = opts || {};
+  const v = { name: name, label: name, types: ['likert'], values: values.slice() };
+  if (scale != null) v.scale = scale;
+  if (opts.anchor_count != null) v.anchor_count = opts.anchor_count;
+  if (opts.likert_range != null) v.likert_range = opts.likert_range;
+  return v;
+}
+function dsG(items, n) {
+  return { source: '§4G fixture', rowCount: n, variables: items };
+}
+// Builders for synthetic value distributions
+function rotateVals(n, mod, offset) {
+  const out = [];
+  for (let i = 0; i < n; i++) out.push(((i + (offset || 0)) % mod) + 1);
+  return out;
+}
+function constVals(n, v) { const a = []; for (let i = 0; i < n; i++) a.push(v); return a; }
+
+// -- Skip path: no Likert items at all --
+{
+  const ds = { source: 'no likert', rowCount: 10,
+    variables: [{ name: 'OE', label: 'OE', types: ['open'], values: ['x','y','z','','','','','','',''] }] };
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const rs = out.domain_details.response_scale_review;
+  check('§4G no Likert → score null',          String(rs.score),       'null');
+  check('§4G no Likert → skipped flag',        String(rs.skipped),     'true');
+  check('§4G no Likert → skip_reason',         rs.skip_reason,         'no_likert_items');
+  check('§4G no Likert → response_scale_review listed in skipped_domains',
+    out.skipped_domains.indexOf('response_scale_review') >= 0 ? 'in' : 'missing', 'in');
+}
+
+// -- Raw-data-only partial-evaluation: no scale assignments, no anchor meta
+//    → anchor_count / midpoint / single_format / straight_lining all skip.
+//    Anchor symmetry defaults to 2 (per spec). Completion + missingness +
+//    distribution all score. Max = 2+3+3+3 = 11.
+{
+  const N = 50;
+  const items = [
+    mkLikertG('Q1', null, rotateVals(N, 5, 0)),
+    mkLikertG('Q2', null, rotateVals(N, 5, 1)),
+    mkLikertG('Q3', null, rotateVals(N, 5, 2)),
+    mkLikertG('Q4', null, rotateVals(N, 5, 3)),
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G partial-eval max rescales to 11',   String(rs.max),                                    '11');
+  check('§4G anchor_count skipped',              String(rs.breakdown.anchor_count.skipped),         'true');
+  check('§4G midpoint_presence skipped',         String(rs.breakdown.midpoint_presence.skipped),    'true');
+  check('§4G single_format_per_scale skipped',   String(rs.breakdown.single_format_per_scale.skipped), 'true');
+  check('§4G straight_lining skipped',           String(rs.breakdown.straight_lining.skipped),      'true');
+  check('§4G anchor_symmetry default = 2',       String(rs.breakdown.anchor_symmetry.pts),          '2');
+  check('§4G distribution full pts (no flagged)', String(rs.breakdown.response_distribution_shape.pts), '3');
+  check('§4G completion full pts (100%)',        String(rs.breakdown.completion_rate.pts),          '3');
+  check('§4G missingness full pts (0%)',         String(rs.breakdown.item_missingness.pts),         '3');
+  check('§4G partial-eval score = 100 (raw 11/11)', String(rs.score), '100');
+  check('§4G partial-eval has 4 skipped subs',   String(rs.skipped_subcomponents.length),           '4');
+}
+
+// -- Anchor-count band: 5-point scale → 3, 7-point → 3, 4-point → 2, 2-point → 0.
+//    Build one scale per fixture so the spec sub-scores are unambiguous.
+{
+  const N = 30;
+  function single(anchor, range) {
+    const items = ['A1','A2','A3','A4'].map(function (n, i) {
+      return mkLikertG(n, 'one', rotateVals(N, anchor, i), { anchor_count: anchor, likert_range: range });
+    });
+    const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+    return out.domain_details.response_scale_review;
+  }
+  check('§4G 5-anchor → anchor_count = 3',  String(single(5, [1, 5]).breakdown.anchor_count.pts), '3');
+  check('§4G 7-anchor → anchor_count = 3',  String(single(7, [1, 7]).breakdown.anchor_count.pts), '3');
+  check('§4G 4-anchor → anchor_count = 2',  String(single(4, [1, 4]).breakdown.anchor_count.pts), '2');
+  check('§4G 6-anchor → anchor_count = 2',  String(single(6, [1, 6]).breakdown.anchor_count.pts), '2');
+  check('§4G 3-anchor → anchor_count = 1',  String(single(3, [1, 3]).breakdown.anchor_count.pts), '1');
+  check('§4G 10-anchor → anchor_count = 1', String(single(10, [1, 10]).breakdown.anchor_count.pts), '1');
+  check('§4G 2-anchor → anchor_count = 0',  String(single(2, [1, 2]).breakdown.anchor_count.pts), '0');
+  // Midpoint: odd anchor count → 2; even → 1.
+  check('§4G 5-anchor → midpoint = 2',  String(single(5, [1, 5]).breakdown.midpoint_presence.pts), '2');
+  check('§4G 4-anchor → midpoint = 1',  String(single(4, [1, 4]).breakdown.midpoint_presence.pts), '1');
+  check('§4G 7-anchor → midpoint = 2',  String(single(7, [1, 7]).breakdown.midpoint_presence.pts), '2');
+}
+
+// -- Single-format-per-scale: mixed formats within one scale → 0 --
+{
+  const N = 30;
+  const items = [
+    mkLikertG('M1', 'mix', rotateVals(N, 5, 0), { likert_range: [1, 5] }),
+    mkLikertG('M2', 'mix', rotateVals(N, 7, 1), { likert_range: [1, 7] }),
+    mkLikertG('M3', 'mix', rotateVals(N, 5, 2), { likert_range: [1, 5] }),
+    mkLikertG('M4', 'mix', rotateVals(N, 5, 3), { likert_range: [1, 5] }),
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G mixed format within scale → single_format = 0',
+    String(rs.breakdown.single_format_per_scale.pts), '0');
+}
+
+// -- Response-distribution shape: items where modal anchor ≥ 60% → flagged --
+{
+  const N = 50;
+  // Q1 is uniform (no flag). Q2 has 70% picking value 3 (flag). Q3 has 60% (flag boundary).
+  const q1 = rotateVals(N, 5, 0);                     // uniform-ish
+  const q2 = []; for (let i = 0; i < N; i++) q2.push(i < 35 ? 3 : ((i + 1) % 5) + 1); // 70% at 3
+  const q3 = []; for (let i = 0; i < N; i++) q3.push(i < 30 ? 4 : ((i + 1) % 5) + 1); // 60% at 4
+  const items = [
+    mkLikertG('Q1', 'd', q1, { anchor_count: 5 }),
+    mkLikertG('Q2', 'd', q2, { anchor_count: 5 }),
+    mkLikertG('Q3', 'd', q3, { anchor_count: 5 }),
+    mkLikertG('Q4', 'd', q1, { anchor_count: 5 }),
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G distribution: 2 items flagged (Q2 + Q3)',
+    String(rs.flagged_distribution_items.length), '2');
+  // 3 - 0.5 * 2 = 2
+  check('§4G distribution: deduct 0.5 per flag → 2 pts',
+    String(rs.breakdown.response_distribution_shape.pts), '2');
+}
+
+// -- Distribution: many flags clamp at 0 --
+{
+  const N = 50;
+  // All 7 items are constant → all flagged.
+  const items = [];
+  for (let i = 0; i < 7; i++) items.push(mkLikertG('K' + i, 'k', constVals(N, 3), { anchor_count: 5 }));
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G distribution: 7 flagged items clamps to 0',
+    String(rs.breakdown.response_distribution_shape.pts), '0');
+}
+
+// -- Completion rate bands: ≥95/85/70/<70 → 3/2/1/0 --
+{
+  const N = 100;
+  function buildAtCompletion(completePct) {
+    // Build a Likert col + a non-Likert "required" col so completion ≠ 100%.
+    // Easiest: make some rows have a missing value on Q1.
+    const missingRows = Math.round(N * (1 - completePct));
+    const values = [];
+    for (let i = 0; i < N; i++) values.push(i < missingRows ? null : 3);
+    return RSSI_MATH.computeLensesFromDataset(dsG([
+      mkLikertG('Q1', 'c', values, { anchor_count: 5 }),
+      mkLikertG('Q2', 'c', rotateVals(N, 5, 0), { anchor_count: 5 }),
+      mkLikertG('Q3', 'c', rotateVals(N, 5, 1), { anchor_count: 5 }),
+    ], N)).domain_details.response_scale_review;
+  }
+  check('§4G completion 97% → 3 pts', String(buildAtCompletion(0.97).breakdown.completion_rate.pts), '3');
+  check('§4G completion 88% → 2 pts', String(buildAtCompletion(0.88).breakdown.completion_rate.pts), '2');
+  check('§4G completion 75% → 1 pt',  String(buildAtCompletion(0.75).breakdown.completion_rate.pts), '1');
+  check('§4G completion 50% → 0 pts', String(buildAtCompletion(0.50).breakdown.completion_rate.pts), '0');
+}
+
+// -- Item missingness bands --
+{
+  const N = 100;
+  function buildAtMiss(missPct) {
+    // missPct of cells across Likert items are missing.
+    // 3 items × N cells; set first floor(missPct * 3N / 3) cells of each to null.
+    const perCol = Math.round(N * missPct);
+    function col(off) {
+      const v = [];
+      for (let i = 0; i < N; i++) v.push(i < perCol ? null : (((i + off) % 5) + 1));
+      return v;
+    }
+    return RSSI_MATH.computeLensesFromDataset(dsG([
+      mkLikertG('Q1', 'm', col(0), { anchor_count: 5 }),
+      mkLikertG('Q2', 'm', col(1), { anchor_count: 5 }),
+      mkLikertG('Q3', 'm', col(2), { anchor_count: 5 }),
+    ], N)).domain_details.response_scale_review;
+  }
+  check('§4G item missingness 3% → 3 pts',  String(buildAtMiss(0.03).breakdown.item_missingness.pts), '3');
+  check('§4G item missingness 8% → 2 pts',  String(buildAtMiss(0.08).breakdown.item_missingness.pts), '2');
+  check('§4G item missingness 15% → 1 pt',  String(buildAtMiss(0.15).breakdown.item_missingness.pts), '1');
+  check('§4G item missingness 30% → 0 pts', String(buildAtMiss(0.30).breakdown.item_missingness.pts), '0');
+}
+
+// -- Straight-lining: per-scale, not full-matrix (v1 bug fix verification) --
+{
+  const N = 50;
+  // Two scales. Scale "engagement" has straight-liners (all 5s on every row).
+  // Scale "climate" has varied responses. v1 full-matrix would have computed
+  // 0% straight-lining because climate items vary; v2 per-scale catches the
+  // engagement straight-lining.
+  const items = [
+    mkLikertG('E1', 'engagement', constVals(N, 5), { anchor_count: 5 }),
+    mkLikertG('E2', 'engagement', constVals(N, 5), { anchor_count: 5 }),
+    mkLikertG('E3', 'engagement', constVals(N, 5), { anchor_count: 5 }),
+    mkLikertG('C1', 'climate',    rotateVals(N, 5, 0), { anchor_count: 5 }),
+    mkLikertG('C2', 'climate',    rotateVals(N, 5, 1), { anchor_count: 5 }),
+    mkLikertG('C3', 'climate',    rotateVals(N, 5, 2), { anchor_count: 5 }),
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  // engagement scale = 100% straight-line; climate ≈ 0%; avg = 50% → > 5% → 0 pts.
+  check('§4G per-scale straight-lining catches block-level pattern → 0 pts',
+    String(rs.breakdown.straight_lining.pts), '0');
+  // Sanity: diagnostics.straightLinerPct reflects per-scale average, not 0%.
+  check('§4G straightLinerPct reflects per-scale avg (≈ 0.5)',
+    String(Math.round(rs.diagnostics.straightLinerPct * 100) / 100), '0.5');
+}
+
+// -- Straight-lining: clean scale → 2 pts --
+{
+  const N = 50;
+  const items = ['S1','S2','S3','S4'].map(function (n, i) {
+    return mkLikertG(n, 's', rotateVals(N, 5, i), { anchor_count: 5 });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G no straight-lining → 2 pts', String(rs.breakdown.straight_lining.pts), '2');
+}
+
+// -- Full-metadata ideal case: all 8 sub-components score full ---
+{
+  const N = 60;
+  const items = ['I1','I2','I3','I4'].map(function (n, i) {
+    return mkLikertG(n, 'ideal', rotateVals(N, 5, i), { anchor_count: 5, likert_range: [1, 5] });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G ideal: max = 20 (no skips)',         String(rs.max),                      '20');
+  check('§4G ideal: anchor_count = 3',            String(rs.breakdown.anchor_count.pts), '3');
+  check('§4G ideal: midpoint = 2',                String(rs.breakdown.midpoint_presence.pts), '2');
+  check('§4G ideal: anchor_symmetry default = 2', String(rs.breakdown.anchor_symmetry.pts), '2');
+  check('§4G ideal: single_format = 2',           String(rs.breakdown.single_format_per_scale.pts), '2');
+  check('§4G ideal: distribution = 3',            String(rs.breakdown.response_distribution_shape.pts), '3');
+  check('§4G ideal: completion = 3',              String(rs.breakdown.completion_rate.pts), '3');
+  check('§4G ideal: missingness = 3',             String(rs.breakdown.item_missingness.pts), '3');
+  check('§4G ideal: straight-lining = 2',         String(rs.breakdown.straight_lining.pts), '2');
+  check('§4G ideal: score = 100',                 String(rs.score), '100');
+  check('§4G ideal: no sub-components skipped',   String(rs.skipped_subcomponents.length), '0');
+}
+
+// -- Sample size does NOT enter the score (spec §4G) --
+{
+  // Tiny N (5 rows) with full data → should still hit the same score
+  // as the partial-eval case above (raw 11 / 11 → 100).
+  const N = 5;
+  const items = ['T1','T2','T3'].map(function (n, i) {
+    return mkLikertG(n, null, rotateVals(N, 5, i));
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G low N does NOT deduct (spec §4G: warning-only)', String(rs.score), '100');
+}
+
+// -- Scale assignments present + anchor missing → per-scale subs still skip --
+{
+  const N = 30;
+  const items = ['U1','U2','U3','U4'].map(function (n, i) {
+    return mkLikertG(n, 'u', rotateVals(N, 5, i));
+    // no anchor_count, no likert_range
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G scales present, no anchor meta: anchor_count skipped',
+    String(rs.breakdown.anchor_count.skipped), 'true');
+  check('§4G scales present, no anchor meta: midpoint skipped',
+    String(rs.breakdown.midpoint_presence.skipped), 'true');
+  check('§4G scales present, no anchor meta: single_format skipped',
+    String(rs.breakdown.single_format_per_scale.skipped), 'true');
+  // But straight-lining IS computable here because we have scales.
+  check('§4G scales present, no anchor meta: straight_lining NOT skipped',
+    String(rs.breakdown.straight_lining.skipped), 'false');
+}
+
+// -- No anchor labels in current data contract: symmetry always defaults to 2 --
+// (Surfaced explicitly per Phase 1 Q1 decision — spec-defined default until
+// platform-side anchor metadata ships per KNOWN_ISSUES.md §8.)
+{
+  const N = 20;
+  const out = RSSI_MATH.computeLensesFromDataset(dsG([
+    mkLikertG('Z1', 'z', rotateVals(N, 5, 0), { anchor_count: 5 }),
+    mkLikertG('Z2', 'z', rotateVals(N, 5, 1), { anchor_count: 5 }),
+  ], N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G symmetry never skips (spec-defined default)',
+    String(rs.breakdown.anchor_symmetry.skipped), 'false');
+  check('§4G symmetry default = 2 (no labels in contract)',
+    String(rs.breakdown.anchor_symmetry.pts), '2');
+}
+
+// -- Diagnostics backward-compat fields preserved (downstream renderer reads these) --
+{
+  const N = 30;
+  const items = ['B1','B2','B3'].map(function (n, i) {
+    return mkLikertG(n, 'b', rotateVals(N, 5, i), { anchor_count: 5 });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(dsG(items, N));
+  const rs = out.domain_details.response_scale_review;
+  check('§4G diagnostics.completionPct present',     typeof rs.diagnostics.completionPct,     'number');
+  check('§4G diagnostics.missingnessPct present',    typeof rs.diagnostics.missingnessPct,    'number');
+  check('§4G diagnostics.straightLinerPct present',  typeof rs.diagnostics.straightLinerPct,  'number');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E/§4F all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E/§4F/§4G all check.');
 }

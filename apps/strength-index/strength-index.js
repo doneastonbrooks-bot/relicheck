@@ -766,7 +766,7 @@
     const rel = computeReliability();
     const fs  = computeFactorStructure();
     const iq  = computeItemQuality();
-    const rq  = computeResponseQuality();
+    const rq  = computeResponseScaleReview(config);
     const ss  = computeScaleStructure(config);
 
     // Map v1 compute output → canonical 8-domain sub-score map.
@@ -1457,59 +1457,270 @@
   // RESPONSE QUALITY (15 pts)
   // Sample-size brackets + completion + missingness + straight-lining.
   // ====================================================================
-  function computeResponseQuality() {
-    const MAX = 15;
-    // Sample-size brackets
-    let basePts;
-    if (rowCount >= 100) basePts = 15;
-    else if (rowCount >= 50) basePts = 13;
-    else if (rowCount >= 30) basePts = 11;
-    else if (rowCount >= 10) basePts = 8;
-    else basePts = 5;
+  // ====================================================================
+  // RESPONSE SCALE REVIEW (Spec §4G) — 20 raw pts, rescaled ×5 to 0–100.
+  //
+  // Two halves:
+  //   Likert design (12 pts):
+  //     - Anchor count           (3 pts) — 5/7 ideal; 4/6 ok; 3/10+ weak; 2 → 0
+  //     - Midpoint presence      (2 pts) — odd anchor count → 2; even → 1
+  //     - Anchor symmetry        (2 pts) — default 2 when labels absent (per spec)
+  //     - Single-format-per-scale (2 pts) — items in a scale share format
+  //     - Response-distribution  (3 pts) — flag items with modal anchor ≥ 60%
+  //   Respondent behavior (8 pts):
+  //     - Completion rate        (3 pts) — ≥95/85/70/0 → 3/2/1/0
+  //     - Item missingness       (3 pts) — ≤5/10/20/+ → 3/2/1/0
+  //     - Straight-lining        (2 pts) — PER SCALE (spec §4G fixes v1 bug)
+  //
+  // Skip-and-rescale (mirrors §4E):
+  //   - Anchor count, midpoint, single-format-per-scale skip when scale
+  //     assignments OR per-item anchor metadata (anchor_count / likert_range)
+  //     are absent on any Likert item.
+  //   - Straight-lining skips when scale assignments are absent (per Phase 1
+  //     decision: do NOT fall back to v1's full-matrix mode — that is the
+  //     specific v1 bug this rebuild exists to fix).
+  //   - Anchor symmetry defaults to 2 when labels are absent (spec §4G).
+  //     It does not skip — the spec defines the no-labels default.
+  //   - Completion / missingness / response-distribution always score from
+  //     raw data and never skip.
+  //
+  // Partial-evaluation behavior: §4G is the first domain that produces a
+  // meaningful sub-score from raw data alone (≥ 9/20 of pts are always
+  // available). The sub-score will shift when platform-side data ships
+  // anchor metadata, scale assignments, and (eventually) anchor labels.
+  // See KNOWN_ISSUES.md §7.
+  //
+  // Sample size does NOT enter this score (spec §4G: "surfaced as a
+  // warning … but does not deduct points").
+  // ====================================================================
+  function computeResponseScaleReview(config) {
+    config = config || {};
+    const MAX_RAW = 20;
 
-    // Completion: rows complete across non-open vars
-    const required = allVars.filter(v => !(v.types || []).some(t => t === 'open'));
+    if (likertVars.length === 0) {
+      return {
+        score: null, raw: null, max: MAX_RAW,
+        note: 'No Likert items to evaluate response-scale design.',
+        interp: 'No Likert items to evaluate response-scale design.',
+        tone: 'neutral',
+        skipped: true, skip_reason: 'no_likert_items',
+        diagnostics: { completionPct: null, missingnessPct: null, straightLinerPct: null },
+      };
+    }
+
+    // ---- Group by scale (optional; some subs require it) ----
+    const scaleMap = {};
+    let allHaveScale = true;
+    likertVars.forEach(function (v) {
+      const s = (v.scale != null && v.scale !== '') ? String(v.scale)
+              : (v.construct != null && v.construct !== '') ? String(v.construct)
+              : null;
+      if (s == null) { allHaveScale = false; return; }
+      if (!scaleMap[s]) scaleMap[s] = [];
+      scaleMap[s].push(v);
+    });
+    const scales = allHaveScale
+      ? Object.keys(scaleMap).map(function (n) { return { name: n, items: scaleMap[n] }; })
+      : null;
+
+    // ---- Anchor metadata accessors ----
+    function getAnchorCount(it) {
+      if (it.anchor_count != null) return Number(it.anchor_count);
+      if (Array.isArray(it.likert_range) && it.likert_range.length === 2 &&
+          it.likert_range[0] != null && it.likert_range[1] != null) {
+        return Number(it.likert_range[1]) - Number(it.likert_range[0]) + 1;
+      }
+      return null;
+    }
+    function fmtKey(it) {
+      if (Array.isArray(it.likert_range) && it.likert_range.length === 2 &&
+          it.likert_range[0] != null && it.likert_range[1] != null) {
+        return 'r:' + it.likert_range[0] + '-' + it.likert_range[1];
+      }
+      if (it.anchor_count != null) return 'a:' + it.anchor_count;
+      return null;
+    }
+    const anchorMissing = likertVars.some(function (v) { return getAnchorCount(v) == null; });
+
+    // ---- Sub: anchor count (3 pts) ----
+    // Spec bands: 5/7 → 3; 4/6 → 2; 3 or 10+ → 1; 2 → 0.
+    // Spec is silent on 8/9 — treat as the "10+ neighborhood" → 1 pt.
+    function anchorCountPts(a) {
+      if (a === 5 || a === 7) return 3;
+      if (a === 4 || a === 6) return 2;
+      if (a === 3)            return 1;
+      if (a >= 8)             return 1;
+      if (a === 2)            return 0;
+      return 0;
+    }
+    let subAnchorPts = null, subAnchorSkip = false;
+    let subMidpointPts = null, subMidpointSkip = false;
+    let subSingleFmtPts = null, subSingleFmtSkip = false;
+    if (!scales || anchorMissing) {
+      subAnchorSkip = true;
+      subMidpointSkip = true;
+      subSingleFmtSkip = true;
+    } else {
+      subAnchorPts = mean(scales.map(function (s) {
+        // Representative anchor count = first item's; mixed-format case is
+        // caught separately by the single_format_per_scale sub.
+        return anchorCountPts(getAnchorCount(s.items[0]));
+      }));
+      subMidpointPts = mean(scales.map(function (s) {
+        const a = getAnchorCount(s.items[0]);
+        return (a % 2 === 1) ? 2 : 1;
+      }));
+      subSingleFmtPts = mean(scales.map(function (s) {
+        const keys = s.items.map(fmtKey);
+        const first = keys[0];
+        const allSame = keys.every(function (k) { return k === first; });
+        return allSame ? 2 : 0;
+      }));
+    }
+
+    // ---- Sub: anchor symmetry (2 pts) ----
+    // Per spec §4G: "When anchor labels are absent: award 2 by default."
+    // The current data contract carries no anchor_labels field — engine
+    // ships the default and surfaces the eventual label-aware behavior
+    // through KNOWN_ISSUES.md §8.
+    const subSymmetryPts = 2;
+
+    // ---- Sub: response-distribution shape (3 pts) ----
+    // For each Likert item, flag if modal-anchor proportion ≥ 0.60.
+    // Deduct 0.5 pt per flagged item; clamp to [0, 3].
+    const flaggedItems = [];
+    likertVars.forEach(function (v) {
+      const counts = {};
+      let nResp = 0;
+      v.values.forEach(function (x) {
+        if (isMissing(x)) return;
+        const k = String(num(x));
+        if (k === 'null') return;
+        counts[k] = (counts[k] || 0) + 1;
+        nResp++;
+      });
+      if (nResp === 0) return;
+      let modeCount = 0;
+      Object.keys(counts).forEach(function (k) {
+        if (counts[k] > modeCount) modeCount = counts[k];
+      });
+      if (modeCount / nResp >= 0.60) flaggedItems.push(v.name);
+    });
+    const subDistributionPts = clamp(3 - 0.5 * flaggedItems.length, 0, 3);
+
+    // ---- Sub: completion rate (3 pts) ----
+    const required = allVars.filter(function (v) {
+      return !(v.types || []).some(function (t) { return t === 'open'; });
+    });
     let complete = 0;
     for (let i = 0; i < rowCount; i++) {
-      if (required.every(v => !isMissing(v.values[i]))) complete++;
+      if (required.every(function (v) { return !isMissing(v.values[i]); })) complete++;
     }
     const completeRate = rowCount ? complete / rowCount : 0;
-    let completionPen = 0;
-    if (completeRate < 0.90) completionPen += 1;
-    if (completeRate < 0.75) completionPen += 1;
+    let subCompletionPts;
+    if      (completeRate >= 0.95) subCompletionPts = 3;
+    else if (completeRate >= 0.85) subCompletionPts = 2;
+    else if (completeRate >= 0.70) subCompletionPts = 1;
+    else                           subCompletionPts = 0;
 
-    // Item-level missingness penalty
+    // ---- Sub: item missingness (3 pts) ----
     let missCells = 0, totalCells = 0;
-    likertVars.forEach(v => {
-      v.values.forEach(x => { totalCells++; if (isMissing(x)) missCells++; });
+    likertVars.forEach(function (v) {
+      v.values.forEach(function (x) { totalCells++; if (isMissing(x)) missCells++; });
     });
     const missRate = totalCells ? missCells / totalCells : 0;
-    let missPen = 0;
-    if (missRate > 0.10) missPen += 1;
-    if (missRate > 0.20) missPen += 1;
+    let subMissingnessPts;
+    if      (missRate <= 0.05) subMissingnessPts = 3;
+    else if (missRate <= 0.10) subMissingnessPts = 2;
+    else if (missRate <= 0.20) subMissingnessPts = 1;
+    else                       subMissingnessPts = 0;
 
-    // Straight-lining
-    let straight = 0, considered = 0;
-    if (likertVars.length >= 3) {
-      for (let i = 0; i < rowCount; i++) {
-        const vals = likertVars.map(v => v.values[i]);
-        if (vals.some(isMissing)) continue;
-        considered++;
-        if (vals.every(v => num(v) === num(vals[0]))) straight++;
-      }
+    // ---- Sub: straight-lining (2 pts, PER SCALE) ----
+    // Spec §4G fixes v1's full-matrix bug. Skip when scale assignments
+    // are absent (Phase 1 decision).
+    let subStraightPts = null, subStraightSkip = false;
+    let straightRateOverall = null;
+    if (!scales) {
+      subStraightSkip = true;
+    } else {
+      const perScaleRates = scales.map(function (s) {
+        if (s.items.length < 2) return 0; // not meaningful for k=1
+        let straight = 0, considered = 0;
+        for (let i = 0; i < rowCount; i++) {
+          const vals = s.items.map(function (it) { return it.values[i]; });
+          if (vals.some(isMissing)) continue;
+          considered++;
+          const first = num(vals[0]);
+          if (vals.every(function (v) { return num(v) === first; })) straight++;
+        }
+        return considered ? straight / considered : 0;
+      });
+      straightRateOverall = perScaleRates.length ? mean(perScaleRates) : 0;
+      if      (straightRateOverall <= 0.02) subStraightPts = 2;
+      else if (straightRateOverall <= 0.05) subStraightPts = 1;
+      else                                  subStraightPts = 0;
     }
-    const straightRate = considered ? straight / considered : 0;
-    let straightPen = 0;
-    if (straightRate > 0.05) straightPen += 1;
-    if (straightRate > 0.15) straightPen += 1;
 
-    const raw = Math.max(0, basePts - completionPen - missPen - straightPen);
-    const score = clamp(round((raw / MAX) * 100), 0, 100);
+    // ---- Combine + skip-and-rescale ----
+    const components = [
+      { key: 'anchor_count',                pts: subAnchorPts,        max: 3, skipped: subAnchorSkip },
+      { key: 'midpoint_presence',           pts: subMidpointPts,      max: 2, skipped: subMidpointSkip },
+      { key: 'anchor_symmetry',             pts: subSymmetryPts,      max: 2, skipped: false },
+      { key: 'single_format_per_scale',     pts: subSingleFmtPts,     max: 2, skipped: subSingleFmtSkip },
+      { key: 'response_distribution_shape', pts: subDistributionPts,  max: 3, skipped: false },
+      { key: 'completion_rate',             pts: subCompletionPts,    max: 3, skipped: false },
+      { key: 'item_missingness',            pts: subMissingnessPts,   max: 3, skipped: false },
+      { key: 'straight_lining',             pts: subStraightPts,      max: 2, skipped: subStraightSkip },
+    ];
+    let raw = 0, maxAvailable = 0;
+    components.forEach(function (c) {
+      if (!c.skipped) { raw += c.pts; maxAvailable += c.max; }
+    });
+    const score = maxAvailable > 0
+      ? clamp(round((raw / maxAvailable) * 100), 0, 100)
+      : null;
+    const skippedKeys = components.filter(function (c) { return c.skipped; }).map(function (c) { return c.key; });
+
+    const tone = score == null ? 'neutral'
+      : score >= 80 ? 'ok'
+      : score >= 60 ? 'warn'
+      : 'alert';
+
+    const rawDisp = Math.round(raw * 10) / 10;
+    const note = skippedKeys.length
+      ? rawDisp + ' / ' + maxAvailable + ' (rescaled from ' + MAX_RAW + '; ' + skippedKeys.length + ' sub-component(s) skipped)'
+      : rawDisp + ' / ' + MAX_RAW;
+
+    const interpParts = [
+      'Completion ' + Math.round(completeRate * 100) + '%',
+      'item missingness ' + (missRate * 100).toFixed(1) + '%',
+    ];
+    if (!subStraightSkip) interpParts.push('per-scale straight-lining ' + (straightRateOverall * 100).toFixed(1) + '%');
+    if (flaggedItems.length) interpParts.push(flaggedItems.length + ' item(s) with modal anchor ≥ 60%');
+    const interp = interpParts.join('; ') + '.';
+
+    const breakdown = {};
+    components.forEach(function (c) {
+      breakdown[c.key] = { pts: c.pts, max: c.max, skipped: c.skipped };
+    });
+
     return {
-      score, raw, max: MAX,
-      note: 'n=' + rowCount + ', completion ' + Math.round(completeRate * 100) + '%, straight-lining ' + (straightRate * 100).toFixed(1) + '%  ·  ' + raw + ' / ' + MAX,
-      interp: 'Sample size n=' + rowCount + ' (' + (rowCount >= 50 ? 'adequate' : 'small') + '). Completion ' + Math.round(completeRate * 100) + '%; straight-lining ' + (straightRate * 100).toFixed(1) + '%; item missingness ' + (missRate * 100).toFixed(1) + '%.',
-      tone: score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'alert',
+      score: score,
+      raw: rawDisp,
+      max: maxAvailable,
+      max_full: MAX_RAW,
+      note: note,
+      interp: interp,
+      tone: tone,
+      skipped: false,
+      skipped_subcomponents: skippedKeys,
+      breakdown: breakdown,
+      flagged_distribution_items: flaggedItems,
+      diagnostics: {
+        completionPct: completeRate,
+        missingnessPct: missRate,
+        straightLinerPct: straightRateOverall,
+      },
     };
   }
 

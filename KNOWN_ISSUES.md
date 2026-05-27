@@ -69,7 +69,9 @@ Any saved report from before the band fix will produce a lower headline score an
 
 3. **Setup Wizard captures `reverse_coded_confirmed` at the survey level.** When the user has reviewed reverse-coding flags and the answer is "none" (or "I've reviewed them all"), the Wizard sets a survey-level `reverse_coded_confirmed: true`, which the invoking surface passes into the engine via the configuration object (`config.reverse_coded_confirmed`). The wizard does not exist yet; design it to capture this distinction during the reverse-coding step. Without this flag, sub-component 2 skips and rescales (the honest default — the engine cannot distinguish "no reverse items" from "user hasn't reviewed yet" without an explicit signal). Spec §4E table row for "Reverse-coded balance" documents the contract.
 
-4. **Propagate per-item Likert format metadata.** Same file again, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `likert_range: [min, max]` (e.g., `[1, 5]` or `[1, 7]`) and/or `anchor_count: int` per Likert variable. Source: the question definition in the Survey Builder (which already knows the anchor count). The schema convention is open — engine accepts either field. Without this, sub-component 3 (response-format uniformity) skips and rescales.
+4. **Propagate per-item Likert format metadata.** Same file again, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `likert_range: [min, max]` (e.g., `[1, 5]` or `[1, 7]`) and/or `anchor_count: int` per Likert variable. Source: the question definition in the Survey Builder (which already knows the anchor count). The schema convention is open — engine accepts either field. Without this, sub-component 3 (response-format uniformity) skips and rescales. **Note:** this same metadata also unlocks §4G sub-components 1 (anchor count), 2 (midpoint presence), and 4 (single-format-per-scale) — see §7.
+
+5. **Propagate structured anchor labels (required only for full §4G anchor-symmetry evaluation).** Add `anchor_labels: [string, ...]` per Likert variable (e.g., `["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]`), sourced from the Survey Builder's question definition. Until this lands, §4G sub-component 3 (anchor symmetry) awards the spec-defined default of 2/2 per Phase 1 Q1 decision (the engine does not attempt heuristic symmetry detection from arbitrary label strings — see §8). When labels arrive, the engine can do real symmetry detection from structured inputs. Marked optional in the checklist: change 5 is a future-evaluation expansion, not a prerequisite for §4G to score.
 
 **Implication.** Until these four are wired, §4E is verified in the harness but unexercised in production. When the first of these changes lands, the engine will begin returning real §4E scores; that first run on real data should be verified end-to-end (sub-scores match hand-checked values on a known dataset). The combination of changes 1 + 4 unlocks the majority of the domain (sub-components 1, 3, 4, 5 score; sub-2 stays skipped); changes 2 + 3 then unlock sub-2.
 
@@ -104,3 +106,38 @@ Any saved report from before the band fix will produce a lower headline score an
 **Resolve during.** Report-rendering work on the platform side. The fix is platform-rendering, not module math: when `kmo.pts === 0 && bartlett.pts === 0`, surface a factorability-failure callout above the standard band interpretation. Optionally extend the §3 interpretation bands with factorability-specific copy when this pattern is detected.
 
 **Code touch-points.** Module side (no fix needed): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeFactorStructure`. Platform side (eventual fix): report-rendering surfaces consuming `domain_details.factor_readiness.breakdown`. Spec §4F.
+
+---
+
+## 7. §4G Response Scale Review is partial-evaluation in production — lens scores will shift when platform-side metadata ships
+
+**Surfaced:** §4G Response Scale Review build.
+
+**Problem.** §4G is the first domain that produces a meaningful sub-score from raw data alone. Unlike §4E (which whole-domain-skips without scale assignments), §4G always scores at least 9/20 raw points from raw data (completion 3 + item missingness 3 + response-distribution shape 3) plus a spec-defined 2/2 default for anchor symmetry (see §8) — total 11/13 always-available pts (rescaled). The remaining 7 pts (anchor count 3 + midpoint presence 2 + single-format-per-scale 2) and the per-scale straight-lining sub-component (2 pts) require platform-side data that isn't wired yet:
+
+- **Anchor metadata (`likert_range` or `anchor_count` per Likert variable)** unlocks anchor count, midpoint presence, and single-format-per-scale. Same data-contract requirement as §4 item 4 above; landing it unlocks §4E *and* the §4G Likert-design half together.
+- **Scale assignments (`scale` / `construct` per Likert variable)** unlocks per-scale straight-lining. Same data-contract requirement as §4 item 1; landing it fixes v1's full-matrix straight-lining bug in production (the rebuild's whole purpose for this sub-component).
+
+**Implication.** Production lens scores today reflect the partial-evaluation state: §4G sub-scores around 85 (raw ~11/13 → 85) for clean data, dropping for genuine completion/missingness/distribution problems. When platform-side metadata ships, the same data will produce higher (or sometimes lower) §4G sub-scores as the additional sub-components engage. On the harness's strong fixture, the swing from "no metadata" partial-eval to "full metadata" was +12 points on §4G sub-score, which translated to PC 93.44 → 98.24, RC 89.81 → 98.87, VF 91.91 → 98.72 (lens shifts of +4 to +9 points).
+
+§4G is the third domain with platform-data-dependent shift potential (after §4E and the eventual §4A/§4B/§4D builds), and the magnitude on §4G is the largest yet because §4G ships *live* in production whereas §4E ships dormant.
+
+**Resolve during.** Combined with §4 item 4 (anchor metadata propagation) and §4 item 1 (scale assignments) on the platform side. No engine-side fix needed — the math is correct now and will remain correct when more data arrives. The user-facing concern is the same as §2: re-running on identical data produces a different number. Whether and how to communicate this (banner on old reports, automatic recompute, version-pinning) is a product decision paired with the §9 versioning storage work.
+
+**Code touch-points.** Module side (no fix needed): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeResponseScaleReview`. Platform side: [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php) — items 1 + 4 in §4 above. Spec §4G.
+
+---
+
+## 8. §4G anchor symmetry awards default 2/2 until structured anchor labels ship
+
+**Surfaced:** §4G Response Scale Review build, Phase 1 Q1.
+
+**Problem.** Spec §4G sub-component 3 ("anchor symmetry") asks the engine to award full points when anchor endpoint labels are balanced (e.g., "Strongly Disagree" / "Strongly Agree") and 0 when they are unbalanced (e.g., "Disagree" / "Strongly Agree"). The spec explicitly defines a graceful default: "When anchor labels are absent: award 2 by default." The current data contract does not carry anchor labels at all, so the engine ships the default-2 behavior unconditionally.
+
+Detecting symmetry from arbitrary label strings is a hard NLP problem and committing to a particular heuristic (mirror-length, common-negation pattern, synonym-pair detection, etc.) means committing to a particular failure mode. The Phase 1 decision was to *not* attempt heuristic detection now; instead, wait for the platform layer to provide structured anchor metadata (anchor type, polarity per anchor, midpoint flag) that the engine can act on cleanly.
+
+**Implication.** Today every survey's §4G symmetry sub-component awards 2/2. A genuinely asymmetric anchor set is not flagged. The other 18 raw points of §4G are correctly computed; this is one sub-component of a partial-eval domain. The default is spec-sanctioned, not a bug.
+
+**Resolve during.** Platform-side anchor-labels work (added as item 5 to the §4 checklist above). When structured anchor metadata is available, extend `computeResponseScaleReview` to inspect `anchor_labels`, classify polarity, and award 2 for balanced endpoint polarity, 0 otherwise. Until then, the default behavior is correct per spec.
+
+**Code touch-points.** Module side (future): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeResponseScaleReview` — `subSymmetryPts` is currently a constant 2. Platform side: §4 item 5 (anchor-labels propagation). Spec §4G sub-component 3.
