@@ -2230,6 +2230,37 @@ console.log('--- §4B Construct Alignment ---');
   });
   check('§4B lens shift: construct_alignment NOT in skipped_domains for CFA fixture',
     cfaOut.skipped_domains.indexOf('construct_alignment') === -1 ? '=' : 'still skipped', '=');
+
+  // ---- Matrix-fanout grouping ----
+  // _build_dataset.php fans a matrix question with k sub-items into k Likert
+  // variables, each tagged with the parent question's construct. The engine
+  // groups by v.scale || v.construct, so a 4-sub-item matrix tagged
+  // construct='M' should produce the same per-scale entry as four standalone
+  // items sharing construct='M'. Build both shapes from the same numeric
+  // values and compare grouping output.
+  const fanoutValues = fxCfa.scales.A.slice(0, 4).map(function (n) { return fxCfa.columns[n]; });
+  const matrixFanout = fanoutValues.map(function (vals, i) {
+    return { name: 'q_m_r' + i, label: 'M — row ' + i, types: ['likert'], construct: 'M', values: vals };
+  });
+  const standaloneTagged = fanoutValues.map(function (vals, i) {
+    return { name: 'q_s' + i, label: 'S' + i, types: ['likert'], construct: 'M', values: vals };
+  });
+  const outFanout = RSSI_MATH.computeLensesFromDataset({ source: 'matrix-fanout', rowCount: fxCfa.N, variables: matrixFanout });
+  const outStandalone = RSSI_MATH.computeLensesFromDataset({ source: 'standalone-tagged', rowCount: fxCfa.N, variables: standaloneTagged });
+
+  const caFan = outFanout.domain_details.construct_alignment;
+  const caStd = outStandalone.domain_details.construct_alignment;
+  check('§4B matrix-fanout: construct_alignment NOT skipped (shared construct activates §4B)',
+    String(caFan.skipped), 'false');
+  check('§4B matrix-fanout: exactly one per_scale entry (4 sub-items grouped as one scale)',
+    String(caFan.breakdown.primary_loading.per_scale.length), '1');
+  check('§4B matrix-fanout: per_scale entry uses the shared construct as scale name',
+    caFan.breakdown.primary_loading.per_scale[0].scale, 'M');
+  check('§4B matrix-fanout: per-scale loading count equals sub-item count (k=4)',
+    String((caFan.breakdown.primary_loading.per_scale[0].loadings || []).length), '4');
+  check('§4B matrix-fanout: per-scale mean loading equals standalone-tagged equivalent (same code path)',
+    String(caFan.breakdown.primary_loading.per_scale[0].mean_loading),
+    String(caStd.breakdown.primary_loading.per_scale[0].mean_loading));
 }
 
 console.log('');

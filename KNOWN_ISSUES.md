@@ -61,13 +61,15 @@ Any saved report from before the band fix will produce a lower headline score an
 
 **Problem.** Each domain build in the canonical engine has surfaced a piece of dataset-shape or configuration data the engine needs but the platform does not yet supply. The engine handles every missing piece gracefully (skip-and-rescale, V-F cap, sub-component skip with diagnostic), so the lens math is correct today; but several domains and sub-components are *dormant* or *partial-evaluation* in production until the platform-side data contract is extended. This entry consolidates the seven changes a platform engineer needs to land to unlock every domain end-to-end.
 
-**Where the data comes from.** All per-Likert-item changes live in [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php), the transform that builds the variables array the engine consumes. Survey-level config flags flow through the invoking surface's configuration object. Two changes require new platform-layer UI (Setup Wizard for `reverse_coded_confirmed`; a demographic-tagging step).
+**Where the data comes from.** Per-Likert-item changes live in [api/surveys/_build_dataset.php](api/surveys/_build_dataset.php) for the Survey Builder path; the uploaded-datasets and wizards-driven paths each have their own transform (see #1b/#1c). Survey-level config flags flow through the invoking surface's configuration object. Two changes require new platform-layer UI (Setup Wizard for `reverse_coded_confirmed`; a demographic-tagging step).
 
 **The seven changes — dependency map.**
 
 | # | Change | Type | Unlocks |
 |---|---|---|---|
-| 1 | `scale` (or `construct`) per Likert variable | per-item dataset field | §4A whole-domain (HTMT + convergent + criterion grouping); §4E whole-domain; §4G straight-lining sub-component |
+| 1a | `scale` (or `construct`) per Likert variable — **Survey Builder path** via [api/surveys/_build_dataset.php](api/surveys/_build_dataset.php) | per-item dataset field | **DONE 2026-05-27.** §4A convergent + HTMT, §4B whole-domain, §4E partial all now activate for surveys built through the Survey Builder when `q.construct` is populated. §4A criterion still skips pending #6; §4E sub-2 still skips pending #2+#3; §4E sub-3 still skips pending #4 |
+| 1b | `scale` (or `construct`) per Likert variable — **uploaded-datasets path** via [api/datasets/*](api/datasets/) | per-item dataset field | Same three-domain activation, but for users who upload XLSX/CSV via the datasets surface rather than the Survey Builder. `column_meta.construct` is already captured by [api/datasets/update_columns.php:55](api/datasets/update_columns.php:55); a separate transform is needed to read it through into the engine's `variables[]` shape. |
+| 1c | `scale` (or `construct`) per Likert variable — **wizards-driven settings path** via [survey-wizard.php](survey-wizard.php) / [strength-survey-wizard.php](strength-survey-wizard.php) | per-item dataset field | Third source-of-truth: the wizards write `settings.scales` (project-level, keyed by variable name) but no transform consumes it. A separate transform is needed to map this settings map onto the dataset variables before they reach the engine. |
 | 2 | `reverse_coded: bool` per Likert variable | per-item dataset field | §4E sub-2 (reverse-coded balance) reading |
 | 3 | `reverse_coded_confirmed: bool` survey-level flag | config object | §4E sub-2 scoring (tri-state contract — needs Setup Wizard step) |
 | 4 | `likert_range: [min, max]` or `anchor_count: int` per Likert variable | per-item dataset field | §4E sub-3 (format uniformity); §4G subs 1/2/4 (anchor count / midpoint / single-format); §4D fairness threshold normalization |
@@ -75,16 +77,22 @@ Any saved report from before the band fix will produce a lower headline score an
 | 6 | `config.criterion_column` (column name) | config object | §4A criterion sub-component; removes §3.6 V-F cap |
 | 7 | `is_demographic: true` per categorical variable **OR** `config.demographic_columns: [name, …]` | per-item flag or config list | §4D fairness half (DIF proxy) |
 
-**Per-domain status with current data contract.**
+**Per-domain status with current data contract (as of 2026-05-27, after #1a landed).**
 
-- **§4E Scale Structure**: whole-domain skip (depends on #1). Once #1 lands, sub-components 1, 4, 5 score immediately. #4 unlocks sub-3. #2 + #3 together unlock sub-2.
-- **§4G Response Scale Review**: partial-evaluation. Without #1 + #4, ships at ~11/13 always-available pts (rescaled). #1 unlocks per-scale straight-lining. #4 unlocks anchor count / midpoint / single-format. #5 unlocks real anchor-symmetry (currently default 2/2 per §8).
-- **§4A Validity**: whole-domain skip until #1. After #1, convergent + HTMT score; #6 unlocks criterion and disengages the §3.6 V-F cap.
-- **§4D Bias & Clarity**: partial-evaluation today. Wording-half scores whenever item text is propagated via `v.label` (already populated by [_build_dataset.php:26](api/surveys/_build_dataset.php:26) in production — no change needed for that half). Fairness-half requires #7. Threshold normalization on the fairness half also benefits from #4; absent #4, the engine falls back to 0.5 absolute with a `scale_range_normalization_unavailable_using_absolute_threshold` diagnostic.
+- **§4E Scale Structure**: **Survey Builder path ACTIVE** for surveys with constructs assigned (item-count, missingness, survey health score). Other two surfaces still whole-domain-skip pending #1b/#1c. #4 unlocks sub-3 across all surfaces. #2 + #3 together unlock sub-2 across all surfaces.
+- **§4G Response Scale Review**: partial-evaluation. Survey Builder path now gets per-scale straight-lining (the #1a unlock). #4 unlocks anchor count / midpoint / single-format across surfaces. #5 unlocks real anchor-symmetry (currently default 2/2 per §8).
+- **§4A Validity**: **Survey Builder path ACTIVE** (convergent + HTMT score). Other two surfaces still skip pending #1b/#1c. #6 unlocks criterion and disengages the §3.6 V-F cap.
+- **§4B Construct Alignment**: **Survey Builder path ACTIVE** (per-scale PAF loadings + cross-loadings score). Other two surfaces still skip pending #1b/#1c.
+- **§4D Bias & Clarity**: partial-evaluation today. Wording-half scores whenever item text is propagated via `v.label` (already populated by [_build_dataset.php](api/surveys/_build_dataset.php) in production — no change needed for that half). Fairness-half requires #7. Threshold normalization on the fairness half also benefits from #4; absent #4, the engine falls back to 0.5 absolute with a `scale_range_normalization_unavailable_using_absolute_threshold` diagnostic.
+
+**Activation impact of #1a (Survey Builder path).** Users with surveys built through the Builder where `q.construct` is populated will see new scoring for §4A, §4B, and §4E starting with the 2026-05-27 commit. Their lens scores will shift accordingly (§4B alone adds ~+2 pts on `psychometric_core` and `validity_forward` per the harness CFA fixture). Users with surveys that don't have constructs assigned will see no change — the engine still whole-domain-skips when *any* Likert item is untagged.
 
 **Implementation notes per change.**
 
-1. **`scale` / `construct`** — sourced from `column_meta.construct` on the [datasets table](db/schema_phase7.sql) (already populated by [api/datasets/update_columns.php](api/datasets/update_columns.php), see [api/datasets/create.php:4](api/datasets/create.php)). Engine accepts either field. Single highest-leverage change: unlocks the most downstream domains.
+1. **`scale` / `construct`** — three independent surfaces, three independent source fields, three independent transforms. Engine accepts either field name (`scale` or `construct`) and reads via `v.scale || v.construct`:
+   - **#1a Survey Builder path (DONE 2026-05-27)** — sourced from `q.construct` on each question in `surveys.questions` JSON, populated by the Survey Builder UI ([app.html:8050](app.html:8050)) and the AI Construct Mapper ([app.html:8806](app.html:8806)). Propagated through [api/surveys/_build_dataset.php](api/surveys/_build_dataset.php) (Likert block + matrix block, sub-items inherit parent construct).
+   - **#1b Uploaded-datasets path (remaining)** — sourced from `column_meta.construct` on the [datasets table](db/schema_phase7.sql) (already populated by [api/datasets/update_columns.php:55](api/datasets/update_columns.php:55)). A separate transform is needed to read it through into the engine's `variables[]` shape; consumer surfaces that load dataset JSON directly (e.g., the studio mount when sourced from a dataset rather than a survey) need to set `v.construct` from `column_meta`.
+   - **#1c Wizards-driven settings path (remaining)** — sourced from `settings.scales` (project-level, keyed by dataset variable name) written by [survey-wizard.php:297](survey-wizard.php:297) and [strength-survey-wizard.php:297](strength-survey-wizard.php:297). No transform currently consumes it; a join-by-variable-name step is needed when the wizards path produces the engine input.
 2. **`reverse_coded`** — sourced from `column_meta.reverse` (already in the [datasets table](db/schema_phase7.sql) per [api/datasets/create.php:4](api/datasets/create.php)).
 3. **`reverse_coded_confirmed`** — survey-level flag captured by a Setup Wizard step (wizard does not exist yet; design it to capture this distinction during reverse-coding flagging). Engine reads via `config.reverse_coded_confirmed`.
 4. **Likert format metadata** — sourced from the Survey Builder's question definition (already knows the anchor count). Engine accepts either `likert_range: [min, max]` or `anchor_count: int`.
@@ -289,3 +297,24 @@ The CFA-with-EFA-fallback path the spec describes (§4B and §11) is structurall
 **Resolve during.** Resolved at landing. Spec is updated; engine implements the rule; harness verifies via the two-item-scale fixture (`fit_exclude_reason === 'k_lte_3'`). No further work required.
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeConstructAlignment` → `perScale` loop's `if (k <= 3) { fitExcludeReason = 'k_lte_3'; }` branch. Spec §4B Model Fit row.
+
+---
+
+
+## 16. Standalone RSSI app has no scale-assignment UI — §4A/§4B/§4E whole-domain-skip on every standalone run
+
+**Surfaced:** §4 item #1a end-to-end verification (2026-05-27).
+
+**Problem.** The standalone RSSI app at [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) parses uploaded CSV client-side and forwards the detected Likert columns straight to the engine with no column-tagging step. Variables flow into `RSSI_MATH.computeLensesFromDataset` without `v.scale` or `v.construct` set on any of them. The engine therefore whole-domain-skips §4A Validity, §4B Construct Alignment, and §4E Scale Structure on every standalone RSSI run, regardless of how well-constructed the underlying instrument is.
+
+This is a **fourth platform-side surface** distinct from the three transform paths in §4 item #1 (a/b/c). The other three surfaces have the data captured somewhere upstream and just need a transform to read it through; standalone RSSI has no upstream capture at all — there's no UI step where the user assigns items to scales.
+
+**Implication.** Standalone RSSI users see three domains permanently null in their reports. The headline lens scores are computed without those domains and rescaled accordingly per §3, so the math is correct, but a meaningful portion of the engine's diagnostic power is unavailable on this surface. The studio-mount path (surveys built through the Survey Builder) now exercises these three domains as of §4 item #1a; standalone RSSI does not.
+
+**Resolve during.** Standalone RSSI UX work, when prioritized. The fix requires:
+1. A post-upload column-tagging step in `rssi-upload.js` where the user assigns each Likert column to a construct (free-text input, or an AI-suggest button mirroring the Survey Builder's Construct Mapper).
+2. Wiring those assignments onto each variable as `v.construct` before calling `computeLensesFromDataset`.
+
+Priority depends on which surface (studio mount vs. standalone) users actually use most. The studio mount is now the higher-leverage path because three additional domains score there.
+
+**Code touch-points.** [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) (CSV parse + variable construction), [apps/rssi/rssi.js](apps/rssi/rssi.js) (host page). No engine change needed — same data contract as the studio mount.
