@@ -179,9 +179,11 @@ The Construct Alignment domain produces a 0–100 sub-score. Unit of analysis is
 | Primary loading strength | 10 | Per scale, fit a single-factor CFA. Average the standardized loadings. Map cross-scale mean: ≥ 0.70 → 10, 0.60–0.699 → 7, 0.50–0.599 → 4, < 0.50 → 0. |
 | Weak-loading penalty | 5 | Start at 5. Deduct 1 pt per item with standardized loading < 0.40, clamped to [0, 5]. |
 | Cross-loadings | 5 | Fit an exploratory model with k = number of declared scales factors and oblique rotation. Flag any item whose secondary loading is within 0.20 of its primary and both ≥ 0.30. Start at 5, deduct 1 pt per cross-loaded item, clamped to [0, 5]. |
-| Model fit | 5 | Use the per-scale CFA fit indices. Award 5 pts when every scale's CFI ≥ 0.95 and RMSEA ≤ 0.06. Award 3 pts when every scale's CFI ≥ 0.90 and RMSEA ≤ 0.08. Award 0 otherwise. Single-item and two-item scales are excluded from this check (fit indices are not defined). |
+| Model fit | 5 | Use the per-scale CFA fit indices. Award 5 pts when every scale's CFI ≥ 0.95 and RMSEA ≤ 0.06. Award 3 pts when every scale's CFI ≥ 0.90 and RMSEA ≤ 0.08. Award 0 otherwise. **Single-item, two-item, and three-item scales are excluded from fit scoring** — k=3 produces df=0 (the one-factor model is just-identified, fit is perfect by construction and therefore uninformative); k≤2 is under-identified. Loadings and the weak-loading penalty still apply for k≥2 scales; cross-loading detection via the pooled Promax EFA also applies; only Model Fit excludes k≤3. |
 
 When CFA fails to converge for a scale, fall back to EFA with one factor and surface a warning flag, per Section 11.
+
+**Estimator note.** §4B implements the per-scale single-factor "CFA" as **iterated principal-axis factoring (PAF)**, not full maximum-likelihood estimation. Communalities are refined iteratively by replacing the correlation matrix's diagonal with prior-iteration squared loadings and re-running the top-eigenpair decomposition. On the §4B sanity-check fixture this produces loadings within ~0.002 of `semopy`'s ML output; the harness asserts the conservative ±0.05 tolerance the Phase 1 audit approved. The CFA-with-EFA-fallback path the spec describes is structurally a no-op under this estimator — they are the same algorithm. Cross-loadings are computed from a pooled multi-factor EFA with Promax oblique rotation (κ=4, the lavaan/psych default). See [KNOWN_ISSUES.md](../KNOWN_ISSUES.md) for the rationale and the path to ML if divergence ever becomes user-facing.
 
 ---
 

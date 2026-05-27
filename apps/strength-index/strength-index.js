@@ -280,6 +280,262 @@
     return vector.map(v => v * sqrtL); // signed loadings
   }
 
+  // ---------- §4B Construct Alignment numerical primitives ----------
+  // jacobiEigen: full eigendecomposition of a symmetric matrix via
+  // classical Jacobi rotations. Returns eigenvalues sorted descending
+  // alongside the corresponding eigenvectors (columns of vectors[]). For
+  // §4B we need the top-m eigenpairs (m = #scales) to seed the EFA used
+  // in cross-loading detection; firstEigen only delivers the top one.
+  function jacobiEigen(M, maxIter) {
+    const n = M.length;
+    const A = M.map(function (row) { return row.slice(); });
+    const V = [];
+    for (let i = 0; i < n; i++) {
+      V.push(new Array(n).fill(0));
+      V[i][i] = 1;
+    }
+    const tol = 1e-10;
+    const iters = maxIter || 200;
+    for (let s = 0; s < iters; s++) {
+      // Find off-diagonal pivot with largest |A[p][q]|.
+      let p = 0, q = 1, maxOff = Math.abs(A[0][1]);
+      for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+          if (Math.abs(A[i][j]) > maxOff) { maxOff = Math.abs(A[i][j]); p = i; q = j; }
+        }
+      }
+      if (maxOff < tol) break;
+      const theta = (A[q][q] - A[p][p]) / (2 * A[p][q]);
+      const t = (theta >= 0)
+        ? 1 / (theta + Math.sqrt(1 + theta * theta))
+        : 1 / (theta - Math.sqrt(1 + theta * theta));
+      const c = 1 / Math.sqrt(1 + t * t);
+      const sn = t * c;
+      // Rotate rows/cols p and q.
+      const App = A[p][p], Aqq = A[q][q], Apq = A[p][q];
+      A[p][p] = App - t * Apq;
+      A[q][q] = Aqq + t * Apq;
+      A[p][q] = 0; A[q][p] = 0;
+      for (let i = 0; i < n; i++) {
+        if (i !== p && i !== q) {
+          const Aip = A[i][p], Aiq = A[i][q];
+          A[i][p] = c * Aip - sn * Aiq;
+          A[p][i] = A[i][p];
+          A[i][q] = sn * Aip + c * Aiq;
+          A[q][i] = A[i][q];
+        }
+        const Vip = V[i][p], Viq = V[i][q];
+        V[i][p] = c * Vip - sn * Viq;
+        V[i][q] = sn * Vip + c * Viq;
+      }
+    }
+    const eigs = [];
+    for (let i = 0; i < n; i++) {
+      eigs.push({ value: A[i][i], vector: V.map(function (row) { return row[i]; }) });
+    }
+    eigs.sort(function (a, b) { return b.value - a.value; });
+    return eigs;
+  }
+
+  // varimax: orthogonal rotation on an n×m loading matrix L. Maximizes
+  // the variance of squared loadings within each column via pairwise
+  // column rotations (Kaiser 1958). Returns the rotated matrix in place
+  // (caller passes a copy).
+  function varimax(L, maxIter) {
+    const n = L.length;
+    if (!n) return L;
+    const m = L[0].length;
+    if (m < 2) return L;
+    const iters = maxIter || 100;
+    const tol = 1e-8;
+    // Kaiser normalization: row-normalize before rotation, restore after.
+    const rowNorm = L.map(function (row) {
+      let s = 0; for (let j = 0; j < m; j++) s += row[j] * row[j];
+      return Math.sqrt(s) || 1;
+    });
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < m; j++) L[i][j] /= rowNorm[i];
+    }
+    let prevCrit = -1;
+    for (let it = 0; it < iters; it++) {
+      for (let p = 0; p < m - 1; p++) {
+        for (let q = p + 1; q < m; q++) {
+          let num = 0, den = 0;
+          for (let i = 0; i < n; i++) {
+            const u = L[i][p] * L[i][p] - L[i][q] * L[i][q];
+            const v = 2 * L[i][p] * L[i][q];
+            num += 2 * u * v;
+            den += u * u - v * v;
+          }
+          // No Kaiser normalization correction term here; the row-
+          // normalization above absorbs that. Standard pairwise angle:
+          const phi = 0.25 * Math.atan2(num, den);
+          const c = Math.cos(phi), s = Math.sin(phi);
+          if (Math.abs(s) < 1e-15) continue;
+          for (let i = 0; i < n; i++) {
+            const Lp = L[i][p], Lq = L[i][q];
+            L[i][p] = c * Lp + s * Lq;
+            L[i][q] = -s * Lp + c * Lq;
+          }
+        }
+      }
+      // Convergence: sum of column variances of squared loadings.
+      let crit = 0;
+      for (let j = 0; j < m; j++) {
+        let s = 0, ss = 0;
+        for (let i = 0; i < n; i++) {
+          const v = L[i][j] * L[i][j];
+          s += v; ss += v * v;
+        }
+        crit += ss - (s * s) / n;
+      }
+      if (Math.abs(crit - prevCrit) < tol) { prevCrit = crit; break; }
+      prevCrit = crit;
+    }
+    // De-normalize rows.
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < m; j++) L[i][j] *= rowNorm[i];
+    }
+    return L;
+  }
+
+  // promaxFromVarimax: Promax oblique rotation (Hendrickson & White 1964).
+  // Inputs: V is the varimax-rotated loading matrix (n×m); kappa is the
+  // power (4 is the standard default used by lavaan and psych). Returns
+  // { pattern, phi } where pattern is the pattern matrix (n×m, oblique
+  // loadings) and phi is the m×m factor-correlation matrix.
+  //
+  // Algorithm:
+  //   1. Target P = sign(V) * |V|^kappa.
+  //   2. Solve V * T = P via least squares: T = (V'V)^-1 V' P.
+  //   3. Rescale columns of T so the column norms of T^-1 are unity
+  //      (puts the pattern matrix on a comparable scale to V).
+  //   4. Pattern = V * T_scaled. Phi = T_scaled^-1 * (T_scaled^-1)'.
+  function promaxFromVarimax(V, kappa) {
+    const n = V.length;
+    if (!n) return { pattern: V, phi: null, converged: false };
+    const m = V[0].length;
+    if (m < 2) return { pattern: V, phi: null, converged: false };
+    kappa = kappa || 4;
+    // Target.
+    const P = V.map(function (row) {
+      return row.map(function (v) {
+        return (v >= 0 ? 1 : -1) * Math.pow(Math.abs(v), kappa);
+      });
+    });
+    // V'V (m×m), V'P (m×m).
+    const VtV = [], VtP = [];
+    for (let a = 0; a < m; a++) {
+      VtV.push(new Array(m).fill(0));
+      VtP.push(new Array(m).fill(0));
+      for (let b = 0; b < m; b++) {
+        let s1 = 0, s2 = 0;
+        for (let i = 0; i < n; i++) { s1 += V[i][a] * V[i][b]; s2 += V[i][a] * P[i][b]; }
+        VtV[a][b] = s1; VtP[a][b] = s2;
+      }
+    }
+    const { inv: VtVi } = inverseAndDet(VtV);
+    if (!VtVi) return { pattern: V, phi: null, converged: false };
+    // T = (V'V)^-1 V'P.
+    const T = [];
+    for (let a = 0; a < m; a++) {
+      T.push(new Array(m).fill(0));
+      for (let b = 0; b < m; b++) {
+        let s = 0;
+        for (let c = 0; c < m; c++) s += VtVi[a][c] * VtP[c][b];
+        T[a][b] = s;
+      }
+    }
+    // Rescale T so columns of T^-1 have unit norm (lavaan/psych convention).
+    const { inv: Ti } = inverseAndDet(T);
+    if (!Ti) return { pattern: V, phi: null, converged: false };
+    const colNormsTi = [];
+    for (let b = 0; b < m; b++) {
+      let s = 0;
+      for (let a = 0; a < m; a++) s += Ti[a][b] * Ti[a][b];
+      colNormsTi.push(Math.sqrt(s) || 1);
+    }
+    // D = diag(1/colNormsTi); T_scaled = T * D^-1 = T * diag(colNormsTi);
+    // T_scaled^-1 = D * T^-1 ; equivalently scale rows of Ti by 1/colNormsTi
+    // and columns of T by colNormsTi. We need: pattern = V * T_scaled, phi = (T_scaled^-1)(T_scaled^-1)'.
+    const Tscaled = [];
+    for (let a = 0; a < m; a++) {
+      Tscaled.push(new Array(m).fill(0));
+      for (let b = 0; b < m; b++) Tscaled[a][b] = T[a][b] * colNormsTi[b];
+    }
+    const pattern = [];
+    for (let i = 0; i < n; i++) {
+      pattern.push(new Array(m).fill(0));
+      for (let b = 0; b < m; b++) {
+        let s = 0;
+        for (let a = 0; a < m; a++) s += V[i][a] * Tscaled[a][b];
+        pattern[i][b] = s;
+      }
+    }
+    // Phi = T_scaled^-1 * (T_scaled^-1)'.
+    const { inv: TsInv } = inverseAndDet(Tscaled);
+    if (!TsInv) return { pattern: pattern, phi: null, converged: false };
+    const phi = [];
+    for (let a = 0; a < m; a++) {
+      phi.push(new Array(m).fill(0));
+      for (let b = 0; b < m; b++) {
+        let s = 0;
+        for (let c = 0; c < m; c++) s += TsInv[a][c] * TsInv[b][c];
+        phi[a][b] = s;
+      }
+    }
+    return { pattern: pattern, phi: phi, converged: true };
+  }
+
+  // mlDiscrepancyFit: CFI + RMSEA for a one-factor model with k≥4
+  // indicators on standardized scale. Inputs:
+  //   R         — k×k observed correlation matrix.
+  //   loadings  — length-k standardized loadings (λ_i).
+  //   N         — sample size (paired complete-case rows used to build R).
+  // Returns { cfi, rmsea, chi2_model, df_model, chi2_null, df_null,
+  //           singular: bool } or { singular: true, ... } if either det fails.
+  //
+  // Model-implied Σ̂[i,j] = λ_i λ_j off-diag; Σ̂[i,i] = 1 (standardized).
+  // ML discrepancy F_ML = log|Σ̂| + tr(R Σ̂^{-1}) - log|R| - k.
+  // χ²_model = (N-1) F_ML; df_model = (k-1)(k-2)/2 for one-factor.
+  // χ²_null  = -(N-1) log|R|; df_null = k(k-1)/2 (independence model).
+  function mlDiscrepancyFit(R, loadings, N) {
+    const k = R.length;
+    const sigmaHat = [];
+    for (let i = 0; i < k; i++) {
+      sigmaHat.push(new Array(k).fill(0));
+      for (let j = 0; j < k; j++) {
+        sigmaHat[i][j] = (i === j) ? 1 : loadings[i] * loadings[j];
+      }
+    }
+    const sh = inverseAndDet(sigmaHat);
+    const rd = inverseAndDet(R);
+    if (!sh.inv || sh.det <= 0 || !rd.inv || rd.det <= 0) {
+      return { singular: true };
+    }
+    let tr = 0;
+    for (let i = 0; i < k; i++) {
+      for (let j = 0; j < k; j++) tr += R[i][j] * sh.inv[j][i];
+    }
+    const Fml = Math.log(sh.det) + tr - Math.log(rd.det) - k;
+    const chi2m = (N - 1) * Fml;
+    const dfm = (k - 1) * (k - 2) / 2;
+    const chi2n = -(N - 1) * Math.log(rd.det);
+    const dfn = k * (k - 1) / 2;
+    const numerator = Math.max(chi2m - dfm, 0);
+    const denominator = Math.max(chi2n - dfn, numerator, 1e-12);
+    const cfi = clamp(1 - numerator / denominator, 0, 1);
+    const rmsea = dfm > 0
+      ? Math.sqrt(Math.max((chi2m / dfm - 1) / (N - 1), 0))
+      : null;
+    return {
+      cfi: cfi, rmsea: rmsea,
+      chi2_model: chi2m, df_model: dfm,
+      chi2_null: chi2n, df_null: dfn,
+      singular: false,
+    };
+  }
+
   // ====================================================================
   // CANONICAL MATH — exposed on window.RSSI_MATH (see top-of-file
   // header for the product-wide rule). Functions here are consumed by
@@ -775,19 +1031,20 @@
     const ss  = computeScaleStructure(config);
     const val = computeValidity(config);
     const bc  = computeBiasClarity(config);
+    const ca  = computeConstructAlignment(config);
 
     // Map v1 compute output → canonical 8-domain sub-score map.
-    // One un-built domain remains (Spec §4B Construct Alignment);
-    // computeLenses excludes it via skip-and-rescale. §4A Validity and
-    // §4D Bias & Clarity are live. §4E Scale Structure is built but
-    // stays null in production until the platform-side data contract
-    // carries scale assignments etc. (KNOWN_ISSUES.md §4). §4D's
-    // fairness half requires demographic columns; when absent, the
-    // wording half rescales alone (KNOWN_ISSUES.md §4 items 7-8).
+    // All eight domains are built per spec §2. §4A Validity, §4D Bias
+    // & Clarity, and §4B Construct Alignment are live. §4E Scale
+    // Structure is built but stays null in production until the
+    // platform-side data contract carries scale assignments etc.
+    // (KNOWN_ISSUES.md §4). §4B and §4A both whole-domain-skip until
+    // per-item scale assignments propagate (same data-contract
+    // dependency).
     const subscores = {
       reliability:           rel.score,
       validity:              val.score,
-      construct_alignment:   null,
+      construct_alignment:   ca.score,
       item_prompt_quality:   iq.score,
       bias_clarity:          bc.score,
       scale_structure:       ss.score,
@@ -820,6 +1077,7 @@
       domain_details: {
         reliability:           rel,
         validity:              val,
+        construct_alignment:   ca,
         bias_clarity:          bc,
         factor_readiness:      fs,
         item_prompt_quality:   iq,
@@ -870,6 +1128,14 @@
     // KNOWN_ISSUES.md tracks the future consolidation.
     _inverseAndDet: inverseAndDet,
     _chiPValue:     chiPValue,
+    // Spec §4B Construct Alignment primitives. Exposed so the harness
+    // can drive each step (eigendecomp → varimax → promax → ML fit)
+    // against pinned reference values from semopy and factor_analyzer.
+    _jacobiEigen:        jacobiEigen,
+    _varimax:            varimax,
+    _promaxFromVarimax:  promaxFromVarimax,
+    _mlDiscrepancyFit:   mlDiscrepancyFit,
+    _correlationMatrix:  correlationMatrix,
   };
 
   // Compute §4F directly from a k×k correlation matrix R and N. Used by
@@ -2341,6 +2607,445 @@
   //     treat as demographics. Engine accepts EITHER v.is_demographic OR
   //     config.demographic_columns; whichever the platform supplies wins.
   // ====================================================================
+  // ====================================================================
+  // Spec §4B Construct Alignment.
+  //
+  // Per-scale single-factor "CFA" + pooled multi-factor EFA for cross-
+  // loading detection. The estimator is iterated principal-axis factoring
+  // (PAF), not maximum-likelihood: communalities are refined iteratively
+  // by replacing R's diagonal with prior-iteration squared loadings and
+  // re-running the top-eigenpair decomposition. This is the deliberate
+  // v2 phase-one simplification approved in the §4B Phase 1 audit
+  // (Q1 option (a)) — the spec's CFA-with-EFA-fallback wording effectively
+  // makes EFA-with-one-factor the canonical path. On the CFA sanity-check
+  // fixture (KNOWN_ISSUES.md §13), iterated PAF lands within ~0.002 of
+  // semopy ML on the standardized loadings — an order of magnitude tighter
+  // than the ±0.05 tolerance the harness asserts. KNOWN_ISSUES.md notes
+  // the PAF-vs-ML rationale and the path to ML if divergence ever becomes
+  // user-facing.
+  //
+  // Sign convention for per-scale loadings: median-positive. Documented in
+  // alignSign() below. Scales with roughly balanced positive/negative
+  // loadings have a defined but possibly counter-intuitive behavior under
+  // this rule (median lands on a small loading whose sign may flip across
+  // runs of resembling data); the alternative conventions (sum-positive,
+  // first-positive) have their own failure modes and median-positive is
+  // the most stable in practice for positively-keyed item batteries.
+  //
+  // Sub-component points (of 25 raw, ×4 = 0–100):
+  //   primary_loading        10  — cross-scale mean → band
+  //   weak_loading_penalty    5  — start 5, −1 per λ < 0.40
+  //   cross_loadings          5  — start 5, −1 per cross-loaded item
+  //                                from pooled Promax-rotated EFA
+  //   model_fit               5  — every k≥4 scale must clear CFI/RMSEA
+  //                                thresholds; k≤3 scales excluded (Phase
+  //                                1 Q4 extension — k=3 produces df=0,
+  //                                fit perfect by construction, uninformative)
+  //
+  // Skip-and-rescale mirrors §4A: whole-domain skip when no scale
+  // assignments are present; per-sub-component skip otherwise.
+  // ====================================================================
+  function computeConstructAlignment(config) {
+    config = config || {};
+    const MAX_RAW = 25;
+    const skipResult = function (reason, note) {
+      return {
+        score: null, raw: null, max: MAX_RAW, max_full: MAX_RAW,
+        note: note, interp: note, tone: 'neutral',
+        skipped: true, skip_reason: reason,
+      };
+    };
+
+    if (likertVars.length === 0) {
+      return skipResult('no_likert_items', 'Construct Alignment skipped: no Likert items.');
+    }
+
+    // ---- Scale grouping (accept v.scale or v.construct) — §4A pattern ----
+    const scaleMap = {};
+    let allHaveScale = true;
+    likertVars.forEach(function (v) {
+      const s = (v.scale != null && v.scale !== '') ? String(v.scale)
+              : (v.construct != null && v.construct !== '') ? String(v.construct)
+              : null;
+      if (s == null) { allHaveScale = false; return; }
+      if (!scaleMap[s]) scaleMap[s] = [];
+      scaleMap[s].push(v);
+    });
+    if (!allHaveScale || Object.keys(scaleMap).length === 0) {
+      return skipResult('no_scale_assignments',
+        'Construct Alignment skipped: no per-item scale assignments. Setup Wizard must tag each Likert item with its scale before this domain scores.');
+    }
+    const scales = Object.keys(scaleMap).map(function (n) {
+      return { name: n, items: scaleMap[n] };
+    });
+
+    // ---- Per-scale complete cases (listwise per scale) ----
+    function completeColsFor(items) {
+      const cols = items.map(function (it) { return it.values; });
+      const n = cols[0].length;
+      const out = items.map(function () { return []; });
+      for (let i = 0; i < n; i++) {
+        let ok = true;
+        for (let j = 0; j < cols.length; j++) {
+          const v = cols[j][i];
+          if (v == null || v === '' || isNaN(+v)) { ok = false; break; }
+        }
+        if (ok) for (let j = 0; j < cols.length; j++) out[j].push(+cols[j][i]);
+      }
+      return out;
+    }
+
+    // ---- Iterated PAF loadings (one factor) ----
+    // Replaces R's diagonal with prior-iter squared loadings (communalities)
+    // and re-decomposes. Initial communalities: max off-diagonal |r| per
+    // item (a standard low-cost starter). Converges in 10–30 iterations
+    // for clean data; non-convergence flagged.
+    function iteratedPAFLoadings(R) {
+      const k = R.length;
+      const Rc = R.map(function (row) { return row.slice(); });
+      // Initial communalities.
+      const h2 = new Array(k);
+      for (let i = 0; i < k; i++) {
+        let mx = 0;
+        for (let j = 0; j < k; j++) if (i !== j) mx = Math.max(mx, Math.abs(R[i][j]));
+        h2[i] = mx;
+        Rc[i][i] = mx;
+      }
+      const maxIter = 100;
+      let converged = false;
+      let loadings = null;
+      for (let it = 0; it < maxIter; it++) {
+        const eigs = jacobiEigen(Rc);
+        const top = eigs[0];
+        const sqrtL = Math.sqrt(Math.max(top.value, 0));
+        loadings = top.vector.map(function (v) { return v * sqrtL; });
+        let maxDelta = 0;
+        for (let i = 0; i < k; i++) {
+          const newH = loadings[i] * loadings[i];
+          maxDelta = Math.max(maxDelta, Math.abs(newH - h2[i]));
+          h2[i] = newH;
+          Rc[i][i] = newH;
+        }
+        if (maxDelta < 1e-5) { converged = true; break; }
+      }
+      return { loadings: loadings, converged: converged };
+    }
+
+    // Sign convention: median-positive. See block comment above.
+    function alignSign(loadings) {
+      const sorted = loadings.slice().sort(function (a, b) { return a - b; });
+      const median = sorted[Math.floor(sorted.length / 2)];
+      if (median < 0) return loadings.map(function (l) { return -l; });
+      return loadings.slice();
+    }
+
+    // Heywood-case handling: clamp loadings to ±0.999 and flag.
+    function applyHeywoodClamp(loadings, items) {
+      const flags = [];
+      const clamped = loadings.map(function (l, i) {
+        if (Math.abs(l) > 0.999) {
+          flags.push({ item: items[i].name, original_loading: l, kind: 'loading_overflow' });
+          return l > 0 ? 0.999 : -0.999;
+        }
+        return l;
+      });
+      return { loadings: clamped, flags: flags };
+    }
+
+    // ---- Sub 1 + 2: per-scale loadings + weak-loading penalty + fit ----
+    const N_FLOOR = 30;
+    const perScale = [];
+    let weakCount = 0;
+    let primaryLoadingValues = [];  // flat list of |λ| across all scales for cross-scale mean
+
+    scales.forEach(function (s) {
+      const k = s.items.length;
+      const completeCols = completeColsFor(s.items);
+      const nComplete = completeCols[0] ? completeCols[0].length : 0;
+      if (k < 2) {
+        perScale.push({
+          scale: s.name, k: k, n_complete: nComplete,
+          skipped: true, skip_reason: 'k_lt_2',
+        });
+        return;
+      }
+      if (nComplete < N_FLOOR) {
+        perScale.push({
+          scale: s.name, k: k, n_complete: nComplete,
+          skipped: true, skip_reason: 'n_lt_30',
+          note: 'Sample size insufficient for factor analysis (need ≥ 30 complete rows; have ' + nComplete + ').',
+        });
+        return;
+      }
+      const R = correlationMatrix(completeCols);
+      // Singular check — PAF/CFA fallback flag.
+      const detProbe = inverseAndDet(R);
+      const cfaToEfaFallback = !detProbe.inv;
+      const paf = iteratedPAFLoadings(R);
+      const aligned = alignSign(paf.loadings);
+      const clamp = applyHeywoodClamp(aligned, s.items);
+      const loadings = clamp.loadings;
+      // Weak items.
+      const weakItems = [];
+      loadings.forEach(function (l, i) {
+        if (Math.abs(l) < 0.40) {
+          weakItems.push({ scale: s.name, item: s.items[i].name, loading: l });
+          weakCount++;
+        }
+      });
+      loadings.forEach(function (l) { primaryLoadingValues.push(Math.abs(l)); });
+      // Fit (k ≥ 4 only — Phase 1 Q4 spec extension).
+      let fit = null, fitExcludeReason = null;
+      if (k <= 3) {
+        fitExcludeReason = 'k_lte_3';
+      } else {
+        const fitRaw = mlDiscrepancyFit(R, loadings, nComplete);
+        if (fitRaw.singular) {
+          fitExcludeReason = 'singular';
+        } else {
+          fit = { cfi: fitRaw.cfi, rmsea: fitRaw.rmsea };
+        }
+      }
+      perScale.push({
+        scale: s.name, k: k, n_complete: nComplete,
+        skipped: false,
+        loadings: loadings,
+        mean_loading: mean(loadings.map(Math.abs)),
+        weak_items: weakItems,
+        heywood_flags: clamp.flags,
+        cfa_to_efa_fallback: cfaToEfaFallback,
+        paf_converged: paf.converged,
+        fit: fit,
+        fit_exclude_reason: fitExcludeReason,
+      });
+    });
+
+    const scoredScales = perScale.filter(function (s) { return !s.skipped; });
+
+    // ---- Primary-loading sub-component ----
+    let primaryPts = null, primaryMean = null, primarySkipped = false;
+    if (primaryLoadingValues.length === 0) {
+      primarySkipped = true;
+    } else {
+      primaryMean = mean(primaryLoadingValues);
+      if (primaryMean >= 0.70) primaryPts = 10;
+      else if (primaryMean >= 0.60) primaryPts = 7;
+      else if (primaryMean >= 0.50) primaryPts = 4;
+      else primaryPts = 0;
+    }
+
+    // ---- Weak-loading penalty sub-component ----
+    let weakPts = null, weakSkipped = false;
+    if (scoredScales.length === 0) weakSkipped = true;
+    else weakPts = clamp(5 - weakCount, 0, 5);
+
+    // ---- Sub 3: Pooled Promax EFA for cross-loadings ----
+    let crossPts = null, crossSkipped = false;
+    let crossFlagged = [];
+    let promaxNonConverged = false;
+    let factorAlignmentAmbiguous = false;
+    let factorAlignmentDiagnostic = null;
+    let pooledNComplete = null;
+    let pooledM = scales.length;
+    if (scales.length < 2) {
+      crossSkipped = true;
+    } else {
+      // Pool ALL likert items across scales; complete cases listwise on the pooled matrix.
+      const pooledItems = [];
+      const pooledScaleIdx = [];  // parallel array: which scale each item belongs to
+      scales.forEach(function (s) {
+        s.items.forEach(function (it) { pooledItems.push(it); pooledScaleIdx.push(s.name); });
+      });
+      const pooledCols = completeColsFor(pooledItems);
+      pooledNComplete = pooledCols[0] ? pooledCols[0].length : 0;
+      if (pooledNComplete < N_FLOOR) {
+        crossSkipped = true;
+      } else {
+        const Rp = correlationMatrix(pooledCols);
+        const eigs = jacobiEigen(Rp);
+        const m = Math.min(pooledM, eigs.length);
+        // Top-m initial loadings.
+        const init = [];
+        for (let i = 0; i < pooledItems.length; i++) init.push(new Array(m).fill(0));
+        for (let f = 0; f < m; f++) {
+          const sqrtL = Math.sqrt(Math.max(eigs[f].value, 0));
+          for (let i = 0; i < pooledItems.length; i++) init[i][f] = eigs[f].vector[i] * sqrtL;
+        }
+        varimax(init);  // mutates in place
+        const promax = promaxFromVarimax(init, 4);
+        if (!promax.converged) {
+          promaxNonConverged = true;
+          crossSkipped = true;
+        } else {
+          const pattern = promax.pattern;
+          // Align factors to scales: for each scale, find which factor has
+          // the highest mean |loading| on that scale's items.
+          const scaleNames = scales.map(function (s) { return s.name; });
+          const meanAbsByScaleFactor = {};
+          scaleNames.forEach(function (sn) {
+            meanAbsByScaleFactor[sn] = new Array(m).fill(0);
+            const idxs = [];
+            for (let i = 0; i < pooledItems.length; i++) if (pooledScaleIdx[i] === sn) idxs.push(i);
+            for (let f = 0; f < m; f++) {
+              let sum = 0;
+              idxs.forEach(function (i) { sum += Math.abs(pattern[i][f]); });
+              meanAbsByScaleFactor[sn][f] = idxs.length ? sum / idxs.length : 0;
+            }
+          });
+          const scaleToFactor = {};
+          const factorToScales = {};
+          scaleNames.forEach(function (sn) {
+            const arr = meanAbsByScaleFactor[sn];
+            let best = 0;
+            for (let f = 1; f < m; f++) if (arr[f] > arr[best]) best = f;
+            scaleToFactor[sn] = best;
+            if (!factorToScales[best]) factorToScales[best] = [];
+            factorToScales[best].push(sn);
+          });
+          // Ambiguity: any factor claimed by >1 scale.
+          Object.keys(factorToScales).forEach(function (f) {
+            if (factorToScales[f].length > 1) {
+              factorAlignmentAmbiguous = true;
+              factorAlignmentDiagnostic =
+                'Factor structure is ambiguous: scales [' + factorToScales[f].join(', ') +
+                '] all load most heavily on factor ' + f +
+                '. This may indicate the constructs are not distinct, or the EFA solution is unstable. ' +
+                'Consider re-examining whether these scales measure different constructs.';
+            }
+          });
+          // Per-item cross-loading flag: primary = |loading on item's assigned factor|;
+          // secondary = max |loading on other factors|; flag when secondary ≥ 0.30 AND
+          // primary ≥ 0.30 AND (primary − secondary) < 0.20.
+          for (let i = 0; i < pooledItems.length; i++) {
+            const assignedF = scaleToFactor[pooledScaleIdx[i]];
+            const primary = Math.abs(pattern[i][assignedF]);
+            let secondary = 0, secondaryF = -1;
+            for (let f = 0; f < m; f++) {
+              if (f === assignedF) continue;
+              const v = Math.abs(pattern[i][f]);
+              if (v > secondary) { secondary = v; secondaryF = f; }
+            }
+            // Ambiguous-alignment case: treat every item in a contested scale
+            // as a cross-loading candidate (defensive per Phase 2 review).
+            const inContested = factorAlignmentAmbiguous &&
+              (factorToScales[assignedF] || []).length > 1;
+            const meetsFlagRule =
+              primary >= 0.30 && secondary >= 0.30 && (primary - secondary) < 0.20;
+            if (meetsFlagRule || inContested) {
+              crossFlagged.push({
+                item: pooledItems[i].name,
+                scale: pooledScaleIdx[i],
+                primary_factor: assignedF,
+                primary_loading: pattern[i][assignedF],
+                secondary_factor: secondaryF,
+                secondary_loading: secondaryF >= 0 ? pattern[i][secondaryF] : null,
+                reason: meetsFlagRule ? 'cross_loading' : 'contested_factor',
+              });
+            }
+          }
+          crossPts = clamp(5 - crossFlagged.length, 0, 5);
+        }
+      }
+    }
+
+    // ---- Sub 4: Model fit (every k≥4 scale must clear thresholds) ----
+    let fitPts = null, fitSkipped = false, fitBand = null;
+    const fitEligibleScales = scoredScales.filter(function (s) { return s.fit != null; });
+    if (fitEligibleScales.length === 0) {
+      fitSkipped = true;
+    } else {
+      const allTight = fitEligibleScales.every(function (s) {
+        return s.fit.cfi >= 0.95 && s.fit.rmsea <= 0.06;
+      });
+      const allLoose = fitEligibleScales.every(function (s) {
+        return s.fit.cfi >= 0.90 && s.fit.rmsea <= 0.08;
+      });
+      if (allTight) { fitPts = 5; fitBand = '0.95/0.06'; }
+      else if (allLoose) { fitPts = 3; fitBand = '0.90/0.08'; }
+      else { fitPts = 0; fitBand = 'fail'; }
+    }
+
+    // ---- Combine: skip-and-rescale ----
+    const components = [
+      { key: 'primary_loading',      pts: primaryPts, max: 10, skipped: primarySkipped },
+      { key: 'weak_loading_penalty', pts: weakPts,    max:  5, skipped: weakSkipped },
+      { key: 'cross_loadings',       pts: crossPts,   max:  5, skipped: crossSkipped },
+      { key: 'model_fit',            pts: fitPts,     max:  5, skipped: fitSkipped },
+    ];
+    let raw = 0, maxAvail = 0;
+    components.forEach(function (c) {
+      if (!c.skipped) { raw += c.pts; maxAvail += c.max; }
+    });
+    const score = maxAvail > 0 ? clamp(round((raw / maxAvail) * 100), 0, 100) : null;
+    const skippedKeys = components.filter(function (c) { return c.skipped; }).map(function (c) { return c.key; });
+    const tone = score == null ? 'neutral'
+      : score >= 80 ? 'ok'
+      : score >= 60 ? 'warn'
+      : 'alert';
+
+    const rawDisp = Math.round(raw * 10) / 10;
+    const note = score == null
+      ? 'Construct Alignment not estimable (' + skippedKeys.join(', ') + ' skipped).'
+      : (skippedKeys.length
+          ? rawDisp + ' / ' + maxAvail + ' (rescaled from ' + MAX_RAW + '; ' + skippedKeys.join(', ') + ' skipped)'
+          : rawDisp + ' / ' + MAX_RAW);
+    const perScaleSummary = perScale.map(function (s) {
+      return s.skipped
+        ? s.scale + ' (skipped: ' + s.skip_reason + ')'
+        : s.scale + ' (k=' + s.k + ', mean λ=' + s.mean_loading.toFixed(2) + ')';
+    }).join('; ');
+    const interp = score == null ? note
+      : 'Construct Alignment sub-score ' + score + '/100 across ' + scales.length + ' scale(s): ' + perScaleSummary + '.';
+
+    return {
+      score: score,
+      raw: rawDisp,
+      max: maxAvail,
+      max_full: MAX_RAW,
+      note: note,
+      interp: interp,
+      tone: tone,
+      skipped: score == null,
+      skipped_subcomponents: skippedKeys,
+      breakdown: {
+        primary_loading: {
+          pts: primaryPts, max: 10, skipped: primarySkipped,
+          cross_scale_mean: primaryMean,
+          per_scale: perScale,
+        },
+        weak_loading_penalty: {
+          pts: weakPts, max: 5, skipped: weakSkipped,
+          weak_count: weakCount,
+        },
+        cross_loadings: {
+          pts: crossPts, max: 5, skipped: crossSkipped,
+          flagged_items: crossFlagged,
+          promax_non_converged: promaxNonConverged,
+          factor_scale_alignment_ambiguous: factorAlignmentAmbiguous,
+          factor_alignment_diagnostic: factorAlignmentDiagnostic,
+          pooled_n_complete: pooledNComplete,
+          pooled_m_factors: pooledM,
+        },
+        model_fit: {
+          pts: fitPts, max: 5, skipped: fitSkipped,
+          band: fitBand,
+          per_scale: perScale.map(function (s) {
+            if (s.skipped) return { scale: s.scale, excluded_reason: s.skip_reason };
+            return {
+              scale: s.scale, k: s.k,
+              cfi: s.fit ? s.fit.cfi : null,
+              rmsea: s.fit ? s.fit.rmsea : null,
+              excluded_reason: s.fit_exclude_reason,
+            };
+          }),
+        },
+      },
+      scales: perScale.map(function (s) {
+        return { name: s.scale, k: s.k, n_complete: s.n_complete };
+      }),
+    };
+  }
+
   function computeBiasClarity(config) {
     config = config || {};
     const MAX_RAW = 20;

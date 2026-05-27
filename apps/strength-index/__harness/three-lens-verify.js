@@ -1907,10 +1907,335 @@ function mkLikertD(name, label, scale, values, opts) {
     'bc=' + out.domain_subscores.bias_clarity, '=');
 }
 
+// ====================================================================
+// §4B Construct Alignment harness section.
+//
+// Reference values are pinned in expected_cfa.json (semopy ML CFA) and
+// expected_promax.json (factor_analyzer Promax with κ=4). The
+// fixtures themselves live in fixture_cfa.json and fixture_promax.json
+// and are byte-identical between the Python reference run and this JS
+// harness — both consume the same generated dataset.
+//
+// Tolerance accommodates the iterated-PAF estimator's divergence from
+// semopy's ML; with iterated PAF (not single-pass PC) the divergence
+// turns out to be ≪ ±0.05 on this fixture (~0.002 on loadings, ~0.025
+// on RMSEA), but the harness asserts ±0.05 per the Phase 1 Q7
+// approval. See KNOWN_ISSUES.md §4B note for the PAF-vs-ML rationale.
+// ====================================================================
+console.log('');
+console.log('--- §4B Construct Alignment ---');
+{
+  const HARNESS_DIR = __dirname;
+  const fxCfa = JSON.parse(fs.readFileSync(path.join(HARNESS_DIR, 'fixture_cfa.json'), 'utf8'));
+  const exCfa = JSON.parse(fs.readFileSync(path.join(HARNESS_DIR, 'expected_cfa.json'), 'utf8'));
+  const fxPromax = JSON.parse(fs.readFileSync(path.join(HARNESS_DIR, 'fixture_promax.json'), 'utf8'));
+  const exPromax = JSON.parse(fs.readFileSync(path.join(HARNESS_DIR, 'expected_promax.json'), 'utf8'));
+
+  // ---- CFA sanity check: per-scale loadings + CFI within ±0.05 of semopy ----
+  // Tolerance is a deliberate consequence of using iterated PAF rather
+  // than ML; tighter parity would require an ML implementation per
+  // KNOWN_ISSUES.md note on §4B. Iterated PAF in practice converges
+  // close to ML for clean one-factor data; the ±0.05 ceiling is the
+  // approved Phase 1 Q7 guarantee.
+  const cfaItems = [];
+  Object.keys(fxCfa.columns).forEach(function (name) {
+    const scaleName = fxCfa.scales.A.indexOf(name) >= 0 ? 'A' : 'B';
+    cfaItems.push({ name: name, label: name, types: ['likert'], scale: scaleName, values: fxCfa.columns[name] });
+  });
+  const cfaOut = RSSI_MATH.computeLensesFromDataset({ source: '§4B CFA fixture', rowCount: fxCfa.N, variables: cfaItems });
+  const ca = cfaOut.domain_details.construct_alignment;
+  console.log('  §4B CFA fixture: score=' + ca.score + ' raw=' + ca.raw + '/' + ca.max);
+  check('§4B CFA fixture: domain scored (not skipped)', String(ca.skipped), 'false');
+
+  // Loading max-abs-diff across all 8 items vs semopy reference.
+  let cfaMaxDiff = 0;
+  ca.breakdown.primary_loading.per_scale.forEach(function (s) {
+    if (s.skipped) return;
+    const items = fxCfa.scales[s.scale];
+    s.loadings.forEach(function (l, i) {
+      const ref = exCfa[s.scale].loadings_std[items[i]];
+      const d = Math.abs(l - ref);
+      if (d > cfaMaxDiff) cfaMaxDiff = d;
+    });
+  });
+  check('§4B CFA loadings within ±0.05 of semopy ML reference (max-abs-diff)',
+    cfaMaxDiff <= 0.05 ? '=' : 'maxDiff=' + cfaMaxDiff.toFixed(4), '=');
+
+  // CFI ±0.05 per scale.
+  ca.breakdown.model_fit.per_scale.forEach(function (s) {
+    if (s.cfi == null) return;
+    const refCfi = Math.min(exCfa[s.scale].cfi, 1.0);  // semopy occasionally reports CFI>1; clamp for comparison
+    check('§4B CFA Scale ' + s.scale + ': CFI within ±0.05 of semopy reference',
+      Math.abs(s.cfi - refCfi) <= 0.05 ? '=' : 'engine=' + s.cfi.toFixed(3) + ' ref=' + refCfi.toFixed(3), '=');
+  });
+
+  // Clean fixture → all sub-components score full marks → score 100.
+  check('§4B CFA fixture: primary_loading pts = 10 (mean λ ≥ 0.70)', String(ca.breakdown.primary_loading.pts), '10');
+  check('§4B CFA fixture: weak_loading_penalty pts = 5 (no λ < 0.40)', String(ca.breakdown.weak_loading_penalty.pts), '5');
+  check('§4B CFA fixture: cross_loadings pts = 5 (no items flagged)', String(ca.breakdown.cross_loadings.pts), '5');
+  check('§4B CFA fixture: model_fit pts = 5 (CFI ≥ 0.95, RMSEA ≤ 0.06)', String(ca.breakdown.model_fit.pts), '5');
+  check('§4B CFA fixture: score = 100', String(ca.score), '100');
+  check('§4B CFA fixture: PAF converged on both scales',
+    ca.breakdown.primary_loading.per_scale.every(function (s) { return s.skipped || s.paf_converged; }) ? '=' : 'non-converged', '=');
+
+  // ---- Promax sanity check ----
+  // factor_analyzer Promax with method='principal', kappa=4. Pinned reference
+  // in expected_promax.json. Assertion: full-pattern-matrix max-abs-diff ≤ 0.05
+  // (Phase 2 review preference over per-item near-zero tolerance).
+  const promaxItems = [];
+  fxPromax.items_factor_0.forEach(function (name) {
+    promaxItems.push({ name: name, label: name, types: ['likert'], scale: 'F1', values: fxPromax.columns[name] });
+  });
+  fxPromax.items_factor_1.forEach(function (name) {
+    promaxItems.push({ name: name, label: name, types: ['likert'], scale: 'F2', values: fxPromax.columns[name] });
+  });
+  const proOut = RSSI_MATH.computeLensesFromDataset({ source: '§4B Promax fixture', rowCount: fxPromax.N, variables: promaxItems });
+  const caPro = proOut.domain_details.construct_alignment;
+  check('§4B Promax fixture: cross_loadings sub-component scored', String(caPro.breakdown.cross_loadings.skipped), 'false');
+  check('§4B Promax fixture: pooled_m_factors = 2', String(caPro.breakdown.cross_loadings.pooled_m_factors), '2');
+  check('§4B Promax fixture: factor_scale_alignment not ambiguous',
+    String(caPro.breakdown.cross_loadings.factor_scale_alignment_ambiguous), 'false');
+
+  // Drive the Promax primitive directly so we can compare the full pattern
+  // matrix against factor_analyzer. (The orchestrator only surfaces flagged
+  // cross-loadings, not the raw pattern; the primitive is the right unit of
+  // verification here.)
+  const proItems = fxPromax.items_factor_0.concat(fxPromax.items_factor_1);
+  const proCols = proItems.map(function (n) { return fxPromax.columns[n].slice(); });
+  const Rp = RSSI_MATH._correlationMatrix(proCols);
+  const eigsP = RSSI_MATH._jacobiEigen(Rp);
+  const init = proItems.map(function () { return [0, 0]; });
+  for (let f = 0; f < 2; f++) {
+    const sqrtL = Math.sqrt(Math.max(eigsP[f].value, 0));
+    for (let i = 0; i < proItems.length; i++) init[i][f] = eigsP[f].vector[i] * sqrtL;
+  }
+  RSSI_MATH._varimax(init);
+  const { pattern, phi } = RSSI_MATH._promaxFromVarimax(init, 4);
+  // Determine engine factor-to-reference-factor mapping by which engine
+  // factor has the higher mean |loading| on items I1..I4.
+  let m00 = 0, m01 = 0;
+  for (let i = 0; i < 4; i++) { m00 += Math.abs(pattern[i][0]); m01 += Math.abs(pattern[i][1]); }
+  const engineF0 = m00 >= m01 ? 0 : 1;
+  const engineF1 = 1 - engineF0;
+  // Sign alignment: ensure engine factor 0's mean loading on its primary items is positive.
+  let signs = [1, 1];
+  let mean0 = 0; for (let i = 0; i < 4; i++) mean0 += pattern[i][engineF0]; if (mean0 < 0) signs[engineF0] = -1;
+  let mean1 = 0; for (let i = 4; i < 8; i++) mean1 += pattern[i][engineF1]; if (mean1 < 0) signs[engineF1] = -1;
+  // Full-matrix max-abs-diff.
+  let proMaxDiff = 0;
+  proItems.forEach(function (name, i) {
+    const ref = exPromax.loadings[name];
+    const engPrimary = signs[engineF0] * pattern[i][engineF0];
+    const engSecondary = signs[engineF1] * pattern[i][engineF1];
+    proMaxDiff = Math.max(proMaxDiff, Math.abs(engPrimary - ref.factor_0));
+    proMaxDiff = Math.max(proMaxDiff, Math.abs(engSecondary - ref.factor_1));
+  });
+  check('§4B Promax pattern matrix max-abs-diff vs factor_analyzer ≤ 0.05',
+    proMaxDiff <= 0.05 ? '=' : 'maxDiff=' + proMaxDiff.toFixed(4), '=');
+  // Phi (factor correlation) ±0.05.
+  const phiEng = phi[engineF0][engineF1] * signs[engineF0] * signs[engineF1];
+  check('§4B Promax factor correlation Φ within ±0.05 of factor_analyzer reference',
+    Math.abs(phiEng - exPromax.factor_correlation) <= 0.05 ? '=' :
+    'engine=' + phiEng.toFixed(3) + ' ref=' + exPromax.factor_correlation.toFixed(3), '=');
+
+  // ---- Adversarial fixture: weak factor structure ----
+  // 4 items, population λ=0.30, single scale, N=300. Expect low primary-
+  // loading band (cross-scale mean < 0.50 → 0 pts), max weak-loading
+  // deductions, single-scale → cross-loadings skipped. Score in [0, 25].
+  function weakFixture() {
+    const N = 300;
+    const lam = 0.30;
+    const epsSd = Math.sqrt(1 - lam * lam);
+    // Deterministic Mersenne-twister-lite seeded RNG.
+    let s = 12345;
+    function rng() { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }
+    function gauss() { return Math.sqrt(-2 * Math.log(rng() || 1e-9)) * Math.cos(2 * Math.PI * rng()); }
+    const items = [];
+    const F = []; for (let i = 0; i < N; i++) F.push(gauss());
+    for (let k = 1; k <= 4; k++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) {
+        const z = lam * F[i] + epsSd * gauss();
+        vals.push(Math.max(1, Math.min(5, Math.round(z + 3))));  // shift to Likert-ish
+      }
+      items.push({ name: 'W' + k, label: 'W' + k, types: ['likert'], scale: 'WeakScale', values: vals });
+    }
+    return { source: '§4B weak fixture', rowCount: N, variables: items };
+  }
+  const weakOut = RSSI_MATH.computeLensesFromDataset(weakFixture());
+  const caWeak = weakOut.domain_details.construct_alignment;
+  console.log('  §4B weak fixture: score=' + caWeak.score + ' mean λ=' +
+    caWeak.breakdown.primary_loading.cross_scale_mean.toFixed(3));
+  check('§4B weak fixture: primary_loading pts = 0 (mean λ < 0.50)',
+    String(caWeak.breakdown.primary_loading.pts), '0');
+  check('§4B weak fixture: cross_loadings skipped (single scale)',
+    String(caWeak.breakdown.cross_loadings.skipped), 'true');
+  check('§4B weak fixture: score ≤ 50 (weak structure)',
+    caWeak.score <= 50 ? '=' : 'score=' + caWeak.score, '=');
+
+  // ---- Cross-loading fixture: 2 scales × 4 items, one designed cross-loader ----
+  function crossFixture() {
+    const N = 400;
+    let s = 77777;
+    function rng() { s = (s * 1664525 + 1013904223) % 4294967296; return s / 4294967296; }
+    function gauss() { return Math.sqrt(-2 * Math.log(rng() || 1e-9)) * Math.cos(2 * Math.PI * rng()); }
+    // Two correlated factors, ρ=0.3.
+    const rho = 0.3;
+    const F1 = [], F2 = [];
+    for (let i = 0; i < N; i++) {
+      const z1 = gauss(), z2 = gauss();
+      F1.push(z1);
+      F2.push(rho * z1 + Math.sqrt(1 - rho * rho) * z2);
+    }
+    function mkItem(name, scale, loadF1, loadF2) {
+      const epsSd = Math.sqrt(Math.max(1 - loadF1 * loadF1 - loadF2 * loadF2 - 2 * loadF1 * loadF2 * rho, 0.01));
+      const vals = [];
+      for (let i = 0; i < N; i++) {
+        const z = loadF1 * F1[i] + loadF2 * F2[i] + epsSd * gauss();
+        vals.push(Math.max(1, Math.min(5, Math.round(z + 3))));
+      }
+      return { name: name, label: name, types: ['likert'], scale: scale, values: vals };
+    }
+    const items = [
+      mkItem('A1', 'ScaleA', 0.8, 0.0),
+      mkItem('A2', 'ScaleA', 0.8, 0.0),
+      mkItem('A3', 'ScaleA', 0.8, 0.0),
+      mkItem('A4', 'ScaleA', 0.55, 0.50),   // deliberate cross-loader
+      mkItem('B1', 'ScaleB', 0.0, 0.8),
+      mkItem('B2', 'ScaleB', 0.0, 0.8),
+      mkItem('B3', 'ScaleB', 0.0, 0.8),
+      mkItem('B4', 'ScaleB', 0.0, 0.8),
+    ];
+    return { source: '§4B cross fixture', rowCount: N, variables: items };
+  }
+  const crossOut = RSSI_MATH.computeLensesFromDataset(crossFixture());
+  const caCross = crossOut.domain_details.construct_alignment;
+  const flagged = caCross.breakdown.cross_loadings.flagged_items;
+  console.log('  §4B cross-loading fixture: ' + flagged.length + ' item(s) flagged: ' +
+    flagged.map(function (f) { return f.item; }).join(','));
+  check('§4B cross-loading fixture: at least one item flagged',
+    flagged.length >= 1 ? '=' : 'count=' + flagged.length, '=');
+  check('§4B cross-loading fixture: A4 is in the flagged set',
+    flagged.some(function (f) { return f.item === 'A4'; }) ? '=' :
+    'flagged=' + flagged.map(function (f) { return f.item; }).join(','), '=');
+  check('§4B cross-loading fixture: cross_loadings pts < 5 (deduction occurred)',
+    caCross.breakdown.cross_loadings.pts < 5 ? '=' : 'pts=' + caCross.breakdown.cross_loadings.pts, '=');
+
+  // ---- Skip path: no scale assignments → whole-domain skip ----
+  function noScaleFixture() {
+    const N = 60;
+    const items = [];
+    for (let q = 1; q <= 4; q++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(((i + q) % 5) + 1);
+      items.push({ name: 'Q' + q, label: 'Q' + q, types: ['likert'], values: vals });
+    }
+    return { source: '§4B no-scale fixture', rowCount: N, variables: items };
+  }
+  const noScaleOut = RSSI_MATH.computeLensesFromDataset(noScaleFixture());
+  check('§4B no scale assignments: construct_alignment is null',
+    String(noScaleOut.domain_subscores.construct_alignment), 'null');
+  check('§4B no scale assignments: construct_alignment in skipped_domains',
+    noScaleOut.skipped_domains.indexOf('construct_alignment') >= 0 ? '=' : 'not skipped', '=');
+  check('§4B no scale assignments: domain_details surfaces skip_reason',
+    noScaleOut.domain_details.construct_alignment.skip_reason, 'no_scale_assignments');
+
+  // ---- Skip path: single-item scale ----
+  function singleItemScaleFixture() {
+    const N = 60;
+    const items = [];
+    // Scale A has 4 items; Scale Solo has 1 item.
+    for (let q = 1; q <= 4; q++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(((i + q) % 5) + 1);
+      items.push({ name: 'A' + q, label: 'A' + q, types: ['likert'], scale: 'A', values: vals });
+    }
+    const solo = [];
+    for (let i = 0; i < N; i++) solo.push(((i * 7) % 5) + 1);
+    items.push({ name: 'Solo1', label: 'Solo1', types: ['likert'], scale: 'Solo', values: solo });
+    return { source: '§4B single-item fixture', rowCount: N, variables: items };
+  }
+  const singleOut = RSSI_MATH.computeLensesFromDataset(singleItemScaleFixture());
+  const caSingle = singleOut.domain_details.construct_alignment;
+  const soloEntry = caSingle.breakdown.primary_loading.per_scale.find(function (s) { return s.scale === 'Solo'; });
+  check('§4B single-item scale: per-scale entry skipped',
+    String(soloEntry.skipped), 'true');
+  check('§4B single-item scale: skip_reason = k_lt_2',
+    soloEntry.skip_reason, 'k_lt_2');
+
+  // ---- Skip path: two-item scale (loadings OK, fit excluded) ----
+  function twoItemScaleFixture() {
+    const N = 80;
+    const items = [];
+    for (let q = 1; q <= 2; q++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(((i + q * 2) % 5) + 1);
+      items.push({ name: 'T' + q, label: 'T' + q, types: ['likert'], scale: 'Two', values: vals });
+    }
+    for (let q = 1; q <= 4; q++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(((i + q) % 5) + 1);
+      items.push({ name: 'Q' + q, label: 'Q' + q, types: ['likert'], scale: 'Quad', values: vals });
+    }
+    return { source: '§4B two-item fixture', rowCount: N, variables: items };
+  }
+  const twoOut = RSSI_MATH.computeLensesFromDataset(twoItemScaleFixture());
+  const caTwo = twoOut.domain_details.construct_alignment;
+  const twoEntry = caTwo.breakdown.primary_loading.per_scale.find(function (s) { return s.scale === 'Two'; });
+  check('§4B two-item scale: per-scale entry NOT skipped (loadings well-defined)',
+    String(twoEntry.skipped), 'false');
+  check('§4B two-item scale: fit_exclude_reason = k_lte_3',
+    twoEntry.fit_exclude_reason, 'k_lte_3');
+
+  // ---- Skip path: N < 30 complete rows per scale ----
+  function smallNFixture() {
+    const N = 20;
+    const items = [];
+    for (let q = 1; q <= 4; q++) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push(((i + q) % 5) + 1);
+      items.push({ name: 'S' + q, label: 'S' + q, types: ['likert'], scale: 'Small', values: vals });
+    }
+    return { source: '§4B small-N fixture', rowCount: N, variables: items };
+  }
+  const smallOut = RSSI_MATH.computeLensesFromDataset(smallNFixture());
+  const caSmall = smallOut.domain_details.construct_alignment;
+  const smallEntry = caSmall.breakdown.primary_loading.per_scale.find(function (s) { return s.scale === 'Small'; });
+  check('§4B small-N scale: per-scale entry skipped',
+    String(smallEntry.skipped), 'true');
+  check('§4B small-N scale: skip_reason = n_lt_30',
+    smallEntry.skip_reason, 'n_lt_30');
+
+  // ---- Lens-score shift documentation ----
+  // §4B was emitting null before this build. With scale assignments
+  // present on the CFA fixture, all three lens scores now include §4B
+  // at its respective weight. Compare against §4B-null baseline.
+  function manualLens(subscores, weights) {
+    let w = 0, s = 0;
+    Object.keys(weights).forEach(function (d) {
+      if (subscores[d] == null) return;
+      s += subscores[d] * weights[d]; w += weights[d];
+    });
+    return w > 0 ? Math.round((s / w) * 100) / 100 : null;
+  }
+  const subWithout = Object.assign({}, cfaOut.domain_subscores, { construct_alignment: null });
+  const subWith = cfaOut.domain_subscores;
+  const W = RSSI_MATH.LENS_WEIGHTS;
+  ['psychometric_core', 'respondent_centered', 'validity_forward'].forEach(function (L) {
+    const before = manualLens(subWithout, W[L]);
+    const after = manualLens(subWith, W[L]);
+    const delta = (after != null && before != null) ? (after - before) : null;
+    console.log('  §4B lens shift on CFA fixture (' + L + '): ' + before + ' → ' + after +
+      (delta != null ? ' (Δ ' + (delta >= 0 ? '+' : '') + delta.toFixed(2) + ')' : ''));
+  });
+  check('§4B lens shift: construct_alignment NOT in skipped_domains for CFA fixture',
+    cfaOut.skipped_domains.indexOf('construct_alignment') === -1 ? '=' : 'still skipped', '=');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4D/§4E/§4F/§4G all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4B/§4D/§4E/§4F/§4G all check.');
 }

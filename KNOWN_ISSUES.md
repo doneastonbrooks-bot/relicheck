@@ -245,3 +245,47 @@ A survey in Spanish, French, Mandarin, or any non-English language will produce 
 **Resolve during.** Future v2 phase two work, if user feedback surfaces the need. The implementation would slot in as a fourth wording-health flag (1 pt deduction per flagged item, same per-flag pattern) without restructuring the domain. Likely approach: a static "academic / corporate jargon" wordlist, or a frequency-based detector against a general-English reference corpus. The decision tree (which wordlist? which corpus? which threshold?) is what makes this disproportionate today; a focused conversation can resolve all three once user demand materializes.
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeBiasClarity` → would add a `hasJargon(text)` helper alongside the existing three detectors. Spec §4D wording row (would add (d)).
+
+---
+
+## 13. §4B CFA implemented as iterated PAF, not full ML
+
+**Surfaced:** §4B Construct Alignment build, Phase 1 Q1.
+
+**Problem.** Spec §4B describes per-scale Confirmatory Factor Analysis but does not pin the estimator. The canonical implementation uses **iterated principal-axis factoring (PAF)**, not maximum-likelihood (ML) estimation. PAF refines communalities by replacing the correlation matrix's diagonal with prior-iteration squared loadings and re-running the top-eigenpair decomposition until max |Δh²| < 1e-5 or 100 iterations. ML would minimize the Wishart-based discrepancy function via a quasi-Newton or L-BFGS optimizer that the engine does not currently have.
+
+**Implication.** On the §4B sanity-check fixture (2 scales × 4 items × N=500, λ=0.8, factor cor 0.3, quantized to 5-pt Likert), iterated PAF produces standardized loadings within **~0.002** of `semopy`'s ML output — an order of magnitude tighter than the ±0.05 tolerance the harness asserts. CFI and RMSEA derived from the PAF loadings via the ML discrepancy formula are within the same ±0.05 bound. The simplification is deliberate, approved during the Phase 1 audit (Q1 option (a)), and on tested data is essentially invisible to users; the harness assertion at ±0.05 remains the conservative guarantee.
+
+The CFA-with-EFA-fallback path the spec describes (§4B and §11) is structurally a no-op under this estimator — they are the same algorithm. The engine still surfaces a `cfa_to_efa_fallback` diagnostic when R is singular so the user sees the fallback signal.
+
+**Resolve during.** Future v2 phase two work, only if the PAF-vs-ML divergence becomes user-facing. The replacement would be a custom ML optimizer (~days of work, with convergence-handling, line search, and gradient computation), or — preferably — a decision to route §4B through a Python microservice or WASM port per spec §11. Until then, iterated PAF is the right v2 phase one choice.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeConstructAlignment` → `iteratedPAFLoadings`. Spec §4B estimator note.
+
+---
+
+## 14. §4B dormant in production until scale assignments propagate
+
+**Surfaced:** §4B Construct Alignment build, Phase 1 audit.
+
+**Problem.** §4B requires per-Likert-item `scale` / `construct` membership to compute (every sub-component groups items by scale). The platform-side data contract does not yet supply this field — the same dependency tracked as item #1 in [§4 above](#4-platform-side-data-contract-checklist--seven-changes-unlock-the-full-canonical-engine). When the field is absent, §4B whole-domain skips (`construct_alignment: null`) and the §3.2 lens math absorbs it via skip-and-rescale.
+
+**Implication.** Production lens scores today are unchanged by the §4B build — §4B's contribution to the weighted sum is zero until scale assignments propagate. On the §4B CFA sanity-check fixture (scale assignments present), the three lens scores shift by +1.4 to +2.5 points relative to the §4B-null baseline because §4B at score 100 is higher than the other domains' averages on that fixture. No new platform-side data contract item is required beyond §4 item #1; §4B and §4A go live together when that lands.
+
+**Resolve during.** §4 item #1 landing on the platform side. No engine-side fix needed.
+
+**Code touch-points.** Module side (no fix needed): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeConstructAlignment` — already wired and gated on scale assignments. Platform side: same dependency as §4 item #1. Spec §4B.
+
+---
+
+## 15. §4B Model Fit excludes k ≤ 3 scales
+
+**Surfaced:** §4B Construct Alignment build, Phase 1 Q4 (spec extension).
+
+**Problem.** The spec §4B Model Fit sub-component originally read "Single-item and two-item scales are excluded from this check (fit indices are not defined)." During the Phase 1 audit it became clear that **three-item scales** also need to be excluded: for k=3 the one-factor model has df = (k−1)(k−2)/2 = 0. With zero degrees of freedom, the model is just-identified — χ² equals zero and fit indices (CFI ≈ 1.0, RMSEA = 0) are perfect by construction regardless of how the data actually behaves. Reporting fit on a just-identified model would mislead users by implying excellent structural fit when the indices are mathematically forced to that value.
+
+**Implication.** The spec §4B Model Fit row is updated to read "Single-item, two-item, and three-item scales excluded from fit scoring." Loadings and the weak-loading penalty still apply for k≥2 (the math is well-defined there); cross-loading detection via the pooled Promax EFA also applies (items participate in the pooled rotation regardless of their scale's k); only Model Fit excludes k≤3. The exclusion is engine-side: per-scale fit returns `{ fit: null, fit_exclude_reason: 'k_lte_3' }` and is dropped from the "every scale clears the threshold" quantifier without penalty.
+
+**Resolve during.** Resolved at landing. Spec is updated; engine implements the rule; harness verifies via the two-item-scale fixture (`fit_exclude_reason === 'k_lte_3'`). No further work required.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeConstructAlignment` → `perScale` loop's `if (k <= 3) { fitExcludeReason = 'k_lte_3'; }` branch. Spec §4B Model Fit row.
