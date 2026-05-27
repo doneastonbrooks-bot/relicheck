@@ -214,6 +214,262 @@
     return vector.map(v => v * sqrtL); // signed loadings
   }
 
+  // ====================================================================
+  // ABSORBED MATH — from apps/rssi/rssi-reliability.js and
+  // apps/rssi/rssi-analyses.js. Per v2 build spec §6, this engine is
+  // canonical; the rssi/ math files are scheduled for retirement once
+  // both surfaces consume the canonical engine.
+  //
+  // This block is the *narrow* absorption: the non-duplicative math
+  // (null-aware Cronbach over raw item arrays, the narrative scoring
+  // functions used by the standalone RSSI surface) is brought over
+  // verbatim and exposed on window.RSSI_ABSORBED_MATH. The existing
+  // inline math in computeReliability/computeItemQuality is left
+  // untouched; equivalence is asserted at the bottom of the IIFE.
+  //
+  // Functions sourced from rssi-reliability.js:
+  //   absorbedCompleteCases, absorbedCronbachAlpha, absorbedItemTotal,
+  //   bandForAlpha
+  // Functions sourced from rssi-analyses.js:
+  //   absorbedAvgInterItemR, absorbedItemRestCorrelations,
+  //   computeValidityNarrative, computeItemQualityNarrative
+  // ====================================================================
+
+  // From rssi-reliability.js. Items arrive as arrays-of-numbers-or-null
+  // (no upstream complete-case filtering); this returns the row-aligned
+  // 2D matrix of complete rows.
+  function absorbedCompleteCases(items) {
+    if (!items.length) return [];
+    const n = items[0].length;
+    const matrix = [];
+    for (let i = 0; i < n; i++) {
+      let ok = true;
+      for (let j = 0; j < items.length; j++) {
+        if (items[j][i] == null || isNaN(items[j][i])) { ok = false; break; }
+      }
+      if (ok) {
+        const row = new Array(items.length);
+        for (let j = 0; j < items.length; j++) row[j] = items[j][i];
+        matrix.push(row);
+      }
+    }
+    return matrix;
+  }
+
+  // From rssi-reliability.js. Null-aware Cronbach α. Returns null when
+  // k < 2 or fewer than 5 complete cases. The engine's inline α uses
+  // a slightly different floor (3 complete rows) — that difference is
+  // intentional and is exercised by the equivalence check below.
+  function absorbedCronbachAlpha(items) {
+    const k = items.length;
+    if (k < 2) return null;
+    const matrix = absorbedCompleteCases(items);
+    if (matrix.length < 5) return null;
+    const itemVars = [];
+    for (let j = 0; j < k; j++) {
+      const col = matrix.map(function (r) { return r[j]; });
+      itemVars.push(variance(col));
+    }
+    const sums = matrix.map(function (r) { return r.reduce(function (a, b) { return a + b; }, 0); });
+    const totalVar = variance(sums);
+    if (totalVar === 0) return 0;
+    const itemVarSum = itemVars.reduce(function (a, b) { return a + b; }, 0);
+    return (k / (k - 1)) * (1 - itemVarSum / totalVar);
+  }
+
+  // From rssi-reliability.js. Corrected item-rest correlation: item[idx]
+  // against the sum of all OTHER items, on complete cases.
+  function absorbedItemTotal(items, idx) {
+    if (items.length < 2) return null;
+    const matrix = absorbedCompleteCases(items);
+    if (matrix.length < 5) return null;
+    const itemVals = matrix.map(function (r) { return r[idx]; });
+    const restSums = matrix.map(function (r) {
+      let s = 0;
+      for (let j = 0; j < r.length; j++) if (j !== idx) s += r[j];
+      return s;
+    });
+    return pearson(itemVals, restSums);
+  }
+
+  // From rssi-reliability.js. Banding for the interactive analyzer's
+  // banner. NOTE: these bands are the rssi/ banner bands, NOT the
+  // canonical v2 §4.1 bands (which are the ones computeReliability
+  // already uses for point allocation). They are absorbed verbatim so
+  // a future standalone-RSSI surface can render the same banner.
+  function bandForAlpha(a) {
+    if (a == null) return { label: '—', class: 'neutral' };
+    if (a >= 0.85) return { label: 'Excellent', class: 'good' };
+    if (a >= 0.70) return { label: 'Good',      class: 'good' };
+    if (a >= 0.60) return { label: 'Marginal',  class: 'warn' };
+    return              { label: 'Low',       class: 'bad' };
+  }
+
+  // From rssi-analyses.js. Average inter-item correlation on complete
+  // cases. Equivalent to the loop already in computeReliability.
+  function absorbedAvgInterItemR(itemArrays) {
+    const matrix = absorbedCompleteCases(itemArrays);
+    const k = itemArrays.length;
+    if (k < 2 || !matrix.length) return null;
+    const validCols = itemArrays.map(function (_, j) {
+      return matrix.map(function (r) { return r[j]; });
+    });
+    let sum = 0, pairs = 0;
+    for (let i = 0; i < k; i++) {
+      for (let j = i + 1; j < k; j++) {
+        sum += pearson(validCols[i], validCols[j]);
+        pairs++;
+      }
+    }
+    return pairs ? sum / pairs : 0;
+  }
+
+  // From rssi-analyses.js. Item-rest correlations for every item.
+  function absorbedItemRestCorrelations(itemArrays) {
+    const matrix = absorbedCompleteCases(itemArrays);
+    const k = itemArrays.length;
+    if (k < 2 || matrix.length < 5) return itemArrays.map(function () { return null; });
+    const validCols = itemArrays.map(function (_, j) {
+      return matrix.map(function (r) { return r[j]; });
+    });
+    return validCols.map(function (item, i) {
+      const rest = matrix.map(function (_, idx) {
+        let s = 0;
+        for (let j = 0; j < k; j++) if (j !== i) s += validCols[j][idx];
+        return s;
+      });
+      return pearson(item, rest);
+    });
+  }
+
+  // From rssi-analyses.js. Narrative validity status heuristic over
+  // reliability outputs. NOTE: this is NOT the canonical §4A Validity
+  // sub-scoring (which requires HTMT + criterion validity). It is the
+  // status/judgment text the standalone RSSI surface renders. Absorbed
+  // verbatim so the engine owns the only copy of the heuristic.
+  function computeValidityNarrative(likertItems) {
+    if (likertItems.length < 2) {
+      return { error: 'Need at least 2 Likert items.' };
+    }
+    const itemArrays = likertItems.map(function (it) { return it.values.map(num); });
+    const matrix = absorbedCompleteCases(itemArrays);
+    if (matrix.length < 5) {
+      return { error: 'Need at least 5 complete responses across all items.' };
+    }
+    const alpha   = absorbedCronbachAlpha(itemArrays);
+    const avgR    = absorbedAvgInterItemR(itemArrays);
+    const itemRest = absorbedItemRestCorrelations(itemArrays);
+    const k = likertItems.length;
+    const n = matrix.length;
+    const rows = likertItems.map(function (it, i) {
+      const r = itemRest[i];
+      let flag = 'ok';
+      if (r != null && r < 0)         flag = 'neg';
+      else if (r != null && r < 0.30) flag = 'weak';
+      return {
+        name:     it.name,
+        label:    it.label || it.name,
+        n:        n,
+        itemRest: r,
+        flag:     flag,
+      };
+    });
+    const negCount  = rows.filter(function (r) { return r.flag === 'neg'; }).length;
+    const weakCount = rows.filter(function (r) { return r.flag === 'weak'; }).length;
+    let status, statusTone, judgment, decision, nextStep;
+    if (negCount >= 3 || (alpha != null && alpha < 0.60)) {
+      status = 'Not Ready'; statusTone = 'alert';
+      judgment = 'Significant validity concerns. The instrument is not yet ready to support strong claims, publication, or high-stakes decisions.';
+      decision = 'Do not use for decisions yet. The instrument needs scoring corrections and item review before it can be trusted.';
+      nextStep = 'Confirm reverse-coding on every _R item, rerun reliability, and review whether the instrument is one scale or several subscales.';
+    } else if (negCount > 0 || weakCount >= Math.ceil(k * 0.2) || (avgR != null && avgR < 0.20) || (alpha != null && alpha < 0.70)) {
+      status = 'Use with Caution'; statusTone = 'caution';
+      judgment = 'Mixed evidence. The instrument has acceptable internal consistency, but item-level evidence suggests construct-alignment problems.';
+      decision = 'Appropriate for exploratory analysis or internal review. Do not use for strong claims, publication, or high-stakes decisions until flagged items are reviewed.';
+      nextStep = 'Confirm whether all _R items were reverse-scored. Then rerun reliability and factor structure checks. Consider analyzing subscales separately rather than one total score.';
+    } else if ((avgR != null && avgR < 0.30) || weakCount > 0) {
+      status = 'Mixed Evidence'; statusTone = 'warn';
+      judgment = 'Validity evidence is mixed. The instrument is usable for exploratory analysis but should be strengthened before publication.';
+      decision = 'Acceptable for internal use and exploratory analysis. Resolve the flagged items before publication or external reporting.';
+      nextStep = 'Inspect the weak-item-rest items, consider revising or dropping them, and report by subscale where possible.';
+    } else {
+      status = 'Strong'; statusTone = 'strong';
+      judgment = 'Validity evidence is strong. Items converge on the intended construct and the scale supports confident reporting.';
+      decision = 'Ready to use. Standard caveats around content validity (expert wording review) still apply.';
+      nextStep = 'No statistical correction needed. Confirm content and face validity with a subject-matter expert before publication.';
+    }
+    return {
+      alpha: alpha, avgR: avgR, n: n, k: k,
+      negCount: negCount, weakCount: weakCount,
+      rows: rows,
+      status: status, statusTone: statusTone,
+      judgment: judgment, decision: decision, nextStep: nextStep,
+    };
+  }
+
+  // From rssi-analyses.js. Narrative item-quality variant. Same flag
+  // set as computeItemQuality (ceiling/floor, low var, |skew|>2,
+  // |kurt|>5, missing>=20%) but produces ok/warn/alert tiers + narrative
+  // strings instead of the canonical point deduction. Absorbed verbatim
+  // so the engine owns the only copy.
+  function computeItemQualityNarrative(likertItems) {
+    if (likertItems.length < 1) return { error: 'Need at least 1 Likert item.' };
+    const rows = likertItems.map(function (v) {
+      const all  = v.values;
+      const nums = all.map(num).filter(function (x) { return x != null; });
+      const missing = all.length - nums.length;
+      const m  = nums.length ? nums.reduce(function (s, x) { return s + x; }, 0) / nums.length : null;
+      const s  = nums.length > 1 ? Math.sqrt(variance(nums)) : null;
+      const lo = nums.length ? Math.min.apply(null, nums) : null;
+      const hi = nums.length ? Math.max.apply(null, nums) : null;
+      const range = (hi != null && lo != null) ? hi - lo : 0;
+      const ceil  = (nums.length && hi != null) ? nums.filter(function (x) { return x === hi; }).length / nums.length : 0;
+      const floor = (nums.length && lo != null) ? nums.filter(function (x) { return x === lo; }).length / nums.length : 0;
+      const lowVar = (s != null && range > 0) ? (s < 0.15 * range) : false;
+      let skew = 0, kurt = 0;
+      if (nums.length >= 3 && s != null && s > 0) {
+        skew = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 3); }, 0) / nums.length;
+      }
+      if (nums.length >= 4 && s != null && s > 0) {
+        kurt = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 4); }, 0) / nums.length - 3;
+      }
+      const flags = [];
+      if (ceil  >= 0.70) flags.push('ceiling');
+      if (floor >= 0.70) flags.push('floor');
+      if (lowVar)        flags.push('low variance');
+      if (Math.abs(skew) > 2)  flags.push('extreme skew');
+      if (Math.abs(kurt) > 5)  flags.push('extreme kurtosis');
+      if (missing / all.length > 0.20) flags.push(Math.round(missing / all.length * 100) + '% missing');
+      let tone = 'ok';
+      if (flags.length >= 3) tone = 'alert';
+      else if (flags.length) tone = 'warn';
+      return { name: v.name, label: v.label || v.name, n: nums.length, mean: m, sd: s, missing: missing, ceil: ceil, floor: floor, skew: skew, kurt: kurt, flags: flags, tone: tone };
+    });
+    const ok    = rows.filter(function (r) { return r.tone === 'ok'; }).length;
+    const warn  = rows.filter(function (r) { return r.tone === 'warn'; }).length;
+    const alert = rows.filter(function (r) { return r.tone === 'alert'; }).length;
+    const judgment = alert
+      ? alert + ' item' + (alert === 1 ? '' : 's') + ' show multiple problems and should be revised or removed; ' + warn + ' need a closer look.'
+      : warn
+        ? warn + ' item' + (warn === 1 ? '' : 's') + ' show one issue each. Inspect; most are usable with minor adjustments.'
+        : 'All items pass the item-quality screens.';
+    const statusTone = alert ? 'alert' : warn ? 'warn' : 'strong';
+    const status     = alert ? 'Action Required' : warn ? 'Inspect' : 'All Clear';
+    return { rows: rows, ok: ok, warn: warn, alert: alert, judgment: judgment, status: status, statusTone: statusTone };
+  }
+
+  // Single entry point for retirement-phase work to migrate against.
+  window.RSSI_ABSORBED_MATH = {
+    completeCases:          absorbedCompleteCases,
+    cronbachAlpha:          absorbedCronbachAlpha,
+    itemTotal:              absorbedItemTotal,
+    bandForAlpha:           bandForAlpha,
+    avgInterItemR:          absorbedAvgInterItemR,
+    itemRestCorrelations:   absorbedItemRestCorrelations,
+    computeValidityNarrative,
+    computeItemQualityNarrative,
+  };
+
   // ---------- Components ----------
   function computeReliability() {
     // Domain: Internal Consistency & Scale Reliability (25 pts total)
@@ -262,6 +518,22 @@
     const totals   = valid.map((_, idx) => validCols.reduce((s, col) => s + col[idx], 0));
     const totalVar = variance(totals);
     const alpha = (k / (k - 1)) * (1 - itemVar / (totalVar || 1));
+
+    // Equivalence check: the absorbed null-aware Cronbach (from
+    // rssi-reliability.js) should match the inline computation above
+    // on the same items. Diverges only when the absorbed function's
+    // 5-complete-row floor rejects a dataset the inline path accepts
+    // (≥ 3 rows) — in that case absorbed returns null and we skip.
+    try {
+      const _absorbed = absorbedCronbachAlpha(
+        likertVars.map(function (v) { return v.values.map(num); })
+      );
+      if (_absorbed != null && Math.abs(_absorbed - alpha) > 1e-9) {
+        console.warn('[strength-index] Cronbach α drift between inline and absorbed paths:',
+                     { inline: alpha, absorbed: _absorbed });
+      }
+    } catch (e) { /* equivalence check is non-fatal */ }
+
     let alphaPts;
     if      (alpha >= 0.90) alphaPts = 8;
     else if (alpha >= 0.80) alphaPts = 7;
