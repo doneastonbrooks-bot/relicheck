@@ -55,31 +55,59 @@ Any saved report from before the band fix will produce a lower headline score an
 
 ---
 
-## 4. §4E Scale Structure is dormant in production — four platform-side changes unlock it
+## 4. Platform-side data-contract checklist — seven changes unlock the full canonical engine
 
-**Surfaced:** §4E Scale Structure build.
+**Surfaced:** §4E Scale Structure build; grown to seven items across §4E/§4G/§4A/§4D builds.
 
-**Problem.** §4E is fully implemented in [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) (`computeScaleStructure`) and exhaustively verified by [apps/strength-index/__harness/three-lens-verify.js](apps/strength-index/__harness/three-lens-verify.js) (54 assertions covering every sub-component, every band threshold, every skip path, and the rescale arithmetic). However, the domain returns `score: null` (whole-domain skip) on all current production data because the data the engine consumes — built by [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) — does not yet carry the four per-item / per-survey fields §4E needs. Until each of the four changes below lands, `domain_subscores.scale_structure` stays null in production, the lens math absorbs the skip via §3.2 skip-and-rescale, and §4E contributes nothing to the headline.
+**Problem.** Each domain build in the canonical engine has surfaced a piece of dataset-shape or configuration data the engine needs but the platform does not yet supply. The engine handles every missing piece gracefully (skip-and-rescale, V-F cap, sub-component skip with diagnostic), so the lens math is correct today; but several domains and sub-components are *dormant* or *partial-evaluation* in production until the platform-side data contract is extended. This entry consolidates the seven changes a platform engineer needs to land to unlock every domain end-to-end.
 
-**The four changes that unlock §4E.** Each is a platform-side change with a specific code location:
+**Where the data comes from.** All per-Likert-item changes live in [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php), the transform that builds the variables array the engine consumes. Survey-level config flags flow through the invoking surface's configuration object. Two changes require new platform-layer UI (Setup Wizard for `reverse_coded_confirmed`; a demographic-tagging step).
 
-1. **Propagate scale assignments into the dataset shape.** [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php) emits Likert variables with `{ name, types, label, values }`. Add `scale` (or `construct`) per Likert variable, sourced from `column_meta.construct` on the [datasets table](db/schema_phase7.sql) (already populated by [api/datasets/update_columns.php](api/datasets/update_columns.php), see [api/datasets/create.php:4](api/datasets/create.php)). The engine accepts either `v.scale` or `v.construct` as the membership key — whichever fits the existing convention. Without this, the whole §4E domain skips and the other three changes below cannot be exercised.
+**The seven changes — dependency map.**
 
-2. **Propagate per-item reverse-coded flags.** Same file, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `reverse_coded: bool` per Likert variable, sourced from `column_meta.reverse` (already in the [datasets table](db/schema_phase7.sql) per [api/datasets/create.php:4](api/datasets/create.php)). Without this, every item is treated as not-reverse-coded for sub-component 2 scoring purposes.
+| # | Change | Type | Unlocks |
+|---|---|---|---|
+| 1 | `scale` (or `construct`) per Likert variable | per-item dataset field | §4A whole-domain (HTMT + convergent + criterion grouping); §4E whole-domain; §4G straight-lining sub-component |
+| 2 | `reverse_coded: bool` per Likert variable | per-item dataset field | §4E sub-2 (reverse-coded balance) reading |
+| 3 | `reverse_coded_confirmed: bool` survey-level flag | config object | §4E sub-2 scoring (tri-state contract — needs Setup Wizard step) |
+| 4 | `likert_range: [min, max]` or `anchor_count: int` per Likert variable | per-item dataset field | §4E sub-3 (format uniformity); §4G subs 1/2/4 (anchor count / midpoint / single-format); §4D fairness threshold normalization |
+| 5 | `anchor_labels: [string, …]` per Likert variable (optional) | per-item dataset field | §4G sub-3 (anchor symmetry beyond default 2/2 — see §8) |
+| 6 | `config.criterion_column` (column name) | config object | §4A criterion sub-component; removes §3.6 V-F cap |
+| 7 | `is_demographic: true` per categorical variable **OR** `config.demographic_columns: [name, …]` | per-item flag or config list | §4D fairness half (DIF proxy) |
 
-3. **Setup Wizard captures `reverse_coded_confirmed` at the survey level.** When the user has reviewed reverse-coding flags and the answer is "none" (or "I've reviewed them all"), the Wizard sets a survey-level `reverse_coded_confirmed: true`, which the invoking surface passes into the engine via the configuration object (`config.reverse_coded_confirmed`). The wizard does not exist yet; design it to capture this distinction during the reverse-coding step. Without this flag, sub-component 2 skips and rescales (the honest default — the engine cannot distinguish "no reverse items" from "user hasn't reviewed yet" without an explicit signal). Spec §4E table row for "Reverse-coded balance" documents the contract.
+**Per-domain status with current data contract.**
 
-4. **Propagate per-item Likert format metadata.** Same file again, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `likert_range: [min, max]` (e.g., `[1, 5]` or `[1, 7]`) and/or `anchor_count: int` per Likert variable. Source: the question definition in the Survey Builder (which already knows the anchor count). The schema convention is open — engine accepts either field. Without this, sub-component 3 (response-format uniformity) skips and rescales. **Note:** this same metadata also unlocks §4G sub-components 1 (anchor count), 2 (midpoint presence), and 4 (single-format-per-scale) — see §7.
+- **§4E Scale Structure**: whole-domain skip (depends on #1). Once #1 lands, sub-components 1, 4, 5 score immediately. #4 unlocks sub-3. #2 + #3 together unlock sub-2.
+- **§4G Response Scale Review**: partial-evaluation. Without #1 + #4, ships at ~11/13 always-available pts (rescaled). #1 unlocks per-scale straight-lining. #4 unlocks anchor count / midpoint / single-format. #5 unlocks real anchor-symmetry (currently default 2/2 per §8).
+- **§4A Validity**: whole-domain skip until #1. After #1, convergent + HTMT score; #6 unlocks criterion and disengages the §3.6 V-F cap.
+- **§4D Bias & Clarity**: partial-evaluation today. Wording-half scores whenever item text is propagated via `v.label` (already populated by [_build_dataset.php:26](api/surveys/_build_dataset.php:26) in production — no change needed for that half). Fairness-half requires #7. Threshold normalization on the fairness half also benefits from #4; absent #4, the engine falls back to 0.5 absolute with a `scale_range_normalization_unavailable_using_absolute_threshold` diagnostic.
 
-5. **Propagate structured anchor labels (required only for full §4G anchor-symmetry evaluation).** Add `anchor_labels: [string, ...]` per Likert variable (e.g., `["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]`), sourced from the Survey Builder's question definition. Until this lands, §4G sub-component 3 (anchor symmetry) awards the spec-defined default of 2/2 per Phase 1 Q1 decision (the engine does not attempt heuristic symmetry detection from arbitrary label strings — see §8). When labels arrive, the engine can do real symmetry detection from structured inputs. Marked optional in the checklist: change 5 is a future-evaluation expansion, not a prerequisite for §4G to score.
+**Implementation notes per change.**
 
-6. **Capture the criterion column for §4A criterion validity.** The engine accepts `config.criterion_column` (the item ID / column name of a numeric outcome to correlate scale totals against). Whatever surface invokes the engine — Setup Wizard, evidence-intake config, or a dedicated criterion-mapping step — must populate this field for the §4A criterion sub-component to score. The engine handles the absence gracefully: the criterion sub-component skips, the §3.6 Validity-Forward cap engages, and the lens math absorbs the skip via per-subcomponent rescale. So this is purely a "to activate criterion validity, the platform must capture which column is the criterion" entry, not a correctness gate. When the configured column is missing from the dataset or non-numeric, the engine returns a structured error in `domain_details.validity.breakdown.criterion.error`, distinct from the skip-with-diagnostic path (too few paired observations). Marked optional in the checklist: §4A scores convergent + HTMT without criterion; change 6 unlocks the third sub-component and removes the V-F cap.
+1. **`scale` / `construct`** — sourced from `column_meta.construct` on the [datasets table](db/schema_phase7.sql) (already populated by [api/datasets/update_columns.php](api/datasets/update_columns.php), see [api/datasets/create.php:4](api/datasets/create.php)). Engine accepts either field. Single highest-leverage change: unlocks the most downstream domains.
+2. **`reverse_coded`** — sourced from `column_meta.reverse` (already in the [datasets table](db/schema_phase7.sql) per [api/datasets/create.php:4](api/datasets/create.php)).
+3. **`reverse_coded_confirmed`** — survey-level flag captured by a Setup Wizard step (wizard does not exist yet; design it to capture this distinction during reverse-coding flagging). Engine reads via `config.reverse_coded_confirmed`.
+4. **Likert format metadata** — sourced from the Survey Builder's question definition (already knows the anchor count). Engine accepts either `likert_range: [min, max]` or `anchor_count: int`.
+5. **`anchor_labels`** — sourced from the Survey Builder's question definition. **Optional**: §4G ships a spec-sanctioned 2/2 default until labels arrive.
+6. **`criterion_column`** — column name (item ID) of a numeric outcome variable. Surface that populates this field is open (Setup Wizard, evidence-intake config, or a dedicated criterion-mapping step). **Optional**: §4A scores convergent + HTMT without it; #6 unlocks criterion and removes the V-F cap.
+7. **Demographic detection** — engine accepts EITHER signal:
+   - Per-variable `is_demographic: true` flag on categorical variables in the dataset shape, OR
+   - `config.demographic_columns: [name1, name2, …]` list in the config object.
+   Whichever the platform supplies wins. The dataset transform already emits categorical variables (`types: ['categorical']`); marking demographics is either a per-question Survey Builder flag or a dedicated demographic-tagging step.
 
-**Implication.** Until these four are wired, §4E is verified in the harness but unexercised in production. When the first of these changes lands, the engine will begin returning real §4E scores; that first run on real data should be verified end-to-end (sub-scores match hand-checked values on a known dataset). The combination of changes 1 + 4 unlocks the majority of the domain (sub-components 1, 3, 4, 5 score; sub-2 stays skipped); changes 2 + 3 then unlock sub-2.
+**Recommended order of landing.**
 
-**Resolve during.** Platform-side dataset-transform + Setup Wizard work, separate conversation from this module-side build.
+1. **First**: change #1 (scale assignments). Unlocks the most surface area. After this, §4A + §4E begin scoring and §4G adds per-scale straight-lining.
+2. **Second**: change #4 (anchor metadata). Unlocks §4E sub-3, §4G subs 1/2/4, and §4D threshold normalization. Combined with #1, the largest end-to-end lift in production lens scores.
+3. **Third (parallel-OK)**: change #2 (reverse_coded flags), #6 (criterion_column), #7 (demographic detection). Each is independent of the others and unlocks a discrete capability.
+4. **Fourth**: change #3 (reverse_coded_confirmed). Requires Setup Wizard UI.
+5. **Optional**: change #5 (anchor_labels). Future-evaluation expansion of §4G sub-3.
 
-**Code touch-points.** [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) (transform), Setup Wizard surface (not yet built), [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeScaleStructure` (consumer). Spec §4E.
+**First-run verification.** When the first of these lands, the affected domain will begin producing real scores in production for the first time. End-to-end verify against a known dataset (sub-scores match hand-checked values) before relying on the lens scores for user-facing reports — the harness's coverage is synthetic by design, and the first production run on real data deserves an end-to-end sanity check.
+
+**Resolve during.** Platform-side dataset-transform + Setup Wizard work, separate conversation from any module-side build.
+
+**Code touch-points.** [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) (transform — changes #1, #2, #4, #5, #7), Setup Wizard surface (not yet built — changes #3, #6, #7), [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) (consumer — already wired for all seven). Spec §4A, §4D, §4E, §4G.
 
 ---
 
@@ -166,3 +194,54 @@ A survey with weak items therefore loses points in *both* domains for the same u
 3. **Reframe in the report.** Render the two domains with explicit cross-references so the user sees the connection rather than reading them as independent findings.
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeReliability` (item-rest deduction loop), `computeValidity` (convergent sub-component). Spec §4 row "Item-rest correlations," §4A row "Convergent validity."
+
+---
+
+## 10. §4D double-barreled detector — rule-based heuristic with documented false-positive risk
+
+**Surfaced:** §4D Bias & Clarity build, Phase 1 Q6.
+
+**Problem.** The double-barreled flag in §4D wording health detects items where a coordinating conjunction (`and` / `or`) joins what *appears* to be two clauses with verbs on each side. The detector is regex-based: it splits on ` and ` / ` or ` and checks each side against a curated English verb list. Without an NLP / POS tagger, this is a heuristic — it catches the most common double-barreled patterns but produces false positives on legitimate compound sentences.
+
+**Example false positive.** *"I am happy and well-rested"* trips the detector: left side contains "am" (a verb in the list); right side contains "well-rested" — and although the right side has no listed verb, a variant like *"I am happy and feel well-rested"* would trip both sides. This is arguably one proposition expressed compactly, not two separate things being asked about. The detector cannot distinguish "X and Y are both adjectives describing one state" from "X is one thing being measured, Y is a separate thing being measured."
+
+**Implication.** Users seeing a double-barreled flag should treat it as "worth reviewing," not "definitely broken." The flag deducts 1 pt from the 12-pt wording pool, so a single false-positive item costs <1 pt on the §4D sub-score; the cumulative impact on the lens scores is bounded. The diagnostic value (surfacing item phrasing that might confuse respondents) outweighs the false-positive cost in practice.
+
+**Resolve during.** When a real POS tagger or NLP library is available to the engine (e.g., a future Python microservice or WASM-port decision per spec §11). Until then, the heuristic is acceptable for v2 phase one.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeBiasClarity` → `hasDoubleBarreled` (regex + `DOUBLE_VERBS` list). Spec §4D wording row (b).
+
+---
+
+## 11. §4D wording detectors are English-only — internationalization deferred
+
+**Surfaced:** §4D Bias & Clarity build, Phase 1 Q6.
+
+**Problem.** Two of the three wording-health flags rely on English-language lists:
+- The **leading-language lexicon** (`obviously`, `clearly`, `always`, `never`, `everyone`, `no one`) is English.
+- The **double-barreled detector's verb list** (`is`, `are`, `has`, `have`, `do`, `does`, `can`, `should`, `helps`, `makes`, …) is English.
+
+A survey in Spanish, French, Mandarin, or any non-English language will produce zero wording flags from these two detectors (false negatives across the board). The FK Grade Level formula is also language-specific — the formula was calibrated on English text, and the syllable-counting heuristic uses English vowel patterns. Applied to non-English text, FK values are not interpretable in any standard sense.
+
+**Implication.** §4D's wording-half is only meaningful for English-language surveys at present. ReliCheck v2 doesn't appear to target non-English deployments today, so this is a deferred concern rather than an active bug. When non-English support enters the roadmap, each detector needs either a per-language list (verb + leading lexicon) or replacement with a language-agnostic approach.
+
+**Resolve during.** Internationalization planning conversation (not yet scoped). Three response options:
+1. **Per-language detector swap.** Maintain `WORDING_DETECTORS[locale]` with verb list, leading lexicon, and FK-equivalent readability formula (e.g., LIX for European languages) per language. Engine reads survey locale from config and selects the right detector.
+2. **Defer the flag.** §4D wording half ships disabled for non-English surveys; only fairness scores. Spec interpretation: "no inspectable item text" applied per-language.
+3. **NLP-library route.** A POS-tagged + multilingual NLP service replaces the rule-based detectors entirely. Aligns with the §11 spec note about a future Python microservice or WASM port.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeBiasClarity` → `LEADING_LEX`, `DOUBLE_VERBS`, `fkGrade`. Spec §4D wording row.
+
+---
+
+## 12. §4D jargon detection deferred — out of scope for v2 phase one
+
+**Surfaced:** §4D Bias & Clarity build, Phase 1 Q8.
+
+**Problem.** The §4D conversation header mentioned "possibly jargon detection" as a wording-health flag, but the spec §4D body lists only three flags (FK > 12, double-barreled, leading lexicon). Jargon detection is intentionally NOT in the spec — the implementation cost (corpus frequency data, domain-specific thresholds, false-positive risk) is disproportionate to the diagnostic value in v2 phase one.
+
+**Implication.** Items containing genuine jargon (e.g., *"Our organization's KPI alignment with OKRs supports cross-functional synergy"*) will not be flagged by the wording-health half unless they also trip FK > 12 or one of the other two detectors. This is a known scope decision, not an oversight.
+
+**Resolve during.** Future v2 phase two work, if user feedback surfaces the need. The implementation would slot in as a fourth wording-health flag (1 pt deduction per flagged item, same per-flag pattern) without restructuring the domain. Likely approach: a static "academic / corporate jargon" wordlist, or a frequency-based detector against a general-English reference corpus. The decision tree (which wordlist? which corpus? which threshold?) is what makes this disproportionate today; a focused conversation can resolve all three once user demand materializes.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeBiasClarity` → would add a `hasJargon(text)` helper alongside the existing three detectors. Spec §4D wording row (would add (d)).

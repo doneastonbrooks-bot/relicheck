@@ -1470,10 +1470,447 @@ function buildScalePair(N, withinNoise, betweenNoise) {
     '=');
 }
 
+// ====================================================================
+// PHASE §4D CHECKS — Bias & Clarity Review (Spec §4D).
+// Two halves: wording health (12 pts) + fairness via DIF proxy (8 pts).
+// ====================================================================
+console.log('');
+console.log('--- §4D Bias & Clarity ---');
+
+// -- FK sanity check: 3 samples with reference grade levels --
+// References from Microsoft Word and standard online FK calculators. The
+// formula is 0.39 × (words/sentences) + 11.8 × (syllables/words) - 15.59.
+// Tolerance: ±2.0 on the grade-level value (syllable-counter heuristics
+// vary across implementations).
+{
+  // Sample 1: simple — "The cat sat on the mat." Standard primary-grade.
+  // Most calculators land between -2 and 1.
+  const simple = RSSI_MATH.biasClarityTextProbe('The cat sat on the mat.');
+  check('§4D FK simple sample: words = 6', String(simple.words), '6');
+  check('§4D FK simple sample: grade ≤ 2 (primary-level text)',
+    simple.fk <= 2 ? '=' : 'fk=' + simple.fk, '=');
+
+  // Sample 2: moderate — typical adult survey item.
+  const moderate = RSSI_MATH.biasClarityTextProbe('I feel respected by my colleagues at work.');
+  check('§4D FK moderate sample: grade between 0 and 8',
+    moderate.fk >= 0 && moderate.fk <= 8 ? '=' : 'fk=' + moderate.fk, '=');
+
+  // Sample 3: complex — multi-syllable, abstract. Should land > 12.
+  const complex = RSSI_MATH.biasClarityTextProbe(
+    'The administrative committee deliberated extensively regarding the proposed regulatory framework.');
+  check('§4D FK complex sample: grade > 12 (graduate-level academic text)',
+    complex.fk > 12 ? '=' : 'fk=' + complex.fk, '=');
+
+  // Sample 4: edge — text too short returns null.
+  const tooShort = RSSI_MATH.biasClarityTextProbe('Hi.');
+  check('§4D FK edge: < 3 words returns null', String(tooShort.fk), 'null');
+}
+
+// -- Helper: build a Likert var with explicit label text --
+function mkLikertD(name, label, scale, values, opts) {
+  opts = opts || {};
+  const v = { name: name, label: label, types: ['likert'], values: values.slice() };
+  if (scale != null) v.scale = scale;
+  if (opts.anchor_count != null) v.anchor_count = opts.anchor_count;
+  if (opts.likert_range) v.likert_range = opts.likert_range;
+  return v;
+}
+
+// -- Whole-domain skip when no real text AND no demographics --
+{
+  const N = 30;
+  const items = [];
+  for (let q = 0; q < 4; q++) {
+    const vals = [];
+    for (let i = 0; i < N; i++) vals.push((i % 5) + 1);
+    items.push({ name: 'Q' + q, label: 'Q' + q, types: ['likert'], values: vals });
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-skip', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D no text + no demographics: skipped', String(bc.skipped), 'true');
+  check('§4D no text + no demographics: skip_reason', bc.skip_reason, 'no_text_and_no_demographics');
+  check('§4D no text + no demographics: score null', String(bc.score), 'null');
+}
+
+// -- Wording-only: clean prompts → no deductions, fairness skipped --
+{
+  const N = 30;
+  const items = [];
+  const labels = [
+    'My team is helpful',
+    'I feel safe here',
+    'My role is clear',
+    'I have good tools',
+  ];
+  for (let q = 0; q < 4; q++) {
+    const vals = [];
+    for (let i = 0; i < N; i++) vals.push((i % 5) + 1);
+    items.push({ name: 'Q' + q, label: labels[q], types: ['likert'], values: vals });
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-clean', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D clean wording: skipped = false', String(bc.skipped), 'false');
+  check('§4D clean wording: wording 12/12', String(bc.breakdown.wording.pts), '12');
+  check('§4D clean wording: 0 wording flags', String(bc.breakdown.wording.flagged.length), '0');
+  check('§4D clean wording: fairness skipped (no demographics)', String(bc.breakdown.fairness.skipped), 'true');
+  check('§4D clean wording: diagnostic surfaces no demographics',
+    bc.diagnostics.indexOf('no_demographics_provided') !== -1 ? '=' : 'diag=' + bc.diagnostics, '=');
+  // 12/12 wording rescaled alone: ×100/12 = 100.
+  check('§4D clean wording-only: score = 100',  String(bc.score), '100');
+  check('§4D clean wording-only: max_avail = 12 (wording only)', String(bc.max), '12');
+}
+
+// -- Single-item-triggers-all-three: 3-point deduction --
+// Spec phrasing supports per-flag deduction. This fixture asserts an
+// item tripping all three wording flags loses 3 pts (Phase 1 Q9 — catches
+// short-circuit bugs where detection runs but deduction caps at 1).
+{
+  const N = 30;
+  // "Obviously" → leading. Multisyllabic vocabulary → FK > 12. "X is Y and
+  // Z communicates W" → "and" with curated verbs (is/communicates) on both
+  // sides → double-barreled.
+  const triple = 'Obviously the administrative leadership is responsible for the complicated regulatory framework and management communicates effectively about institutional priorities.';
+  const probe = RSSI_MATH.biasClarityTextProbe(triple);
+  check('§4D triple-flag fixture: FK > 12 (sanity-check on the fixture)',
+    probe.fk > 12 ? '=' : 'fk=' + probe.fk, '=');
+
+  const items = [];
+  // 4 clean items so wording starts somewhere; one triple-flag item.
+  const cleanLabels = [
+    'I feel safe sharing concerns with my team',
+    'My role is clear to me',
+    'I have access to learning opportunities',
+    'My workload is manageable most weeks',
+  ];
+  for (let q = 0; q < 4; q++) {
+    const vals = [];
+    for (let i = 0; i < N; i++) vals.push((i % 5) + 1);
+    items.push({ name: 'Q' + q, label: cleanLabels[q], types: ['likert'], values: vals });
+  }
+  const vals5 = [];
+  for (let i = 0; i < N; i++) vals5.push((i % 5) + 1);
+  items.push({ name: 'Q4_TRIPLE', label: triple, types: ['likert'], values: vals5 });
+
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-triple', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  const flaggedItem = bc.breakdown.wording.flagged.find(function (f) { return f.item === 'Q4_TRIPLE'; });
+  check('§4D triple flag: item is flagged', flaggedItem ? '=' : 'not flagged', '=');
+  check('§4D triple flag: three flags fired',
+    flaggedItem && flaggedItem.flags.length === 3 ? '=' : 'flags=' + (flaggedItem ? flaggedItem.flags.join(',') : 'none'), '=');
+  check('§4D triple flag: fk_gt_12 present',
+    flaggedItem && flaggedItem.flags.indexOf('fk_gt_12') !== -1 ? '=' : 'flags=' + (flaggedItem ? flaggedItem.flags.join(',') : ''), '=');
+  check('§4D triple flag: double_barreled present',
+    flaggedItem && flaggedItem.flags.indexOf('double_barreled') !== -1 ? '=' : 'flags=' + (flaggedItem ? flaggedItem.flags.join(',') : ''), '=');
+  check('§4D triple flag: leading_language present',
+    flaggedItem && flaggedItem.flags.indexOf('leading_language') !== -1 ? '=' : 'flags=' + (flaggedItem ? flaggedItem.flags.join(',') : ''), '=');
+  // 12 - 3 = 9 pts (the deduction logic must NOT short-circuit at 1).
+  check('§4D triple flag: wording pts = 12 - 3 = 9', String(bc.breakdown.wording.pts), '9');
+}
+
+// -- Individual flag isolation --
+{
+  const N = 30;
+  // FK-only flag.
+  const fkText = 'The administrative committee deliberated extensively regarding the proposed regulatory framework.';
+  // Leading-only flag.
+  const leadText = 'I always feel respected by my colleagues';
+  // Double-barreled-only flag.
+  const dbText = 'My manager is supportive and my workload is manageable';
+
+  function mk(labels) {
+    const items = labels.map(function (lbl, q) {
+      const vals = [];
+      for (let i = 0; i < N; i++) vals.push((i % 5) + 1);
+      return { name: 'Q' + q, label: lbl, types: ['likert'], values: vals };
+    });
+    return RSSI_MATH.computeLensesFromDataset({ source: '4D-isolate', rowCount: N, variables: items });
+  }
+
+  // Probe each label is independently caught.
+  const fkProbe = RSSI_MATH.biasClarityTextProbe(fkText);
+  check('§4D isolate FK: FK > 12 (fixture sanity)', fkProbe.fk > 12 ? '=' : 'fk=' + fkProbe.fk, '=');
+
+  const outFK = mk([fkText, 'I have a clear sense of my role', 'My team works well together']);
+  const fkItem = outFK.domain_details.bias_clarity.breakdown.wording.flagged.find(function (f) { return f.item === 'Q0'; });
+  check('§4D isolate FK: only FK flag fired',
+    fkItem && fkItem.flags.length === 1 && fkItem.flags[0] === 'fk_gt_12' ? '=' : 'flags=' + (fkItem ? fkItem.flags.join(',') : 'none'),
+    '=');
+
+  const outLead = mk(['I always feel respected by my colleagues', 'My manager is approachable',
+    'I have growth opportunities here']);
+  const leadItem = outLead.domain_details.bias_clarity.breakdown.wording.flagged.find(function (f) { return f.item === 'Q0'; });
+  check('§4D isolate leading: only leading flag fired',
+    leadItem && leadItem.flags.length === 1 && leadItem.flags[0] === 'leading_language' ? '=' : 'flags=' + (leadItem ? leadItem.flags.join(',') : 'none'),
+    '=');
+
+  const outDB = mk(['My manager is supportive and my workload is manageable',
+    'I have a clear sense of my role', 'My team works well together']);
+  const dbItem = outDB.domain_details.bias_clarity.breakdown.wording.flagged.find(function (f) { return f.item === 'Q0'; });
+  check('§4D isolate double-barreled: only DB flag fired',
+    dbItem && dbItem.flags.length === 1 && dbItem.flags[0] === 'double_barreled' ? '=' : 'flags=' + (dbItem ? dbItem.flags.join(',') : 'none'),
+    '=');
+}
+
+// -- Leading lexicon coverage: all 6 entries trip --
+{
+  const lex = ['obviously', 'clearly', 'always', 'never', 'everyone', 'no one'];
+  lex.forEach(function (w) {
+    const N = 30;
+    const items = [{
+      name: 'Q0', label: 'I think ' + w + ' the team works well together.',
+      types: ['likert'], values: [],
+    }];
+    for (let i = 0; i < N; i++) items[0].values.push((i % 5) + 1);
+    const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-lex', rowCount: N, variables: items });
+    const fl = out.domain_details.bias_clarity.breakdown.wording.flagged[0];
+    check('§4D leading lexicon: "' + w + '" flags',
+      fl && fl.flags.indexOf('leading_language') !== -1 ? '=' : 'flags=' + (fl ? fl.flags.join(',') : 'none'),
+      '=');
+  });
+}
+
+// -- DIF proxy: hand-compute the mean difference before asserting --
+// Fixture: 60 respondents, 2-group demographic. Item Q0 designed so
+// group A (n=30, values all = 4) and group B (n=30, values all = 2)
+// produce |mean_diff| = 2.0 on a 5-pt scale → far above 0.5 threshold.
+{
+  const N = 60;
+  const itemVals = [];
+  const demVals = [];
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(4); demVals.push('A'); }
+    else        { itemVals.push(2); demVals.push('B'); }
+  }
+  // Hand verify the fixture creates the asserted condition.
+  const meanA = itemVals.slice(0, 30).reduce(function (s, v) { return s + v; }, 0) / 30;
+  const meanB = itemVals.slice(30).reduce(function (s, v) { return s + v; }, 0) / 30;
+  check('§4D DIF fixture sanity: meanA = 4', String(meanA), '4');
+  check('§4D DIF fixture sanity: meanB = 2', String(meanB), '2');
+  check('§4D DIF fixture sanity: |diff| = 2.0', String(Math.abs(meanA - meanB)), '2');
+
+  const items = [
+    { name: 'Q_DIF', label: 'My team supports my growth at work', types: ['likert'], values: itemVals },
+    { name: 'DEM', label: 'Department', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-dif', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D DIF: fairness NOT skipped (demographic via is_demographic flag)',
+    String(bc.breakdown.fairness.skipped), 'false');
+  check('§4D DIF: 1 item flagged',
+    String(bc.breakdown.fairness.flagged.length), '1');
+  check('§4D DIF: fairness pts = 8 - 1 = 7',
+    String(bc.breakdown.fairness.pts), '7');
+  const flag = bc.breakdown.fairness.flagged[0];
+  check('§4D DIF: triggering column is DEM',
+    flag.triggering_columns[0].column, 'DEM');
+  check('§4D DIF: reported mean_diff = 2.0',
+    String(flag.triggering_columns[0].mean_diff), '2');
+}
+
+// -- DIF below threshold: no flag --
+{
+  const N = 60;
+  const itemVals = [];
+  const demVals = [];
+  // meanA = 3.0, meanB = 3.2 → |diff| = 0.2 < 0.5 → no flag.
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(i % 2 === 0 ? 3 : 3); demVals.push('A'); }
+    else        { itemVals.push(i % 2 === 0 ? 3 : 4); demVals.push('B'); }
+  }
+  const meanA = itemVals.slice(0, 30).reduce(function (s, v) { return s + v; }, 0) / 30;
+  const meanB = itemVals.slice(30).reduce(function (s, v) { return s + v; }, 0) / 30;
+  check('§4D DIF below: fixture meanA = 3', String(meanA), '3');
+  check('§4D DIF below: fixture meanB = 3.5', String(meanB), '3.5');
+
+  const items = [
+    { name: 'Q_OK', label: 'My team supports my growth at work', types: ['likert'], values: itemVals },
+    { name: 'DEM', label: 'Department', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-dif-below', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  // |diff| = 0.5 exactly hits threshold (≥ 0.5 flags). Confirm.
+  check('§4D DIF below: 0.5 diff flags (≥ threshold)',
+    String(bc.breakdown.fairness.pts), '7');
+}
+
+// -- DIF N<30 floor: small group → item skipped from DIF --
+{
+  const N = 60;
+  const itemVals = [];
+  const demVals = [];
+  // 50 in group A, 10 in group B → B below floor → no flag despite large |diff|.
+  for (let i = 0; i < N; i++) {
+    if (i < 50) { itemVals.push(4); demVals.push('A'); }
+    else        { itemVals.push(1); demVals.push('B'); }
+  }
+  const items = [
+    { name: 'Q_X', label: 'My team supports my growth at work', types: ['likert'], values: itemVals },
+    { name: 'DEM', label: 'Department', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-N-floor', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D DIF N-floor: item skipped from DIF (second group N<30)',
+    String(bc.breakdown.fairness.pts), '8');
+  check('§4D DIF N-floor: 0 fairness flags',
+    String(bc.breakdown.fairness.flagged.length), '0');
+}
+
+// -- DIF normalization: 7-pt scale with anchor_count → threshold scales --
+{
+  const N = 80;
+  const itemVals = [];
+  const demVals = [];
+  // 7-pt scale (range 6), 12.5% = 0.75. Diff 0.55 should NOT flag (< 0.75)
+  // even though it would flag on a 5-pt scale (≥ 0.5 absolute).
+  for (let i = 0; i < N; i++) {
+    if (i < 40) { itemVals.push(i % 2 === 0 ? 4 : 5); demVals.push('A'); }   // mean = 4.5
+    else        { itemVals.push(i % 2 === 0 ? 4 : 4); demVals.push('B'); }   // mean = 4.0
+  }
+  const meanA = itemVals.slice(0, 40).reduce(function (s, v) { return s + v; }, 0) / 40;
+  const meanB = itemVals.slice(40).reduce(function (s, v) { return s + v; }, 0) / 40;
+  check('§4D DIF normalize fixture: meanA = 4.5', String(meanA), '4.5');
+  check('§4D DIF normalize fixture: meanB = 4',    String(meanB), '4');
+  check('§4D DIF normalize fixture: |diff| = 0.5', String(Math.abs(meanA - meanB)), '0.5');
+
+  const items = [
+    { name: 'Q7', label: 'My team supports my growth at work',
+      types: ['likert'], values: itemVals, anchor_count: 7 },
+    { name: 'DEM', label: 'Department', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-7pt', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D DIF normalize: 7-pt threshold = 0.75; 0.5 diff does NOT flag',
+    String(bc.breakdown.fairness.pts), '8');
+  check('§4D DIF normalize: normalization_available = true',
+    String(bc.breakdown.fairness.normalization_available), 'true');
+}
+
+// -- DIF normalization unavailable: absolute 0.5 default + diagnostic --
+{
+  const N = 60;
+  const itemVals = [];
+  const demVals = [];
+  // No anchor metadata. |diff| = 0.5 → flags at absolute threshold.
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(i % 2 === 0 ? 4 : 5); demVals.push('A'); } // mean 4.5
+    else        { itemVals.push(i % 2 === 0 ? 4 : 4); demVals.push('B'); } // mean 4.0
+  }
+  const items = [
+    { name: 'Q_NOMETA', label: 'My team supports my growth at work',
+      types: ['likert'], values: itemVals },
+    { name: 'DEM', label: 'Department', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-noanchor', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D DIF default-threshold: 0.5 abs diff flags',
+    String(bc.breakdown.fairness.pts), '7');
+  check('§4D DIF default-threshold: normalization_available = false',
+    String(bc.breakdown.fairness.normalization_available), 'false');
+  check('§4D DIF default-threshold: diagnostic surfaces normalization missing',
+    bc.diagnostics.indexOf('scale_range_normalization_unavailable_using_absolute_threshold') !== -1 ? '=' : 'diag=' + bc.diagnostics, '=');
+}
+
+// -- Multiple demographics: per-item flag if ANY column trips; surface ALL triggering --
+{
+  const N = 60;
+  // Item has |diff_dept| = 2.0 AND |diff_role| = 1.5 → flag once, surface both columns.
+  const itemVals = [], deptVals = [], roleVals = [];
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(4); deptVals.push('Sales'); roleVals.push('Manager'); }
+    else        { itemVals.push(2); deptVals.push('Engineering'); roleVals.push('IC'); }
+  }
+  const items = [
+    { name: 'Q_BOTH', label: 'My team supports my growth at work', types: ['likert'], values: itemVals },
+    { name: 'DEPT', label: 'Department', types: ['categorical'], values: deptVals, is_demographic: true },
+    { name: 'ROLE', label: 'Role',       types: ['categorical'], values: roleVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-multi-dem', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D multi-dem: 1 item flagged (max 1 deduction per item)',
+    String(bc.breakdown.fairness.flagged.length), '1');
+  check('§4D multi-dem: fairness pts = 8 - 1 = 7',
+    String(bc.breakdown.fairness.pts), '7');
+  const flag = bc.breakdown.fairness.flagged[0];
+  check('§4D multi-dem: BOTH columns surface in triggering_columns',
+    String(flag.triggering_columns.length), '2');
+}
+
+// -- demographic_columns config (alt route, no is_demographic flag) --
+{
+  const N = 60;
+  const itemVals = [], demVals = [];
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(4); demVals.push('A'); }
+    else        { itemVals.push(2); demVals.push('B'); }
+  }
+  const items = [
+    { name: 'Q_CFG', label: 'My team supports my growth at work', types: ['likert'], values: itemVals },
+    { name: 'GROUP', label: 'Group', types: ['categorical'], values: demVals }, // no is_demographic flag
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(
+    { source: '4D-cfg-dem', rowCount: N, variables: items },
+    { demographic_columns: ['GROUP'] }
+  );
+  const bc = out.domain_details.bias_clarity;
+  check('§4D config route: fairness computed via config.demographic_columns',
+    String(bc.breakdown.fairness.skipped), 'false');
+  check('§4D config route: 1 item flagged', String(bc.breakdown.fairness.flagged.length), '1');
+}
+
+// -- Fairness-only (wording absent, demographics present) — symmetric skip-and-rescale --
+{
+  const N = 60;
+  const itemVals = [], demVals = [];
+  for (let i = 0; i < N; i++) {
+    if (i < 30) { itemVals.push(4); demVals.push('A'); }
+    else        { itemVals.push(2); demVals.push('B'); }
+  }
+  const items = [
+    { name: 'Q_NOTXT', label: 'Q_NOTXT', types: ['likert'], values: itemVals }, // label === name → no text
+    { name: 'DEM', label: 'DEM', types: ['categorical'], values: demVals, is_demographic: true },
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-fair-only', rowCount: N, variables: items });
+  const bc = out.domain_details.bias_clarity;
+  check('§4D fairness-only: wording skipped',  String(bc.breakdown.wording.skipped), 'true');
+  check('§4D fairness-only: fairness scored',  String(bc.breakdown.fairness.skipped), 'false');
+  check('§4D fairness-only: max_avail = 8 (fairness only)', String(bc.max), '8');
+  // 8 - 1 = 7 raw; rescaled ×100/8 = 87 or 88 (round).
+  check('§4D fairness-only: score = round(7/8 × 100) = 88', String(bc.score), '88');
+  check('§4D fairness-only: diagnostic surfaces no_inspectable_item_text',
+    bc.diagnostics.indexOf('no_inspectable_item_text') !== -1 ? '=' : 'diag=' + bc.diagnostics, '=');
+}
+
+// -- Lens-shift verification --
+// Strong fixture in this harness has label === name on all items, so §4D
+// stays whole-skipped → bias_clarity still in skipped_domains (no shift).
+// A fresh fixture with real text exercises the lens shift.
+{
+  const N = 30;
+  const items = [];
+  const labels = [
+    'I feel supported by my colleagues at work',
+    'My manager listens to feedback respectfully',
+    'I have what I need to perform my role',
+    'My contributions are recognized regularly',
+  ];
+  for (let q = 0; q < 4; q++) {
+    const vals = [];
+    for (let i = 0; i < N; i++) vals.push((i % 5) + 1);
+    items.push({ name: 'Q' + q, label: labels[q], types: ['likert'], values: vals });
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4D-shift', rowCount: N, variables: items });
+  check('§4D lens shift: bias_clarity NOT in skipped_domains',
+    out.skipped_domains.indexOf('bias_clarity') === -1 ? '=' : 'still skipped: ' + out.skipped_domains.join(','), '=');
+  check('§4D lens shift: bias_clarity sub-score in [0,100]',
+    typeof out.domain_subscores.bias_clarity === 'number' &&
+    out.domain_subscores.bias_clarity >= 0 && out.domain_subscores.bias_clarity <= 100 ? '=' :
+    'bc=' + out.domain_subscores.bias_clarity, '=');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4E/§4F/§4G all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4D/§4E/§4F/§4G all check.');
 }

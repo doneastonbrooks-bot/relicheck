@@ -774,22 +774,22 @@
     const rq  = computeResponseScaleReview(config);
     const ss  = computeScaleStructure(config);
     const val = computeValidity(config);
+    const bc  = computeBiasClarity(config);
 
     // Map v1 compute output → canonical 8-domain sub-score map.
-    // Two un-built domains remain (Spec §4B Construct Alignment + §4D
-    // Bias & Clarity); computeLenses excludes them via skip-and-rescale.
-    // §4A Validity is live (computeValidity); §4E Scale Structure is
-    // built but stays null in production until the platform-side data
-    // contract carries scale assignments etc. (KNOWN_ISSUES.md §4).
-    // §4A scoring activates as soon as scale assignments arrive; the
-    // criterion sub-component additionally requires config.criterion_column
-    // (KNOWN_ISSUES.md §4 item 6).
+    // One un-built domain remains (Spec §4B Construct Alignment);
+    // computeLenses excludes it via skip-and-rescale. §4A Validity and
+    // §4D Bias & Clarity are live. §4E Scale Structure is built but
+    // stays null in production until the platform-side data contract
+    // carries scale assignments etc. (KNOWN_ISSUES.md §4). §4D's
+    // fairness half requires demographic columns; when absent, the
+    // wording half rescales alone (KNOWN_ISSUES.md §4 items 7-8).
     const subscores = {
       reliability:           rel.score,
       validity:              val.score,
       construct_alignment:   null,
       item_prompt_quality:   iq.score,
-      bias_clarity:          null,
+      bias_clarity:          bc.score,
       scale_structure:       ss.score,
       factor_readiness:      fs.score,
       response_scale_review: rq.score,
@@ -820,6 +820,7 @@
       domain_details: {
         reliability:           rel,
         validity:              val,
+        bias_clarity:          bc,
         factor_readiness:      fs,
         item_prompt_quality:   iq,
         response_scale_review: rq,
@@ -860,6 +861,10 @@
     // matrix + per-item scale assignments so the harness can drive the
     // HTMT formula with hand-computable values to 4-decimal precision.
     htmtFromR: htmtFromR,
+    // Spec §4D harness exposure. Pure-text probe of FK grade level so
+    // the harness can sanity-check the formula + syllable counter
+    // against samples with known reference values.
+    biasClarityTextProbe: biasClarityTextProbe,
     // Numerical primitives — exported for sanity-checking in the harness.
     // Duplicated from apps/instrument-quality/instrument-quality.js;
     // KNOWN_ISSUES.md tracks the future consolidation.
@@ -2284,6 +2289,324 @@
     }
     const maxHtmt = pairs.length ? pairs.reduce(function (m, p) { return Math.max(m, p.htmt); }, 0) : null;
     return { pairs: pairs, maxHtmt: maxHtmt, k: k, scales: names };
+  }
+
+  // ====================================================================
+  // §4D BIAS & CLARITY REVIEW (Spec §4D).
+  //
+  // Two halves, 20 raw pts total:
+  //   - Wording health (12 pts). Start at 12. Per Likert/open item with
+  //     real prompt text, deduct 1 pt PER FLAG for: (a) Flesch-Kincaid
+  //     Grade Level > 12, (b) double-barreled (heuristic regex: " and "
+  //     / " or " with a verb on each side), (c) leading lexicon.
+  //     A single item tripping all three flags loses 3 pts (Phase 1 Q9).
+  //     Clamp deductions to [0, 12].
+  //   - Fairness via DIF proxy (8 pts). When demographic columns are
+  //     configured, for each Likert item compare response means across
+  //     the LARGEST TWO groups of each demographic column (N ≥ 30 floor
+  //     per group). Flag the item if |mean_diff| ≥ threshold on ANY
+  //     demographic column (Phase 1 Q4 Option B). Deduct 1 pt per
+  //     flagged item; clamp [0, 8]. Diagnostics surface every triggering
+  //     column per item, not just the first.
+  //
+  // DIF threshold:
+  //   - Spec says ≥ 0.5 on a 5-pt scale → 12.5 % of range.
+  //   - When per-item anchor metadata (likert_range or anchor_count) is
+  //     available, normalize the threshold to 12.5 % of that item's
+  //     scale range so the flag rate is consistent across formats.
+  //   - When metadata is absent, default to 0.5 absolute and surface a
+  //     normalization-unavailable diagnostic on the §4D output (Phase 1 Q2).
+  //
+  // Item-text "has real prompt text" check (Phase 1 Q1):
+  //   - Skip from wording analysis when label === name (no propagation)
+  //     OR label empty OR < 3 words. When every item is text-less, the
+  //     wording half whole-skips.
+  //
+  // Skip-and-rescale (parallel to §4A / §4E):
+  //   - Whole-domain skip when neither item text nor demographics avail.
+  //   - Wording-only when demographics absent: rescale ×100/12 ≈ 8.33.
+  //   - Fairness-only when wording absent: rescale ×100/8 = 12.5 (Phase 1 Q7).
+  //
+  // Heuristic limitations are tracked in KNOWN_ISSUES.md (double-barreled
+  // false positives, English-only verb list, deferred jargon detection).
+  //
+  // Per-item fields read:
+  //   - v.label                  (string)   — prompt text
+  //   - v.values                 (any[])    — column responses
+  //   - v.likert_range/anchor_count        — for DIF normalization
+  //   - v.is_demographic         (bool)     — alt demographic flag
+  //
+  // Config fields read:
+  //   - config.demographic_columns ([string]) — list of column names to
+  //     treat as demographics. Engine accepts EITHER v.is_demographic OR
+  //     config.demographic_columns; whichever the platform supplies wins.
+  // ====================================================================
+  function computeBiasClarity(config) {
+    config = config || {};
+    const MAX_RAW = 20;
+    const MAX_WORDING = 12;
+    const MAX_FAIRNESS = 8;
+
+    // ---- Item-text helpers ----
+    function hasRealText(v) {
+      const lbl = (v.label == null ? '' : String(v.label)).trim();
+      if (!lbl) return false;
+      if (lbl === v.name) return false;
+      const wc = lbl.split(/\s+/).filter(function (w) { return /[a-zA-Z]/.test(w); }).length;
+      return wc >= 3;
+    }
+    function syllableCount(word) {
+      const w = word.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w.length) return 0;
+      let stripped = w;
+      // Silent trailing 'e' (but not 'le' which carries a syllable).
+      if (stripped.length > 2 && stripped.charAt(stripped.length - 1) === 'e'
+          && stripped.charAt(stripped.length - 2) !== 'l') {
+        stripped = stripped.slice(0, -1);
+      }
+      const groups = stripped.match(/[aeiouy]+/g);
+      return Math.max(1, groups ? groups.length : 1);
+    }
+    function fkGrade(text) {
+      const sentences = (String(text).match(/[.!?]+/g) || []).length || 1;
+      const words = String(text).split(/\s+/).filter(function (w) { return /[a-zA-Z]/.test(w); });
+      if (words.length < 3) return null;
+      const syllables = words.reduce(function (s, w) { return s + syllableCount(w); }, 0);
+      return 0.39 * (words.length / sentences) + 11.8 * (syllables / words.length) - 15.59;
+    }
+    // English verb list for double-barreled heuristic. Limitation tracked
+    // in KNOWN_ISSUES.md (false positives + internationalization).
+    const DOUBLE_VERBS = {};
+    ['is','are','was','were','am','be','been','being',
+     'has','have','had','do','does','did',
+     'can','could','should','would','will','shall','may','might','must',
+     'helps','help','makes','make','supports','support','gives','give',
+     'takes','take','treats','treat','feels','feel','thinks','think',
+     'believes','believe','knows','know','works','work','runs','run',
+     'leads','lead','manages','manage','communicates','communicate',
+     'provides','provide','offers','offer','enables','enable','allows','allow',
+     'requires','require','needs','need','wants','want','likes','like','loves','love',
+     'tries','try','seeks','seek','creates','create','builds','build',
+     'understands','understand','explains','explain','shows','show','demonstrates','demonstrate'
+    ].forEach(function (v) { DOUBLE_VERBS[v] = true; });
+    function hasDoubleBarreled(text) {
+      const t = String(text).toLowerCase();
+      const re = /\s+(and|or)\s+/g;
+      let m;
+      while ((m = re.exec(t)) !== null) {
+        const left = t.slice(0, m.index);
+        const right = t.slice(m.index + m[0].length);
+        const lws = left.match(/\b[a-z']+\b/g) || [];
+        const rws = right.match(/\b[a-z']+\b/g) || [];
+        const lhas = lws.some(function (w) { return DOUBLE_VERBS[w]; });
+        const rhas = rws.some(function (w) { return DOUBLE_VERBS[w]; });
+        if (lhas && rhas) return true;
+      }
+      return false;
+    }
+    const LEADING_LEX = ['obviously','clearly','always','never','everyone','no one'];
+    function hasLeading(text) {
+      const t = String(text).toLowerCase();
+      return LEADING_LEX.some(function (w) {
+        const pattern = '\\b' + w.replace(' ', '\\s+') + '\\b';
+        return new RegExp(pattern).test(t);
+      });
+    }
+
+    // ---- Wording-health pass ----
+    const inspectable = allVars.filter(function (v) {
+      const types = v.types || [];
+      return (types.indexOf('likert') !== -1 || types.indexOf('open') !== -1) && hasRealText(v);
+    });
+    let wordingSkipped = false;
+    let wordingPts = null;
+    const wordingFlagged = [];
+    if (inspectable.length === 0) {
+      wordingSkipped = true;
+    } else {
+      let deductions = 0;
+      inspectable.forEach(function (v) {
+        const text = String(v.label);
+        const flags = [];
+        const fk = fkGrade(text);
+        if (fk != null && fk > 12) flags.push('fk_gt_12');
+        if (hasDoubleBarreled(text)) flags.push('double_barreled');
+        if (hasLeading(text)) flags.push('leading_language');
+        deductions += flags.length;
+        if (flags.length) {
+          wordingFlagged.push({ item: v.name, label: text, flags: flags, fk: fk });
+        }
+      });
+      wordingPts = clamp(MAX_WORDING - deductions, 0, MAX_WORDING);
+    }
+
+    // ---- Fairness / DIF pass ----
+    const demNamesFromConfig = Array.isArray(config.demographic_columns)
+      ? config.demographic_columns.slice() : [];
+    const demVars = allVars.filter(function (v) {
+      if (v.is_demographic === true) return true;
+      return demNamesFromConfig.indexOf(v.name) !== -1;
+    });
+    let fairnessSkipped = false;
+    let fairnessPts = null;
+    let dimsAvailable = false;
+    let normalizationAvailable = false;
+    const fairnessFlagged = [];
+    if (demVars.length === 0 || likertVars.length === 0) {
+      fairnessSkipped = true;
+    } else {
+      dimsAvailable = true;
+      let deductions = 0;
+      likertVars.forEach(function (item) {
+        // Determine per-item threshold.
+        let scaleRange = null;
+        if (Array.isArray(item.likert_range) && item.likert_range.length === 2
+            && item.likert_range[0] != null && item.likert_range[1] != null) {
+          scaleRange = Number(item.likert_range[1]) - Number(item.likert_range[0]);
+        } else if (item.anchor_count != null) {
+          scaleRange = Number(item.anchor_count) - 1;
+        }
+        let threshold;
+        if (scaleRange != null && scaleRange > 0) {
+          normalizationAvailable = true;
+          threshold = 0.125 * scaleRange;
+        } else {
+          threshold = 0.5;
+        }
+        const triggering = [];
+        let maxDiff = 0;
+        demVars.forEach(function (d) {
+          // Group respondents by raw demographic value; collect their
+          // numeric item responses.
+          const groups = {};
+          for (let i = 0; i < rowCount; i++) {
+            const g = d.values[i];
+            const r = item.values[i];
+            if (g == null || g === '') continue;
+            if (r == null || r === '' || isNaN(+r)) continue;
+            const key = String(g);
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(+r);
+          }
+          const sizes = Object.keys(groups).map(function (k) {
+            return { key: k, n: groups[k].length };
+          }).sort(function (a, b) { return b.n - a.n; });
+          if (sizes.length < 2) return;
+          const top2 = sizes.slice(0, 2);
+          if (top2[0].n < 30 || top2[1].n < 30) return;
+          const m1 = mean(groups[top2[0].key]);
+          const m2 = mean(groups[top2[1].key]);
+          const diff = Math.abs(m1 - m2);
+          if (diff >= threshold) {
+            triggering.push({
+              column: d.name,
+              group_a: top2[0].key, n_a: top2[0].n, mean_a: m1,
+              group_b: top2[1].key, n_b: top2[1].n, mean_b: m2,
+              mean_diff: diff, threshold: threshold,
+            });
+            if (diff > maxDiff) maxDiff = diff;
+          }
+        });
+        if (triggering.length > 0) {
+          deductions += 1; // Option B: max 1 deduction per item.
+          fairnessFlagged.push({
+            item: item.name, label: item.label,
+            triggering_columns: triggering,
+            max_mean_diff: maxDiff,
+          });
+        }
+      });
+      fairnessPts = clamp(MAX_FAIRNESS - deductions, 0, MAX_FAIRNESS);
+    }
+
+    // ---- Combine: skip-and-rescale ----
+    if (wordingSkipped && fairnessSkipped) {
+      return {
+        score: null, raw: null, max: MAX_RAW, max_full: MAX_RAW,
+        note: 'Bias & Clarity skipped: no inspectable item text and no demographic columns configured.',
+        interp: 'Bias & Clarity skipped: no inspectable item text and no demographic columns configured.',
+        tone: 'neutral',
+        skipped: true,
+        skip_reason: 'no_text_and_no_demographics',
+      };
+    }
+    let raw = 0, maxAvail = 0;
+    if (!wordingSkipped) { raw += wordingPts; maxAvail += MAX_WORDING; }
+    if (!fairnessSkipped) { raw += fairnessPts; maxAvail += MAX_FAIRNESS; }
+    const score = maxAvail > 0 ? clamp(round((raw / maxAvail) * 100), 0, 100) : null;
+
+    const diagnostics = [];
+    if (fairnessSkipped && demVars.length === 0) {
+      diagnostics.push('no_demographics_provided');
+    }
+    if (!fairnessSkipped && !normalizationAvailable) {
+      diagnostics.push('scale_range_normalization_unavailable_using_absolute_threshold');
+    }
+    if (wordingSkipped) {
+      diagnostics.push('no_inspectable_item_text');
+    }
+
+    const tone = score == null ? 'neutral'
+      : score >= 80 ? 'ok'
+      : score >= 60 ? 'warn'
+      : 'alert';
+
+    const rawDisp = Math.round(raw * 10) / 10;
+    const noteParts = [];
+    if (!wordingSkipped) noteParts.push('wording ' + wordingPts + '/' + MAX_WORDING);
+    if (!fairnessSkipped) noteParts.push('fairness ' + fairnessPts + '/' + MAX_FAIRNESS);
+    const note = noteParts.join(' · ') + ' → ' + rawDisp + '/' + maxAvail
+      + (maxAvail !== MAX_RAW ? ' (rescaled from ' + MAX_RAW + ')' : '');
+    const interp = 'Bias & Clarity sub-score ' + score + '/100'
+      + (wordingFlagged.length ? ' · ' + wordingFlagged.length + ' wording flag(s)' : '')
+      + (fairnessFlagged.length ? ' · ' + fairnessFlagged.length + ' DIF flag(s)' : '')
+      + (diagnostics.length ? ' · ' + diagnostics.join(', ') : '');
+
+    return {
+      score: score,
+      raw: rawDisp,
+      max: maxAvail,
+      max_full: MAX_RAW,
+      note: note,
+      interp: interp,
+      tone: tone,
+      skipped: false,
+      diagnostics: diagnostics,
+      breakdown: {
+        wording: {
+          pts: wordingPts, max: MAX_WORDING, skipped: wordingSkipped,
+          items_inspected: inspectable.length,
+          flagged: wordingFlagged,
+        },
+        fairness: {
+          pts: fairnessPts, max: MAX_FAIRNESS, skipped: fairnessSkipped,
+          demographic_columns: demVars.map(function (d) { return d.name; }),
+          normalization_available: normalizationAvailable,
+          flagged: fairnessFlagged,
+        },
+      },
+    };
+  }
+
+  // §4D harness exposure — pure-text scoring callable for FK / double-
+  // barreled / leading sanity-checks without spinning up a full dataset.
+  function biasClarityTextProbe(text) {
+    // Re-implement the inner helpers in a self-contained form so the
+    // harness can drive them; the engine path uses identical code paths.
+    function syll(word) {
+      const w = word.toLowerCase().replace(/[^a-z]/g, '');
+      if (!w.length) return 0;
+      let s = w;
+      if (s.length > 2 && s.charAt(s.length - 1) === 'e' && s.charAt(s.length - 2) !== 'l') s = s.slice(0, -1);
+      const g = s.match(/[aeiouy]+/g);
+      return Math.max(1, g ? g.length : 1);
+    }
+    const sentences = (String(text).match(/[.!?]+/g) || []).length || 1;
+    const words = String(text).split(/\s+/).filter(function (w) { return /[a-zA-Z]/.test(w); });
+    if (words.length < 3) return { fk: null, words: words.length, syllables: 0, sentences: sentences };
+    const syllables = words.reduce(function (s, w) { return s + syll(w); }, 0);
+    const fk = 0.39 * (words.length / sentences) + 11.8 * (syllables / words.length) - 15.59;
+    return { fk: fk, words: words.length, syllables: syllables, sentences: sentences };
   }
 
   // ====================================================================
