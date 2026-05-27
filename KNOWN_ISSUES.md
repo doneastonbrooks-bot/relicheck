@@ -320,3 +320,31 @@ This is a **fourth platform-side surface** distinct from the three transform pat
 Priority depends on which surface (studio mount vs. standalone) users actually use most. The studio mount is now the higher-leverage path because three additional domains score there.
 
 **Code touch-points.** [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) (CSV parse + variable construction), [apps/rssi/rssi.js](apps/rssi/rssi.js) (host page). No engine change needed — same data contract as the studio mount.
+
+---
+
+## 17. Verification process — platform-side commits must check that API-integration callers are tracked
+
+**Surfaced:** §4 item #1c follow-up audit (2026-05-27). The transform-layer activation work for #1a (Survey Builder path) and #1c (wizards-driven settings path) was repeatedly verified end-to-end via the strength-index harness shim — the real PHP transform called in a real PHP process, dataset JSON piped through the canonical engine, three-domain activation confirmed. The harness loop passed both times. What it did not catch: the two production callers of that transform — [api/surveys/responses-dataset.php](api/surveys/responses-dataset.php) and [_studio_mount.php](_studio_mount.php) — were sitting **untracked** in the working tree, with zero git history, across at least one prior #1-series commit. The transform extension may not have actually reached production users until the callers were brought under version control in the follow-up commit.
+
+**Problem.** The harness-shim verification approach has a structural blind spot. It calls the transform directly with synthetic input and feeds the output through the engine. That proves the transform → engine seam is correct. It cannot prove that the *callers* the harness is standing in for actually exist in tracked form, or that they pass the new parameter through, or that they match what's deployed. An untracked caller can drift arbitrarily from the version the harness exercised, and no automated check would notice.
+
+**Implication.** Activation commits that look complete (harness green, transform updated, KNOWN_ISSUES.md marked DONE) can in fact be inert on production until the integration layer separately picks up the contract change. Worse, in the #1a/#1c case, the integration layer wasn't even *tracked* — meaning the production version, whatever it is, may have predated the transform-side work entirely and never invoked the new parameter at all.
+
+**Process change — required on every platform-side commit.** Before declaring a platform-side activation complete:
+
+1. **Caller-side tracking check.** For every file that calls the function/endpoint being changed, run `git ls-files --error-unmatch <path>` (or equivalent). If any caller is untracked, flag it as a finding rather than ship the activation as complete.
+2. **Caller-side contract check.** For every tracked caller, confirm it threads the new parameter / consumes the new field. A transform that accepts a new parameter with a defaulted value is backward-compatible, but the activation is only real once the callers pass the value through.
+3. **Deployment-reference scan.** `grep -l <changed-file>` across the tracked set to catch documentation, specs, and other tracked files that reference the changed surface. Update those if they describe outdated contracts.
+
+The end-to-end harness shim is a necessary check but not a sufficient one. Treat it as proving the math/engine half; the integration half needs the three steps above.
+
+**Implication for repo-hygiene work.** This discovery suggests the broader untracked-PHP backlog (currently sitting at ~70+ files per `git status`) is more urgent than the raw file count implies. The untracked set is not "files the user hasn't decided about yet" — at least some of it is **load-bearing production infrastructure that tracked code explicitly depends on**. Future repo-hygiene passes should:
+
+- Prioritize tracking files that are referenced (via `include`, `require_once`, or documentation links) from already-tracked code. Those are by definition load-bearing.
+- Specifically check the seven untracked files referenced from [docs/relicheck_v2_build_spec.md](docs/relicheck_v2_build_spec.md) and any untracked endpoint under `api/` that's invoked by tracked HTML/JS, before treating the rest of the untracked set as lower priority.
+- Treat raw file counts as misleading. The risk is concentrated in the small subset of untracked files the tracked code names directly.
+
+**Resolve during.** Process-only change — applies to every future platform-side commit. The first commit it applies retroactively to is the #1c follow-up tracking commit that surfaced this issue.
+
+**Code touch-points.** No code change. This entry exists as a documented step in the platform-side workflow. Reference it in commit-message checklists or pre-commit reviewer notes.
