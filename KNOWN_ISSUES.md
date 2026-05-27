@@ -52,3 +52,27 @@ Any saved report from before the band fix will produce a lower headline score an
 **Resolve during.** Studio template migration conversation (when the 6-card render is replaced with the canonical 8-domain grid). Either inline a local `esc()` helper at the top of `strength-index.js` or guard the references.
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `renderReliabilityDetail()`. Spec §6 (already noted as a follow-up there).
+
+---
+
+## 4. §4E Scale Structure is dormant in production — four platform-side changes unlock it
+
+**Surfaced:** §4E Scale Structure build.
+
+**Problem.** §4E is fully implemented in [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) (`computeScaleStructure`) and exhaustively verified by [apps/strength-index/__harness/three-lens-verify.js](apps/strength-index/__harness/three-lens-verify.js) (54 assertions covering every sub-component, every band threshold, every skip path, and the rescale arithmetic). However, the domain returns `score: null` (whole-domain skip) on all current production data because the data the engine consumes — built by [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) — does not yet carry the four per-item / per-survey fields §4E needs. Until each of the four changes below lands, `domain_subscores.scale_structure` stays null in production, the lens math absorbs the skip via §3.2 skip-and-rescale, and §4E contributes nothing to the headline.
+
+**The four changes that unlock §4E.** Each is a platform-side change with a specific code location:
+
+1. **Propagate scale assignments into the dataset shape.** [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php) emits Likert variables with `{ name, types, label, values }`. Add `scale` (or `construct`) per Likert variable, sourced from `column_meta.construct` on the [datasets table](db/schema_phase7.sql) (already populated by [api/datasets/update_columns.php](api/datasets/update_columns.php), see [api/datasets/create.php:4](api/datasets/create.php)). The engine accepts either `v.scale` or `v.construct` as the membership key — whichever fits the existing convention. Without this, the whole §4E domain skips and the other three changes below cannot be exercised.
+
+2. **Propagate per-item reverse-coded flags.** Same file, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `reverse_coded: bool` per Likert variable, sourced from `column_meta.reverse` (already in the [datasets table](db/schema_phase7.sql) per [api/datasets/create.php:4](api/datasets/create.php)). Without this, every item is treated as not-reverse-coded for sub-component 2 scoring purposes.
+
+3. **Setup Wizard captures `reverse_coded_confirmed` at the survey level.** When the user has reviewed reverse-coding flags and the answer is "none" (or "I've reviewed them all"), the Wizard sets a survey-level `reverse_coded_confirmed: true`, which the invoking surface passes into the engine via the configuration object (`config.reverse_coded_confirmed`). The wizard does not exist yet; design it to capture this distinction during the reverse-coding step. Without this flag, sub-component 2 skips and rescales (the honest default — the engine cannot distinguish "no reverse items" from "user hasn't reviewed yet" without an explicit signal). Spec §4E table row for "Reverse-coded balance" documents the contract.
+
+4. **Propagate per-item Likert format metadata.** Same file again, [api/surveys/_build_dataset.php:22–28](api/surveys/_build_dataset.php). Add `likert_range: [min, max]` (e.g., `[1, 5]` or `[1, 7]`) and/or `anchor_count: int` per Likert variable. Source: the question definition in the Survey Builder (which already knows the anchor count). The schema convention is open — engine accepts either field. Without this, sub-component 3 (response-format uniformity) skips and rescales.
+
+**Implication.** Until these four are wired, §4E is verified in the harness but unexercised in production. When the first of these changes lands, the engine will begin returning real §4E scores; that first run on real data should be verified end-to-end (sub-scores match hand-checked values on a known dataset). The combination of changes 1 + 4 unlocks the majority of the domain (sub-components 1, 3, 4, 5 score; sub-2 stays skipped); changes 2 + 3 then unlock sub-2.
+
+**Resolve during.** Platform-side dataset-transform + Setup Wizard work, separate conversation from this module-side build.
+
+**Code touch-points.** [api/surveys/_build_dataset.php:22](api/surveys/_build_dataset.php) (transform), Setup Wizard surface (not yet built), [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeScaleStructure` (consumer). Spec §4E.

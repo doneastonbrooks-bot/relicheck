@@ -355,10 +355,310 @@ if (weakRelBd.alpha.value != null && weakRelBd.alpha.value < 0.60) {
   check('α below 0.60 awards 0/8 (was 2/8 in v1)', String(weakRelBd.alpha.pts), '0');
 }
 
+// ====================================================================
+// PHASE §4E CHECKS — Scale Structure domain.
+//
+// Because §4E will be DORMANT in production until the platform-side
+// data contract carries scale assignments, reverse_coded flags,
+// reverse_coded_confirmed at the survey level, and likert_range /
+// anchor_count per item (see KNOWN_ISSUES.md §4), the harness is the
+// only verification layer that exercises this math today. Coverage
+// must be thorough: every sub-component AND every skip path.
+// ====================================================================
+console.log('');
+console.log('--- §4E Scale Structure ---');
+
+// Helper: build a Likert variable with optional scale-structure metadata.
+function mkLikert(name, scale, n, opts) {
+  opts = opts || {};
+  const v = {
+    name: name, label: name, types: ['likert'],
+    values: [],
+  };
+  if (scale != null) v.scale = scale;
+  if (opts.reverse_coded != null) v.reverse_coded = opts.reverse_coded;
+  if (opts.likert_range != null)  v.likert_range  = opts.likert_range;
+  if (opts.anchor_count != null)  v.anchor_count  = opts.anchor_count;
+  // Synthetic values: rotate 1..5 unless all-missing-for-first-m specified.
+  const allMissingRows = opts.allMissingRows || 0;
+  for (let i = 0; i < n; i++) {
+    if (i < allMissingRows) v.values.push(null);
+    else                    v.values.push(((i + name.length) % 5) + 1);
+  }
+  return v;
+}
+function mkDataset(items, n) {
+  return { source: '§4E fixture', rowCount: n, variables: items };
+}
+
+// -- Skip path 1: whole-domain skip when no scale assignments --
+{
+  const N = 30;
+  const ds = mkDataset([
+    mkLikert('Q1', null, N), mkLikert('Q2', null, N),
+    mkLikert('Q3', null, N), mkLikert('Q4', null, N),
+  ], N);
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const ss = out.domain_details.scale_structure;
+  check('§4E no scale assignments → score null',           String(ss.score),       'null');
+  check('§4E no scale assignments → skipped flag',         String(ss.skipped),     'true');
+  check('§4E no scale assignments → skip_reason',          ss.skip_reason,         'no_scale_assignments');
+  check('§4E no scale assignments → subscores.scale_structure null',
+    String(out.domain_subscores.scale_structure), 'null');
+  check('§4E no scale assignments → listed in skipped_domains',
+    out.skipped_domains.indexOf('scale_structure') >= 0 ? 'in' : 'missing', 'in');
+}
+
+// -- Computation path: ideal 4-item scale, with all metadata, full credit --
+{
+  const N = 50;
+  const items = ['A1', 'A2', 'A3', 'A4'].map(function (n, i) {
+    return mkLikert(n, 'engagement', N, {
+      reverse_coded: i === 0, // A1 is reverse-coded
+      likert_range: [1, 5],
+    });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  console.log('  Ideal-scale fixture: ' + JSON.stringify({ raw: ss.raw, max: ss.max, score: ss.score, breakdown: ss.breakdown }));
+  check('§4E ideal scale: item_count sub awards 5',    String(ss.breakdown.item_count_per_scale.pts), '5');
+  check('§4E ideal scale: reverse_coded sub awards 3', String(ss.breakdown.reverse_coded_balance.pts), '3');
+  check('§4E ideal scale: format uniformity awards 3', String(ss.breakdown.response_format_uniformity.pts), '3');
+  check('§4E ideal scale: scale missingness awards 2', String(ss.breakdown.scale_missingness.pts), '2');
+  check('§4E ideal scale: survey k=4 awards 1 (band 4/31–40)', String(ss.breakdown.survey_item_count_health.pts), '1');
+  check('§4E ideal scale: no sub-components skipped', String(ss.skipped_subcomponents.length), '0');
+  check('§4E ideal scale: raw 14/15, score 93', String(ss.score), '93');
+}
+
+// -- Reverse-coded path: confirmed but no items flagged → 0 for k≥4 --
+{
+  const N = 30;
+  const items = ['B1', 'B2', 'B3', 'B4', 'B5'].map(function (n) {
+    return mkLikert(n, 'commitment', N, { likert_range: [1, 7] });
+    // no reverse_coded: true on any item
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E reverse-confirmed + no flagged items → sub-2 = 0 (architectural finding)',
+    String(ss.breakdown.reverse_coded_balance.pts), '0');
+  check('§4E reverse-confirmed + no flagged: sub-2 NOT skipped',
+    String(ss.breakdown.reverse_coded_balance.skipped), 'false');
+}
+
+// -- Reverse-coded path: NOT confirmed → sub-2 skips and rescales --
+{
+  const N = 30;
+  const items = ['C1', 'C2', 'C3', 'C4', 'C5'].map(function (n) {
+    return mkLikert(n, 'satisfaction', N, { likert_range: [1, 5] });
+  });
+  // No reverse_coded_confirmed in config.
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), {});
+  const ss = out.domain_details.scale_structure;
+  check('§4E reverse-unconfirmed → sub-2 skipped',
+    String(ss.breakdown.reverse_coded_balance.skipped), 'true');
+  check('§4E reverse-unconfirmed → sub-2 pts null',
+    String(ss.breakdown.reverse_coded_balance.pts), 'null');
+  check('§4E reverse-unconfirmed → rescale base 12 (max=12)',
+    String(ss.max), '12');
+  // Expected: sub1=5 (k=5), sub3=3, sub4=2, sub5=2 (total=5 in 5..30) → raw=12, max=12 → score=100
+  check('§4E reverse-unconfirmed: raw 12/12, score 100',
+    String(ss.score), '100');
+  check('§4E reverse-unconfirmed → skipped_subcomponents lists reverse_coded_balance',
+    ss.skipped_subcomponents.indexOf('reverse_coded_balance') >= 0 ? 'in' : 'missing', 'in');
+}
+
+// -- Format-metadata-absent path: sub-3 skips and rescales --
+{
+  const N = 30;
+  const items = ['D1', 'D2', 'D3', 'D4', 'D5'].map(function (n, i) {
+    return mkLikert(n, 'climate', N, { reverse_coded: i === 0 });
+    // no likert_range, no anchor_count
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E no format meta → sub-3 skipped',
+    String(ss.breakdown.response_format_uniformity.skipped), 'true');
+  check('§4E no format meta → rescale base 12 (max=12)',
+    String(ss.max), '12');
+  // Expected: sub1=5 (k=5), sub2=3, sub4=2, sub5=2 (total=5 in 5..30) → raw=12, max=12 → score=100
+  check('§4E no format meta: raw 12/12, score 100',
+    String(ss.score), '100');
+}
+
+// -- Combined skip: format absent AND reverse-confirmed absent → 9/9 base --
+{
+  const N = 30;
+  const items = ['E1', 'E2', 'E3', 'E4', 'E5'].map(function (n) {
+    return mkLikert(n, 'combo', N);
+    // no likert_range, no reverse flags, no confirmation
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), {});
+  const ss = out.domain_details.scale_structure;
+  check('§4E combined skip: max rescaled to 9 (5+2+2)', String(ss.max), '9');
+  check('§4E combined skip: both subs flagged', String(ss.skipped_subcomponents.length), '2');
+  // sub1=5 (k=5) + sub4=2 + sub5=2 (total=5 in 5..30) = 9 / 9 → 100
+  check('§4E combined skip: raw 9/9, score 100', String(ss.score), '100');
+}
+
+// -- Item-count band: k=3 (small but acceptable) --
+{
+  const N = 30;
+  const items = ['F1', 'F2', 'F3'].map(function (n) {
+    return mkLikert(n, 'small', N, { likert_range: [1, 5] });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E k=3 → item_count sub awards 3', String(ss.breakdown.item_count_per_scale.pts), '3');
+  // k<4 → sub-2 auto-awards 3 per spec
+  check('§4E k=3 (k<4) → reverse balance auto-awards 3', String(ss.breakdown.reverse_coded_balance.pts), '3');
+}
+
+// -- Item-count band: k=1 (single-item scale) --
+{
+  const N = 30;
+  const items = [mkLikert('G1', 'single', N, { likert_range: [1, 5] })];
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E k=1 → item_count sub awards 0', String(ss.breakdown.item_count_per_scale.pts), '0');
+  // Survey-level: total Likert = 1 → sub-5 = 0 (<4)
+  check('§4E k=1 total → survey item-count sub awards 0', String(ss.breakdown.survey_item_count_health.pts), '0');
+}
+
+// -- Item-count band: k>15 (over-large scale) --
+{
+  const N = 30;
+  const items = [];
+  for (let i = 0; i < 17; i++) {
+    items.push(mkLikert('H' + i, 'huge', N, { likert_range: [1, 5] }));
+  }
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E k=17 → item_count sub awards 0', String(ss.breakdown.item_count_per_scale.pts), '0');
+  // Total Likert = 17 → sub-5 = 2 (in 5..30)
+  check('§4E total=17 → survey item-count sub awards 2', String(ss.breakdown.survey_item_count_health.pts), '2');
+}
+
+// -- Item-count band: k=9 (mid-range penalty) --
+{
+  const N = 30;
+  const items = [];
+  for (let i = 0; i < 9; i++) {
+    items.push(mkLikert('I' + i, 'mid', N, { likert_range: [1, 5] }));
+  }
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E k=9 → item_count sub awards 2', String(ss.breakdown.item_count_per_scale.pts), '2');
+}
+
+// -- Item-count band: k=2 (Spearman-Brown territory) --
+{
+  const N = 30;
+  const items = [mkLikert('J1', 'pair', N, { likert_range: [1, 5] }), mkLikert('J2', 'pair', N, { likert_range: [1, 5] })];
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E k=2 → item_count sub awards 1', String(ss.breakdown.item_count_per_scale.pts), '1');
+  check('§4E k=2 (k<4) → reverse balance auto-awards 3', String(ss.breakdown.reverse_coded_balance.pts), '3');
+}
+
+// -- Survey-level item-count: total in 5..30 ideal --
+// (covered by ideal fixture if it had 5+; the ideal-scale fixture above
+// only has 4 items hitting band-2; this scenario covers the 5..30 band.)
+{
+  const N = 30;
+  const items = [];
+  for (let i = 0; i < 6; i++) {
+    items.push(mkLikert('K' + i, 'hex', N, { likert_range: [1, 5] }));
+  }
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E total=6 → survey item-count sub awards 2', String(ss.breakdown.survey_item_count_health.pts), '2');
+}
+
+// -- Survey-level item-count: total = 41 → 0 (>40) --
+{
+  const N = 30;
+  const items = [];
+  for (let i = 0; i < 41; i++) {
+    items.push(mkLikert('L' + i, 's' + Math.floor(i / 6), N, { likert_range: [1, 5] }));
+  }
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E total=41 → survey item-count sub awards 0', String(ss.breakdown.survey_item_count_health.pts), '0');
+}
+
+// -- Scale missingness bands --
+{
+  // 0% missing → 2 pts (already covered by ideal). Build a 1-5% rate fixture:
+  // N=50, 1 respondent (=2%) has all items missing in scale "mx".
+  const N = 50;
+  const items = ['M1', 'M2', 'M3', 'M4'].map(function (n) {
+    return mkLikert(n, 'mx', N, { likert_range: [1, 5], allMissingRows: 1 });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E scale missingness 2% (in (0,5%]) → 1 pt', String(ss.breakdown.scale_missingness.pts), '1');
+}
+{
+  // 10% all-missing → 0 pts.
+  const N = 50;
+  const items = ['N1', 'N2', 'N3', 'N4'].map(function (n) {
+    return mkLikert(n, 'ny', N, { likert_range: [1, 5], allMissingRows: 5 });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E scale missingness 10% (>5%) → 0 pt', String(ss.breakdown.scale_missingness.pts), '0');
+}
+
+// -- Mixed format within a scale → uniformity sub awards 0 --
+{
+  const N = 30;
+  const items = [
+    mkLikert('O1', 'mixed', N, { likert_range: [1, 5] }),
+    mkLikert('O2', 'mixed', N, { likert_range: [1, 7] }), // different format
+    mkLikert('O3', 'mixed', N, { likert_range: [1, 5] }),
+    mkLikert('O4', 'mixed', N, { likert_range: [1, 5] }),
+  ];
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E mixed format within scale → uniformity sub awards 0',
+    String(ss.breakdown.response_format_uniformity.pts), '0');
+}
+
+// -- Rescale arithmetic check: partial credit + sub-2 skip --
+// k=3 (sub1=3, sub2 auto-skipped k<4 rule N/A — but reverse not confirmed
+// so sub-2 skips at the gating layer), sub-3=3, sub-4=2, sub-5=0 (total=3 < 4).
+// max=12, raw = 3+3+2+0 = 8, score = round(8/12 * 100) = 67.
+{
+  const N = 30;
+  const items = ['R1', 'R2', 'R3'].map(function (n) {
+    return mkLikert(n, 'rescaler', N, { likert_range: [1, 5] });
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), {});
+  const ss = out.domain_details.scale_structure;
+  check('§4E rescale check: max=12 (sub-2 skipped)', String(ss.max), '12');
+  check('§4E rescale check: raw 8 / 12 → score 67 (NOT 53 if divided by 15)',
+    String(ss.score), '67');
+}
+
+// -- Multi-scale: averaging across scales --
+{
+  const N = 30;
+  const items = [];
+  // Scale "p" with k=4 (5 pts), scale "q" with k=1 (0 pts) → mean = 2.5
+  ['P1', 'P2', 'P3', 'P4'].forEach(function (n) {
+    items.push(mkLikert(n, 'p', N, { likert_range: [1, 5] }));
+  });
+  items.push(mkLikert('Q1', 'q', N, { likert_range: [1, 5] }));
+  const out = RSSI_MATH.computeLensesFromDataset(mkDataset(items, N), { reverse_coded_confirmed: true });
+  const ss = out.domain_details.scale_structure;
+  check('§4E multi-scale: item_count avg (5 + 0) / 2 = 2.5',
+    String(ss.breakdown.item_count_per_scale.pts), '2.5');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces, §3.3/§3.5/§3.6 all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E all check.');
 }

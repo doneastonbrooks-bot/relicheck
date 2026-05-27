@@ -716,17 +716,21 @@
     const fs  = computeFactorStructure();
     const iq  = computeItemQuality();
     const rq  = computeResponseQuality();
+    const ss  = computeScaleStructure(config);
 
     // Map v1 compute output → canonical 8-domain sub-score map.
-    // The four un-built domains (Spec §4A/4B/4D/4E new construction)
-    // remain null; computeLenses excludes them via skip-and-rescale.
+    // Three un-built domains (Spec §4A/4B/4D new construction) remain
+    // null; computeLenses excludes them via skip-and-rescale. §4E is
+    // built (computeScaleStructure) but stays null in production until
+    // the platform-side data contract carries scale assignments etc.
+    // (see KNOWN_ISSUES.md §4 for the four data-flow prerequisites).
     const subscores = {
       reliability:           rel.score,
       validity:              null,
       construct_alignment:   null,
       item_prompt_quality:   iq.score,
       bias_clarity:          null,
-      scale_structure:       null,
+      scale_structure:       ss.score,
       factor_readiness:      fs.score,
       response_scale_review: rq.score,
     };
@@ -756,6 +760,7 @@
         factor_readiness:      fs,
         item_prompt_quality:   iq,
         response_scale_review: rq,
+        scale_structure:       ss,
       },
       skipped_domains: lens.skipped_domains,
       rssi_weights_version: RSSI_WEIGHTS_VERSION,
@@ -1323,6 +1328,205 @@
       note: 'n=' + rowCount + ', completion ' + Math.round(completeRate * 100) + '%, straight-lining ' + (straightRate * 100).toFixed(1) + '%  ·  ' + raw + ' / ' + MAX,
       interp: 'Sample size n=' + rowCount + ' (' + (rowCount >= 50 ? 'adequate' : 'small') + '). Completion ' + Math.round(completeRate * 100) + '%; straight-lining ' + (straightRate * 100).toFixed(1) + '%; item missingness ' + (missRate * 100).toFixed(1) + '%.',
       tone: score >= 80 ? 'ok' : score >= 60 ? 'warn' : 'alert',
+    };
+  }
+
+  // ====================================================================
+  // SCALE STRUCTURE (Spec §4E) — 15 raw pts, rescaled to 0–100.
+  //
+  // Five sub-components:
+  //   1. Item count per scale         (5 pts) — k=4–8 ideal; sharp penalties at extremes
+  //   2. Reverse-coded balance        (3 pts) — at least one reverse item in k≥4 scales
+  //   3. Response-format uniformity   (3 pts) — same likert range / anchor count per scale
+  //   4. Scale-level missingness      (2 pts) — share of respondents with all items missing in a scale
+  //   5. Survey-level item-count health (2 pts) — total Likert items in [5, 30]
+  //
+  // Per Phase 1 decisions:
+  //   - No scale assignments on any Likert item → whole domain SKIPS
+  //     (return score: null). Caller's lens math absorbs via §3.2
+  //     skip-and-rescale.
+  //   - Reverse-coded balance uses a tri-state contract: skip-and-
+  //     rescale unless the survey-level config flag
+  //     `reverse_coded_confirmed: true` is set. When the flag IS set,
+  //     scales with k≥4 and zero reverse-coded items score 0 (the
+  //     architectural finding the spec describes); k<4 scales auto-
+  //     award 3. Without the confirmation flag, sub-component 2
+  //     skips and the remaining 12 raw pts rescale to 15.
+  //   - Format uniformity requires per-item likert_range or anchor_count.
+  //     Absent on any item → sub-component 3 skips and rescales.
+  //
+  // Per-item fields read from each Likert variable:
+  //   - v.scale  or  v.construct  (string)   — scale membership
+  //   - v.reverse_coded           (boolean)  — defaults to false
+  //   - v.likert_range            ([lo, hi]) — format key
+  //   - v.anchor_count            (number)   — alt format key
+  //
+  // Config fields read:
+  //   - config.reverse_coded_confirmed (boolean) — gates sub-component 2
+  // ====================================================================
+  function computeScaleStructure(config) {
+    config = config || {};
+    const MAX_RAW = 15;
+    const skipResult = function (reason, note) {
+      return {
+        score: null, raw: null, max: MAX_RAW,
+        note: note, interp: note, tone: 'neutral',
+        skipped: true, skip_reason: reason,
+      };
+    };
+
+    if (likertVars.length === 0) {
+      return skipResult('no_likert_items', 'No Likert items to evaluate scale structure.');
+    }
+
+    // Group items by scale. Accept either `scale` or `construct` as the
+    // membership key (platform conventions differ — column_meta.construct
+    // in db; Setup Wizard may emit `scale`). Both are acceptable; the
+    // engine treats either as the canonical membership field.
+    const scaleMap = {};
+    let allHaveScale = true;
+    likertVars.forEach(function (v) {
+      const s = (v.scale != null && v.scale !== '') ? String(v.scale)
+              : (v.construct != null && v.construct !== '') ? String(v.construct)
+              : null;
+      if (s == null) { allHaveScale = false; return; }
+      if (!scaleMap[s]) scaleMap[s] = [];
+      scaleMap[s].push(v);
+    });
+    if (!allHaveScale || Object.keys(scaleMap).length === 0) {
+      return skipResult('no_scale_assignments',
+        'Scale Structure skipped: no per-item scale assignments. Setup Wizard must tag each Likert item with its scale before this domain scores.');
+    }
+
+    const scales = Object.keys(scaleMap).map(function (name) {
+      return { name: name, items: scaleMap[name] };
+    });
+
+    // ---- Sub-component 1: item count per scale (5 pts) ----
+    function itemCountPts(k) {
+      if (k >= 4 && k <= 8) return 5;
+      if (k === 3)          return 3;
+      if (k >= 9 && k <= 15) return 2;
+      if (k === 2)          return 1;
+      return 0; // k=1 or k>15
+    }
+    const sub1Pts = mean(scales.map(function (s) { return itemCountPts(s.items.length); }));
+
+    // ---- Sub-component 2: reverse-coded balance (3 pts) ----
+    // Tri-state per Phase 1 Q2: absent confirmation flag → skip+rescale.
+    let sub2Pts = null;
+    let sub2Skipped = false;
+    if (!config.reverse_coded_confirmed) {
+      sub2Skipped = true;
+    } else {
+      sub2Pts = mean(scales.map(function (s) {
+        const k = s.items.length;
+        if (k < 4) return 3; // small-scale auto-award per spec
+        const hasReverse = s.items.some(function (it) { return !!it.reverse_coded; });
+        return hasReverse ? 3 : 0;
+      }));
+    }
+
+    // ---- Sub-component 3: response-format uniformity (3 pts) ----
+    // Skip when any item in any scale lacks both likert_range and anchor_count.
+    function fmtKey(it) {
+      if (Array.isArray(it.likert_range) && it.likert_range.length === 2 &&
+          it.likert_range[0] != null && it.likert_range[1] != null) {
+        return 'r:' + it.likert_range[0] + '-' + it.likert_range[1];
+      }
+      if (it.anchor_count != null) return 'a:' + it.anchor_count;
+      return null;
+    }
+    let sub3Pts = null;
+    let sub3Skipped = false;
+    const fmtMissing = scales.some(function (s) {
+      return s.items.some(function (it) { return fmtKey(it) == null; });
+    });
+    if (fmtMissing) {
+      sub3Skipped = true;
+    } else {
+      sub3Pts = mean(scales.map(function (s) {
+        const keys = s.items.map(fmtKey);
+        const first = keys[0];
+        const allSame = keys.every(function (k) { return k === first; });
+        return allSame ? 3 : 0;
+      }));
+    }
+
+    // ---- Sub-component 4: scale-level missingness pattern (2 pts) ----
+    // For each scale: share of respondents who have EVERY item in the
+    // scale missing. 0% → 2; (0, 5%] → 1; >5% → 0.
+    const sub4Pts = mean(scales.map(function (s) {
+      let allMissingCount = 0;
+      for (let i = 0; i < rowCount; i++) {
+        let allMissing = true;
+        for (let j = 0; j < s.items.length; j++) {
+          if (!isMissing(s.items[j].values[i])) { allMissing = false; break; }
+        }
+        if (allMissing) allMissingCount++;
+      }
+      const rate = rowCount ? allMissingCount / rowCount : 0;
+      if (rate === 0)    return 2;
+      if (rate <= 0.05)  return 1;
+      return 0;
+    }));
+
+    // ---- Sub-component 5: survey-level item-count health (2 pts) ----
+    const totalLikert = likertVars.length;
+    let sub5Pts;
+    if (totalLikert >= 5 && totalLikert <= 30)                  sub5Pts = 2;
+    else if (totalLikert === 4 || (totalLikert >= 31 && totalLikert <= 40)) sub5Pts = 1;
+    else                                                         sub5Pts = 0;
+
+    // ---- Combine with skip-and-rescale ----
+    const components = [
+      { key: 'item_count_per_scale',        pts: sub1Pts, max: 5, skipped: false },
+      { key: 'reverse_coded_balance',       pts: sub2Pts, max: 3, skipped: sub2Skipped },
+      { key: 'response_format_uniformity',  pts: sub3Pts, max: 3, skipped: sub3Skipped },
+      { key: 'scale_missingness',           pts: sub4Pts, max: 2, skipped: false },
+      { key: 'survey_item_count_health',    pts: sub5Pts, max: 2, skipped: false },
+    ];
+    let raw = 0, maxAvailable = 0;
+    components.forEach(function (c) {
+      if (!c.skipped) { raw += c.pts; maxAvailable += c.max; }
+    });
+    const score = maxAvailable > 0
+      ? clamp(round((raw / maxAvailable) * 100), 0, 100)
+      : null;
+    const skippedKeys = components.filter(function (c) { return c.skipped; }).map(function (c) { return c.key; });
+
+    const tone = score == null ? 'neutral'
+      : score >= 80 ? 'ok'
+      : score >= 60 ? 'warn'
+      : 'alert';
+
+    const rawDisp = Math.round(raw * 10) / 10;
+    const note = skippedKeys.length
+      ? rawDisp + ' / ' + maxAvailable + ' (rescaled from ' + MAX_RAW + '; ' + skippedKeys.length + ' sub-component(s) skipped)'
+      : rawDisp + ' / ' + MAX_RAW;
+
+    const interp = scales.length === 1
+      ? 'Single scale ("' + scales[0].name + '", k=' + scales[0].items.length + '). Architecture score: ' + score + '/100.'
+      : scales.length + ' scales (k = ' + scales.map(function (s) { return s.items.length; }).join(', ') + '). Architecture score: ' + score + '/100.';
+
+    return {
+      score: score,
+      raw: rawDisp,
+      max: maxAvailable,
+      max_full: MAX_RAW,
+      note: note,
+      interp: interp,
+      tone: tone,
+      skipped: false,
+      skipped_subcomponents: skippedKeys,
+      breakdown: {
+        item_count_per_scale:        { pts: sub1Pts, max: 5, skipped: false },
+        reverse_coded_balance:       { pts: sub2Pts, max: 3, skipped: sub2Skipped },
+        response_format_uniformity:  { pts: sub3Pts, max: 3, skipped: sub3Skipped },
+        scale_missingness:           { pts: sub4Pts, max: 2, skipped: false },
+        survey_item_count_health:    { pts: sub5Pts, max: 2, skipped: false },
+      },
+      scales: scales.map(function (s) { return { name: s.name, k: s.items.length }; }),
     };
   }
 
