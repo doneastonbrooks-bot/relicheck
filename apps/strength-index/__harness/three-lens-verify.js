@@ -141,7 +141,7 @@ console.log('');
 console.log('--- §3.3 closed-form lens math check ---');
 const synthetic = {
   reliability:           90,
-  validity:              null,    // skipped (§4A new construction)
+  validity:              null,    // synthetic-skip for closed-form §3.3 check
   construct_alignment:   null,    // skipped (§4B)
   item_prompt_quality:   75,
   bias_clarity:          null,    // skipped (§4D)
@@ -294,9 +294,10 @@ const capOut4 = RSSI_MATH.applyValidityForwardCap(null, false);
 check('cap dormant when validity is null (value)', String(capOut4.value), 'null');
 check('cap dormant when validity is null (flag)',  String(capOut4.capped), 'false');
 
-// End-to-end: computeLensesFromDataset wires the cap. Validity is null
-// in this build (un-built), so validity_forward_capped should be false
-// regardless of config — cap dormant until §4A ships.
+// End-to-end: computeLensesFromDataset wires the cap. The top-of-file
+// fixture has no scale assignments, so §4A whole-domain-skips and
+// validity stays null → cap dormant regardless of config. The active
+// cap path is exercised in the §4A fixtures below.
 const noCritRun = RSSI_MATH.computeLensesFromDataset(dataset, {});
 check('end-to-end cap dormant when validity null (no criterion config)',
   String(noCritRun.rssi.validity_forward_capped), 'false');
@@ -1138,10 +1139,341 @@ function constVals(n, v) { const a = []; for (let i = 0; i < n; i++) a.push(v); 
   check('§4G diagnostics.straightLinerPct present',  typeof rs.diagnostics.straightLinerPct,  'number');
 }
 
+// ====================================================================
+// PHASE §4A CHECKS — Validity (Spec §4A: convergent + HTMT + criterion).
+// ====================================================================
+console.log('');
+console.log('--- §4A Validity ---');
+
+// -- HTMT sanity check: hand-build a correlation matrix with known
+//    monotrait and heterotrait means; assert HTMT to 4 decimal places.
+//    Two scales of 3 items each. Within each scale: all pairs r = 0.5
+//    → meanMonoA = meanMonoB = 0.5. Between scales: all 9 pairs r = 0.3
+//    → meanHetero = 0.3. HTMT = 0.3 / sqrt(0.5 × 0.5) = 0.6 exactly.
+//    Reference: Henseler, Ringle & Sarstedt 2015, JAMS 43(1):115–135.
+{
+  const R = [
+    // A1   A2   A3   B1   B2   B3
+    [1.0, 0.5, 0.5, 0.3, 0.3, 0.3], // A1
+    [0.5, 1.0, 0.5, 0.3, 0.3, 0.3], // A2
+    [0.5, 0.5, 1.0, 0.3, 0.3, 0.3], // A3
+    [0.3, 0.3, 0.3, 1.0, 0.5, 0.5], // B1
+    [0.3, 0.3, 0.3, 0.5, 1.0, 0.5], // B2
+    [0.3, 0.3, 0.3, 0.5, 0.5, 1.0], // B3
+  ];
+  const out = RSSI_MATH.htmtFromR(R, ['A','A','A','B','B','B']);
+  check('§4A HTMT sanity: 1 pair returned', String(out.pairs.length), '1');
+  check('§4A HTMT sanity: HTMT(A,B) = 0.6000 (4-decimal hand-computed)',
+    Math.abs(out.pairs[0].htmt - 0.6) < 1e-4 ? '=' : 'got ' + out.pairs[0].htmt, '=');
+  check('§4A HTMT sanity: maxHtmt = 0.6000',
+    Math.abs(out.maxHtmt - 0.6) < 1e-4 ? '=' : 'got ' + out.maxHtmt, '=');
+  // Absolute-value convention: flipping a hetero sign should not change HTMT.
+  const Rneg = R.map(function (row) { return row.slice(); });
+  Rneg[0][3] = Rneg[3][0] = -0.3;
+  const outNeg = RSSI_MATH.htmtFromR(Rneg, ['A','A','A','B','B','B']);
+  check('§4A HTMT sanity: |r| convention — sign flip preserves HTMT',
+    Math.abs(outNeg.pairs[0].htmt - 0.6) < 1e-4 ? '=' : 'got ' + outNeg.pairs[0].htmt, '=');
+}
+
+// -- HTMT band: max-across-pairs assignment per spec §4A.
+{
+  // 3 scales of 2 items each. Pair AB hetero 0.4, AC hetero 0.7, BC hetero 0.5.
+  // All mono r = 0.5 → monoA = monoB = monoC = 0.5. denom = 0.5.
+  // HTMT_AB = 0.8, HTMT_AC = 1.4, HTMT_BC = 1.0. Max = 1.4 → > 0.95 → 0 pts.
+  const R = [
+    [1.0, 0.5, 0.4, 0.4, 0.7, 0.7],
+    [0.5, 1.0, 0.4, 0.4, 0.7, 0.7],
+    [0.4, 0.4, 1.0, 0.5, 0.5, 0.5],
+    [0.4, 0.4, 0.5, 1.0, 0.5, 0.5],
+    [0.7, 0.7, 0.5, 0.5, 1.0, 0.5],
+    [0.7, 0.7, 0.5, 0.5, 0.5, 1.0],
+  ];
+  const out = RSSI_MATH.htmtFromR(R, ['A','A','B','B','C','C']);
+  check('§4A HTMT band: 3 pairs evaluated', String(out.pairs.length), '3');
+  check('§4A HTMT band: max across pairs (≈ 1.40 from AC)',
+    Math.abs(out.maxHtmt - 1.4) < 1e-4 ? '=' : 'got ' + out.maxHtmt, '=');
+}
+
+// -- Helper: build a Likert var for §4A fixtures --
+function mkLikertV(name, scale, values) {
+  return { name: name, label: name, types: ['likert'], scale: scale, values: values.slice() };
+}
+
+// -- Fixture: whole-domain skip when no scale assignments --
+{
+  const N = 30;
+  const items = [];
+  for (let q = 0; q < 4; q++) {
+    const vals = [];
+    for (let i = 0; i < N; i++) vals.push(((i + q) % 5) + 1);
+    items.push({ name: 'Q' + q, label: 'Q' + q, types: ['likert'], values: vals });
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4A-noscale', rowCount: N, variables: items });
+  const val = out.domain_details.validity;
+  check('§4A no scales: validity skipped (whole domain)', String(val.skipped), 'true');
+  check('§4A no scales: skip_reason = no_scale_assignments', val.skip_reason, 'no_scale_assignments');
+  check('§4A no scales: score null', String(val.score), 'null');
+  check('§4A no scales: validity sub-score null in lens', String(out.domain_subscores.validity), 'null');
+}
+
+// -- Strong-validity fixture: 2 scales × 4 items, tight within, weak between --
+function buildScalePair(N, withinNoise, betweenNoise) {
+  let s = 42;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('A' + q, 'ScaleA', []));
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('B' + q, 'ScaleB', []));
+  for (let i = 0; i < N; i++) {
+    const tA = 1 + rnd() * 4;
+    const tB = 1 + rnd() * 4;
+    for (let q = 0; q < 4; q++) {
+      const v = Math.max(1, Math.min(5, Math.round(tA + (rnd() - 0.5) * withinNoise)));
+      items[q].values.push(v);
+    }
+    for (let q = 0; q < 4; q++) {
+      // ScaleB items: latent tB + small leak from tA controlled by betweenNoise
+      const v = Math.max(1, Math.min(5, Math.round(tB + (tA - 3) * betweenNoise + (rnd() - 0.5) * withinNoise)));
+      items[4 + q].values.push(v);
+    }
+  }
+  return { source: '4A-pair', rowCount: N, variables: items };
+}
+
+// -- Strong validity: low between-noise → low HTMT, high convergent --
+{
+  const ds = buildScalePair(80, 0.5, 0.0); // independent scales
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const val = out.domain_details.validity;
+  check('§4A strong: skipped = false', String(val.skipped), 'false');
+  check('§4A strong: convergent NOT skipped', String(val.breakdown.convergent.skipped), 'false');
+  check('§4A strong: htmt NOT skipped (2 scales)', String(val.breakdown.discriminant_htmt.skipped), 'false');
+  check('§4A strong: criterion skipped (no config)', String(val.breakdown.criterion.skipped), 'true');
+  // Max-available = 40 (criterion absent). Score ≤ 100. §3.6 cap will engage on lens math.
+  check('§4A strong: max_available = 40 (no criterion)', String(val.max), '40');
+  check('§4A strong: HTMT low (≤ 0.85 → 20 pts)', String(val.breakdown.discriminant_htmt.pts), '20');
+  check('§4A strong: validity_forward_capped = true (no criterion)',
+    String(out.rssi.validity_forward_capped), 'true');
+  // §3.6: validity sub-score is capped at 60 in subscores.validity.
+  check('§4A strong: validity sub-score capped at 60',
+    out.domain_subscores.validity <= 60 ? '=' : 'got ' + out.domain_subscores.validity, '=');
+}
+
+// -- HTMT failure: scales bleed heavily into each other (shared latent) --
+{
+  const N = 80;
+  let s = 17;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('A' + q, 'ScaleA', []));
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('B' + q, 'ScaleB', []));
+  // Both scales driven by the SAME latent → HTMT should be ≈ 1.0.
+  for (let i = 0; i < N; i++) {
+    const t = 1 + rnd() * 4;
+    for (let q = 0; q < 4; q++) {
+      items[q].values.push(Math.max(1, Math.min(5, Math.round(t + (rnd() - 0.5) * 0.4))));
+    }
+    for (let q = 0; q < 4; q++) {
+      items[4 + q].values.push(Math.max(1, Math.min(5, Math.round(t + (rnd() - 0.5) * 0.4))));
+    }
+  }
+  const ds = { source: '4A-htmt-fail', rowCount: N, variables: items };
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  const val = out.domain_details.validity;
+  check('§4A HTMT fail: htmt computed', String(val.breakdown.discriminant_htmt.skipped), 'false');
+  // High between-scale correlations → HTMT large → fewer points.
+  check('§4A HTMT fail: max_htmt > 0.85',
+    val.breakdown.discriminant_htmt.max_htmt > 0.85 ? '=' : 'got ' + val.breakdown.discriminant_htmt.max_htmt, '=');
+  check('§4A HTMT fail: htmt pts < 20',
+    val.breakdown.discriminant_htmt.pts < 20 ? '=' : 'got ' + val.breakdown.discriminant_htmt.pts, '=');
+}
+
+// -- Convergent band fixture: weak items → low item-rest → low convergent --
+{
+  const N = 60;
+  let s = 7;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  // 2 scales of 4 items each. ScaleA items are nearly independent (weak convergent).
+  // ScaleB items load on a shared trait (strong convergent).
+  const items = [];
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('A' + q, 'ScaleA', []));
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('B' + q, 'ScaleB', []));
+  for (let i = 0; i < N; i++) {
+    const tB = 1 + rnd() * 4;
+    for (let q = 0; q < 4; q++) {
+      const v = Math.max(1, Math.min(5, Math.round(1 + rnd() * 4))); // pure noise
+      items[q].values.push(v);
+    }
+    for (let q = 0; q < 4; q++) {
+      const v = Math.max(1, Math.min(5, Math.round(tB + (rnd() - 0.5) * 0.4)));
+      items[4 + q].values.push(v);
+    }
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4A-conv', rowCount: N, variables: items });
+  const val = out.domain_details.validity;
+  check('§4A weak convergent: ScaleA mean_item_total < 0.30',
+    val.breakdown.convergent.per_scale[0].mean_item_total < 0.30 ? '=' : 'got ' + val.breakdown.convergent.per_scale[0].mean_item_total, '=');
+  check('§4A weak convergent: ScaleB mean_item_total ≥ 0.50',
+    val.breakdown.convergent.per_scale[1].mean_item_total >= 0.50 ? '=' : 'got ' + val.breakdown.convergent.per_scale[1].mean_item_total, '=');
+}
+
+// -- Single-scale: per-subcomponent skip (HTMT skipped, convergent computed) --
+{
+  const N = 40;
+  let s = 99;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 4; q++) items.push(mkLikertV('Q' + q, 'OnlyScale', []));
+  for (let i = 0; i < N; i++) {
+    const t = 1 + rnd() * 4;
+    for (let q = 0; q < 4; q++) {
+      items[q].values.push(Math.max(1, Math.min(5, Math.round(t + (rnd() - 0.5) * 0.4))));
+    }
+  }
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4A-1scale', rowCount: N, variables: items });
+  const val = out.domain_details.validity;
+  check('§4A single-scale: convergent computed', String(val.breakdown.convergent.skipped), 'false');
+  check('§4A single-scale: htmt skipped',         String(val.breakdown.discriminant_htmt.skipped), 'true');
+  check('§4A single-scale: max_available = 20 (only convergent, no criterion)', String(val.max), '20');
+  check('§4A single-scale: score still computed', val.score != null ? '=' : 'null', '=');
+}
+
+// -- Criterion validity fixture: per-band assertion --
+// Two scales of 3 items each + a numeric criterion column. Tight scales →
+// row-sum highly correlated with the criterion when criterion equals tA.
+{
+  const N = 40;
+  let s = 13;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('A' + q, 'A', []));
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('B' + q, 'B', []));
+  const crit = { name: 'CRIT', label: 'CRIT', types: ['continuous'], values: [] };
+  for (let i = 0; i < N; i++) {
+    const tA = 1 + rnd() * 4;
+    const tB = 1 + rnd() * 4;
+    for (let q = 0; q < 3; q++) items[q].values.push(Math.max(1, Math.min(5, Math.round(tA + (rnd() - 0.5) * 0.3))));
+    for (let q = 0; q < 3; q++) items[3 + q].values.push(Math.max(1, Math.min(5, Math.round(tB + (rnd() - 0.5) * 0.3))));
+    // Criterion = scaled tA + tiny noise → high |r| with ScaleA total.
+    crit.values.push(tA * 3 + (rnd() - 0.5) * 0.2);
+  }
+  items.push(crit);
+  const ds = { source: '4A-crit-high', rowCount: N, variables: items };
+  const out = RSSI_MATH.computeLensesFromDataset(ds, { criterion_column: 'CRIT' });
+  const val = out.domain_details.validity;
+  check('§4A criterion present: NOT skipped',  String(val.breakdown.criterion.skipped), 'false');
+  check('§4A criterion present: error = null',  String(val.breakdown.criterion.error), 'null');
+  check('§4A criterion present: max_full = 60', String(val.max), '60');
+  check('§4A criterion high: |r| ≥ 0.50 → 20 pts',
+    val.breakdown.criterion.pts === 20 && val.breakdown.criterion.max_abs_r >= 0.50 ? '=' : 'pts=' + val.breakdown.criterion.pts + ' r=' + val.breakdown.criterion.max_abs_r, '=');
+  check('§4A criterion present: validity_forward_capped = false',
+    String(out.rssi.validity_forward_capped), 'false');
+  check('§4A criterion present: N ≥ 30 → no low-N warning',
+    String(val.breakdown.criterion.low_n_warning), 'false');
+}
+
+// -- Criterion absent: cap engages on Validity-Forward lens --
+{
+  // Reuse the strong-pair fixture (no criterion in config).
+  const ds = buildScalePair(80, 0.5, 0.0);
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  check('§4A cap: validity_forward_capped = true', String(out.rssi.validity_forward_capped), 'true');
+  check('§4A cap: validity sub-score ≤ 60',
+    out.domain_subscores.validity <= 60 ? '=' : 'got ' + out.domain_subscores.validity, '=');
+}
+
+// -- Criterion column missing from dataset: ERROR (not skip) --
+{
+  const ds = buildScalePair(60, 0.5, 0.0);
+  const out = RSSI_MATH.computeLensesFromDataset(ds, { criterion_column: 'NOT_THERE' });
+  const val = out.domain_details.validity;
+  check('§4A crit missing: criterion skipped',  String(val.breakdown.criterion.skipped), 'true');
+  check('§4A crit missing: error includes "not found"',
+    /not found/i.test(String(val.breakdown.criterion.error)) ? '=' : 'err=' + val.breakdown.criterion.error, '=');
+}
+
+// -- Criterion column non-numeric: ERROR (not skip with diagnostic) --
+{
+  const ds = buildScalePair(50, 0.5, 0.0);
+  ds.variables.push({
+    name: 'TEXT_COL', label: 'TEXT_COL', types: ['open'],
+    values: ds.variables[0].values.map(function (_, i) { return 'response_' + i; }),
+  });
+  const out = RSSI_MATH.computeLensesFromDataset(ds, { criterion_column: 'TEXT_COL' });
+  const val = out.domain_details.validity;
+  check('§4A non-numeric crit: criterion skipped',  String(val.breakdown.criterion.skipped), 'true');
+  check('§4A non-numeric crit: error includes "non-numeric"',
+    /non-numeric/i.test(String(val.breakdown.criterion.error)) ? '=' : 'err=' + val.breakdown.criterion.error, '=');
+}
+
+// -- Criterion column with too few paired observations: skip with diagnostic (not error) --
+{
+  const N = 50;
+  let s = 21;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('A' + q, 'A', []));
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('B' + q, 'B', []));
+  const crit = { name: 'CRIT_SPARSE', label: 'CRIT_SPARSE', types: ['continuous'], values: [] };
+  for (let i = 0; i < N; i++) {
+    const tA = 1 + rnd() * 4, tB = 1 + rnd() * 4;
+    for (let q = 0; q < 3; q++) items[q].values.push(Math.max(1, Math.min(5, Math.round(tA + (rnd() - 0.5) * 0.3))));
+    for (let q = 0; q < 3; q++) items[3 + q].values.push(Math.max(1, Math.min(5, Math.round(tB + (rnd() - 0.5) * 0.3))));
+    // Only 5 criterion values populated (rest null).
+    crit.values.push(i < 5 ? tA * 3 : null);
+  }
+  items.push(crit);
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4A-sparse-crit', rowCount: N, variables: items }, { criterion_column: 'CRIT_SPARSE' });
+  const val = out.domain_details.validity;
+  check('§4A sparse crit (N<10): criterion skipped',  String(val.breakdown.criterion.skipped), 'true');
+  check('§4A sparse crit: error message about paired observations',
+    /too few paired/i.test(String(val.breakdown.criterion.error)) ? '=' : 'err=' + val.breakdown.criterion.error, '=');
+  // §3.6 cap should engage because criterion sub-component skipped.
+  check('§4A sparse crit: cap engaged', String(out.rssi.validity_forward_capped), 'true');
+}
+
+// -- Criterion in 10–29 paired range: low-N warning fires --
+{
+  const N = 80;
+  let s = 31;
+  const rnd = function () { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  const items = [];
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('A' + q, 'A', []));
+  for (let q = 0; q < 3; q++) items.push(mkLikertV('B' + q, 'B', []));
+  const crit = { name: 'CRIT_LOWN', label: 'CRIT_LOWN', types: ['continuous'], values: [] };
+  for (let i = 0; i < N; i++) {
+    const tA = 1 + rnd() * 4, tB = 1 + rnd() * 4;
+    for (let q = 0; q < 3; q++) items[q].values.push(Math.max(1, Math.min(5, Math.round(tA + (rnd() - 0.5) * 0.3))));
+    for (let q = 0; q < 3; q++) items[3 + q].values.push(Math.max(1, Math.min(5, Math.round(tB + (rnd() - 0.5) * 0.3))));
+    // 15 paired observations (10 ≤ N < 30 band).
+    crit.values.push(i < 15 ? tA * 3 + (rnd() - 0.5) * 0.2 : null);
+  }
+  items.push(crit);
+  const out = RSSI_MATH.computeLensesFromDataset({ source: '4A-lowN-crit', rowCount: N, variables: items }, { criterion_column: 'CRIT_LOWN' });
+  const val = out.domain_details.validity;
+  check('§4A low-N crit: criterion computed',  String(val.breakdown.criterion.skipped), 'false');
+  check('§4A low-N crit: low_n_warning = true', String(val.breakdown.criterion.low_n_warning), 'true');
+  check('§4A low-N crit: N = 15',               String(val.breakdown.criterion.n), '15');
+}
+
+// -- Lens shift verification: validity moves from null → scored; lenses re-weight. --
+{
+  const ds = buildScalePair(80, 0.5, 0.0); // strong pair, no criterion → cap engages
+  const out = RSSI_MATH.computeLensesFromDataset(ds);
+  check('§4A lens shift: validity NOT in skipped_domains',
+    out.skipped_domains.indexOf('validity') === -1 ? '=' : 'still skipped: ' + out.skipped_domains.join(','), '=');
+  // Validity is capped at 60 → all three lenses see the same validity input.
+  // PC + VF weight Validity = 22, RC = 15. Equal-cap geometry per KNOWN_ISSUES.md §1.
+  check('§4A lens shift: all three lenses produce numeric scores',
+    (typeof out.rssi.psychometric_core === 'number' &&
+     typeof out.rssi.respondent_centered === 'number' &&
+     typeof out.rssi.validity_forward === 'number') ? '=' : 'PC=' + out.rssi.psychometric_core + ' RC=' + out.rssi.respondent_centered + ' VF=' + out.rssi.validity_forward,
+    '=');
+}
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4E/§4F/§4G all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4E/§4F/§4G all check.');
 }

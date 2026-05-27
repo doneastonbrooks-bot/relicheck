@@ -73,6 +73,8 @@ Any saved report from before the band fix will produce a lower headline score an
 
 5. **Propagate structured anchor labels (required only for full §4G anchor-symmetry evaluation).** Add `anchor_labels: [string, ...]` per Likert variable (e.g., `["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]`), sourced from the Survey Builder's question definition. Until this lands, §4G sub-component 3 (anchor symmetry) awards the spec-defined default of 2/2 per Phase 1 Q1 decision (the engine does not attempt heuristic symmetry detection from arbitrary label strings — see §8). When labels arrive, the engine can do real symmetry detection from structured inputs. Marked optional in the checklist: change 5 is a future-evaluation expansion, not a prerequisite for §4G to score.
 
+6. **Capture the criterion column for §4A criterion validity.** The engine accepts `config.criterion_column` (the item ID / column name of a numeric outcome to correlate scale totals against). Whatever surface invokes the engine — Setup Wizard, evidence-intake config, or a dedicated criterion-mapping step — must populate this field for the §4A criterion sub-component to score. The engine handles the absence gracefully: the criterion sub-component skips, the §3.6 Validity-Forward cap engages, and the lens math absorbs the skip via per-subcomponent rescale. So this is purely a "to activate criterion validity, the platform must capture which column is the criterion" entry, not a correctness gate. When the configured column is missing from the dataset or non-numeric, the engine returns a structured error in `domain_details.validity.breakdown.criterion.error`, distinct from the skip-with-diagnostic path (too few paired observations). Marked optional in the checklist: §4A scores convergent + HTMT without criterion; change 6 unlocks the third sub-component and removes the V-F cap.
+
 **Implication.** Until these four are wired, §4E is verified in the harness but unexercised in production. When the first of these changes lands, the engine will begin returning real §4E scores; that first run on real data should be verified end-to-end (sub-scores match hand-checked values on a known dataset). The combination of changes 1 + 4 unlocks the majority of the domain (sub-components 1, 3, 4, 5 score; sub-2 stays skipped); changes 2 + 3 then unlock sub-2.
 
 **Resolve during.** Platform-side dataset-transform + Setup Wizard work, separate conversation from this module-side build.
@@ -141,3 +143,26 @@ Detecting symmetry from arbitrary label strings is a hard NLP problem and commit
 **Resolve during.** Platform-side anchor-labels work (added as item 5 to the §4 checklist above). When structured anchor metadata is available, extend `computeResponseScaleReview` to inspect `anchor_labels`, classify polarity, and award 2 for balanced endpoint polarity, 0 otherwise. Until then, the default behavior is correct per spec.
 
 **Code touch-points.** Module side (future): [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeResponseScaleReview` — `subSymmetryPts` is currently a constant 2. Platform side: §4 item 5 (anchor-labels propagation). Spec §4G sub-component 3.
+
+---
+
+## 9. Corrected item-rest correlations feed both Reliability (§4) and Validity convergent (§4A) — cumulative-penalty effect
+
+**Surfaced:** §4A Validity build, Phase 1 audit.
+
+**Problem.** The corrected item-rest correlation now contributes to two domains:
+- **§4 Reliability** uses item-rest as a sub-component of the 25-pt reliability score (3 pts available, with deductions for items with r < 0.30 and r < 0).
+- **§4A Validity convergent (sub-component 1)** averages item-rest within each scale and bands the cross-scale mean to 20 pts.
+
+A survey with weak items therefore loses points in *both* domains for the same underlying signal. This is intentional per spec — different lenses on the same statistic — but the cumulative effect on the headline lens score is real. A scale with mean item-rest = 0.25 loses ~1 pt from Reliability *and* lands in the 6/20 convergent band, dropping ~14 raw §4A points → ~23 sub-score points → ~3.5–5 weighted lens points depending on the lens.
+
+**Implication.** The math is correct per spec §4 and §4A. The user-facing concern is whether the same diagnostic appearing in two domain narratives reads as "two distinct findings" or "the same finding double-counted." Whether this is a problem depends on:
+1. How the report renders the two domains (if both surface the item-rest finding verbatim, users may interpret as duplication).
+2. Whether lens-weighted lens scores shift more than the report-author intends when both domains penalize the same items.
+
+**Resolve during.** Next weight-tuning conversation OR report-rendering work, whichever surfaces the issue first. Three response options when this becomes a user-facing concern:
+1. **Accept as-is.** The cumulative penalty is the spec's intent — weak items should impact both reliability *and* validity conclusions.
+2. **De-weight one domain.** Reduce the item-rest contribution in either §4 (3 pts of 25) or §4A (the convergent band) to soften double-counting.
+3. **Reframe in the report.** Render the two domains with explicit cross-references so the user sees the connection rather than reading them as independent findings.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — `computeReliability` (item-rest deduction loop), `computeValidity` (convergent sub-component). Spec §4 row "Item-rest correlations," §4A row "Convergent validity."

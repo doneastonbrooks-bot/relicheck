@@ -113,9 +113,10 @@ Add additional pairings for other lens-disagreement patterns; surface them as th
 
 Validity (Section 4A) splits into three equally-weighted sub-components: convergent validity (20 pts of 60), discriminant validity via HTMT (20 pts of 60), and criterion validity (20 pts of 60). The 60-point raw total rescales to a 0–100 sub-score by multiplying by 100/60 = 1.667.
 
-When criterion data is absent (no `criterion_column` is configured, per Section 10):
+When criterion evidence is absent from scoring — either because no `criterion_column` is configured (per Section 10) **or** because the configured column was skipped (missing from the dataset, non-numeric, or fewer than 10 paired complete observations per Section 4A):
 
 - The criterion sub-component is skipped, not zero-filled. The raw total becomes a 40-point scale (convergent + discriminant) rescaling to a 0–100 sub-score by multiplying by 100/40 = 2.5, with a hard cap of 60 applied so the absence of criterion evidence cannot produce an indistinguishable headline from a fully-evidenced instrument.
+- The cap engages on the authoritative skip signal — whether the criterion sub-component actually scored — not on config presence alone. A configured-but-skipped criterion triggers the cap exactly like an unconfigured one.
 - The cap is surfaced on the Validity-Forward lens score with a "limited evidence" indicator.
 - The Validity-Forward score is never silently lowered below the other two lenses without an explanation; the disagreement readout (Section 3.5) absorbs the case where the cap drives Validity-Forward more than 10 points below the others.
 
@@ -159,9 +160,13 @@ The Validity domain produces a 0–100 sub-score. Three sub-components, each 20 
 |---|---|---|
 | Convergent validity | 20 | For each scale, compute the average corrected item-total correlation. Map the cross-scale mean to points: ≥ 0.50 → 20, 0.40–0.499 → 16, 0.30–0.399 → 12, 0.20–0.299 → 6, < 0.20 → 0. |
 | Discriminant validity (HTMT) | 20 | For each pair of scales, compute the Heterotrait-Monotrait ratio. Map the maximum HTMT across pairs to points: ≤ 0.85 → 20, 0.85–0.90 → 14, 0.90–0.95 → 8, > 0.95 → 0. Use HTMT, not raw inter-scale correlation. |
-| Criterion validity | 20 | When `criterion_column` is configured, correlate each scale's total score with the criterion. Map the maximum absolute correlation across scales to points: ≥ 0.50 → 20, 0.30–0.499 → 14, 0.20–0.299 → 8, < 0.20 → 0. When `criterion_column` is absent, skip this sub-component and apply the cap in Section 3.6. |
+| Criterion validity | 20 | When `criterion_column` is configured, correlate each scale's total score with the criterion on pairwise-complete rows. Map the maximum absolute correlation across scales to points: ≥ 0.50 → 20, 0.30–0.499 → 14, 0.20–0.299 → 8, < 0.20 → 0. **Minimum-N floor:** require ≥ 10 paired complete observations per scale to compute at all; below that, skip with a "too few paired observations" diagnostic. **Low-N warning:** when 10 ≤ N < 30, score the band but surface a low-N warning. When `criterion_column` is absent (unconfigured, missing from dataset, or non-numeric), skip this sub-component and apply the cap in Section 3.6. A missing or non-numeric configured column returns a structured error (configuration wrong) rather than a skip-with-diagnostic (data fine but insufficient). |
 
-Raw total: 60 with criterion, 40 without. Rescale to 0–100 per Section 3.6. The cap engages whenever the criterion sub-component is skipped, irrespective of how high convergent and discriminant score.
+Raw total: 60 with criterion, 40 without. Rescale to 0–100 per Section 3.6. The cap engages whenever the criterion sub-component is skipped (configured-but-skipped triggers the cap exactly like unconfigured), irrespective of how high convergent and discriminant score.
+
+**HTMT formula.** Discriminant validity uses the Heterotrait-Monotrait ratio per Henseler, Ringle & Sarstedt (2015), "A new criterion for assessing discriminant validity in variance-based structural equation modeling," *Journal of the Academy of Marketing Science* 43(1):115–135. For scales *i* and *j*, HTMT = MeanHetero(i,j) / sqrt(MeanMono(i) × MeanMono(j)) where the means are computed on the absolute values of the item-level correlations per Henseler 2015 §3.2 (sign-invariant convention). The 0.85 conservative cutoff and 0.90 liberal cutoff define the band boundaries above.
+
+**Per-subcomponent skip-and-rescale.** Single-scale surveys skip the HTMT sub-component (no pairs to evaluate) but still score convergent + criterion when available. Scales with fewer than 2 items skip from the convergent computation. The engine sums only the present sub-components and rescales: `score = round(raw_present / max_present × 100)`. When per-item scale assignments are absent on any Likert item, the whole domain skips (`validity: null`) and the §3.2 lens math absorbs the skip.
 
 ---
 

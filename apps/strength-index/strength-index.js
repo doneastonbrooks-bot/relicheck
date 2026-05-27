@@ -633,15 +633,21 @@
   const DEFAULT_HEADLINE_LENS = 'respondent_centered';
 
   // Spec §3.6 — Validity-Forward evidence cap.
-  // When criterion data is absent, the Validity sub-score is capped at
-  // 60 so the absence of criterion evidence cannot produce an
+  // When criterion evidence is absent from scoring, the Validity sub-score
+  // is capped at 60 so the absence of criterion evidence cannot produce an
   // indistinguishable headline from a fully-evidenced instrument.
   // The cap modifies the underlying sub-score (which feeds all three
   // lenses), but the "limited evidence" indicator is surfaced only on
   // the Validity-Forward lens per §3.6.
-  function applyValidityForwardCap(validitySubscore, criterionPresent) {
+  //
+  // The second argument is whether criterion evidence actually scored —
+  // not just whether config.criterion_column was supplied. A configured
+  // criterion that ends up skipped (too few paired observations, non-
+  // numeric column, missing column) leaves the Validity sub-score on the
+  // 40-pt rescale and triggers the cap exactly like an unconfigured one.
+  function applyValidityForwardCap(validitySubscore, criterionScored) {
     if (validitySubscore == null) return { value: null, capped: false };
-    if (criterionPresent) return { value: validitySubscore, capped: false };
+    if (criterionScored) return { value: validitySubscore, capped: false };
     if (validitySubscore <= 60) return { value: validitySubscore, capped: true };
     return { value: 60, capped: true };
   }
@@ -739,7 +745,6 @@
   // ====================================================================
   function computeLensesFromDataset(ds, config) {
     config = config || {};
-    const criterionPresent = !!config.criterion_column;
     const baseOut = {
       rssi: {
         psychometric_core: null, respondent_centered: null, validity_forward: null,
@@ -768,16 +773,20 @@
     const iq  = computeItemQuality();
     const rq  = computeResponseScaleReview(config);
     const ss  = computeScaleStructure(config);
+    const val = computeValidity(config);
 
     // Map v1 compute output → canonical 8-domain sub-score map.
-    // Three un-built domains (Spec §4A/4B/4D new construction) remain
-    // null; computeLenses excludes them via skip-and-rescale. §4E is
-    // built (computeScaleStructure) but stays null in production until
-    // the platform-side data contract carries scale assignments etc.
-    // (see KNOWN_ISSUES.md §4 for the four data-flow prerequisites).
+    // Two un-built domains remain (Spec §4B Construct Alignment + §4D
+    // Bias & Clarity); computeLenses excludes them via skip-and-rescale.
+    // §4A Validity is live (computeValidity); §4E Scale Structure is
+    // built but stays null in production until the platform-side data
+    // contract carries scale assignments etc. (KNOWN_ISSUES.md §4).
+    // §4A scoring activates as soon as scale assignments arrive; the
+    // criterion sub-component additionally requires config.criterion_column
+    // (KNOWN_ISSUES.md §4 item 6).
     const subscores = {
       reliability:           rel.score,
-      validity:              null,
+      validity:              val.score,
       construct_alignment:   null,
       item_prompt_quality:   iq.score,
       bias_clarity:          null,
@@ -787,10 +796,12 @@
     };
 
     // Spec §3.6 — apply Validity-Forward evidence cap before lens math.
-    // The cap is dormant in this build (validity sub-score is null
-    // until §4A ships); when validity becomes a real number, the cap
-    // automatically engages if config.criterion_column is absent.
-    const cap = applyValidityForwardCap(subscores.validity, criterionPresent);
+    // Cap engages whenever the criterion sub-component did not score
+    // (absent config, configured-but-missing column, non-numeric column,
+    // or too few paired observations). val.breakdown.criterion.skipped
+    // is the authoritative signal.
+    const criterionScored = val.breakdown && val.breakdown.criterion && !val.breakdown.criterion.skipped;
+    const cap = applyValidityForwardCap(subscores.validity, criterionScored);
     subscores.validity = cap.value;
 
     const lens = computeLenses(subscores);
@@ -808,6 +819,7 @@
       domain_subscores: subscores,
       domain_details: {
         reliability:           rel,
+        validity:              val,
         factor_readiness:      fs,
         item_prompt_quality:   iq,
         response_scale_review: rq,
@@ -843,6 +855,11 @@
     // precisely-tuned edge-band fixtures (the integration path also
     // covers it via computeLensesFromDataset).
     factorReadinessFromR: factorReadinessFromR,
+    // Spec §4A harness exposure. computeValidity closes over likertVars;
+    // expose a thin adapter that operates on a hand-built correlation
+    // matrix + per-item scale assignments so the harness can drive the
+    // HTMT formula with hand-computable values to 4-decimal precision.
+    htmtFromR: htmtFromR,
     // Numerical primitives — exported for sanity-checking in the harness.
     // Duplicated from apps/instrument-quality/instrument-quality.js;
     // KNOWN_ISSUES.md tracks the future consolidation.
@@ -1921,6 +1938,352 @@
       },
       scales: scales.map(function (s) { return { name: s.name, k: s.items.length }; }),
     };
+  }
+
+  // ====================================================================
+  // §4A VALIDITY DOMAIN (Spec §4A + §3.6).
+  //
+  // Three sub-components, 20 raw pts each → 60 with criterion, 40 without:
+  //   1. Convergent validity (20). For each scale, average the corrected
+  //      item-total correlation; band the cross-scale mean.
+  //   2. Discriminant validity via HTMT (20). For each pair of scales,
+  //      compute Heterotrait-Monotrait ratio; band the MAX across pairs.
+  //   3. Criterion validity (20). When config.criterion_column is set,
+  //      correlate each scale's row-sum total with the criterion column;
+  //      band the MAX |r| across scales.
+  //
+  // HTMT formula per Henseler, Ringle & Sarstedt (2015), "A new criterion
+  // for assessing discriminant validity in variance-based structural
+  // equation modeling," J. Acad. Marketing Sci. 43(1):115–135. Absolute-
+  // value convention applied to both monotrait and heterotrait means
+  // (Henseler 2015 §3.2). Cutoff 0.85 = conservative; 0.90 = liberal.
+  //
+  // Skip policy (per-subcomponent skip-and-rescale, parallel to §4E):
+  //   - Whole-domain skip when no Likert items OR no scale assignments.
+  //   - Convergent skips if no scale has ≥ 2 items (item-rest undefined).
+  //   - HTMT skips if < 2 scales (no pairs to evaluate).
+  //   - Criterion skips when config.criterion_column is absent OR when
+  //     paired N < 10 on every scale (Phase 1 Q2). Returns ERROR (not
+  //     skip) when configured column is missing or non-numeric (Q3).
+  //   - Low-N warning fires when 10 ≤ N < 30 paired observations.
+  //
+  // §3.6 cap is applied OUTSIDE this fn (in computeLensesFromDataset via
+  // applyValidityForwardCap) on the returned sub-score: when criterion
+  // is absent, the score is capped at 60 to surface "limited evidence."
+  //
+  // The corrected item-rest correlation feeds two domains (Reliability
+  // §4 + Validity §4A convergent). The double contribution is intentional
+  // per spec — captured in KNOWN_ISSUES.md.
+  //
+  // Per-item fields read from each Likert variable:
+  //   - v.scale  or  v.construct  (string)   — scale membership
+  //   - v.values                  (number[]) — response column
+  //
+  // Config fields read:
+  //   - config.criterion_column (string)     — column name of criterion
+  // ====================================================================
+  function computeValidity(config) {
+    config = config || {};
+    const MAX_RAW = 60;
+    const skipResult = function (reason, note) {
+      return {
+        score: null, raw: null, max: MAX_RAW, max_full: MAX_RAW,
+        note: note, interp: note, tone: 'neutral',
+        skipped: true, skip_reason: reason,
+      };
+    };
+
+    if (likertVars.length === 0) {
+      return skipResult('no_likert_items', 'Validity skipped: no Likert items.');
+    }
+
+    // ---- Scale grouping (accept v.scale or v.construct) ----
+    const scaleMap = {};
+    let allHaveScale = true;
+    likertVars.forEach(function (v) {
+      const s = (v.scale != null && v.scale !== '') ? String(v.scale)
+              : (v.construct != null && v.construct !== '') ? String(v.construct)
+              : null;
+      if (s == null) { allHaveScale = false; return; }
+      if (!scaleMap[s]) scaleMap[s] = [];
+      scaleMap[s].push(v);
+    });
+    if (!allHaveScale || Object.keys(scaleMap).length === 0) {
+      return skipResult('no_scale_assignments',
+        'Validity skipped: no per-item scale assignments. Setup Wizard must tag each Likert item with its scale before this domain scores.');
+    }
+    const scales = Object.keys(scaleMap).map(function (n) {
+      return { name: n, items: scaleMap[n] };
+    });
+
+    // ---- Pearson on pairwise-complete cases ----
+    function pearsonPairwise(a, b) {
+      const xa = [], xb = [];
+      for (let i = 0; i < a.length; i++) {
+        const x = a[i], y = b[i];
+        if (x == null || x === '' || isNaN(+x)) continue;
+        if (y == null || y === '' || isNaN(+y)) continue;
+        xa.push(+x); xb.push(+y);
+      }
+      if (xa.length < 5) return null;
+      return pearson(xa, xb);
+    }
+
+    // ---- Sub 1: Convergent (20 pts) ----
+    // Per-scale: average corrected item-total correlation. Cross-scale
+    // mean → band per spec §4A.
+    const perScaleConvergent = scales.map(function (s) {
+      if (s.items.length < 2) return null;
+      const cols = s.items.map(function (it) { return it.values; });
+      const rs = absorbedItemRestCorrelations(cols);
+      const valid = rs.filter(function (r) { return r != null && !isNaN(r); });
+      return valid.length ? mean(valid) : null;
+    });
+    const validConv = perScaleConvergent.filter(function (r) { return r != null; });
+    let convergentMean = null;
+    let convergentSkipped = false;
+    if (validConv.length === 0) convergentSkipped = true;
+    else convergentMean = mean(validConv);
+    function convergentBand(r) {
+      if (r >= 0.50) return 20;
+      if (r >= 0.40) return 16;
+      if (r >= 0.30) return 12;
+      if (r >= 0.20) return 6;
+      return 0;
+    }
+    const convergentPts = convergentSkipped ? null : convergentBand(convergentMean);
+
+    // ---- Sub 2: Discriminant / HTMT (20 pts) ----
+    function meanMono(items) {
+      if (items.length < 2) return null;
+      let sum = 0, count = 0;
+      for (let p = 0; p < items.length; p++) {
+        for (let q = p + 1; q < items.length; q++) {
+          const r = pearsonPairwise(items[p].values, items[q].values);
+          if (r != null) { sum += Math.abs(r); count++; }
+        }
+      }
+      return count ? sum / count : null;
+    }
+    function meanHetero(itemsA, itemsB) {
+      let sum = 0, count = 0;
+      for (let p = 0; p < itemsA.length; p++) {
+        for (let q = 0; q < itemsB.length; q++) {
+          const r = pearsonPairwise(itemsA[p].values, itemsB[q].values);
+          if (r != null) { sum += Math.abs(r); count++; }
+        }
+      }
+      return count ? sum / count : null;
+    }
+    const htmtPairs = [];
+    let htmtSkipped = false;
+    let htmtMax = null;
+    if (scales.length < 2) {
+      htmtSkipped = true;
+    } else {
+      for (let i = 0; i < scales.length; i++) {
+        for (let j = i + 1; j < scales.length; j++) {
+          const A = scales[i].items, B = scales[j].items;
+          const monoA = meanMono(A);
+          const monoB = meanMono(B);
+          const hetero = meanHetero(A, B);
+          if (monoA == null || monoB == null || hetero == null) continue;
+          const denom = Math.sqrt(monoA * monoB);
+          if (denom === 0) continue;
+          htmtPairs.push({ a: scales[i].name, b: scales[j].name, htmt: hetero / denom });
+        }
+      }
+      if (htmtPairs.length === 0) htmtSkipped = true;
+      else htmtMax = htmtPairs.reduce(function (m, p) { return Math.max(m, p.htmt); }, 0);
+    }
+    function htmtBand(h) {
+      if (h <= 0.85) return 20;
+      if (h <= 0.90) return 14;
+      if (h <= 0.95) return 8;
+      return 0;
+    }
+    const htmtPts = htmtSkipped ? null : htmtBand(htmtMax);
+
+    // ---- Sub 3: Criterion (20 pts) ----
+    let critSkipped = false;
+    let critError = null;
+    let critMaxAbs = null;
+    let critN = null;
+    let critLowN = false;
+    if (!config.criterion_column) {
+      critSkipped = true;
+    } else {
+      const critVar = allVars.find(function (v) { return v.name === config.criterion_column; });
+      if (!critVar) {
+        critError = 'criterion_column "' + config.criterion_column + '" not found in dataset';
+        critSkipped = true;
+      } else {
+        // Numeric validation: at least 80% of non-empty values must parse
+        // as numbers. Below that, treat as misconfiguration (Phase 1 Q3:
+        // ERROR, not skip, because the distinction matters to the user).
+        const nonEmpty = critVar.values.filter(function (v) { return v != null && v !== ''; });
+        const numeric = nonEmpty.filter(function (v) { return !isNaN(parseFloat(v)); });
+        if (nonEmpty.length === 0 || numeric.length / nonEmpty.length < 0.80) {
+          critError = 'criterion_column "' + config.criterion_column + '" is non-numeric; expected a numeric column for correlation';
+          critSkipped = true;
+        } else {
+          // For each scale: build row-sum total over rows where all scale
+          // items AND the criterion are present. Correlate, take max |r|.
+          // N floor: ≥ 10 paired complete rows. 10–29 → low-N warning;
+          // ≥ 30 → clean. Below 10 → skip with diagnostic. (Phase 1 Q2.)
+          let bestAbs = null, bestN = 0;
+          scales.forEach(function (s) {
+            const tot = [], cr = [];
+            for (let i = 0; i < rowCount; i++) {
+              let sum = 0, ok = true;
+              for (let j = 0; j < s.items.length; j++) {
+                const x = s.items[j].values[i];
+                if (x == null || x === '' || isNaN(+x)) { ok = false; break; }
+                sum += +x;
+              }
+              const c = critVar.values[i];
+              if (!ok || c == null || c === '' || isNaN(+c)) continue;
+              tot.push(sum);
+              cr.push(+c);
+            }
+            if (tot.length < 10) return;
+            const r = pearson(tot, cr);
+            if (r == null || isNaN(r)) return;
+            const abs = Math.abs(r);
+            if (bestAbs == null || abs > bestAbs) { bestAbs = abs; bestN = tot.length; }
+          });
+          if (bestAbs == null) {
+            critSkipped = true;
+            critError = 'criterion correlation skipped: too few paired observations (need ≥ 10 per scale)';
+          } else {
+            critMaxAbs = bestAbs;
+            critN = bestN;
+            if (bestN < 30) critLowN = true;
+          }
+        }
+      }
+    }
+    function critBand(r) {
+      if (r >= 0.50) return 20;
+      if (r >= 0.30) return 14;
+      if (r >= 0.20) return 8;
+      return 0;
+    }
+    const critPts = critSkipped ? null : critBand(critMaxAbs);
+
+    // ---- Combine: skip-and-rescale ----
+    const components = [
+      { key: 'convergent',         pts: convergentPts, max: 20, skipped: convergentSkipped },
+      { key: 'discriminant_htmt',  pts: htmtPts,       max: 20, skipped: htmtSkipped },
+      { key: 'criterion',          pts: critPts,       max: 20, skipped: critSkipped },
+    ];
+    let raw = 0, maxAvail = 0;
+    components.forEach(function (c) {
+      if (!c.skipped) { raw += c.pts; maxAvail += c.max; }
+    });
+    const score = maxAvail > 0 ? clamp(round((raw / maxAvail) * 100), 0, 100) : null;
+    const skippedKeys = components.filter(function (c) { return c.skipped; }).map(function (c) { return c.key; });
+    const tone = score == null ? 'neutral'
+      : score >= 80 ? 'ok'
+      : score >= 60 ? 'warn'
+      : 'alert';
+
+    const rawDisp = Math.round(raw * 10) / 10;
+    const note = score == null
+      ? 'Validity not estimable (' + skippedKeys.join(', ') + ' skipped).'
+      : (skippedKeys.length
+          ? rawDisp + ' / ' + maxAvail + ' (rescaled from ' + MAX_RAW + '; ' + skippedKeys.join(', ') + ' skipped)'
+          : rawDisp + ' / ' + MAX_RAW);
+    const interp = score == null ? note
+      : 'Validity sub-score ' + score + '/100 across ' + scales.length + ' scale(s).'
+        + (critSkipped && !critError ? ' Criterion absent — §3.6 cap engages.' : '')
+        + (critLowN ? ' Criterion N=' + critN + ' (low-N warning, < 30).' : '');
+
+    return {
+      score: score,
+      raw: rawDisp,
+      max: maxAvail,
+      max_full: MAX_RAW,
+      note: note,
+      interp: interp,
+      tone: tone,
+      skipped: score == null,
+      skipped_subcomponents: skippedKeys,
+      breakdown: {
+        convergent: {
+          pts: convergentPts, max: 20, skipped: convergentSkipped,
+          mean_item_total: convergentMean,
+          per_scale: scales.map(function (s, i) {
+            return { scale: s.name, mean_item_total: perScaleConvergent[i] };
+          }),
+        },
+        discriminant_htmt: {
+          pts: htmtPts, max: 20, skipped: htmtSkipped,
+          max_htmt: htmtMax,
+          pairs: htmtPairs,
+        },
+        criterion: {
+          pts: critPts, max: 20, skipped: critSkipped,
+          max_abs_r: critMaxAbs,
+          n: critN,
+          low_n_warning: critLowN,
+          error: critError,
+        },
+      },
+      scales: scales.map(function (s) { return { name: s.name, k: s.items.length }; }),
+    };
+  }
+
+  // Spec §4A HTMT computation from a pre-built correlation matrix +
+  // per-item scale assignment. Used by the harness for hand-computable
+  // sanity-checks (parallels factorReadinessFromR for §4F).
+  //
+  // R: k×k symmetric correlation matrix.
+  // scaleIdx: length-k array of scale identifiers (any hashable values).
+  // Returns: { pairs: [{a, b, htmt}, ...], maxHtmt }
+  function htmtFromR(R, scaleIdx) {
+    const k = R.length;
+    const byScale = {};
+    scaleIdx.forEach(function (s, i) {
+      if (!byScale[s]) byScale[s] = [];
+      byScale[s].push(i);
+    });
+    const names = Object.keys(byScale);
+    function meanAbs(pairs) {
+      if (!pairs.length) return null;
+      let sum = 0;
+      pairs.forEach(function (p) { sum += Math.abs(R[p[0]][p[1]]); });
+      return sum / pairs.length;
+    }
+    function monoPairs(idxList) {
+      const out = [];
+      for (let i = 0; i < idxList.length; i++)
+        for (let j = i + 1; j < idxList.length; j++)
+          out.push([idxList[i], idxList[j]]);
+      return out;
+    }
+    function heteroPairs(A, B) {
+      const out = [];
+      for (let i = 0; i < A.length; i++)
+        for (let j = 0; j < B.length; j++)
+          out.push([A[i], B[j]]);
+      return out;
+    }
+    const pairs = [];
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        const A = byScale[names[i]], B = byScale[names[j]];
+        const monoA = meanAbs(monoPairs(A));
+        const monoB = meanAbs(monoPairs(B));
+        const hetero = meanAbs(heteroPairs(A, B));
+        if (monoA == null || monoB == null || hetero == null) continue;
+        const denom = Math.sqrt(monoA * monoB);
+        if (denom === 0) continue;
+        pairs.push({ a: names[i], b: names[j], htmt: hetero / denom });
+      }
+    }
+    const maxHtmt = pairs.length ? pairs.reduce(function (m, p) { return Math.max(m, p.htmt); }, 0) : null;
+    return { pairs: pairs, maxHtmt: maxHtmt, k: k, scales: names };
   }
 
   // ====================================================================
