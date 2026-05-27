@@ -1,5 +1,27 @@
 // ReliCheck Strength Index — composite instrument-quality score.
-// -------------------------------------------------------------------
+// ===================================================================
+// CANONICAL PSYCHOMETRICS ENGINE — single source of truth.
+//
+// This file contains the canonical psychometrics engine for the entire
+// ReliCheck product. The math exposed on window.RSSI_MATH is the single
+// source of truth for α, item-rest, item-total, average inter-item r,
+// α-if-deleted, and the reliability and item-quality narratives.
+//
+// Both the standalone RSSI analyzer at apps/rssi/ and the in-studio
+// Strength Index mount consume from this engine. Any future surface
+// that performs these calculations must also consume from here, not
+// implement its own copy. Two surfaces producing different numbers for
+// the same data is a product bug.
+//
+// The math is exposed unconditionally on script load. The dataset-
+// presence gate runs after the math exposure, so this file behaves
+// correctly on pages that include it for the math but do not render the
+// strength-index UI (e.g., rssi-upload.php).
+//
+// Consumers should load this file with `defer` to ensure the global is
+// populated before their own scripts run.
+// ===================================================================
+//
 // Reads window.STRENGTH_DATASET (set inline by the mounting page) and
 // computes five components:
 //   - Reliability        Cronbach's α on Likert/Scale items
@@ -50,17 +72,10 @@
   window.STRENGTH_DATASET_RESOLVED = dataset;
   window.STRENGTH_DATASET_SOURCE   = datasetSource;
 
-  if (!dataset || !Array.isArray(dataset.variables)) {
-    console.warn('Strength Index: no dataset available');
-    return;
-  }
-
-  // ---------- Variable groups ----------
-  const byType = (t) => dataset.variables.filter(v => v.types && v.types.indexOf(t) !== -1);
-  const likertVars      = byType('likert');
-  const categoricalVars = byType('categorical');
-  const allVars         = dataset.variables;
-  const rowCount        = dataset.rowCount || (allVars[0] ? allVars[0].values.length : 0);
+  // Note: dataset-presence check and variable groups are deferred until
+  // after window.RSSI_MATH is exposed, so the standalone RSSI
+  // surface (which loads this file purely to consume the math) gets the
+  // math even when no STRENGTH_DATASET is set on the page.
 
   // ---------- Helpers ----------
   function num(v) { const x = parseFloat(v); return isNaN(x) ? null : x; }
@@ -215,24 +230,15 @@
   }
 
   // ====================================================================
-  // ABSORBED MATH — from apps/rssi/rssi-reliability.js and
-  // apps/rssi/rssi-analyses.js. Per v2 build spec §6, this engine is
-  // canonical; the rssi/ math files are scheduled for retirement once
-  // both surfaces consume the canonical engine.
+  // CANONICAL MATH — exposed on window.RSSI_MATH (see top-of-file
+  // header for the product-wide rule). Functions here are consumed by
+  // computeReliability below in this same file and by the standalone
+  // RSSI surface (apps/rssi/rssi-reliability.js, rssi-analyses.js).
   //
-  // This block is the *narrow* absorption: the non-duplicative math
-  // (null-aware Cronbach over raw item arrays, the narrative scoring
-  // functions used by the standalone RSSI surface) is brought over
-  // verbatim and exposed on window.RSSI_ABSORBED_MATH. The existing
-  // inline math in computeReliability/computeItemQuality is left
-  // untouched; equivalence is asserted at the bottom of the IIFE.
-  //
-  // Functions sourced from rssi-reliability.js:
-  //   absorbedCompleteCases, absorbedCronbachAlpha, absorbedItemTotal,
-  //   bandForAlpha
-  // Functions sourced from rssi-analyses.js:
-  //   absorbedAvgInterItemR, absorbedItemRestCorrelations,
-  //   computeValidityNarrative, computeItemQualityNarrative
+  // Surface:
+  //   completeCases, cronbachAlpha, itemTotal, bandForAlpha,
+  //   avgInterItemR, itemRestCorrelations,
+  //   computeReliabilityStatusNarrative, computeItemQuality
   // ====================================================================
 
   // From rssi-reliability.js. Items arrive as arrays-of-numbers-or-null
@@ -257,9 +263,8 @@
   }
 
   // From rssi-reliability.js. Null-aware Cronbach α. Returns null when
-  // k < 2 or fewer than 5 complete cases. The engine's inline α uses
-  // a slightly different floor (3 complete rows) — that difference is
-  // intentional and is exercised by the equivalence check below.
+  // k < 2 or fewer than 5 complete cases. computeReliability's outer
+  // guard now matches the 5-row floor so the two paths agree.
   function absorbedCronbachAlpha(items) {
     const k = items.length;
     if (k < 2) return null;
@@ -292,17 +297,17 @@
     return pearson(itemVals, restSums);
   }
 
-  // From rssi-reliability.js. Banding for the interactive analyzer's
-  // banner. NOTE: these bands are the rssi/ banner bands, NOT the
-  // canonical v2 §4.1 bands (which are the ones computeReliability
-  // already uses for point allocation). They are absorbed verbatim so
-  // a future standalone-RSSI surface can render the same banner.
+  // Canonical α band per spec §4.1. Returns the user-facing label
+  // (consumed by the standalone analyzer banner) and the point
+  // allocation (consumed by computeReliability scoring math). The
+  // `class` field maps to the existing banner CSS (good/warn/bad/neutral).
   function bandForAlpha(a) {
-    if (a == null) return { label: '—', class: 'neutral' };
-    if (a >= 0.85) return { label: 'Excellent', class: 'good' };
-    if (a >= 0.70) return { label: 'Good',      class: 'good' };
-    if (a >= 0.60) return { label: 'Marginal',  class: 'warn' };
-    return              { label: 'Low',       class: 'bad' };
+    if (a == null)       return { label: '—',          class: 'neutral', points: 0 };
+    if (a >= 0.90)       return { label: 'Excellent',  class: 'good',    points: 8 };
+    if (a >= 0.80)       return { label: 'Strong',     class: 'good',    points: 7 };
+    if (a >= 0.70)       return { label: 'Acceptable', class: 'warn',    points: 5 };
+    if (a >= 0.60)       return { label: 'Marginal',   class: 'warn',    points: 3 };
+    return                      { label: 'Inadequate', class: 'bad',     points: 0 };
   }
 
   // From rssi-analyses.js. Average inter-item correlation on complete
@@ -342,12 +347,15 @@
     });
   }
 
-  // From rssi-analyses.js. Narrative validity status heuristic over
-  // reliability outputs. NOTE: this is NOT the canonical §4A Validity
-  // sub-scoring (which requires HTMT + criterion validity). It is the
-  // status/judgment text the standalone RSSI surface renders. Absorbed
-  // verbatim so the engine owns the only copy of the heuristic.
-  function computeValidityNarrative(likertItems) {
+  // Narrative reliability-status heuristic over α + avg inter-item r +
+  // item-rest correlations. Produces the Ready / Use-with-Caution /
+  // Mixed / Strong status the standalone RSSI surface renders for the
+  // reliability lens. NOTE: this is NOT the canonical §4A Validity
+  // sub-scoring (which is new construction requiring HTMT + criterion
+  // validity, out of scope for this conversation). The name was
+  // updated from computeValidityNarrative to reflect what the heuristic
+  // actually measures.
+  function computeReliabilityStatusNarrative(likertItems) {
     if (likertItems.length < 2) {
       return { error: 'Need at least 2 Likert items.' };
     }
@@ -407,47 +415,115 @@
     };
   }
 
-  // From rssi-analyses.js. Narrative item-quality variant. Same flag
-  // set as computeItemQuality (ceiling/floor, low var, |skew|>2,
-  // |kurt|>5, missing>=20%) but produces ok/warn/alert tiers + narrative
-  // strings instead of the canonical point deduction. Absorbed verbatim
-  // so the engine owns the only copy.
-  function computeItemQualityNarrative(likertItems) {
+  // Canonical item-quality function. Merges the scoring math (points +
+  // flags, formerly the IIFE-local computeItemQuality) with the
+  // narrative (rows + ok/warn/alert/judgment/status, formerly
+  // computeItemQualityNarrative) into a single source of truth.
+  //
+  // Per-item flag-threshold semantics adopt computeItemQuality across
+  // three edge cases where the two old functions diverged:
+  //   1) Constant item (range = 0): flag low variance (range coerced
+  //      to 1 so the 15%-of-range test passes for sd = 0).
+  //   2) Missing rate at exactly 20%: flag (`>=`, not `>`).
+  //   3) Item with < 2 valid responses: short-circuit. The item bumps
+  //      the highMiss penalty bucket but is not added to the flat
+  //      flags list; the narrative row reports the missing rate so it
+  //      still surfaces in the per-item table.
+  //
+  // Return shape:
+  //   - points         : raw points out of 20 (scoring math consumer)
+  //   - flags          : flat list of "<name> (<reason>)" strings —
+  //                      matches old computeItemQuality.flaggedItems
+  //                      exactly (scoring math + render note consumer)
+  //   - narrative      : structured object — rows[] + ok/warn/alert
+  //                      counts + judgment + status + statusTone
+  //                      (standalone analyzer renderer)
+  //   - narrative_text : one-line plain-English summary suitable for
+  //                      the strength-index card and report copy
+  function canonicalItemQuality(likertItems) {
     if (likertItems.length < 1) return { error: 'Need at least 1 Likert item.' };
     const rows = likertItems.map(function (v) {
       const all  = v.values;
       const nums = all.map(num).filter(function (x) { return x != null; });
       const missing = all.length - nums.length;
-      const m  = nums.length ? nums.reduce(function (s, x) { return s + x; }, 0) / nums.length : null;
-      const s  = nums.length > 1 ? Math.sqrt(variance(nums)) : null;
-      const lo = nums.length ? Math.min.apply(null, nums) : null;
-      const hi = nums.length ? Math.max.apply(null, nums) : null;
-      const range = (hi != null && lo != null) ? hi - lo : 0;
-      const ceil  = (nums.length && hi != null) ? nums.filter(function (x) { return x === hi; }).length / nums.length : 0;
-      const floor = (nums.length && lo != null) ? nums.filter(function (x) { return x === lo; }).length / nums.length : 0;
-      const lowVar = (s != null && range > 0) ? (s < 0.15 * range) : false;
+      const missRate = all.length ? missing / all.length : 0;
+
+      // Short-circuit: < 2 valid responses. Item bumps highMiss penalty
+      // but is excluded from the flat flags list (computeItemQuality
+      // semantics).
+      if (nums.length < 2) {
+        return {
+          name: v.name, label: v.label || v.name, n: nums.length,
+          mean: null, sd: null, missing: missing,
+          ceil: 0, floor: 0, skew: 0, kurt: 0,
+          flags: [Math.round(missRate * 100) + '% missing'],
+          tone: 'warn',
+          _shortCircuit: true,
+        };
+      }
+
+      const m   = nums.reduce(function (s, x) { return s + x; }, 0) / nums.length;
+      const sdv = Math.sqrt(variance(nums));
+      const lo  = Math.min.apply(null, nums);
+      const hi  = Math.max.apply(null, nums);
+      const range = (hi - lo) || 1; // coerce 0 → 1 so constant items flag low variance
+      const ceil  = nums.filter(function (x) { return x === hi; }).length / nums.length;
+      const floor = nums.filter(function (x) { return x === lo; }).length / nums.length;
+      const lowVar = sdv < 0.15 * range;
       let skew = 0, kurt = 0;
-      if (nums.length >= 3 && s != null && s > 0) {
-        skew = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 3); }, 0) / nums.length;
+      if (nums.length >= 3 && sdv > 0) {
+        skew = nums.reduce(function (a, x) { return a + Math.pow((x - m) / sdv, 3); }, 0) / nums.length;
       }
-      if (nums.length >= 4 && s != null && s > 0) {
-        kurt = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 4); }, 0) / nums.length - 3;
+      if (nums.length >= 4 && sdv > 0) {
+        kurt = nums.reduce(function (a, x) { return a + Math.pow((x - m) / sdv, 4); }, 0) / nums.length - 3;
       }
-      const flags = [];
-      if (ceil  >= 0.70) flags.push('ceiling');
-      if (floor >= 0.70) flags.push('floor');
-      if (lowVar)        flags.push('low variance');
-      if (Math.abs(skew) > 2)  flags.push('extreme skew');
-      if (Math.abs(kurt) > 5)  flags.push('extreme kurtosis');
-      if (missing / all.length > 0.20) flags.push(Math.round(missing / all.length * 100) + '% missing');
+      const itemFlags = [];
+      if (ceil  >= 0.70)        itemFlags.push('ceiling');
+      if (floor >= 0.70)        itemFlags.push('floor');
+      if (lowVar)               itemFlags.push('low variance');
+      if (Math.abs(skew) > 2)   itemFlags.push('extreme skew');
+      if (Math.abs(kurt) > 5)   itemFlags.push('extreme kurtosis');
+      if (missRate >= 0.20)     itemFlags.push(Math.round(missRate * 100) + '% missing');
       let tone = 'ok';
-      if (flags.length >= 3) tone = 'alert';
-      else if (flags.length) tone = 'warn';
-      return { name: v.name, label: v.label || v.name, n: nums.length, mean: m, sd: s, missing: missing, ceil: ceil, floor: floor, skew: skew, kurt: kurt, flags: flags, tone: tone };
+      if (itemFlags.length >= 3) tone = 'alert';
+      else if (itemFlags.length) tone = 'warn';
+      return {
+        name: v.name, label: v.label || v.name, n: nums.length,
+        mean: m, sd: sdv, missing: missing,
+        ceil: ceil, floor: floor, skew: skew, kurt: kurt,
+        flags: itemFlags, tone: tone,
+      };
     });
-    const ok    = rows.filter(function (r) { return r.tone === 'ok'; }).length;
-    const warn  = rows.filter(function (r) { return r.tone === 'warn'; }).length;
-    const alert = rows.filter(function (r) { return r.tone === 'alert'; }).length;
+
+    // Penalty buckets + flat flags. Mirror computeItemQuality exactly:
+    // short-circuited rows bump highMiss but skip the flags push.
+    let ceilingFloor = 0, lowVarN = 0, highSkew = 0, highKurt = 0, highMiss = 0;
+    const flags = [];
+    rows.forEach(function (r) {
+      if (r._shortCircuit) { highMiss++; return; }
+      if (r.flags.indexOf('ceiling') !== -1 || r.flags.indexOf('floor') !== -1) {
+        ceilingFloor++; flags.push(r.name + ' (ceiling/floor)');
+      }
+      if (r.flags.indexOf('low variance')     !== -1) { lowVarN++;  flags.push(r.name + ' (low variance)'); }
+      if (r.flags.indexOf('extreme skew')     !== -1) { highSkew++; flags.push(r.name + ' (skewed)'); }
+      if (r.flags.indexOf('extreme kurtosis') !== -1) { highKurt++; flags.push(r.name + ' (kurtic)'); }
+      const missF = r.flags.find(function (f) { return /% missing/.test(f); });
+      if (missF) { highMiss++; flags.push(r.name + ' (' + missF + ')'); }
+    });
+    const pen = Math.min(ceilingFloor * 2, 6) + Math.min(lowVarN * 2, 6) +
+                Math.min(highSkew * 1, 4) + Math.min(highKurt * 1, 4) +
+                Math.min(highMiss * 2, 4);
+    const points = Math.max(0, 20 - pen);
+
+    // Strip private fields before exposing rows to the narrative.
+    const narrativeRows = rows.map(function (r) {
+      const c = {};
+      Object.keys(r).forEach(function (k) { if (k.charAt(0) !== '_') c[k] = r[k]; });
+      return c;
+    });
+    const ok    = narrativeRows.filter(function (r) { return r.tone === 'ok'; }).length;
+    const warn  = narrativeRows.filter(function (r) { return r.tone === 'warn'; }).length;
+    const alert = narrativeRows.filter(function (r) { return r.tone === 'alert'; }).length;
     const judgment = alert
       ? alert + ' item' + (alert === 1 ? '' : 's') + ' show multiple problems and should be revised or removed; ' + warn + ' need a closer look.'
       : warn
@@ -455,20 +531,45 @@
         : 'All items pass the item-quality screens.';
     const statusTone = alert ? 'alert' : warn ? 'warn' : 'strong';
     const status     = alert ? 'Action Required' : warn ? 'Inspect' : 'All Clear';
-    return { rows: rows, ok: ok, warn: warn, alert: alert, judgment: judgment, status: status, statusTone: statusTone };
+
+    const narrative_text = flags.length
+      ? 'Items to review: ' + flags.slice(0, 4).join(', ') + (flags.length > 4 ? ', and more' : '') + '.'
+      : 'No items show ceiling, floor, low-variance, skew, kurtosis, or high-missingness flags.';
+
+    return {
+      points: points,
+      flags: flags,
+      narrative: { rows: narrativeRows, ok: ok, warn: warn, alert: alert, judgment: judgment, status: status, statusTone: statusTone },
+      narrative_text: narrative_text,
+    };
   }
 
   // Single entry point for retirement-phase work to migrate against.
-  window.RSSI_ABSORBED_MATH = {
+  window.RSSI_MATH = {
     completeCases:          absorbedCompleteCases,
     cronbachAlpha:          absorbedCronbachAlpha,
     itemTotal:              absorbedItemTotal,
     bandForAlpha:           bandForAlpha,
     avgInterItemR:          absorbedAvgInterItemR,
     itemRestCorrelations:   absorbedItemRestCorrelations,
-    computeValidityNarrative,
-    computeItemQualityNarrative,
+    computeReliabilityStatusNarrative,
+    computeItemQuality:     canonicalItemQuality,
   };
+
+  // ---------- Dataset gate ----------
+  // Math is exposed above; everything below is the strength-index render
+  // path and requires a resolved dataset.
+  if (!dataset || !Array.isArray(dataset.variables)) {
+    console.warn('Strength Index: no dataset available');
+    return;
+  }
+
+  // ---------- Variable groups ----------
+  const byType = (t) => dataset.variables.filter(v => v.types && v.types.indexOf(t) !== -1);
+  const likertVars      = byType('likert');
+  const categoricalVars = byType('categorical');
+  const allVars         = dataset.variables;
+  const rowCount        = dataset.rowCount || (allVars[0] ? allVars[0].values.length : 0);
 
   // ---------- Components ----------
   function computeReliability() {
@@ -502,44 +603,26 @@
       }
       if (!any) valid.push(i);
     }
-    if (valid.length < 3) {
+    if (valid.length < 5) {
       return {
         score: null, raw: null, max: 25,
         note: 'Not enough complete rows.',
-        interp: 'Provisional reliability needs at least three respondents with answers across every scale item.',
+        interp: 'Provisional reliability needs at least five respondents with answers across every scale item.',
         tone: 'warn',
       };
     }
     const k = cols.length;
     const validCols = cols.map(col => valid.map(i => col[i]));
+    const rawArrays = likertVars.map(v => v.values.map(num));
 
     // ----- Cronbach's α (8 pts) -----
-    const itemVar  = validCols.reduce((s, col) => s + variance(col), 0);
     const totals   = valid.map((_, idx) => validCols.reduce((s, col) => s + col[idx], 0));
-    const totalVar = variance(totals);
-    const alpha = (k / (k - 1)) * (1 - itemVar / (totalVar || 1));
+    const alpha = absorbedCronbachAlpha(rawArrays);
 
-    // Equivalence check: the absorbed null-aware Cronbach (from
-    // rssi-reliability.js) should match the inline computation above
-    // on the same items. Diverges only when the absorbed function's
-    // 5-complete-row floor rejects a dataset the inline path accepts
-    // (≥ 3 rows) — in that case absorbed returns null and we skip.
-    try {
-      const _absorbed = absorbedCronbachAlpha(
-        likertVars.map(function (v) { return v.values.map(num); })
-      );
-      if (_absorbed != null && Math.abs(_absorbed - alpha) > 1e-9) {
-        console.warn('[strength-index] Cronbach α drift between inline and absorbed paths:',
-                     { inline: alpha, absorbed: _absorbed });
-      }
-    } catch (e) { /* equivalence check is non-fatal */ }
-
-    let alphaPts;
-    if      (alpha >= 0.90) alphaPts = 8;
-    else if (alpha >= 0.80) alphaPts = 7;
-    else if (alpha >= 0.70) alphaPts = 5.5;
-    else if (alpha >= 0.60) alphaPts = 4;
-    else                    alphaPts = 2;
+    // Spec §4.1 bands; bandForAlpha is the single source for both the
+    // user-facing label (banner) and the point allocation (scoring).
+    const alphaBand = bandForAlpha(alpha);
+    const alphaPts  = alphaBand.points;
 
     // ----- McDonald's ω (10 pts) -----
     // Requires ≥ 3 items and ≥ 3 respondents (already verified above) to
@@ -589,14 +672,8 @@
     // Corrected item-total: each item correlated with the sum of the
     // OTHER items. Awards 3 pts when all items r ≥ 0.40. Deducts 1 pt
     // per item with r < 0.30; deducts 1.5 pts per item with r < 0.
-    const itemTotals = [];
-    for (let i = 0; i < k; i++) {
-      const item = validCols[i];
-      const rest = valid.map((_, idx) =>
-        validCols.reduce((s, col, j) => s + (j === i ? 0 : col[idx]), 0)
-      );
-      itemTotals.push({ name: likertVars[i].name, r: pearson(item, rest) });
-    }
+    const itemRestRs = absorbedItemRestCorrelations(rawArrays);
+    const itemTotals = likertVars.map((v, i) => ({ name: v.name, r: itemRestRs[i] }));
     let itemTotalPts = 3;
     let weakItems = 0, negItems = 0;
     const weakItemNames = [], negItemNames = [];
@@ -611,14 +688,7 @@
     // ----- Redundancy / overlap (1 pt) -----
     // Average inter-item correlation. Sweet spot 0.30-0.60 → 1 pt.
     // Above 0.80 = items redundant. Below 0.30 = items don't cohere.
-    let total = 0, pairs = 0;
-    for (let i = 0; i < k; i++) {
-      for (let j = i + 1; j < k; j++) {
-        total += pearson(validCols[i], validCols[j]);
-        pairs++;
-      }
-    }
-    const avgR = pairs ? total / pairs : 0;
+    const avgR = absorbedAvgInterItemR(rawArrays) || 0;
     let redundancyPts, redundancyText;
     if (avgR >= 0.30 && avgR <= 0.60) {
       redundancyPts = 1;
@@ -647,15 +717,18 @@
       const itemSd     = numericAll.length > 1 ? Math.sqrt(variance(numericAll)) : null;
       const itemRest   = itemTotals[i] ? itemTotals[i].r : null;
 
-      // α with this item removed
+      // α-if-dropped re-filters complete cases per reduced set, matching
+      // the standalone analyzer's behavior. This differs from v1's inline
+      // behavior, which used fixed full-scale complete cases across all
+      // toggles. Re-filtering is the methodologically honest choice for
+      // exploratory toggling because each reduced scale is treated as its
+      // own analysis. The spec (§7.1, §7.2) is silent on the complete-
+      // cases question; this is a deliberate choice for alignment with
+      // the standalone surface, not a spec mandate.
       let alphaIfDropped = null;
       if (k > 2) {
-        const reduced = validCols.filter((_, j) => j !== i);
-        const rk = reduced.length;
-        const rItemVar = reduced.reduce((s, col) => s + variance(col), 0);
-        const rTotals  = valid.map((_, idx) => reduced.reduce((s, col) => s + col[idx], 0));
-        const rTotalVar = variance(rTotals);
-        alphaIfDropped = (rk / (rk - 1)) * (1 - rItemVar / (rTotalVar || 1));
+        const reducedRaw = rawArrays.filter((_, j) => j !== i);
+        alphaIfDropped = absorbedCronbachAlpha(reducedRaw);
       }
 
       // ω with this item removed (only meaningful with ≥ 3 items remaining)
@@ -941,51 +1014,24 @@
   }
 
   // ====================================================================
-  // ITEM QUALITY (20 pts)
-  // Start at 20; subtract for ceiling/floor, low variance, skew, kurtosis,
-  // item-level missingness.
+  // ITEM QUALITY (20 pts) — thin render adapter around the canonical
+  // merged function (canonicalItemQuality / window.RSSI_MATH
+  // .computeItemQuality). The canonical function returns points and
+  // flags (consumed here for scoring + note) and narrative /
+  // narrative_text (consumed by the standalone analyzer).
   // ====================================================================
   function computeItemQuality() {
     const MAX = 20;
     if (likertVars.length < 1) return blankDomain(MAX, 'No Likert items to evaluate.', 'warn');
-
-    let ceilingFloor = 0, lowVar = 0, highSkew = 0, highKurt = 0, highMiss = 0;
-    const flaggedItems = [];
-    likertVars.forEach(v => {
-      const numAll = v.values.map(num).filter(x => x != null);
-      if (numAll.length < 2) { highMiss++; return; }
-      const lo = Math.min.apply(null, numAll);
-      const hi = Math.max.apply(null, numAll);
-      const range = hi - lo || 1;
-      const sd = Math.sqrt(variance(numAll));
-      // Ceiling / floor: ≥70% at the extreme
-      const ceilN = numAll.filter(x => x === hi).length;
-      const floorN = numAll.filter(x => x === lo).length;
-      const ceilRate = ceilN / numAll.length;
-      const floorRate = floorN / numAll.length;
-      if (ceilRate >= 0.70 || floorRate >= 0.70) { ceilingFloor++; flaggedItems.push(v.name + ' (ceiling/floor)'); }
-      // Very low variance: SD < 15% of range
-      if (sd < 0.15 * range) { lowVar++; flaggedItems.push(v.name + ' (low variance)'); }
-      // Skew
-      if (Math.abs(skewness(numAll)) > 2) { highSkew++; flaggedItems.push(v.name + ' (skewed)'); }
-      // Kurtosis
-      if (Math.abs(kurtosis(numAll)) > 5) { highKurt++; flaggedItems.push(v.name + ' (kurtic)'); }
-      // Missing
-      const missRate = (v.values.length - numAll.length) / v.values.length;
-      if (missRate >= 0.20) { highMiss++; flaggedItems.push(v.name + ' (' + Math.round(missRate * 100) + '% missing)'); }
-    });
-
-    const pen = Math.min(ceilingFloor * 2, 6) + Math.min(lowVar * 2, 6) +
-                Math.min(highSkew * 1, 4) + Math.min(highKurt * 1, 4) +
-                Math.min(highMiss * 2, 4);
-    const raw = Math.max(0, MAX - pen);
+    const c = canonicalItemQuality(likertVars);
+    if (c.error) return blankDomain(MAX, c.error, 'warn');
+    const raw   = c.points;
     const score = clamp(round((raw / MAX) * 100), 0, 100);
+    const flagCount = c.flags.length;
     return {
       score, raw, max: MAX,
-      note: (flaggedItems.length ? flaggedItems.length + ' item flag' + (flaggedItems.length === 1 ? '' : 's') : 'No item-level flags') + '  ·  ' + raw + ' / ' + MAX,
-      interp: flaggedItems.length
-        ? 'Items to review: ' + flaggedItems.slice(0, 4).join(', ') + (flaggedItems.length > 4 ? ', and more' : '') + '.'
-        : 'No items show ceiling, floor, low-variance, skew, kurtosis, or high-missingness flags.',
+      note: (flagCount ? flagCount + ' item flag' + (flagCount === 1 ? '' : 's') : 'No item-level flags') + '  ·  ' + raw + ' / ' + MAX,
+      interp: c.narrative_text,
       tone: score >= 85 ? 'ok' : score >= 65 ? 'warn' : 'alert',
     };
   }

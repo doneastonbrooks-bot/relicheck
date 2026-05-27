@@ -321,20 +321,25 @@ When in doubt: if it can be answered by reading or writing the Section 10 contra
 
 ## 6. Engine Consolidation
 
-Two engines compute RSSI-related math in the v1 tree:
+**`apps/strength-index/strength-index.js` is the single source of truth for psychometric computation across the entire ReliCheck product.** It exposes `window.RSSI_MATH` — the canonical implementations of Cronbach's α, item-rest correlation, item-total correlation, average inter-item r, α-if-deleted, and the reliability and item-quality narratives — and contains all sub-scoring described in Sections 4 and 4A–4G.
 
-1. **`apps/strength-index/strength-index.js`** — server-rendered via `apps/strength-index/render.php`, consumed by the in-studio `strength-index.php` mount through `_studio_mount.php` and the `api/surveys/_build_dataset.php` transform.
-2. **`apps/rssi/rssi-reliability.js`** (with `apps/rssi/rssi-analyses.js`, `apps/rssi/rssi-upload.js`, `apps/rssi/rssi.js`) — client-side, consumed by the standalone RSSI app (`rssi.php`, `rssi-upload.php`, `rssi-report.php`).
+Both current surfaces consume from this engine:
 
-The two engines re-implement overlapping math (Cronbach's α, item-rest correlations, α-if-deleted) in parallel. v2 retires this duplication.
+1. **The in-studio Strength Index mount** (`apps/strength-index/render.php` via `_studio_mount.php` and the `api/surveys/_build_dataset.php` transform).
+2. **The standalone RSSI analyzer** (`rssi-upload.php`, with `apps/rssi/rssi-reliability.js` and `apps/rssi/rssi-analyses.js` as thin renderer layers that delegate every calculation to `window.RSSI_MATH`).
 
-**Canonical engine for v2: `apps/strength-index/strength-index.js`.** All sub-scoring described in Sections 4 and 4A–4G lives here. The functions in `apps/rssi/rssi-reliability.js` and `apps/rssi/rssi-analyses.js` are either absorbed into the canonical engine or deleted during cutover, whichever fits each function. After cutover:
+**Any future surface that performs these calculations must also consume from `window.RSSI_MATH`, not implement its own copy.** Two surfaces producing different numbers for the same data is a product bug. This is the single source of truth rule for psychometrics in this codebase.
 
-- Both surfaces (the standalone `rssi.php` / `rssi-upload.php` / `rssi-report.php` trio **and** the in-studio `strength-index.php` mount) consume the canonical engine and inherit every improvement.
-- The standalone surface's client-side parse loop (`apps/rssi/rssi-upload.js`) is reduced to the part the platform needs for that surface (CSV/XLSX → dataset shape), and the scoring half is removed.
-- `rssi-reliability.js`'s interactive-toggle math survives, but as the engine's recompute interface (Section 7), not as a parallel implementation.
+Operational notes:
+
+- The math is exposed unconditionally on script load. The dataset-presence gate in `strength-index.js` runs after the exposure, so the file behaves correctly when included purely for the math by a page that does not render the strength-index UI.
+- Consumers must load `strength-index.js` with `defer` before their own scripts so the global is populated by the time they run.
+- The standalone surface's client-side parse loop (`apps/rssi/rssi-upload.js`) handles CSV/XLSX → dataset shape only; the scoring half is gone.
+- `rssi-reliability.js`'s interactive-toggle UI survives as the renderer for the engine's recompute interface (Section 7), not as a parallel math implementation.
 
 The eight Instrument Quality mount files at the repo root (`reliability.php`, `validity.php`, `construct-alignment.php`, `item-quality.php`, `bias-clarity.php`, `scale-structure.php`, `factor-readiness.php`, `response-scale.php`) are production surfaces for the broader Instrument Quality studio. They are **out of scope** for this spec and are not edited by v2 cutover work.
+
+**Known follow-up — implicit `escapeHtml` dependency.** `strength-index.js` references a global `escapeHtml(s)` function nine times (in `renderReliabilityDetail`) but does not define it. The dependency is supplied today by an inline script block in the host PHP page (e.g., `rssi.php` defines one). The engine should be made self-contained — either by inlining a local `esc()` helper or by guarding the references — so that any page including `strength-index.js` for the math gets a fully working file regardless of host-page conventions. Deferred from the retirement work; surfaced here so it isn't forgotten.
 
 ---
 

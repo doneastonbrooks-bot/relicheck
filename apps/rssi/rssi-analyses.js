@@ -16,86 +16,10 @@
 (function () {
   'use strict';
 
-  /* ─────────────────────────────────────────────────────────────
-   *  MATH
-   * ───────────────────────────────────────────────────────────── */
-  function num(v) { const x = parseFloat(v); return isNaN(x) ? null : x; }
-  function mean(arr) { return arr.length ? arr.reduce(function (s, v) { return s + v; }, 0) / arr.length : 0; }
-  function variance(arr) {
-    if (arr.length < 2) return 0;
-    const m = mean(arr);
-    return arr.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / (arr.length - 1);
-  }
-  function pearson(a, b) {
-    const n = Math.min(a.length, b.length);
-    if (n < 2) return 0;
-    let ma = 0, mb = 0;
-    for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; }
-    ma /= n; mb /= n;
-    let cov = 0, va = 0, vb = 0;
-    for (let i = 0; i < n; i++) {
-      cov += (a[i] - ma) * (b[i] - mb);
-      va  += (a[i] - ma) * (a[i] - ma);
-      vb  += (b[i] - mb) * (b[i] - mb);
-    }
-    const denom = Math.sqrt(va * vb);
-    return denom === 0 ? 0 : cov / denom;
-  }
-  function completeCases(itemArrays) {
-    if (!itemArrays.length) return { validCols: [], validRows: [] };
-    const n = itemArrays[0].length;
-    const validRows = [];
-    for (let i = 0; i < n; i++) {
-      let ok = true;
-      for (let j = 0; j < itemArrays.length; j++) {
-        if (itemArrays[j][i] == null || isNaN(itemArrays[j][i])) { ok = false; break; }
-      }
-      if (ok) validRows.push(i);
-    }
-    const validCols = itemArrays.map(function (col) {
-      return validRows.map(function (idx) { return col[idx]; });
-    });
-    return { validCols: validCols, validRows: validRows };
-  }
-  function cronbachAlpha(itemArrays) {
-    const k = itemArrays.length;
-    if (k < 2) return null;
-    const { validCols, validRows } = completeCases(itemArrays);
-    if (validRows.length < 5) return null;
-    const itemVarSum = validCols.reduce(function (s, c) { return s + variance(c); }, 0);
-    const sums = validRows.map(function (_, idx) {
-      return validCols.reduce(function (s, c) { return s + c[idx]; }, 0);
-    });
-    const totalVar = variance(sums);
-    if (totalVar === 0) return 0;
-    return (k / (k - 1)) * (1 - itemVarSum / totalVar);
-  }
-  function avgInterItemR(itemArrays) {
-    const { validCols } = completeCases(itemArrays);
-    const k = validCols.length;
-    if (k < 2) return null;
-    let sum = 0, pairs = 0;
-    for (let i = 0; i < k; i++) {
-      for (let j = i + 1; j < k; j++) {
-        sum += pearson(validCols[i], validCols[j]);
-        pairs++;
-      }
-    }
-    return pairs ? sum / pairs : 0;
-  }
-  function itemRestCorrelations(itemArrays) {
-    const { validCols, validRows } = completeCases(itemArrays);
-    const k = validCols.length;
-    if (k < 2 || validRows.length < 5) return validCols.map(function () { return null; });
-    return validCols.map(function (item, i) {
-      const rest = validRows.map(function (_, idx) {
-        let s = 0;
-        for (let j = 0; j < k; j++) if (j !== i) s += validCols[j][idx];
-        return s;
-      });
-      return pearson(item, rest);
-    });
-  }
+  /* Scoring math comes from the canonical engine at
+     /apps/strength-index/strength-index.js (window.RSSI_MATH). That file
+     must be loaded before this one; the call sites below read directly
+     from the global. */
 
   /* ─────────────────────────────────────────────────────────────
    *  DATA SOURCE — pulls Likert items from the current RSSI dataset
@@ -114,70 +38,6 @@
     });
   }
 
-  /* ─────────────────────────────────────────────────────────────
-   *  VALIDITY — extracted from instrument-quality engine,
-   *  re-rendered in RSSI styling.
-   * ───────────────────────────────────────────────────────────── */
-  function computeValidity(likertItems) {
-    if (likertItems.length < 2) {
-      return { error: 'Need at least 2 Likert items.' };
-    }
-    const itemArrays = likertItems.map(function (it) { return it.values.map(num); });
-    const { validCols, validRows } = completeCases(itemArrays);
-    if (validRows.length < 5) {
-      return { error: 'Need at least 5 complete responses across all items.' };
-    }
-    const alpha   = cronbachAlpha(itemArrays);
-    const avgR    = avgInterItemR(itemArrays);
-    const itemRest = itemRestCorrelations(itemArrays);
-    const k = likertItems.length;
-    const n = validRows.length;
-    const rows = likertItems.map(function (it, i) {
-      const r = itemRest[i];
-      let flag = 'ok';
-      if (r != null && r < 0)    flag = 'neg';
-      else if (r != null && r < 0.30) flag = 'weak';
-      return {
-        name: it.name,
-        label: it.label || it.name,
-        n: validRows.length,
-        itemRest: r,
-        flag: flag,
-      };
-    });
-    const negCount  = rows.filter(function (r) { return r.flag === 'neg'; }).length;
-    const weakCount = rows.filter(function (r) { return r.flag === 'weak'; }).length;
-    let status, statusTone, judgment, decision, nextStep;
-    if (negCount >= 3 || (alpha != null && alpha < 0.60)) {
-      status = 'Not Ready'; statusTone = 'alert';
-      judgment = 'Significant validity concerns. The instrument is not yet ready to support strong claims, publication, or high-stakes decisions.';
-      decision = 'Do not use for decisions yet. The instrument needs scoring corrections and item review before it can be trusted.';
-      nextStep = 'Confirm reverse-coding on every _R item, rerun reliability, and review whether the instrument is one scale or several subscales.';
-    } else if (negCount > 0 || weakCount >= Math.ceil(k * 0.2) || (avgR != null && avgR < 0.20) || (alpha != null && alpha < 0.70)) {
-      status = 'Use with Caution'; statusTone = 'caution';
-      judgment = 'Mixed evidence. The instrument has acceptable internal consistency, but item-level evidence suggests construct-alignment problems.';
-      decision = 'Appropriate for exploratory analysis or internal review. Do not use for strong claims, publication, or high-stakes decisions until flagged items are reviewed.';
-      nextStep = 'Confirm whether all _R items were reverse-scored. Then rerun reliability and factor structure checks. Consider analyzing subscales separately rather than one total score.';
-    } else if ((avgR != null && avgR < 0.30) || weakCount > 0) {
-      status = 'Mixed Evidence'; statusTone = 'warn';
-      judgment = 'Validity evidence is mixed. The instrument is usable for exploratory analysis but should be strengthened before publication.';
-      decision = 'Acceptable for internal use and exploratory analysis. Resolve the flagged items before publication or external reporting.';
-      nextStep = 'Inspect the weak-item-rest items, consider revising or dropping them, and report by subscale where possible.';
-    } else {
-      status = 'Strong'; statusTone = 'strong';
-      judgment = 'Validity evidence is strong. Items converge on the intended construct and the scale supports confident reporting.';
-      decision = 'Ready to use. Standard caveats around content validity (expert wording review) still apply.';
-      nextStep = 'No statistical correction needed. Confirm content and face validity with a subject-matter expert before publication.';
-    }
-    return {
-      alpha: alpha, avgR: avgR, n: n, k: k,
-      negCount: negCount, weakCount: weakCount,
-      rows: rows,
-      status: status, statusTone: statusTone,
-      judgment: judgment, decision: decision, nextStep: nextStep,
-    };
-  }
-
   function fmt(x, d) { if (x == null || !isFinite(x)) return '—'; return Number(x).toFixed(d == null ? 2 : d); }
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
@@ -194,7 +54,7 @@
         '<div class="rssi-analysis-empty">Upload a Likert-scale dataset to run a validity review.</div>';
       return;
     }
-    const v = computeValidity(items);
+    const v = window.RSSI_MATH.computeReliabilityStatusNarrative(items);
     if (v.error) {
       container.innerHTML = '<div class="rssi-analysis-empty">' + esc(v.error) + '</div>';
       return;
@@ -472,63 +332,23 @@
    *  Con:  duplicates math; if the source engine logic changes, the
    *        port needs to be updated.
    * ───────────────────────────────────────────────────────────── */
-  function sdOf(arr) {
-    if (arr.length < 2) return null;
-    const m = arr.reduce(function (s, v) { return s + v; }, 0) / arr.length;
-    return Math.sqrt(arr.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / (arr.length - 1));
-  }
+  /* Item-quality narrative — delegates to the canonical engine's
+     computeItemQuality and unpacks its `narrative` block. The plain /
+     closing paragraphs are standalone-renderer-specific copy and are
+     layered on after the canonical call. */
   function computeItemQuality(likertItems) {
-    if (likertItems.length < 1) return { error: 'Need at least 1 Likert item.' };
-    const rows = likertItems.map(function (v) {
-      const all  = v.values;
-      const nums = all.map(num).filter(function (x) { return x != null; });
-      const missing = all.length - nums.length;
-      const m  = nums.length ? nums.reduce(function (s, x) { return s + x; }, 0) / nums.length : null;
-      const s  = sdOf(nums);
-      const lo = nums.length ? Math.min.apply(null, nums) : null;
-      const hi = nums.length ? Math.max.apply(null, nums) : null;
-      const range = (hi != null && lo != null) ? hi - lo : 0;
-      const ceil  = (nums.length && hi != null) ? nums.filter(function (x) { return x === hi; }).length / nums.length : 0;
-      const floor = (nums.length && lo != null) ? nums.filter(function (x) { return x === lo; }).length / nums.length : 0;
-      const lowVar = (s != null && range > 0) ? (s < 0.15 * range) : false;
-      let skew = 0, kurt = 0;
-      if (nums.length >= 3 && s != null && s > 0) {
-        skew = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 3); }, 0) / nums.length;
-      }
-      if (nums.length >= 4 && s != null && s > 0) {
-        kurt = nums.reduce(function (a, x) { return a + Math.pow((x - m) / s, 4); }, 0) / nums.length - 3;
-      }
-      const flags = [];
-      if (ceil  >= 0.70) flags.push('ceiling');
-      if (floor >= 0.70) flags.push('floor');
-      if (lowVar)        flags.push('low variance');
-      if (Math.abs(skew) > 2)  flags.push('extreme skew');
-      if (Math.abs(kurt) > 5)  flags.push('extreme kurtosis');
-      if (missing / all.length > 0.20) flags.push(Math.round(missing / all.length * 100) + '% missing');
-      let tone = 'ok';
-      if (flags.length >= 3) tone = 'alert';
-      else if (flags.length) tone = 'warn';
-      return { name: v.name, label: v.label || v.name, n: nums.length, mean: m, sd: s, missing: missing, ceil: ceil, floor: floor, skew: skew, kurt: kurt, flags: flags, tone: tone };
-    });
-    const ok    = rows.filter(function (r) { return r.tone === 'ok'; }).length;
-    const warn  = rows.filter(function (r) { return r.tone === 'warn'; }).length;
-    const alert = rows.filter(function (r) { return r.tone === 'alert'; }).length;
-    const judgment = alert
-      ? alert + ' item' + (alert === 1 ? '' : 's') + ' show multiple problems and should be revised or removed; ' + warn + ' need a closer look.'
-      : warn
-        ? warn + ' item' + (warn === 1 ? '' : 's') + ' show one issue each. Inspect; most are usable with minor adjustments.'
-        : 'All items pass the item-quality screens.';
-    const plain = (alert || warn)
+    const c = window.RSSI_MATH.computeItemQuality(likertItems);
+    if (c.error) return c;
+    const n = c.narrative;
+    const plain = (n.alert || n.warn)
       ? 'A handful of items are not pulling their weight. Items flagged Ceiling or Floor are too easy or too hard to discriminate; Low-variance items behave the same way for almost every respondent; extreme skew or kurtosis means a lopsided distribution.'
       : 'Each item behaves like a useful question. Means and spreads land in workable ranges, no item is stuck at the top or bottom of the scale, and missingness is low.';
-    const closing = alert
-      ? 'Address the ' + alert + ' Problem item' + (alert === 1 ? '' : 's') + ' first &mdash; revise wording or remove from the scale, then recompute &alpha;. The ' + warn + ' Watch item' + (warn === 1 ? '' : 's') + ' should be inspected next.'
-      : warn
-        ? 'Inspect the ' + warn + ' flagged item' + (warn === 1 ? '' : 's') + ' for wording problems before re-fielding.'
+    const closing = n.alert
+      ? 'Address the ' + n.alert + ' Problem item' + (n.alert === 1 ? '' : 's') + ' first &mdash; revise wording or remove from the scale, then recompute &alpha;. The ' + n.warn + ' Watch item' + (n.warn === 1 ? '' : 's') + ' should be inspected next.'
+      : n.warn
+        ? 'Inspect the ' + n.warn + ' flagged item' + (n.warn === 1 ? '' : 's') + ' for wording problems before re-fielding.'
         : 'No revisions required. Standard pre-publication review still applies.';
-    const statusTone = alert ? 'alert' : warn ? 'warn' : 'strong';
-    const status     = alert ? 'Action Required' : warn ? 'Inspect' : 'All Clear';
-    return { rows: rows, ok: ok, warn: warn, alert: alert, judgment: judgment, plain: plain, closing: closing, status: status, statusTone: statusTone };
+    return Object.assign({}, n, { plain: plain, closing: closing });
   }
   function renderItemQualityPorted(container) {
     if (!container) return;

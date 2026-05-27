@@ -12,7 +12,11 @@
   'use strict';
 
   /* ────────────────────────────────────────────────────────────
-   *  MATH (Cronbach α, item-total r, alpha-if-deleted)
+   *  MATH — Cronbach α, item-total r, complete-cases, banding all
+   *  delegated to the canonical engine at
+   *  /apps/strength-index/strength-index.js (window.RSSI_MATH).
+   *  Local helpers below are display-only (parsing, mean/sd for the
+   *  per-item table); the scoring math lives in the canonical engine.
    * ──────────────────────────────────────────────────────────── */
   function num(v) { const x = parseFloat(v); return isNaN(x) ? null : x; }
   function mean(arr) { return arr.length ? arr.reduce(function (s, v) { return s + v; }, 0) / arr.length : 0; }
@@ -22,85 +26,6 @@
     return arr.reduce(function (s, v) { return s + (v - m) * (v - m); }, 0) / (arr.length - 1);
   }
   function sd(arr) { return Math.sqrt(variance(arr)); }
-  function pearson(a, b) {
-    const n = Math.min(a.length, b.length);
-    if (n < 2) return 0;
-    let ma = 0, mb = 0;
-    for (let i = 0; i < n; i++) { ma += a[i]; mb += b[i]; }
-    ma /= n; mb /= n;
-    let cov = 0, va = 0, vb = 0;
-    for (let i = 0; i < n; i++) {
-      cov += (a[i] - ma) * (b[i] - mb);
-      va  += (a[i] - ma) * (a[i] - ma);
-      vb  += (b[i] - mb) * (b[i] - mb);
-    }
-    const denom = Math.sqrt(va * vb);
-    return denom === 0 ? 0 : cov / denom;
-  }
-
-  /* Build complete-case matrix across a set of items (each item is an
-     array of numbers, same length, with nulls where missing). Returns
-     a 2D array [respondent][item] with no nulls. */
-  function completeCases(items) {
-    if (!items.length) return [];
-    const n = items[0].length;
-    const matrix = [];
-    for (let i = 0; i < n; i++) {
-      let ok = true;
-      for (let j = 0; j < items.length; j++) {
-        if (items[j][i] == null || isNaN(items[j][i])) { ok = false; break; }
-      }
-      if (ok) {
-        const row = new Array(items.length);
-        for (let j = 0; j < items.length; j++) row[j] = items[j][i];
-        matrix.push(row);
-      }
-    }
-    return matrix;
-  }
-
-  /* Cronbach α across k items (each item = array of values, may contain nulls).
-     Uses complete-case data. Returns null if k < 2 or fewer than 5 cases. */
-  function cronbachAlpha(items) {
-    const k = items.length;
-    if (k < 2) return null;
-    const matrix = completeCases(items);
-    if (matrix.length < 5) return null;
-    const itemVars = [];
-    for (let j = 0; j < k; j++) {
-      const col = matrix.map(function (r) { return r[j]; });
-      itemVars.push(variance(col));
-    }
-    const sums = matrix.map(function (r) { return r.reduce(function (a, b) { return a + b; }, 0); });
-    const totalVar = variance(sums);
-    if (totalVar === 0) return 0;
-    const itemVarSum = itemVars.reduce(function (a, b) { return a + b; }, 0);
-    return (k / (k - 1)) * (1 - itemVarSum / totalVar);
-  }
-
-  /* Item-total correlation: for item `idx`, the correlation between
-     item[idx]'s values and the sum of all OTHER items' values, on
-     complete cases. */
-  function itemTotal(items, idx) {
-    if (items.length < 2) return null;
-    const matrix = completeCases(items);
-    if (matrix.length < 5) return null;
-    const itemVals = matrix.map(function (r) { return r[idx]; });
-    const restSums = matrix.map(function (r) {
-      let s = 0;
-      for (let j = 0; j < r.length; j++) if (j !== idx) s += r[j];
-      return s;
-    });
-    return pearson(itemVals, restSums);
-  }
-
-  function bandForAlpha(a) {
-    if (a == null) return { label: '—', class: 'neutral' };
-    if (a >= 0.85) return { label: 'Excellent', class: 'good' };
-    if (a >= 0.70) return { label: 'Good',      class: 'good' };
-    if (a >= 0.60) return { label: 'Marginal',  class: 'warn' };
-    return              { label: 'Low',       class: 'bad' };
-  }
 
   /* ────────────────────────────────────────────────────────────
    *  STATE
@@ -132,14 +57,14 @@
   function liveStats() {
     const inc = includedItems();
     const itemArrays = inc.map(function (it) { return it.values.map(num); });
-    const a = cronbachAlpha(itemArrays);
-    const matrix = completeCases(itemArrays);
+    const a = window.RSSI_MATH.cronbachAlpha(itemArrays);
+    const matrix = window.RSSI_MATH.completeCases(itemArrays);
     const sums = matrix.map(function (r) { return r.reduce(function (s, v) { return s + v; }, 0); });
     return {
       k: inc.length,
       n: matrix.length,
       alpha: a,
-      band: bandForAlpha(a),
+      band: window.RSSI_MATH.bandForAlpha(a),
       scaleMean: sums.length ? mean(sums) : 0,
       scaleSd:   sums.length ? sd(sums)   : 0,
     };
@@ -164,10 +89,10 @@
       let irT = null, alphaDel = null;
       if (isInc && incItems.length >= 2) {
         const idx = incNameToIdx[it.name];
-        irT = itemTotal(incArrays, idx);
+        irT = window.RSSI_MATH.itemTotal(incArrays, idx);
         // alpha-if-deleted = alpha computed on (incArrays minus this one)
         const without = incArrays.filter(function (_, j) { return j !== idx; });
-        alphaDel = cronbachAlpha(without);
+        alphaDel = window.RSSI_MATH.cronbachAlpha(without);
       }
       return {
         name:    it.name,
@@ -660,7 +585,7 @@
 
       // Capture the original alpha (all items in) once
       const allArrays = allLikertItems.map(function (it) { return it.values.map(num); });
-      originalAlpha = cronbachAlpha(allArrays);
+      originalAlpha = window.RSSI_MATH.cronbachAlpha(allArrays);
 
       renderShell();
     },
