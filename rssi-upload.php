@@ -755,14 +755,37 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
         <div id="rssiOverviewAnalyzerMount"></div>
       </section>
 
-      <div class="section-head">
+      <!-- Print-only refined-scale summary. Hidden on screen; revealed
+           by the @media print block only when JS populates content
+           (beforeprint handler reads RSSI_RELIABILITY.getRefinedScale()
+           and fills these slots if the user has excluded items). The
+           "Save the refined version" outcome — sits in the report
+           exactly where it belongs. -->
+      <section class="rssi-refined-scale-print" id="rssiRefinedScalePrint" hidden aria-hidden="true">
+        <h3 class="rsp-title">Refined scale</h3>
+        <p class="rsp-lede">The interactive item analysis was used to refine this scale. Below is the comparison of the original and refined Likert set.</p>
+        <div class="rsp-grid">
+          <div class="rsp-cell"><div class="rsp-label">Items included</div><div class="rsp-value"><span id="rsp_item_count">—</span> of <span id="rsp_original_count">—</span></div></div>
+          <div class="rsp-cell"><div class="rsp-label">Cronbach's α</div><div class="rsp-value"><span id="rsp_alpha">—</span> <span class="rsp-band" id="rsp_alpha_band">—</span></div></div>
+          <div class="rsp-cell"><div class="rsp-label">Δ vs. original</div><div class="rsp-value"><span id="rsp_delta">—</span> <span class="rsp-sub">(orig <span id="rsp_orig_alpha">—</span>)</span></div></div>
+          <div class="rsp-cell"><div class="rsp-label">Complete responses</div><div class="rsp-value" id="rsp_n">—</div></div>
+        </div>
+        <h4 class="rsp-subhead">Items removed</h4>
+        <ul class="rsp-list" id="rsp_excluded"></ul>
+        <h4 class="rsp-subhead">Items kept</h4>
+        <ol class="rsp-list" id="rsp_included"></ol>
+      </section>
+
+      <!-- Top issues panel. Visible on-screen workflow tool; hidden on
+           print (committee handouts lead with the result, not a to-do). -->
+      <div class="section-head rssi-issues-block">
         <div>
           <h3>Top issues to fix</h3>
           <div class="section-sub">Highest-impact items first.</div>
         </div>
       </div>
 
-      <div class="card issues" id="rssiIssues"></div>
+      <div class="card issues rssi-issues-block" id="rssiIssues"></div>
 
       <div class="rssi-print-footer">
         ReliCheck Strength Survey Index · Generated <?= date('M j, Y \a\t g:i a') ?> · <span id="rssiPrintTitle">Survey</span>

@@ -547,7 +547,42 @@
   /* ────────────────────────────────────────────────────────────
    *  PUBLIC: mount(container, options)
    * ──────────────────────────────────────────────────────────── */
+  /* Public accessor for the current refined-scale state, in the same
+     shape the JSON-download path builds. Used by the print-report path
+     in rssi.js (beforeprint handler) to populate the refined-scale
+     section when the user has excluded items. Returns null when the
+     analyzer hasn't mounted yet (no dataset, < 2 Likert items, etc.).
+     Detection rule for "items were dropped": items_excluded.length > 0
+     OR delta !== 0 (untouched scales return an empty excluded list and
+     a zero/null delta). */
+  function getRefinedScale() {
+    if (!allLikertItems || allLikertItems.length === 0) return null;
+    const stats = liveStats();
+    const rows  = itemRows();
+    const inc   = rows.filter(function (r) { return r.included; });
+    const exc   = rows.filter(function (r) { return !r.included; });
+    return {
+      generated_at:        new Date().toISOString(),
+      item_count:          inc.length,
+      original_item_count: allLikertItems.length,
+      cronbach_alpha:      stats.alpha,
+      alpha_band:          stats.band ? stats.band.label : null,
+      original_alpha:      originalAlpha,
+      delta:               (originalAlpha != null && stats.alpha != null) ? (stats.alpha - originalAlpha) : null,
+      complete_responses:  stats.n,
+      scale_mean:          stats.scaleMean,
+      scale_sd:            stats.scaleSd,
+      items_included: inc.map(function (r) {
+        return { name: r.name, label: r.label };
+      }),
+      items_excluded: exc.map(function (r) {
+        return { name: r.name, label: r.label };
+      }),
+    };
+  }
+
   window.RSSI_RELIABILITY = {
+    getRefinedScale: getRefinedScale,
     mount: function (container, options) {
       options = options || {};
       mountEl = container;

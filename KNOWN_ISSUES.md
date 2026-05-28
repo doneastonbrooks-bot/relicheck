@@ -434,3 +434,19 @@ Recommended: option 2, which preserves spec §3.5 intent (always interpret meani
 Display-side note: the v2 standalone surface honors the engine's null contract correctly — when the engine returns null, no `.explain-row` exists for the readout (Q3 directive). The fix lives behind the engine seam, not the surface.
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeDisagreementReadout`. [apps/strength-index/__harness/three-lens-verify.js](apps/strength-index/__harness/three-lens-verify.js) — readout cases to extend.
+
+---
+
+## 21. Spec §8.1 `methods_paragraph` is not emitted by the engine
+
+**Surfaced:** §16 v2 handout-PDF Phase 1 audit (2026-05-27).
+
+**Problem.** [docs/relicheck_v2_build_spec.md:423](docs/relicheck_v2_build_spec.md:423) mandates the engine emit a `methods_paragraph` — an auto-generated paragraph (sample size, scale counts, α, ω, fit indices) that the user can copy directly into a research paper. Spec §13 test #1 also references it as part of the canonical taxonomy enforcement. Grep across the entire codebase (`grep -rn "methods_paragraph"` over `apps/` and `api/`) returns **zero matches** in actual code — the field is documented but unimplemented.
+
+**Implication.** The handout-PDF report would benefit substantially from including `methods_paragraph` at the end as a copy-pasteable block for researchers handing the artifact to a journal. Today the report ends after the eight domain interpretations and the optional refined-scale block; a researcher gets clean scores but no auto-composed methods write-up.
+
+**Resolve during.** Engine-side feature work — likely paired with whatever spec-§8.1 reporting-readiness panel work lands next. The engine has all the inputs (per-scale α/ω, sample size, scale counts, factor fit indices when computed) — composition is a string-template job, not a math job.
+
+When it lands, the v2 handout-PDF surface should add a final section ("Methods paragraph") rendering the engine-emitted string with a copy-to-clipboard affordance on-screen, and a printable block on PDF. The print stylesheet already has the visual vocabulary for this (similar to the refined-scale section).
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — emit `methods_paragraph` per spec §8.1. [apps/rssi/rssi.js](apps/rssi/rssi.js) — render in the report when present.

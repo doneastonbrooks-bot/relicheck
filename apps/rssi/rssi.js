@@ -1183,6 +1183,113 @@
     wireLensInfoIcons();
     /* Floating score display: intersection observer + collapse toggle. */
     wireScoreFloat();
+    /* Print-report handlers (beforeprint + afterprint). */
+    wirePrintReport();
+  }
+
+  /* ────────────────────────────────────────────────────────────
+   *  Print-report wiring (Phase 2 of the handout-PDF feature).
+   *
+   *  The existing "Print / Save PDF" button is a window.print() call.
+   *  This handler reacts to the browser's beforeprint event to:
+   *   1. Populate the print-only refined-scale block from the analyzer's
+   *      getRefinedScale() accessor, but ONLY when items have been
+   *      excluded. Untouched scales → block stays hidden, no section
+   *      appears in the printed PDF.
+   *   2. Swap document.title to "RSSI Report — <surveyName>" so the
+   *      browser's "Save as PDF" filename reads as a handout artifact.
+   *
+   *  afterprint restores the title and re-hides the block so the
+   *  on-screen DOM returns to its idle state. The window.print() call
+   *  itself stays where it is on the button — no new entry points.
+   *
+   *  This is wired exactly once on init. The handlers read the live
+   *  dataset/analyzer/result globals at print time, so they always
+   *  reflect the user's current state (refined or not).
+   * ──────────────────────────────────────────────────────────── */
+  let _prePrintTitle = null;
+
+  function wirePrintReport() {
+    if (window._rssiPrintWired) return;
+    window._rssiPrintWired = true;
+    window.addEventListener('beforeprint', _onBeforePrint);
+    window.addEventListener('afterprint',  _onAfterPrint);
+  }
+
+  function _surveyNameForFilename() {
+    const title = document.getElementById('rssiDashTitle');
+    if (title && title.textContent && title.textContent.trim()) {
+      return title.textContent.trim();
+    }
+    return 'Survey';
+  }
+
+  function _onBeforePrint() {
+    // Title swap → drives the browser's "Save as PDF" filename suggestion.
+    if (_prePrintTitle === null) _prePrintTitle = document.title;
+    document.title = 'RSSI Report — ' + _surveyNameForFilename();
+
+    // Refined-scale block: populate only when the analyzer reports
+    // excluded items (the user actually used the table to drop items).
+    const block = document.getElementById('rssiRefinedScalePrint');
+    if (!block) return;
+    const rel = (window.RSSI_RELIABILITY && typeof window.RSSI_RELIABILITY.getRefinedScale === 'function')
+      ? window.RSSI_RELIABILITY.getRefinedScale()
+      : null;
+    if (!rel || !rel.items_excluded || rel.items_excluded.length === 0) {
+      block.hidden = true;
+      block.setAttribute('aria-hidden', 'true');
+      return;
+    }
+    _populateRefinedScale(rel);
+    block.hidden = false;
+    block.setAttribute('aria-hidden', 'false');
+  }
+
+  function _onAfterPrint() {
+    if (_prePrintTitle !== null) {
+      document.title = _prePrintTitle;
+      _prePrintTitle = null;
+    }
+    const block = document.getElementById('rssiRefinedScalePrint');
+    if (block) {
+      block.hidden = true;
+      block.setAttribute('aria-hidden', 'true');
+    }
+  }
+
+  function _populateRefinedScale(rel) {
+    function setText(id, txt) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    }
+    setText('rsp_item_count',     String(rel.item_count));
+    setText('rsp_original_count', String(rel.original_item_count));
+    setText('rsp_alpha',          rel.cronbach_alpha == null ? '—' : rel.cronbach_alpha.toFixed(2));
+    setText('rsp_alpha_band',     rel.alpha_band || '');
+    setText('rsp_orig_alpha',     rel.original_alpha == null ? '—' : rel.original_alpha.toFixed(2));
+    setText('rsp_n',              String(rel.complete_responses == null ? '—' : rel.complete_responses));
+    const dEl = document.getElementById('rsp_delta');
+    if (dEl) {
+      if (rel.delta == null) {
+        dEl.textContent = '—';
+      } else {
+        const sign = rel.delta >= 0 ? '+' : '';
+        dEl.textContent = sign + rel.delta.toFixed(3);
+      }
+    }
+    const excList = document.getElementById('rsp_excluded');
+    if (excList) {
+      excList.innerHTML = rel.items_excluded.map(function (r) {
+        return '<li>' + esc(r.label || r.name) + '</li>';
+      }).join('');
+    }
+    const incList = document.getElementById('rsp_included');
+    if (incList) {
+      incList.innerHTML = rel.items_included.map(function (r) {
+        return '<li>' + esc(r.label || r.name) + '</li>';
+      }).join('');
+    }
   }
 
   /* Per-lens info popover. Reuses the same custom-popover pattern as the
