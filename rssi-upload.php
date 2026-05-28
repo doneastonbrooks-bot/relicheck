@@ -581,10 +581,37 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
     <!-- ─── VIEW: OVERVIEW (default) ─────────────────────────── -->
     <div class="rssi-view" id="rssiViewOverview" data-view="overview">
 
+      <!-- ────────────────────────────────────────────────────────────
+           Print-only title block (KNOWN_ISSUES #22 polish, exec-board
+           PDF treatment). Hidden on screen. Renders only on the saved
+           PDF as the document header: ReliCheck wordmark top-right,
+           survey title + "ReliCheck Strength Survey Index report"
+           subtitle, prepared-by line, engine version. Gives the doc
+           the cover-style identity a board reader expects without
+           wasting a full blank cover page.
+           ──────────────────────────────────────────────────────────── -->
+      <div class="rssi-print-cover" aria-hidden="true">
+        <div class="rssi-print-cover-brand">
+          <img src="/logo-brand.svg" alt="" aria-hidden="true">
+        </div>
+        <div class="rssi-print-cover-text">
+          <div class="rssi-print-cover-eyebrow">Strength Survey Index report</div>
+          <h1 class="rssi-print-cover-title" id="rssiPrintCoverTitle">Survey report</h1>
+          <div class="rssi-print-cover-meta">
+            Prepared by <strong><?= htmlspecialchars($rssi_user_full) ?></strong>
+            &middot; Scored <span id="rssiPrintCoverDate">&mdash;</span>
+            &middot; ReliCheck Strength Survey Index v2.0
+          </div>
+        </div>
+      </div>
+
       <div class="title-row">
         <div>
           <h1 class="h1" id="rssiDashTitle">Your survey</h1>
           <div class="subtitle-row">
+            <!-- On-screen verdict pill ("v · strong"). For print we
+                 render a separate verdict line in the print-only cover
+                 block instead; this pill is hidden in @media print. -->
             <span class="pill pill-blue" id="rssiVerdictPill">—</span>
             <span id="rssiItemCount">— items</span><span class="dot"></span>
             <span id="rssiRespCount">— responses</span><span class="dot"></span>
@@ -627,6 +654,12 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
             </div>
           </div>
           <div class="hero-copy">
+            <!-- Print-only "Executive summary" eyebrow above the h2 +
+                 summary paragraph. On screen the hero h2 reads as
+                 part of the dashboard chrome; on the printed PDF it
+                 IS the executive summary, and labelling it as such
+                 tells a board reader where to start. -->
+            <div class="rssi-print-eyebrow" aria-hidden="true">Executive summary</div>
             <h2 id="rssiHeroH2">Scoring your survey...</h2>
             <p id="rssiHeroP">A plain-language read of the score will appear here.</p>
 
@@ -965,14 +998,31 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
         <ol class="rsp-list" id="rsp_included"></ol>
       </section>
 
+      <!-- Issues panel. On screen reads as "Top issues to fix"; on
+           the printed exec-board PDF the heading swaps to "Recommended
+           actions" (CSS @media print rule + .rssi-issues-print-head
+           reveal) so a board reader sees this as the action list, not
+           a workflow to-do. Flow order on print: dim grid → refined-
+           scale → recommended actions → methods (appendix). -->
+      <div class="section-head rssi-issues-block">
+        <div>
+          <h3 class="rssi-issues-screen-head">Top issues to fix</h3>
+          <h3 class="rssi-issues-print-head">Recommended actions</h3>
+          <div class="section-sub rssi-issues-screen-sub">Highest-impact items first.</div>
+          <div class="section-sub rssi-issues-print-sub">Highest-impact items first. Each fix improves the overall score.</div>
+        </div>
+      </div>
+
+      <div class="card issues rssi-issues-block" id="rssiIssues"></div>
+
       <!-- §8.1 methods paragraph card. Engine-composed research-methods
            prose (KNOWN_ISSUES #21 fix). Hidden when null (less than 2
            Likert items / reliability not estimable). Copy-to-clipboard
-           button matches spec §8.1 surface mandate. Block also renders
-           on print (CSS reveals it on the saved PDF). -->
+           button matches spec §8.1 surface mandate. On the printed
+           PDF this is the final section (research appendix). -->
       <section class="card rssi-methods-paragraph" id="rssiMethodsParagraph" hidden aria-hidden="true">
         <div class="methods-head">
-          <h3>Methods paragraph</h3>
+          <h3>Methods <span class="rssi-print-only-inline">(appendix)</span></h3>
           <button type="button" class="methods-copy-btn" id="rssiMethodsCopyBtn" aria-label="Copy methods paragraph to clipboard">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke-linecap="round"/></svg>
             Copy
@@ -981,19 +1031,8 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
         <p class="methods-body" id="rssiMethodsBody">—</p>
       </section>
 
-      <!-- Top issues panel. Visible on-screen workflow tool; hidden on
-           print (committee handouts lead with the result, not a to-do). -->
-      <div class="section-head rssi-issues-block">
-        <div>
-          <h3>Top issues to fix</h3>
-          <div class="section-sub">Highest-impact items first.</div>
-        </div>
-      </div>
-
-      <div class="card issues rssi-issues-block" id="rssiIssues"></div>
-
       <div class="rssi-print-footer">
-        ReliCheck Strength Survey Index · Generated <?= date('M j, Y \a\t g:i a') ?> · <span id="rssiPrintTitle">Survey</span>
+        Scored with ReliCheck Strength Survey Index v2.0 · Generated <?= date('M j, Y \a\t g:i a') ?> · <span id="rssiPrintTitle">Survey</span>
       </div>
     </div><!-- /#rssiViewOverview -->
 

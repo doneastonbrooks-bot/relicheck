@@ -318,6 +318,23 @@
       document.getElementById('rssiComputedAt').textContent = 'Scored ' + when.toLocaleDateString();
     }
 
+    /* Print-only cover block (KNOWN_ISSUES #22 polish). Mirror the
+       on-screen survey title + scored date into the .rssi-print-cover
+       elements so the exec-board PDF reads them from the same source
+       of truth. Hidden on screen via CSS. */
+    const coverTitleEl = document.getElementById('rssiPrintCoverTitle');
+    if (coverTitleEl) {
+      const sourceTitle = document.getElementById('rssiDashTitle');
+      coverTitleEl.textContent = (sourceTitle && sourceTitle.textContent && sourceTitle.textContent.trim())
+        ? sourceTitle.textContent
+        : 'Survey report';
+    }
+    const coverDateEl = document.getElementById('rssiPrintCoverDate');
+    if (coverDateEl && d.computed_at) {
+      const w = new Date(d.computed_at);
+      coverDateEl.textContent = w.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
     /* ─── Hero copy ─── */
     const heroH2 = document.getElementById('rssiHeroH2');
     if (d.strength >= 85)      heroH2.textContent = 'This survey is in excellent shape.';

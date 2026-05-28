@@ -133,6 +133,23 @@ $rssi_initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_
     <!-- Anchor target for the sidebar's "Overview" link -->
     <a id="rssi-overview" style="display:block;height:0;"></a>
 
+    <!-- Print-only exec-board PDF cover header (KNOWN_ISSUES #22
+         polish). Mirrors rssi-upload.php's .rssi-print-cover block. -->
+    <div class="rssi-print-cover" aria-hidden="true">
+      <div class="rssi-print-cover-brand">
+        <img src="/logo-brand.svg" alt="" aria-hidden="true">
+      </div>
+      <div class="rssi-print-cover-text">
+        <div class="rssi-print-cover-eyebrow">Strength Survey Index report</div>
+        <h1 class="rssi-print-cover-title" id="rssiPrintCoverTitle"><?= htmlspecialchars($rssi_proj_title) ?></h1>
+        <div class="rssi-print-cover-meta">
+          Prepared by <strong><?= htmlspecialchars($rssi_user_full) ?></strong>
+          &middot; Scored <span id="rssiPrintCoverDate">&mdash;</span>
+          &middot; ReliCheck Strength Survey Index v2.0
+        </div>
+      </div>
+    </div>
+
     <!-- Title row -->
     <div class="title-row">
       <div>
@@ -164,6 +181,8 @@ $rssi_initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_
         </div>
       </div>
       <div class="hero-copy">
+        <!-- Print-only "Executive summary" eyebrow above the hero h2. -->
+        <div class="rssi-print-eyebrow" aria-hidden="true">Executive summary</div>
         <h2 id="rssiHeroH2">Score not computed yet.</h2>
         <p id="rssiHeroP">Once a Strength Index analysis is saved to this report, the headline read will appear here in plain language.</p>
 
@@ -319,13 +338,30 @@ $rssi_initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_
       </div>
     </section>
 
+    <!-- Issues panel. Same dual-heading treatment as the standalone:
+         "Top issues to fix" on screen, "Recommended actions" in print.
+         Flow order on print: dim grid → recommended actions → methods. -->
+    <div class="section-head rssi-issues-block">
+      <div>
+        <h3 class="rssi-issues-screen-head">Top issues to fix</h3>
+        <h3 class="rssi-issues-print-head">Recommended actions</h3>
+        <div class="section-sub rssi-issues-screen-sub">Highest-impact items first. Each fix improves the overall score.</div>
+        <div class="section-sub rssi-issues-print-sub">Highest-impact items first. Each fix improves the overall score.</div>
+      </div>
+    </div>
+
+    <a id="rssi-issues" style="display:block;height:0;"></a>
+    <div class="card issues rssi-issues-block" id="rssiIssues">
+      <!-- Issues injected by rssi.js -->
+    </div>
+
     <!-- §8.1 methods paragraph card. Engine-composed research-methods
          prose (KNOWN_ISSUES #21 fix). Hidden when null. Same DOM ids as
          the standalone dashboard so rssi.js paints both surfaces
-         identically. -->
+         identically. Final section on print (research appendix). -->
     <section class="card rssi-methods-paragraph" id="rssiMethodsParagraph" hidden aria-hidden="true">
       <div class="methods-head">
-        <h3>Methods paragraph</h3>
+        <h3>Methods <span class="rssi-print-only-inline">(appendix)</span></h3>
         <button type="button" class="methods-copy-btn" id="rssiMethodsCopyBtn" aria-label="Copy methods paragraph to clipboard">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke-linecap="round"/></svg>
           Copy
@@ -334,22 +370,9 @@ $rssi_initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_
       <p class="methods-body" id="rssiMethodsBody">—</p>
     </section>
 
-    <!-- Top issues -->
-    <div class="section-head">
-      <div>
-        <h3>Top issues to fix</h3>
-        <div class="section-sub">Highest-impact items first. Each fix improves the overall score.</div>
-      </div>
-    </div>
-
-    <a id="rssi-issues" style="display:block;height:0;"></a>
-    <div class="card issues" id="rssiIssues">
-      <!-- Issues injected by rssi.js -->
-    </div>
-
     <!-- Print-only footer -->
     <div class="rssi-print-footer">
-      ReliCheck Strength Survey Index · Generated <?= date('M j, Y \a\t g:i a') ?> · <?= htmlspecialchars($rssi_proj_title) ?>
+      Scored with ReliCheck Strength Survey Index v2.0 · Generated <?= date('M j, Y \a\t g:i a') ?> · <?= htmlspecialchars($rssi_proj_title) ?>
     </div>
 
   </main>

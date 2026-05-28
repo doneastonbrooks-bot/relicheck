@@ -704,6 +704,9 @@
   .rssi-app .btn,
   .rssi-app .section-head .link,
   .rssi-app .dim-foot .view,
+  /* .issue-fix is the "Open →" arrow on each issue row. Hidden on
+     print because a board PDF isn't clickable. The issue title +
+     sub-text still convey the action. */
   .rssi-app .issue-fix,
   .rssi-app .switch,
   .rssi-app .search,
@@ -724,7 +727,38 @@
   .rssi-app .lens-info-popover,
   .rssi-app .lens-cap-pill[hidden],
   .rssi-app .tag-hint,
-  .rssi-app .rssi-issues-block { display: none !important; }
+  /* Web nav chrome that doesn't belong on a board PDF. */
+  .rssi-app .topbar .crumbs,
+  /* Corner brand lives OUTSIDE .rssi-app — the rule from line 110
+     already hides it on print, listed again here so the selector
+     intent reads as one block. */
+  /* Verdict pill ("v · strong") reads as web nav — replaced by the
+     print cover block's stronger verdict treatment. */
+  .rssi-app .subtitle-row .pill,
+  .rssi-app #rssiVerdictPill,
+  /* "Live data" / "Sample data" — the parent .item (with its arrow
+     icon SVG) hides too via :has() so we don't leave an orphan icon
+     where the text used to live. */
+  .rssi-app .hero-meta .item:has(#rssiHeroMetaSource),
+  .rssi-app #rssiHeroMetaSource,
+  /* Issues sub-heads: print uses the .rssi-issues-print-* variants. */
+  .rssi-app .rssi-issues-screen-head,
+  .rssi-app .rssi-issues-screen-sub { display: none !important; }
+  /* Issues card itself: NOT hidden on print. Boards want the action
+     items, so we reinstate "Top issues to fix" (re-titled
+     "Recommended actions" via the print-only head) — this is the
+     reverse of the prior decision; KNOWN_ISSUES #22 polish call. */
+  .rssi-app .rssi-issues-block { display: block !important; }
+  .rssi-app .card.issues.rssi-issues-block { padding: 8px 0 !important; }
+  .rssi-app .rssi-issues-print-head,
+  .rssi-app .rssi-issues-print-sub { display: block !important; }
+  .rssi-app .rssi-issues-print-head {
+    font-size: 16px !important; font-weight: 700 !important;
+    margin: 0 0 4px !important; color: #15171a !important;
+  }
+  .rssi-app .rssi-issues-print-sub {
+    font-size: 11.5px !important; color: #5f6368 !important;
+  }
 
   .rssi-app .app {
     grid-template-columns: 1fr !important;
@@ -808,14 +842,139 @@
     margin-top: 18px;
     padding-top: 10px;
     border-top: 1px solid #ccc;
-    font-size: 11px;
+    font-size: 10.5px;
     color: #6E6E73;
     text-align: center;
   }
+
+  /* ──────────────────────────────────────────────────────────
+     Exec-board PDF cover header (KNOWN_ISSUES #22 polish).
+     Hidden on screen; revealed on print at the top of page 1
+     as the document identity block: small ReliCheck wordmark
+     top-right, eyebrow ("Strength Survey Index report"),
+     survey title, prepared-by / scored / engine version line.
+     Replaces the on-screen breadcrumb + meta strip with a
+     treatment that reads like a real report cover, without
+     wasting a separate blank cover page.
+     ────────────────────────────────────────────────────────── */
+  .rssi-app .rssi-print-cover {
+    display: grid !important;
+    grid-template-columns: 1fr auto;
+    align-items: start;
+    gap: 18px;
+    padding: 0 0 16px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid #0A6FE8;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .rssi-app .rssi-print-cover-brand {
+    grid-column: 2;
+    grid-row: 1;
+    width: 110px;
+    text-align: right;
+  }
+  .rssi-app .rssi-print-cover-brand img {
+    width: 110px;
+    height: auto;
+    opacity: 0.85;
+  }
+  .rssi-app .rssi-print-cover-text {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .rssi-app .rssi-print-cover-eyebrow {
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0A6FE8;
+    margin-bottom: 6px;
+  }
+  .rssi-app .rssi-print-cover-title {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #15171a;
+    margin: 0 0 8px;
+    line-height: 1.2;
+  }
+  .rssi-app .rssi-print-cover-meta {
+    font-size: 11.5px;
+    color: #5f6368;
+    line-height: 1.5;
+  }
+  .rssi-app .rssi-print-cover-meta strong { color: #15171a; }
+
+  /* "Executive summary" eyebrow above hero h2 on print only. */
+  .rssi-app .rssi-print-eyebrow {
+    display: block !important;
+    font-size: 10.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0A6FE8;
+    margin: 0 0 6px;
+  }
+
+  /* "(appendix)" inline tag on methods paragraph head. */
+  .rssi-app .rssi-print-only-inline {
+    display: inline !important;
+    font-weight: 500;
+    color: #8E8E93;
+    font-size: 12.5px;
+  }
+
+  /* Hide the on-screen title row on print — the cover block above
+     replaces it. The h1 inside .title-row continues to be available
+     to JS for the document title swap on Save-as-PDF. */
+  .rssi-app .rssi-view .title-row { display: none !important; }
+
+  /* Page-break discipline for the exec-board flow. */
+  .rssi-app .rssi-print-cover,
+  .rssi-app .rssi-hero-row,
+  .rssi-app .lens-triplet { break-inside: avoid; page-break-inside: avoid; }
+  .rssi-app .dim-grid     { break-inside: avoid; page-break-inside: avoid; }
+  .rssi-app .rssi-issues-block.section-head { break-before: page; page-break-before: always; }
+  .rssi-app .rssi-methods-paragraph { break-before: page; page-break-before: always; }
+
+  /* @page running header + page numbers. Chrome (and other modern
+     browsers) honor @top-center / @bottom-center margin boxes when
+     printing. The running header repeats from page 2 onward; the
+     :first selector suppresses it on the cover page so the
+     document doesn't double-up on identity. */
+  @page {
+    @top-center {
+      content: "ReliCheck Strength Survey Index report";
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, Helvetica, sans-serif;
+      font-size: 9.5pt;
+      color: #8E8E93;
+      vertical-align: bottom;
+      padding-bottom: 6mm;
+    }
+    @bottom-center {
+      content: "Page " counter(page) " of " counter(pages);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, Helvetica, sans-serif;
+      font-size: 9.5pt;
+      color: #8E8E93;
+      vertical-align: top;
+      padding-top: 6mm;
+    }
+  }
+  @page :first {
+    @top-center { content: ""; }
+  }
 }
 
-.rssi-print-footer { display: none; }
-.rssi-refined-scale-print { display: none; }
+/* Hide every print-only DOM element on the SCREEN. The @media print
+   block above lifts these into view when the user saves as PDF. */
+.rssi-print-footer,
+.rssi-refined-scale-print,
+.rssi-print-cover,
+.rssi-print-eyebrow,
+.rssi-print-only-inline,
+.rssi-issues-print-head,
+.rssi-issues-print-sub { display: none; }
 
 /* =============================================================================
    §8.1 methods paragraph card (KNOWN_ISSUES #21 fix).
