@@ -426,18 +426,19 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
           <div style="flex:1;min-width:0;">
             <h2 style="font-size:22px;font-weight:600;letter-spacing:-0.02em;margin:0 0 6px;color:var(--text);">Welcome to the <em style="font-style:normal;background:linear-gradient(180deg,#0A6FE8 0%,#2D8DFF 100%);-webkit-background-clip:text;background-clip:text;color:transparent;">ReliCheck Strength Survey Index</em></h2>
             <p style="margin:0 0 14px;color:var(--text-2);font-size:14.5px;line-height:1.6;max-width:62ch;">
-              RSSI turns any Likert-based survey into a polished, one-page credibility report.
-              We score six diagnostic dimensions of instrument quality, flag the highest-impact issues to fix,
-              and give you a print-ready deliverable to share with stakeholders, attach to a proposal, or hand to a client.
+              RSSI turns any Likert-based survey into a polished credibility report. We score the instrument
+              across eight diagnostic domains, produce three weighted lens scores with Respondent-Centered as
+              the headline, flag the highest-impact issues to fix, and give you a handout-quality PDF with an
+              auto-generated methods paragraph for research write-ups.
             </p>
             <div style="display:flex;gap:24px;flex-wrap:wrap;font-size:13px;color:var(--text-2);">
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--blue);"></span>
-                <span><strong style="color:var(--text);font-weight:600;">Score</strong> &mdash; one headline 0&ndash;100 number with a clear band</span>
+                <span><strong style="color:var(--text);font-weight:600;">Score</strong> &mdash; three lens scores with Respondent-Centered as the headline</span>
               </div>
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--blue);"></span>
-                <span><strong style="color:var(--text);font-weight:600;">Diagnose</strong> &mdash; six dimensions of instrument quality</span>
+                <span><strong style="color:var(--text);font-weight:600;">Diagnose</strong> &mdash; eight canonical domains, from reliability to bias and clarity</span>
               </div>
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--blue);"></span>
@@ -445,7 +446,7 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
               </div>
               <div style="display:inline-flex;align-items:center;gap:6px;">
                 <span style="width:6px;height:6px;border-radius:50%;background:var(--blue);"></span>
-                <span><strong style="color:var(--text);font-weight:600;">Deliver</strong> &mdash; Cmd+P for a clean PDF</span>
+                <span><strong style="color:var(--text);font-weight:600;">Deliver</strong> &mdash; handout PDF with copy-pasteable methods paragraph</span>
               </div>
             </div>
           </div>
@@ -456,7 +457,7 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
         <h2>Upload your survey data</h2>
         <p class="lede">
           Drop a CSV or Excel file with your response data.
-          The Strength Survey Index will score your instrument in seconds — six dimensions, top issues to fix, ready to print or share.
+          The Strength Survey Index will score your instrument in seconds &mdash; three lens scores, eight diagnostic domains, top issues to fix, ready to share.
         </p>
 
         <div class="dropzone" id="rssiDropzone">
@@ -1086,7 +1087,7 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
     <div class="block">
       <h4>How RSSI scores your survey</h4>
       <p class="lead" style="margin: 8px 0 0;">
-        RSSI runs six diagnostic checks: <strong style="color:var(--text); font-weight:600;">reliability</strong> of Likert scales, <strong style="color:var(--text); font-weight:600;">item quality</strong>, <strong style="color:var(--text); font-weight:600;">factor structure</strong>, <strong style="color:var(--text); font-weight:600;">response quality</strong>, <strong style="color:var(--text); font-weight:600;">open-ended</strong> usage, and <strong style="color:var(--text); font-weight:600;">actionability</strong> of the design.
+        RSSI scores eight diagnostic domains: <strong style="color:var(--text); font-weight:600;">Reliability</strong>, <strong style="color:var(--text); font-weight:600;">Validity</strong>, <strong style="color:var(--text); font-weight:600;">Construct Alignment</strong>, <strong style="color:var(--text); font-weight:600;">Item / Prompt Quality</strong>, <strong style="color:var(--text); font-weight:600;">Bias &amp; Clarity Review</strong>, <strong style="color:var(--text); font-weight:600;">Scale Structure</strong>, <strong style="color:var(--text); font-weight:600;">Factor Readiness</strong>, and <strong style="color:var(--text); font-weight:600;">Response Scale Review</strong>. Three weighted lenses &mdash; Psychometric Core, Respondent-Centered, and Validity-Forward &mdash; combine the same domain scores for different audiences.
       </p>
     </div>
 

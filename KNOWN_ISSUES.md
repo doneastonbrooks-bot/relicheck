@@ -457,7 +457,7 @@ When it lands, the v2 handout-PDF surface should add a final section ("Methods p
 
 ## 22. Standalone RSSI welcome panel + right rail still use v1 six-domain language
 
-**Surfaced:** §16 persistence/import work (2026-05-28) — screenshot from production showing the live upload screen with v1 copy.
+**Surfaced:** §16 persistence/import work (2026-05-28) — screenshot from production showing the live upload screen with v1 copy. **RESOLVED 2026-05-28** by rewriting the welcome panel body, the four feature bullets, the upload-card lede, and the right-rail "How RSSI scores your survey" block. Now names the eight canonical domains explicitly + the three weighted lenses + mentions the auto-generated methods paragraph from the just-landed #21 work.
 
 **Problem.** Two text blocks on [rssi-upload.php](rssi-upload.php) still describe the surface in v1 terms, even though the engine emits the v2 eight-domain + three-lens output and the rest of the surface (dashboard, dim-grid, explain panel) has been migrated:
 
