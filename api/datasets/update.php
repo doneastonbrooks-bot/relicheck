@@ -40,7 +40,8 @@ if (array_key_exists('column_meta', $body)) {
     foreach ($body['column_meta'] as $c) {
         if (!is_array($c)) continue;
         $type = $c['type'] ?? 'ignore';
-        if (!in_array($type, ['likert','single','multi','open','ignore'], true)) $type = 'ignore';
+        // Extended for RSSI roles (see api/datasets/create.php header).
+        if (!in_array($type, ['likert','single','multi','open','ignore','numeric','criterion','demographic','identifier'], true)) $type = 'ignore';
         $entry = [
             'name'    => clean_string((string)($c['name'] ?? ''), 200),
             'type'    => $type,
@@ -48,6 +49,9 @@ if (array_key_exists('column_meta', $body)) {
         ];
         if (in_array($type, ['single','multi'], true) && isset($c['options']) && is_array($c['options'])) {
             $entry['options'] = array_values(array_map(fn($o) => clean_string((string)$o, 200), $c['options']));
+        }
+        if (!empty($c['construct'])) {
+            $entry['construct'] = clean_string((string)$c['construct'], 200);
         }
         $cleanCols[] = $entry;
     }
@@ -67,6 +71,9 @@ if (array_key_exists('settings', $body)) {
         'likertLow'    => clean_string((string)($s['likertLow']  ?? 'Strongly disagree'), 80),
         'likertHigh'   => clean_string((string)($s['likertHigh'] ?? 'Strongly agree'),    80),
     ];
+    if (array_key_exists('reverse_coded_confirmed', $s)) {
+        $cleanSettings['reverse_coded_confirmed'] = !empty($s['reverse_coded_confirmed']);
+    }
     $fields[] = 'settings = :st';
     $params[':st'] = json_encode($cleanSettings, JSON_UNESCAPED_UNICODE);
 }

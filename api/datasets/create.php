@@ -1,9 +1,15 @@
 <?php
 // POST /api/datasets/create.php
 // Body: { title, source_filename?, source_format?, column_meta, settings, data }
-//   - column_meta: [{ name, type:'likert'|'single'|'multi'|'open'|'ignore', reverse?, options? }]
-//   - settings:    { likertPoints, likertLow, likertHigh }
-//   - data:        [[row1Cells...], [row2Cells...], ...]
+//   - column_meta: [{ name, type, reverse?, options?, construct? }]
+//       Allowed types: 'likert' | 'single' | 'multi' | 'open' | 'ignore'
+//                      plus RSSI extensions: 'numeric' | 'criterion' | 'demographic' | 'identifier'.
+//       The four RSSI types are read by the strength-index engine (§4A
+//       criterion validity, §4D fairness DIF, etc.) when the dataset is
+//       transformed to the engine shape.
+//   - settings: { likertPoints, likertLow, likertHigh, reverse_coded_confirmed? }
+//       reverse_coded_confirmed is the survey-level §4E sub-2 gate.
+//   - data: [[row1Cells...], [row2Cells...], ...]
 //
 // Limits: 50,000 rows, 200 columns, ~10 MB JSON-encoded payload.
 
@@ -40,12 +46,15 @@ if (count($data) > 50000)     fail('too_many_rows',    'Datasets are limited to 
 // Tier check: rows-per-dataset limit
 require_under_limit((int)$user['id'], 'max_rows_per_dataset', 0, count($data));
 
-// Sanitize column metadata
+// Sanitize column metadata.
+// Type allowlist extended to include the four RSSI roles
+// (numeric / criterion / demographic / identifier) so the standalone
+// RSSI surface can persist tagged uploads without lossy type-collapse.
 $cleanCols = [];
 foreach ($columnMeta as $c) {
     if (!is_array($c)) continue;
     $type = $c['type'] ?? 'ignore';
-    if (!in_array($type, ['likert','single','multi','open','ignore'], true)) $type = 'ignore';
+    if (!in_array($type, ['likert','single','multi','open','ignore','numeric','criterion','demographic','identifier'], true)) $type = 'ignore';
     $entry = [
         'name'    => clean_string((string)($c['name'] ?? ''), 200),
         'type'    => $type,
@@ -54,11 +63,18 @@ foreach ($columnMeta as $c) {
     if (in_array($type, ['single','multi'], true) && isset($c['options']) && is_array($c['options'])) {
         $entry['options'] = array_values(array_map(fn($o) => clean_string((string)$o, 200), $c['options']));
     }
+    // RSSI tag-stage construct field — preserved when present so the
+    // engine's §4A/§4B/§4E activation gates fire on re-load.
+    if (!empty($c['construct'])) {
+        $entry['construct'] = clean_string((string)$c['construct'], 200);
+    }
     $cleanCols[] = $entry;
 }
 $columnCount = count($cleanCols);
 
-// Sanitize settings
+// Sanitize settings. reverse_coded_confirmed is the survey-level §4E
+// sub-2 gate written by the RSSI tag stage; preserved on save so the
+// engine reads it on re-score after re-load.
 $kPoints = (int)($settings['likertPoints'] ?? 5);
 if ($kPoints < 2 || $kPoints > 11) $kPoints = 5;
 $cleanSettings = [
@@ -66,6 +82,9 @@ $cleanSettings = [
     'likertLow'    => clean_string((string)($settings['likertLow']  ?? 'Strongly disagree'), 80),
     'likertHigh'   => clean_string((string)($settings['likertHigh'] ?? 'Strongly agree'),    80),
 ];
+if (array_key_exists('reverse_coded_confirmed', $settings)) {
+    $cleanSettings['reverse_coded_confirmed'] = !empty($settings['reverse_coded_confirmed']);
+}
 
 // Encode the data array. We trust the front-end to have already coerced cells
 // into appropriate types (numbers stay numbers, strings stay strings).

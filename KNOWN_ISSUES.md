@@ -450,3 +450,20 @@ Display-side note: the v2 standalone surface honors the engine's null contract c
 When it lands, the v2 handout-PDF surface should add a final section ("Methods paragraph") rendering the engine-emitted string with a copy-to-clipboard affordance on-screen, and a printable block on PDF. The print stylesheet already has the visual vocabulary for this (similar to the refined-scale section).
 
 **Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — emit `methods_paragraph` per spec §8.1. [apps/rssi/rssi.js](apps/rssi/rssi.js) — render in the report when present.
+
+---
+
+## 22. Standalone RSSI welcome panel + right rail still use v1 six-domain language
+
+**Surfaced:** §16 persistence/import work (2026-05-28) — screenshot from production showing the live upload screen with v1 copy.
+
+**Problem.** Two text blocks on [rssi-upload.php](rssi-upload.php) still describe the surface in v1 terms, even though the engine emits the v2 eight-domain + three-lens output and the rest of the surface (dashboard, dim-grid, explain panel) has been migrated:
+
+- **Welcome panel** ([rssi-upload.php:285](rssi-upload.php:285)): *"RSSI turns any Likert-based survey into a polished, one-page credibility report. We score six diagnostic dimensions of instrument quality…"* and the four bullet points reference "six dimensions of instrument quality" + "Cmd+P for a clean PDF" (the print path is now richer than just Cmd+P, with refined-scale + handout-quality treatment).
+- **Right rail "How RSSI scores your survey" block** ([rssi-upload.php:653-655](rssi-upload.php:653)): *"RSSI runs six diagnostic checks: reliability of Likert scales, item quality, factor structure, response quality, open-ended usage, and actionability of the design."* That maps to the v1 six-component map, not the v2 eight canonical domains. The named domains (reliability, item quality, factor structure, response quality, open-ended usage, actionability) are not all canonical v2 names — "actionability" was retired entirely per Spec §2.
+
+**Implication.** First-time users read promotional copy that doesn't match what the dashboard actually delivers. "Six dimensions" sets the expectation; "Eight canonical domains" is what the report shows. Same for the right rail.
+
+**Resolve during.** Display-copy cleanup. Both blocks need to be rewritten in v2 language matching the dim-grid + explain panel — "eight diagnostic domains across reliability, validity, construct alignment, factor readiness, item / prompt quality, bias & clarity review, scale structure, and response scale review" — and the three lenses introduced as the headline framing (Spec §3.2). Bullet points can be reframed: Score (Respondent-Centered headline + triplet), Diagnose (eight domains), Fix (recommendations), Deliver (handout PDF).
+
+**Code touch-points.** [rssi-upload.php:285-310](rssi-upload.php:285) welcome panel, [rssi-upload.php:653-657](rssi-upload.php:653) right rail block. Copy-only; no engine or wiring changes.

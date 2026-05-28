@@ -462,6 +462,135 @@
     if (!dataset) return;
     const result = computeRSSI(dataset);
     handoffToDashboard(result, dataset, s.fileName || '');
+    // Auto-save server-side after the dashboard renders. Skipped when
+    // we're already viewing a previously-saved dataset (re-tag from
+    // dashboard would otherwise create a duplicate row), and when the
+    // demo flow is active.
+    if (!window.RSSI_DATASET_ID && !window.RSSI_IS_DEMO && window.RSSI_PARSED) {
+      _autoSaveDataset(window.RSSI_PARSED, s).catch(function () { /* silent */ });
+    } else if (window.RSSI_DATASET_ID && !window.RSSI_IS_DEMO) {
+      // Already a saved project — re-tag means update the existing row
+      // (column_meta + settings only; data hasn't changed).
+      _updateSavedTags(window.RSSI_DATASET_ID, s).catch(function () { /* silent */ });
+    }
+  }
+
+  /* ────────────────────────────────────────────────────────────
+   *  Auto-save (Phase 1 Q1 (a)). After the tag stage commits, persist
+   *  the tagged dataset to /api/datasets/create.php using the same
+   *  column_meta + settings schema the studios use, plus RSSI's role
+   *  extensions (numeric / criterion / demographic / identifier) and
+   *  the survey-level reverse_coded_confirmed gate.
+   *
+   *  Captures the returned dataset_id on window.RSSI_DATASET_ID and
+   *  rewrites the URL with ?dataset_id=N via history.replaceState so a
+   *  page reload (or share-link) re-hydrates without an upload step.
+   *
+   *  Skipped for the demo / sample flow (RSSI_IS_DEMO=true) and for
+   *  datasets loaded via ?dataset_id|survey_id|mm_project_id — those
+   *  are already saved.
+   * ──────────────────────────────────────────────────────────── */
+  function _buildColumnMetaForSave(tagState) {
+    return tagState.columns
+      .filter(function (c) { return c.role !== 'identifier' && c.role !== 'ignore' || c.role === 'ignore'; })
+      .map(function (c) {
+        const entry = {
+          name:    c.name,
+          type:    c.role,
+          reverse: !!c.reverseCoded,
+        };
+        const con = (c.construct || '').trim();
+        if (con) entry.construct = con;
+        return entry;
+      });
+  }
+
+  function _buildSettingsForSave(tagState) {
+    // Pull the anchor count off the first Likert row that has one (RSSI's
+    // tag stage stores anchor_count per Likert column; the dataset settings
+    // schema carries a single survey-level likertPoints). When values
+    // differ across columns, save the first; the dim-grid's actual
+    // per-column anchor_count survives in column_meta on update via the
+    // engine's transform (KNOWN_ISSUES §4 #4b).
+    let kPoints = 5;
+    for (const c of tagState.columns) {
+      if (c.role === 'likert' && c.anchorCount != null) {
+        const n = Number(c.anchorCount);
+        if (Number.isFinite(n) && n >= 2 && n <= 11) { kPoints = n; break; }
+      }
+    }
+    return {
+      likertPoints: kPoints,
+      likertLow:    'Strongly disagree',
+      likertHigh:   'Strongly agree',
+      reverse_coded_confirmed: !!tagState.reverseConfirmed,
+    };
+  }
+
+  function _buildDataMatrixForSave(parsed, columnMeta) {
+    // Project parsed.rows (object keyed by header) to a column-ordered
+    // 2-D array in the same order as the column_meta we just built.
+    const headers = columnMeta.map(function (cm) { return cm.name; });
+    return parsed.rows.map(function (r) {
+      return headers.map(function (h) {
+        const v = r[h];
+        return v == null ? '' : v;
+      });
+    });
+  }
+
+  function _autoSaveDataset(parsed, tagState) {
+    const fileName = tagState.fileName || 'Untitled survey';
+    const sourceFormat = /\.xlsx?$/i.test(fileName) ? 'xlsx' : 'csv';
+    const title = fileName.replace(/\.(csv|xlsx?|tsv|txt)$/i, '');
+    const column_meta = _buildColumnMetaForSave(tagState);
+    const settings    = _buildSettingsForSave(tagState);
+    const data        = _buildDataMatrixForSave(parsed, column_meta);
+
+    return fetch('/api/datasets/create.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title:           title,
+        source_filename: fileName,
+        source_format:   sourceFormat,
+        column_meta:     column_meta,
+        settings:        settings,
+        data:            data,
+      }),
+    }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (out) {
+        if (!out.ok || !out.body || !out.body.id) {
+          console.warn('Auto-save failed:', out.body);
+          return null;
+        }
+        window.RSSI_DATASET_ID = out.body.id;
+        // Update the URL so a reload / share opens the saved project.
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.set('dataset_id', String(out.body.id));
+          // Strip transient query params if present.
+          url.searchParams.delete('frommodal');
+          history.replaceState(null, '', url.toString());
+        } catch (e) {}
+        return out.body.id;
+      });
+  }
+
+  function _updateSavedTags(datasetId, tagState) {
+    // Re-tag from the dashboard → persist the new column_meta + settings
+    // against the existing row. Uses update.php so we hit both in one
+    // call (update_columns.php only covers column_meta).
+    const column_meta = _buildColumnMetaForSave(tagState);
+    const settings    = _buildSettingsForSave(tagState);
+    return fetch('/api/datasets/update.php', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: datasetId, column_meta: column_meta, settings: settings }),
+    }).then(function (r) { return r.json(); })
+      .catch(function (e) { console.warn('Tag-update failed:', e); });
   }
 
   function _enterTagStage(parsed, file, arrayBuffer) {
@@ -479,6 +608,205 @@
     // Clear any "parsing..." status banner; the tag stage is its own UI now.
     const status = document.getElementById('rssiUploadStatus');
     if (status) { status.innerHTML = ''; status.className = 'upload-status'; }
+  }
+
+  /* ────────────────────────────────────────────────────────────
+   *  Load from a saved project (Phase 1 Q4–Q6).
+   *
+   *  URL params dispatch on init():
+   *    ?dataset_id=N   → GET /api/datasets/get.php?id=N
+   *    ?survey_id=N    → GET /api/surveys/responses-dataset.php?survey_id=N
+   *    ?mm_project_id=N → GET /api/mm/project.php?id=N, follow its
+   *                       linked dataset_id or survey_id.
+   *
+   *  All three paths converge on _enterFromSavedDataset(), which
+   *  hydrates RSSI_PARSED + RSSI_TAG_STATE from the server payload
+   *  and then either skips the tag stage (column_meta is tag-complete
+   *  AND reverse_coded_confirmed) or shows it pre-populated.
+   *
+   *  When loaded from a saved row, RSSI_DATASET_ID is set so re-tag /
+   *  re-score updates the existing row rather than creating a new one.
+   * ──────────────────────────────────────────────────────────── */
+
+  /* Convert a dataset API response (column_meta + array-of-arrays data)
+     into the { headers, rows } shape RSSI_PARSED carries. */
+  function _hydrateParsed(columnMeta, dataMatrix) {
+    const headers = columnMeta.map(function (cm) { return String(cm.name || ''); });
+    const rows = dataMatrix.map(function (row) {
+      const obj = {};
+      headers.forEach(function (h, i) {
+        const v = row[i];
+        obj[h] = (v == null) ? '' : String(v);
+      });
+      return obj;
+    });
+    return { headers: headers, rows: rows };
+  }
+
+  /* Build a v2 tag state from saved column_meta + settings. Treats every
+     saved row as user-confirmed (no auto-badge) because the user already
+     went through the tag stage when first scoring. */
+  function _hydrateTagState(parsed, columnMeta, settings, fileName, datasetId) {
+    const core = window.RSSI_TAG_CORE;
+    const auto = core ? core.inferColumnRoles(parsed) : [];
+    const autoByName = {};
+    auto.forEach(function (a) { autoByName[a.name] = a; });
+
+    const fallbackAnchor = (settings && Number.isFinite(Number(settings.likertPoints)))
+      ? Number(settings.likertPoints) : null;
+
+    const columns = columnMeta.map(function (cm) {
+      const a = autoByName[cm.name] || { autoRole: cm.type, autoAnchorCount: fallbackAnchor, sample: [] };
+      return {
+        name:            cm.name,
+        role:            cm.type || 'ignore',
+        construct:       cm.construct || '',
+        reverseCoded:    !!cm.reverse,
+        anchorCount:     (cm.type === 'likert') ? fallbackAnchor : a.autoAnchorCount,
+        autoRole:        a.autoRole,
+        autoAnchorCount: a.autoAnchorCount,
+        sample:          a.sample,
+        autoBadge:       false,         // saved = user-tagged
+        userConfirmed:   true,
+      };
+    });
+    return {
+      fileHash:         null,
+      fileName:         fileName,
+      datasetId:        datasetId,
+      reverseConfirmed: !!(settings && settings.reverse_coded_confirmed),
+      columns:          columns,
+    };
+  }
+
+  /* Skip-tag-stage gate (Phase 1 Q6): straight to score iff every Likert
+     column has a construct AND the survey-level reverse-confirmed flag
+     is set. Otherwise show the tag stage pre-populated so the user can
+     fill the gaps. */
+  function _isTagComplete(tagState) {
+    if (!tagState.reverseConfirmed) return false;
+    const likertCols = tagState.columns.filter(function (c) { return c.role === 'likert'; });
+    if (likertCols.length === 0) return false;
+    return likertCols.every(function (c) { return (c.construct || '').trim() !== ''; });
+  }
+
+  function _enterFromSavedDataset(parsed, columnMeta, settings, fileName, datasetId) {
+    window.RSSI_PARSED     = parsed;
+    window.RSSI_DATASET_ID = datasetId || null;
+    window.RSSI_TAG_STATE  = _hydrateTagState(parsed, columnMeta, settings, fileName, datasetId);
+
+    const titleEl = document.getElementById('rssiDashTitle');
+    if (titleEl && fileName) titleEl.textContent = fileName.replace(/\.(csv|xlsx?|tsv|txt)$/i, '');
+
+    if (_isTagComplete(window.RSSI_TAG_STATE)) {
+      // Straight to score → dashboard.
+      const dataset = _materializeFromState();
+      if (dataset) {
+        const result = computeRSSI(dataset);
+        handoffToDashboard(result, dataset, window.RSSI_TAG_STATE.fileName || '');
+      }
+    } else {
+      // Show the tag stage pre-populated.
+      _renderTagTable();
+      _wireTagTableHandlers();
+      const root = document.getElementById('rssiAppRoot');
+      if (root) root.setAttribute('data-stage', 'tag');
+    }
+  }
+
+  function _loadFromDataset(datasetId) {
+    setStatus('<strong>Loading saved project…</strong>');
+    return fetch('/api/datasets/get.php?id=' + encodeURIComponent(datasetId), { credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (out) {
+        if (!out.ok || !out.body || !out.body.dataset) {
+          const msg = (out.body && out.body.error_message) || 'Could not load that project.';
+          setStatus('<strong>' + msg + '</strong>', 'error');
+          return;
+        }
+        const ds = out.body.dataset;
+        const parsed = _hydrateParsed(ds.column_meta || [], ds.data || []);
+        _enterFromSavedDataset(parsed, ds.column_meta || [], ds.settings || {}, ds.source_filename || ds.title || 'Saved project', ds.id);
+      })
+      .catch(function (err) {
+        setStatus('<strong>Could not load that project:</strong> ' + (err && err.message ? err.message : String(err)), 'error');
+      });
+  }
+
+  function _loadFromSurvey(surveyId) {
+    setStatus('<strong>Loading survey responses…</strong>');
+    return fetch('/api/surveys/responses-dataset.php?survey_id=' + encodeURIComponent(surveyId), { credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (out) {
+        if (!out.ok || !out.body || !out.body.payload || !out.body.payload.dataset) {
+          const msg = (out.body && out.body.error_message) || 'Could not load that survey.';
+          setStatus('<strong>' + msg + '</strong>', 'error');
+          return;
+        }
+        // /api/surveys/responses-dataset.php returns the engine-shape dataset
+        // (with variables[] rather than column_meta + data). Convert to the
+        // tag-stage's expected shape.
+        const eng = out.body.payload.dataset;
+        const headers = (eng.variables || []).map(function (v) { return v.name; });
+        const rowCount = (eng.variables && eng.variables[0]) ? (eng.variables[0].values || []).length : 0;
+        const rows = [];
+        for (let i = 0; i < rowCount; i++) {
+          const obj = {};
+          eng.variables.forEach(function (v) {
+            const vv = (v.values || [])[i];
+            obj[v.name] = (vv == null) ? '' : String(vv);
+          });
+          rows.push(obj);
+        }
+        const parsed = { headers: headers, rows: rows };
+        // Build column_meta from variables: type derives from variable.types[0].
+        const colMeta = (eng.variables || []).map(function (v) {
+          const t = (v.types && v.types[0]) || 'open';
+          const role = (t === 'likert')      ? 'likert'
+                     : (t === 'numeric')     ? 'numeric'
+                     : (t === 'categorical') ? 'demographic'
+                     : (t === 'open')        ? 'free_text'
+                     : 'ignore';
+          return {
+            name:      v.name,
+            type:      role,
+            reverse:   !!v.reverse_coded,
+            construct: v.construct || undefined,
+          };
+        });
+        const settings = {
+          likertPoints: (eng.config && eng.config.likertPoints) || 5,
+          reverse_coded_confirmed: !!(eng.config && eng.config.reverse_coded_confirmed),
+        };
+        _enterFromSavedDataset(parsed, colMeta, settings, eng.source || ('Survey #' + surveyId), null);
+        // Survey-loaded datasets aren't owned by `datasets` rows — leave
+        // RSSI_DATASET_ID null so a later "Score my data" creates a new
+        // dataset row (the studios persist these via separate paths).
+      })
+      .catch(function (err) {
+        setStatus('<strong>Could not load that survey:</strong> ' + (err && err.message ? err.message : String(err)), 'error');
+      });
+  }
+
+  function _loadFromMMProject(mmProjectId) {
+    setStatus('<strong>Loading MM project…</strong>');
+    return fetch('/api/mm/project.php?id=' + encodeURIComponent(mmProjectId), { credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (out) {
+        if (!out.ok || !out.body || !out.body.project) {
+          const msg = (out.body && out.body.error_message) || 'Could not load that MM project.';
+          setStatus('<strong>' + msg + '</strong>', 'error');
+          return;
+        }
+        const proj = out.body.project;
+        // MM projects can link to a dataset OR a survey. Dispatch.
+        if (proj.dataset_id) return _loadFromDataset(Number(proj.dataset_id));
+        if (proj.survey_id)  return _loadFromSurvey(Number(proj.survey_id));
+        setStatus('<strong>This MM project has no linked Likert data to score.</strong> Link a dataset or survey to it in the MM Studio, then try again.', 'error');
+      })
+      .catch(function (err) {
+        setStatus('<strong>Could not load that MM project:</strong> ' + (err && err.message ? err.message : String(err)), 'error');
+      });
   }
 
   /* Re-tag from the dashboard. Preserves the in-memory state — does NOT
@@ -763,7 +1091,26 @@
        "View Sample Report" tile). */
     try {
       const qp = new URLSearchParams(window.location.search);
-      if (qp.get('demo') === '1') loadDemo();
+      if (qp.get('demo') === '1') {
+        window.RSSI_IS_DEMO = true;
+        loadDemo();
+      }
+
+      /* Load from a saved project. Three URL-param shapes, mutually
+         exclusive: ?dataset_id=N | ?survey_id=N | ?mm_project_id=N.
+         These bypass the upload stage and route straight into the tag
+         stage (pre-populated) or the dashboard (when tag-complete).
+         Anonymous demo flow still works via ?demo=1. */
+      const dsId = qp.get('dataset_id');
+      const svId = qp.get('survey_id');
+      const mpId = qp.get('mm_project_id');
+      if (dsId && /^\d+$/.test(dsId)) {
+        _loadFromDataset(Number(dsId));
+      } else if (svId && /^\d+$/.test(svId)) {
+        _loadFromSurvey(Number(svId));
+      } else if (mpId && /^\d+$/.test(mpId)) {
+        _loadFromMMProject(Number(mpId));
+      }
 
       /* Pick up a file staged by the landing-page modal (data URL stored
          in sessionStorage under 'rssi.pendingFile'). */
@@ -787,6 +1134,11 @@
         }
       }
     } catch (e) {}
+
+    /* Import picker modal: opens on the "Pull from a saved project"
+       button on the upload stage. Lazy-loads each tab on first activation
+       so the upload page doesn't pay for unused list endpoints. */
+    _wireProjectPicker();
 
     /* Score another → back to upload stage. Tag state is intentionally
        NOT cleared: localStorage still holds it keyed by file hash, so a
@@ -815,6 +1167,166 @@
       if (document.visibilityState === 'hidden') _flushSave();
     });
     window.addEventListener('pagehide', _flushSave);
+  }
+
+  /* ────────────────────────────────────────────────────────────
+   *  Project import picker (modal + tabs + lazy list-loaders).
+   *
+   *  Opens on the "Pull from a saved project" button on the upload
+   *  stage. Three tabs:
+   *    - Datasets    → /api/datasets/list.php
+   *    - Surveys     → /api/surveys/list.php
+   *    - MM Projects → /api/mm/projects.php
+   *
+   *  Each tab's list is fetched on first activation, then cached on
+   *  the modal element. Click a row → navigate to the corresponding
+   *  ?id_param=N URL on this page, which triggers _loadFromDataset /
+   *  _loadFromSurvey / _loadFromMMProject during init().
+   * ──────────────────────────────────────────────────────────── */
+  const _PICKER_ENDPOINTS = {
+    datasets: { url: '/api/datasets/list.php', key: 'datasets', param: 'dataset_id' },
+    surveys:  { url: '/api/surveys/list.php',  key: 'surveys',  param: 'survey_id'  },
+    mm:       { url: '/api/mm/projects.php',   key: 'projects', param: 'mm_project_id' },
+  };
+
+  function _wireProjectPicker() {
+    const modal    = document.getElementById('rssiPickerModal');
+    const openBtn  = document.getElementById('rssiOpenPicker');
+    const closeBtn = document.getElementById('rssiPickerClose');
+    const backdrop = document.getElementById('rssiPickerBackdrop');
+    if (!modal || !openBtn) return;
+
+    function open() {
+      modal.hidden = false;
+      modal.setAttribute('aria-hidden', 'false');
+      // Lazy-load the currently-active tab on first open.
+      const activeTab = modal.querySelector('.rssi-picker-tab.is-active');
+      if (activeTab) _loadPickerTab(activeTab.getAttribute('data-tab'));
+      document.addEventListener('keydown', onKey);
+    }
+    function close() {
+      modal.hidden = true;
+      modal.setAttribute('aria-hidden', 'true');
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+
+    openBtn.addEventListener('click', open);
+    if (closeBtn) closeBtn.addEventListener('click', close);
+    if (backdrop) backdrop.addEventListener('click', close);
+
+    // Tab switching.
+    modal.querySelectorAll('.rssi-picker-tab').forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        const which = tab.getAttribute('data-tab');
+        modal.querySelectorAll('.rssi-picker-tab').forEach(function (t) {
+          const on = t === tab;
+          t.classList.toggle('is-active', on);
+          t.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        modal.querySelectorAll('.rssi-picker-pane').forEach(function (p) {
+          const on = p.getAttribute('data-pane') === which;
+          p.hidden = !on;
+          p.classList.toggle('is-active', on);
+        });
+        _loadPickerTab(which);
+      });
+    });
+
+    // Delegated row click → navigate.
+    modal.addEventListener('click', function (e) {
+      const row = e.target.closest && e.target.closest('.rssi-picker-row[data-pick-id]');
+      if (!row) return;
+      const id    = row.getAttribute('data-pick-id');
+      const param = row.getAttribute('data-pick-param');
+      if (!id || !param) return;
+      // Same page, new URL — triggers the load path in init() on the
+      // fresh page load. (Using full reload rather than rewriting in-
+      // place keeps the dashboard mount lifecycle clean.)
+      const url = new URL(window.location.href);
+      url.searchParams.delete('demo');
+      url.searchParams.delete('frommodal');
+      url.searchParams.delete('dataset_id');
+      url.searchParams.delete('survey_id');
+      url.searchParams.delete('mm_project_id');
+      url.searchParams.set(param, id);
+      window.location.href = url.toString();
+    });
+  }
+
+  function _loadPickerTab(which) {
+    const endpoint = _PICKER_ENDPOINTS[which];
+    if (!endpoint) return;
+    const modal = document.getElementById('rssiPickerModal');
+    const pane  = modal && modal.querySelector('.rssi-picker-pane[data-pane="' + which + '"]');
+    if (!pane) return;
+    if (pane._rssiLoaded) return;       // cached
+    pane._rssiLoaded = true;
+    fetch(endpoint.url, { credentials: 'same-origin' })
+      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+      .then(function (out) {
+        const rows = (out.body && (out.body[endpoint.key] || [])) || [];
+        if (!out.ok) {
+          pane.innerHTML = '<div class="rssi-picker-err">Could not load list.</div>';
+          pane._rssiLoaded = false;     // allow retry
+          return;
+        }
+        if (rows.length === 0) {
+          const empty = (which === 'datasets')
+            ? 'No saved datasets yet. Upload one to see it here.'
+            : (which === 'surveys')
+            ? 'No surveys yet. Build one in Survey Studio.'
+            : 'No MM projects yet.';
+          pane.innerHTML = '<div class="rssi-picker-empty">' + empty + '</div>';
+          return;
+        }
+        pane.innerHTML = '<ul class="rssi-picker-list">' + rows.map(function (r) {
+          return _renderPickerRow(r, which, endpoint.param);
+        }).join('') + '</ul>';
+      })
+      .catch(function () {
+        pane.innerHTML = '<div class="rssi-picker-err">Could not load list. Try again.</div>';
+        pane._rssiLoaded = false;
+      });
+  }
+
+  function _renderPickerRow(r, which, param) {
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+      });
+    }
+    const id    = r.id;
+    let title   = '';
+    let meta    = '';
+    if (which === 'datasets') {
+      title = r.title || r.source_filename || 'Untitled';
+      const bits = [];
+      if (r.row_count)    bits.push(r.row_count + ' rows');
+      if (r.likert_count) bits.push(r.likert_count + ' Likert items');
+      if (r.updated_at)   bits.push('updated ' + new Date(r.updated_at).toLocaleDateString());
+      meta = bits.join(' · ');
+    } else if (which === 'surveys') {
+      title = r.title || ('Survey #' + id);
+      const bits = [];
+      if (r.response_count) bits.push(r.response_count + ' responses');
+      if (r.is_published)   bits.push('published');
+      if (r.updated_at)     bits.push('updated ' + new Date(r.updated_at).toLocaleDateString());
+      meta = bits.join(' · ');
+    } else { // mm
+      title = r.title || ('MM project #' + id);
+      const bits = [];
+      if (r.status)     bits.push(r.status);
+      if (r.updated_at) bits.push('updated ' + new Date(r.updated_at).toLocaleDateString());
+      meta = bits.join(' · ');
+    }
+    return (
+      '<li><button type="button" class="rssi-picker-row" data-pick-id="' + esc(id) + '" data-pick-param="' + esc(param) + '">' +
+        '<div class="rssi-picker-row-title">' + esc(title) + '</div>' +
+        '<div class="rssi-picker-row-meta">' + esc(meta) + '</div>' +
+        '<span class="rssi-picker-row-arrow">→</span>' +
+      '</button></li>'
+    );
   }
 
   if (document.readyState === 'loading') {

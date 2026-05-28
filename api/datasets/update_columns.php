@@ -41,7 +41,8 @@ $clean = [];
 foreach ($cols as $c) {
     if (!is_array($c)) continue;
     $type = $c['type'] ?? 'ignore';
-    if (!in_array($type, ['likert', 'single', 'multi', 'open', 'ignore'], true)) {
+    // Extended for RSSI roles (see api/datasets/create.php header).
+    if (!in_array($type, ['likert','single','multi','open','ignore','numeric','criterion','demographic','identifier'], true)) {
         $type = 'ignore';
     }
     $entry = [

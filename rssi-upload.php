@@ -144,6 +144,151 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
 
     /* Stage visibility rules live in apps/rssi/rssi.css (§16 M2,
        single source of truth across upload / tag / dashboard). */
+
+    /* ── Import affordance: "or pull from a saved project" ───────── */
+    .rssi-app .upload-or-divider {
+      display: flex; align-items: center; gap: 12px;
+      margin: 20px 0 14px;
+      font-size: 12px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .rssi-app .upload-or-divider::before,
+    .rssi-app .upload-or-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--hairline);
+    }
+    .rssi-app .upload-pull-btn {
+      width: 100%;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 18px;
+      background: var(--surface);
+      border: 1px solid var(--hairline-strong);
+      border-radius: 12px;
+      font: inherit; font-weight: 600; font-size: 14px;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+    }
+    .rssi-app .upload-pull-btn:hover {
+      border-color: var(--blue);
+      color: var(--blue);
+      background: var(--blue-soft-bg);
+    }
+
+    /* ── Picker modal ──────────────────────────────────────────── */
+    .rssi-picker-modal { position: fixed; inset: 0; z-index: 1000; }
+    .rssi-picker-modal[hidden] { display: none; }
+    .rssi-picker-backdrop {
+      position: absolute; inset: 0;
+      background: rgba(15, 23, 42, 0.32);
+      backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+    }
+    .rssi-picker-dialog {
+      position: relative;
+      max-width: 640px;
+      width: calc(100% - 32px);
+      max-height: calc(100vh - 64px);
+      margin: 40px auto;
+      background: var(--surface);
+      border: 1px solid var(--hairline);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .rssi-picker-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 22px 12px;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .rssi-picker-head h3 {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.015em;
+    }
+    .rssi-picker-close {
+      appearance: none; -webkit-appearance: none;
+      background: transparent; border: 0; padding: 0;
+      font-size: 22px; line-height: 1;
+      color: var(--text-2); cursor: pointer;
+      width: 28px; height: 28px;
+      display: grid; place-items: center;
+      border-radius: 6px;
+    }
+    .rssi-picker-close:hover { background: var(--surface-muted); color: var(--text); }
+    .rssi-picker-tabs {
+      display: flex; gap: 4px;
+      padding: 8px 16px 0;
+      border-bottom: 1px solid var(--hairline);
+    }
+    .rssi-picker-tab {
+      appearance: none; -webkit-appearance: none;
+      background: transparent; border: 0;
+      padding: 10px 14px;
+      font: inherit; font-size: 13.5px; font-weight: 500;
+      color: var(--text-2); cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .rssi-picker-tab:hover { color: var(--text); }
+    .rssi-picker-tab.is-active {
+      color: var(--blue);
+      border-bottom-color: var(--blue);
+      font-weight: 600;
+    }
+    .rssi-picker-body {
+      flex: 1; overflow-y: auto;
+      padding: 8px 0;
+      min-height: 200px;
+    }
+    .rssi-picker-pane[hidden] { display: none; }
+    .rssi-picker-loading,
+    .rssi-picker-empty,
+    .rssi-picker-err {
+      padding: 32px 22px;
+      text-align: center;
+      color: var(--text-2);
+      font-size: 13.5px;
+    }
+    .rssi-picker-err { color: var(--weak); }
+    .rssi-picker-list {
+      list-style: none; margin: 0; padding: 0;
+    }
+    .rssi-picker-row {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      grid-template-areas: "title arrow" "meta arrow";
+      gap: 2px 14px;
+      align-items: center;
+      padding: 12px 22px;
+      background: transparent;
+      border: 0;
+      border-top: 1px solid var(--hairline);
+      text-align: left;
+      cursor: pointer;
+      font: inherit;
+      color: inherit;
+      transition: background 0.12s;
+    }
+    .rssi-picker-row:hover { background: var(--blue-soft-bg); }
+    .rssi-picker-row-title {
+      grid-area: title;
+      font-size: 14px; font-weight: 600; color: var(--text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rssi-picker-row-meta {
+      grid-area: meta;
+      font-size: 12px; color: var(--text-3);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .rssi-picker-row-arrow {
+      grid-area: arrow;
+      font-size: 16px; color: var(--text-3);
+    }
+    .rssi-picker-row:hover .rssi-picker-row-arrow { color: var(--blue); }
   </style>
 </head>
 <body>
@@ -325,9 +470,52 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
 
         <div class="upload-status" id="rssiUploadStatus"></div>
 
+        <!-- Or pull from a saved project. Opens a modal listing the
+             user's Datasets, Surveys, and MM Projects (Phase 1 Q4–Q5).
+             Click a row → routes to /rssi-upload.php?<id_param>=N which
+             triggers _loadFromDataset / _loadFromSurvey / _loadFromMMProject
+             on init. Persistence + import are sibling affordances on the
+             same upload screen. -->
+        <div class="upload-or-divider"><span>or</span></div>
+        <button type="button" class="upload-pull-btn" id="rssiOpenPicker">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M3 14.5 12 20l9-5.5"/><path d="M3 9.5v5"/><path d="M21 9.5v5"/></svg>
+          Pull from a saved project
+        </button>
+
         <div class="upload-help">
           Need a sample to test the report?
           <a href="#" id="rssiTryDemo">Try with sample data →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ PROJECT IMPORT MODAL ============ -->
+    <!-- Three tabs: Datasets (raw uploads), Surveys (deployed surveys
+         with collected responses), MM Projects. Each tab lazy-loads
+         its list endpoint on first activation. Clicking a row routes
+         to ?<id_param>=N on this same page. -->
+    <div class="rssi-picker-modal" id="rssiPickerModal" hidden aria-hidden="true" role="dialog" aria-label="Pull from a saved project">
+      <div class="rssi-picker-backdrop" id="rssiPickerBackdrop"></div>
+      <div class="rssi-picker-dialog">
+        <div class="rssi-picker-head">
+          <h3>Pull from a saved project</h3>
+          <button type="button" class="rssi-picker-close" id="rssiPickerClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="rssi-picker-tabs" role="tablist">
+          <button type="button" class="rssi-picker-tab is-active" data-tab="datasets" role="tab" aria-selected="true">Datasets</button>
+          <button type="button" class="rssi-picker-tab"           data-tab="surveys"  role="tab" aria-selected="false">Surveys</button>
+          <button type="button" class="rssi-picker-tab"           data-tab="mm"       role="tab" aria-selected="false">MM Projects</button>
+        </div>
+        <div class="rssi-picker-body">
+          <div class="rssi-picker-pane is-active" data-pane="datasets" role="tabpanel">
+            <div class="rssi-picker-loading">Loading…</div>
+          </div>
+          <div class="rssi-picker-pane"           data-pane="surveys"  role="tabpanel" hidden>
+            <div class="rssi-picker-loading">Loading…</div>
+          </div>
+          <div class="rssi-picker-pane"           data-pane="mm"       role="tabpanel" hidden>
+            <div class="rssi-picker-loading">Loading…</div>
+          </div>
         </div>
       </div>
     </div>
