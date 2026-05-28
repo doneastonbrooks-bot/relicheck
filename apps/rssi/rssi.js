@@ -280,8 +280,11 @@
     document.getElementById('rssiBadge').textContent = d.verdict;
     document.getElementById('rssiVerdictPill').textContent = 'v · ' + d.verdict.toLowerCase();
 
-    /* ─── v2 lens triplet (Spec §3.2 + §3.4) ─── */
-    renderLensTriplet(d.rssi || {});
+    /* ─── v2 lens triplet + float + lens-row bands + pulse-on-change ───
+       _paintScoreSummary writes the inline triplet AND the floating
+       sticky bar AND the lens explain-row band pills in the same
+       tick. Single source of truth; surfaces cannot drift. */
+    _paintScoreSummary(d);
     /* ─── v2 disagreement readout (Spec §3.5) ─── */
     renderDisagreementReadout(d.rssi || {});
     document.getElementById('rssiItemCount').textContent  = d.item_count + ' items';
@@ -415,23 +418,73 @@
   }
 
   /* ────────────────────────────────────────────────────────────
-   *  v2 lens triplet rendering (Spec §3.2, §3.4, §3.6).
+   *  Single source of truth for every score-summary surface.
    *
-   *  Paints the three lens scores into chips next to the ring.
-   *  Shows the "Limited evidence" pill on Validity-Forward when the
-   *  engine reports validity_forward_capped (Spec §3.6 — criterion
-   *  sub-component skipped; not a validity failure).
+   *  Writes both the inline triplet (next to the ring) AND the
+   *  floating sticky bar (Tier 1 ring + lens chips + Tier 2 eight
+   *  domain dots) AND the three lens explain-row band pills in the
+   *  same tick. Inline + float read from one `d` object, so they
+   *  cannot drift between renders. Pulse-on-change diff against
+   *  `_prevPaint` so toggles produce a soft 300ms tint on values
+   *  that actually moved; first render has no `_prevPaint` so no
+   *  initial-render pulse.
+   *
+   *  Called from render(). The old name `renderLensTriplet` is kept
+   *  as a synonym so the render() call site continues to read clean.
    * ──────────────────────────────────────────────────────────── */
-  function renderLensTriplet(rssi) {
+  let _prevPaint = null;
+
+  function renderLensTriplet(rssi) { _paintScoreSummary(lastRenderedData || { rssi: rssi, strength: null, components: [] }); }
+
+  function _paintScoreSummary(d) {
+    const rssi = d.rssi || {};
+    const components = d.components || [];
+
+    // Build a flat snapshot of every paintable value. Comparing this
+    // against `_prevPaint` produces the pulse-targets.
+    const snap = {
+      strength: d.strength,
+      lens_psychometric_core:   rssi.psychometric_core,
+      lens_respondent_centered: rssi.respondent_centered,
+      lens_validity_forward:    rssi.validity_forward,
+      cap: !!rssi.validity_forward_capped,
+    };
+    components.forEach(function (c) { snap['dom_' + c.key] = c.skipped ? null : c.score; });
+
+    const hadPrev = _prevPaint !== null;
+    function changed(k) { return hadPrev && _prevPaint[k] !== snap[k]; }
+    function pulseEl(id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('pulse-update');
+      // Force reflow so the animation restarts on rapid re-triggers.
+      void el.offsetWidth;
+      el.classList.add('pulse-update');
+    }
+    function pulseChanged(key, ids) {
+      if (!changed(key)) return;
+      ids.forEach(pulseEl);
+    }
+
+    /* ── Inline lens chips ─────────────────────────────────────── */
     const LENS_KEYS = ['psychometric_core', 'respondent_centered', 'validity_forward'];
     LENS_KEYS.forEach(function (k) {
-      const el = document.getElementById('rssiLens_' + k);
-      if (!el) return;
       const v = rssi[k];
-      el.textContent = (typeof v === 'number') ? String(v) : '—';
+      const inlineEl = document.getElementById('rssiLens_' + k);
+      const floatEl  = document.getElementById('rssiFloatLens_' + k);
+      const txt = (typeof v === 'number') ? String(v) : '—';
+      if (inlineEl) inlineEl.textContent = txt;
+      if (floatEl)  floatEl.textContent  = txt;
     });
-    const cap = document.getElementById('rssiLensCapPill');
-    if (cap) {
+
+    /* ── Cap pill (inline triplet + float + lens explain row) ──── */
+    const capPills = [
+      document.getElementById('rssiLensCapPill'),
+      document.getElementById('rssiFloatCapPill'),
+      document.getElementById('explainCapPill_validity_forward'),
+    ];
+    capPills.forEach(function (cap) {
+      if (!cap) return;
       if (rssi.validity_forward_capped) {
         cap.hidden = false;
         cap.setAttribute('title', 'Criterion validity sub-component was skipped (no criterion column tagged). This is a data-availability cap, not a validity failure. Spec §3.6.');
@@ -439,8 +492,65 @@
         cap.hidden = true;
         cap.removeAttribute('title');
       }
-    }
+    });
+
+    /* No float ring: the Respondent-Centered chip carries that number,
+       so a ring in the float would be redundant. The inline hero
+       keeps the full ring. */
+
+    /* ── Float domain dots ─────────────────────────────────────── */
+    components.forEach(function (c) {
+      const scoreEl = document.getElementById('rssiFloatDot_' + c.key);
+      if (scoreEl) scoreEl.textContent = c.skipped ? '—' : String(c.score);
+      // The mark dot color tracks status — query by the surrounding row.
+      const wrapEl = scoreEl ? scoreEl.closest('.rssi-float-dot') : null;
+      if (wrapEl) {
+        wrapEl.className = 'rssi-float-dot status-' + (c.skipped ? 'skipped' : c.status);
+      }
+    });
+
+    /* ── Lens explain-row band pills (static body lives in PHP) ── */
+    LENS_KEYS.forEach(function (k) {
+      const v = rssi[k];
+      const bandEl = document.getElementById('explainBand_lens_' + k);
+      if (!bandEl) return;
+      if (typeof v !== 'number') {
+        bandEl.textContent = '—';
+        bandEl.className = 'explain-band';
+        return;
+      }
+      const b = bandFor(v);
+      bandEl.textContent = b.label;
+      bandEl.className = 'explain-band status-' + b.status;
+    });
+
+    /* ── Pulse changed values (both surfaces in sync) ──────────── */
+    /* The float has no ring; only the inline ring pulses on `strength`. */
+    pulseChanged('strength', ['rssiScore']);
+    LENS_KEYS.forEach(function (k) {
+      pulseChanged('lens_' + k, ['rssiLens_' + k, 'rssiFloatLens_' + k]);
+    });
+    components.forEach(function (c) {
+      // Inline dim card score lives inside .dim-mini; the float dot.
+      const inlineDim = document.getElementById('dim-' + c.key);
+      const inlineNum = inlineDim ? inlineDim.querySelector('.dim-mini-num') : null;
+      if (changed('dom_' + c.key)) {
+        if (inlineNum) {
+          inlineNum.classList.remove('pulse-update');
+          void inlineNum.offsetWidth;
+          inlineNum.classList.add('pulse-update');
+        }
+        pulseEl('rssiFloatDot_' + c.key);
+      }
+    });
+
+    _prevPaint = snap;
   }
+
+  /* Reset the paint cache so the next render() does not pulse. Used
+     when a fresh dataset arrives (upload → score → handoff) and the
+     "change" semantics no longer apply against the prior dataset. */
+  function _resetPaintCache() { _prevPaint = null; }
 
   /* ────────────────────────────────────────────────────────────
    *  v2 disagreement readout (Spec §3.5).
@@ -633,6 +743,9 @@
     const src = (result && typeof result === 'object') ? result : SAMPLE;
     lastRenderedData = normaliseBlock({ payload: src, addedAt: Date.now() });
     if (!result || typeof result !== 'object') lastRenderedData.isSample = true;
+    // Fresh dataset → reset pulse cache so the first paint does not
+    // diff against the prior dataset's values.
+    _resetPaintCache();
     render(lastRenderedData);
     // The overview view is the default after upload — mount the
     // interactive Cronbach analyzer next to the RSSI score.
@@ -1066,6 +1179,123 @@
 
     /* Lens-help "?" popover toggle (Spec §3.5 mandate). */
     wireLensHelp();
+    /* Per-chip info icons — single shared popover, custom (not native title). */
+    wireLensInfoIcons();
+    /* Floating score display: intersection observer + collapse toggle. */
+    wireScoreFloat();
+  }
+
+  /* Per-lens info popover. Reuses the same custom-popover pattern as the
+     shared "?" affordance: click toggles, ESC + outside-click dismiss.
+     A single popover element gets repositioned + populated per click —
+     no native title (1s delay, no touch, no styling). Copy is locked
+     to the spec §3.2 weight-vector descriptions in short form. */
+  const LENS_INFO_COPY = {
+    psychometric_core:
+      'Weights the heavyweight statistics most: reliability, validity, factor structure. Captures how statistically sound the instrument is.',
+    respondent_centered:
+      'Weights item quality, bias and clarity, and response design most. Captures how well the survey works for the people taking it.',
+    validity_forward:
+      'Treats validity as the most important property, weighting validity, construct alignment, and bias. Captures whether there is evidence the survey measures what it claims.',
+  };
+  function wireLensInfoIcons() {
+    const pop = document.getElementById('rssiLensInfoPopover');
+    const triplet = document.getElementById('rssiLensTriplet');
+    if (!pop || !triplet || pop._rssiWired) return;
+    pop._rssiWired = true;
+    let activeBtn = null;
+    function close() {
+      pop.hidden = true;
+      if (activeBtn) activeBtn.setAttribute('aria-expanded', 'false');
+      activeBtn = null;
+      document.removeEventListener('keydown', onKey);
+      document.removeEventListener('click', onOutside, true);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    function onOutside(e) {
+      if (e.target === activeBtn || pop.contains(e.target)) return;
+      if (e.target.classList && e.target.classList.contains('lens-info-icon')) return;
+      close();
+    }
+    triplet.querySelectorAll('.lens-info-icon').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const lens = btn.getAttribute('data-lens-info');
+        if (activeBtn === btn) { close(); return; }
+        // Close any prior open popover first.
+        if (activeBtn) activeBtn.setAttribute('aria-expanded', 'false');
+        activeBtn = btn;
+        pop.textContent = LENS_INFO_COPY[lens] || '';
+        pop.hidden = false;
+        btn.setAttribute('aria-expanded', 'true');
+        // Position relative to the triplet container, just below the
+        // clicked icon. Bounds-check against the viewport so the popover
+        // never spills past the right edge — shift left if needed. CSS
+        // handles the visual styling; we set only position offsets.
+        const ir = btn.getBoundingClientRect();
+        const tr = triplet.getBoundingClientRect();
+        // Measure popover width by briefly painting it offscreen.
+        pop.style.visibility = 'hidden';
+        pop.style.left = '0px';
+        pop.style.top  = '0px';
+        const popW = pop.offsetWidth || 280;
+        pop.style.visibility = '';
+        let desiredLeft = (ir.left - tr.left) - 8;
+        // Don't let the popover's right edge spill past the viewport's
+        // right edge (with an 8px gutter). Convert to viewport coords
+        // by adding tr.left back, comparing to window.innerWidth, then
+        // converting the clamped value back to container-relative.
+        const popViewportLeft = desiredLeft + tr.left;
+        const overflow = (popViewportLeft + popW) - (window.innerWidth - 8);
+        if (overflow > 0) desiredLeft -= overflow;
+        if (desiredLeft < -tr.left) desiredLeft = -tr.left + 8;
+        pop.style.left = desiredLeft + 'px';
+        pop.style.top  = (ir.bottom - tr.top + 8) + 'px';
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('click', onOutside, true);
+      });
+    });
+  }
+
+  /* Floating score display. Engages when the inline hero scrolls out of
+     view (intersection observer with top-< 0 check so we only show when
+     the user has scrolled BELOW the hero, not above it). The float
+     itself is `position: fixed` in the CSS; we only flip `hidden`. */
+  function wireScoreFloat() {
+    const float = document.getElementById('rssiScoreFloat');
+    const hero  = document.querySelector('.rssi-hero-score');
+    const collapseBtn = document.getElementById('rssiFloatCollapse');
+    const tier2 = document.getElementById('rssiFloatTier2');
+    if (!float || !hero) return;
+
+    if ('IntersectionObserver' in window && !float._rssiObs) {
+      float._rssiObs = new IntersectionObserver(function (entries) {
+        const e = entries[0];
+        if (!e) return;
+        // Show the float only when the hero has scrolled UPWARD out of
+        // view (top above the viewport). On initial page load the hero
+        // is visible (isIntersecting = true) so the float stays hidden.
+        const heroAbove = e.boundingClientRect.top < 0 && !e.isIntersecting;
+        const shouldShow = heroAbove
+          && document.getElementById('rssiAppRoot') &&
+             document.getElementById('rssiAppRoot').getAttribute('data-stage') === 'dashboard';
+        float.hidden = !shouldShow;
+        float.setAttribute('aria-hidden', shouldShow ? 'false' : 'true');
+      }, { threshold: 0 });
+      float._rssiObs.observe(hero);
+    }
+
+    if (collapseBtn && !collapseBtn._rssiWired) {
+      collapseBtn._rssiWired = true;
+      collapseBtn.addEventListener('click', function () {
+        const expanded = collapseBtn.getAttribute('aria-expanded') === 'true';
+        const next = !expanded;
+        collapseBtn.setAttribute('aria-expanded', String(next));
+        if (tier2) tier2.hidden = !next;
+        collapseBtn.textContent = next ? '▴' : '▾';
+        collapseBtn.setAttribute('title', next ? 'Collapse domain cards' : 'Show domain cards');
+      });
+    }
   }
 
   function wireLensHelp() {

@@ -1084,3 +1084,222 @@
   .rssi-app .lens-help { position: static; margin-top: 4px; }
   .rssi-app .lens-help-popover { right: auto; left: 0; }
 }
+
+/* =============================================================================
+   Per-lens info icons (Change 3).
+   One small "ⓘ" next to each lens chip label. Click toggles a single
+   shared popover (rssiLensInfoPopover) positioned next to the clicked
+   icon. Custom popover pattern — NOT browser-native title (no 1s
+   delay, styled, touch-reliable for demos).
+   ============================================================================= */
+.rssi-app .lens-info-icon {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0 0 0 4px;
+  font: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  color: var(--text-3);
+  cursor: pointer;
+  vertical-align: baseline;
+}
+.rssi-app .lens-info-icon:hover { color: var(--blue); }
+.rssi-app .lens-info-icon[aria-expanded="true"] { color: var(--blue); }
+
+.rssi-app .lens-info-popover {
+  position: absolute;
+  width: min(280px, 90vw);
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text);
+  z-index: 25;
+}
+.rssi-app .lens-info-popover[hidden] { display: none; }
+
+/* Explain-row variant for the three lens explanations. Same visual
+   shell as a domain row, but sits in its own section above the eight
+   domain rows. Subtle background tint distinguishes them as a group
+   without overpowering. */
+.rssi-app .explain-row.explain-lens {
+  background: rgba(0, 122, 255, 0.04);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 4px;
+}
+.rssi-app .explain-row.explain-lens .explain-label {
+  color: var(--blue);
+}
+
+/* =============================================================================
+   Pulse-on-change (Change 1 visual cue).
+   Applied via .pulse-update class by _paintScoreSummary when a value
+   differs from the prior render. Class auto-removes via animation; the
+   reflow trick in JS lets rapid re-triggers restart the animation.
+   Soft 300ms tint — not a flash; not a strobe.
+   ============================================================================= */
+@keyframes rssi-pulse {
+  0%   { background-color: rgba(0, 122, 255, 0.22); }
+  100% { background-color: transparent; }
+}
+.rssi-app .pulse-update {
+  animation: rssi-pulse 350ms ease-out;
+  border-radius: 4px;
+}
+
+/* =============================================================================
+   Floating score display (Change 1).
+
+   Position: fixed at the top of the viewport. Becomes visible (via JS
+   intersection observer + `hidden` flip) when the inline hero scrolls
+   above the viewport on the dashboard stage. Two tiers:
+
+     Tier 1 — ring + 3 lens chips + collapse toggle (always visible
+              when the float engages).
+     Tier 2 — eight compact domain dots. Expanded by default; the
+              user can collapse via the toggle.
+
+   Defaults match the user directive: all eight domains visible by
+   default; collapse is the escape hatch, not the default state.
+   ============================================================================= */
+.rssi-app .rssi-score-float {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 30;
+  background: var(--surface);
+  border-bottom: 1px solid var(--hairline-strong);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.08);
+}
+.rssi-app .rssi-score-float[hidden] { display: none; }
+
+.rssi-app .rssi-score-float-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 10px 24px;
+}
+
+/* Tier 1 — three lens chips + collapse toggle. No ring: the
+   Respondent-Centered chip carries that number, so a ring in the
+   float would be redundant. The inline hero keeps the full ring. */
+.rssi-app .rssi-score-float-tier1 {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rssi-app .rssi-float-lens {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.rssi-app .rssi-float-lens-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rssi-app .rssi-float-lens-score {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.rssi-app .rssi-float-lens-headline .rssi-float-lens-label,
+.rssi-app .rssi-float-lens-headline .rssi-float-lens-score {
+  color: var(--blue);
+}
+
+.rssi-app .rssi-float-collapse {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  color: var(--text-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.rssi-app .rssi-float-collapse:hover { color: var(--blue); border-color: var(--blue); }
+
+/* Tier 2 — eight compact domain dots */
+.rssi-app .rssi-score-float-tier2 {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+.rssi-app .rssi-score-float-tier2[hidden] { display: none; }
+.rssi-app .rssi-float-dot {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--surface-muted);
+  border-radius: 6px;
+  min-width: 0;
+}
+.rssi-app .rssi-float-dot-mark {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #C7CDD4;
+}
+.rssi-app .rssi-float-dot-label {
+  font-size: 10.5px;
+  color: var(--text-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rssi-app .rssi-float-dot-score {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+.rssi-app .rssi-float-dot.status-strong   .rssi-float-dot-mark { background: var(--good); }
+.rssi-app .rssi-float-dot.status-good     .rssi-float-dot-mark { background: var(--blue); }
+.rssi-app .rssi-float-dot.status-fair     .rssi-float-dot-mark { background: var(--fair); }
+.rssi-app .rssi-float-dot.status-weak     .rssi-float-dot-mark { background: var(--weak); }
+.rssi-app .rssi-float-dot.status-skipped  .rssi-float-dot-mark { background: #C7CDD4; }
+.rssi-app .rssi-float-dot.status-skipped  .rssi-float-dot-score { color: var(--text-3); }
+
+/* Float responsive: narrow viewports stack tier 2 into 4×2 then 2×4 */
+@media (max-width: 1100px) {
+  .rssi-app .rssi-score-float-tier2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .rssi-app .rssi-score-float-inner { padding: 8px 14px; }
+  .rssi-app .rssi-score-float-tier1 { gap: 10px; flex-wrap: wrap; }
+  .rssi-app .rssi-float-lens-label { font-size: 9.5px; }
+  .rssi-app .rssi-float-lens-score { font-size: 16px; }
+  .rssi-app .rssi-score-float-tier2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

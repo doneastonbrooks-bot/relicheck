@@ -449,17 +449,30 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
                  criterion sub-component was skipped (Spec §3.6 cap). -->
             <div class="lens-triplet" id="rssiLensTriplet" role="group" aria-label="Three RSSI lens scores">
               <div class="lens-chip" data-lens="psychometric_core">
-                <span class="lens-chip-label">Psychometric Core</span>
+                <span class="lens-chip-label">Psychometric Core
+                  <button type="button" class="lens-info-icon" data-lens-info="psychometric_core" aria-label="About Psychometric Core" aria-expanded="false">ⓘ</button>
+                </span>
                 <span class="lens-chip-score" id="rssiLens_psychometric_core">—</span>
               </div>
               <div class="lens-chip lens-chip-headline" data-lens="respondent_centered">
-                <span class="lens-chip-label">Respondent-Centered <span class="lens-chip-badge">Headline</span></span>
+                <span class="lens-chip-label">Respondent-Centered <span class="lens-chip-badge">Headline</span>
+                  <button type="button" class="lens-info-icon" data-lens-info="respondent_centered" aria-label="About Respondent-Centered" aria-expanded="false">ⓘ</button>
+                </span>
                 <span class="lens-chip-score" id="rssiLens_respondent_centered">—</span>
               </div>
               <div class="lens-chip" data-lens="validity_forward">
-                <span class="lens-chip-label">Validity-Forward <span class="lens-cap-pill" id="rssiLensCapPill" hidden>Limited evidence</span></span>
+                <span class="lens-chip-label">Validity-Forward <span class="lens-cap-pill" id="rssiLensCapPill" hidden>Limited evidence</span>
+                  <button type="button" class="lens-info-icon" data-lens-info="validity_forward" aria-label="About Validity-Forward" aria-expanded="false">ⓘ</button>
+                </span>
                 <span class="lens-chip-score" id="rssiLens_validity_forward">—</span>
               </div>
+
+              <!-- Single shared popover element for per-chip info icons.
+                   Reuses the custom popover pattern (NOT browser-native title)
+                   for consistency with the existing "?" affordance, no 1s
+                   delay, and reliable touch support. Content populated by JS
+                   based on which info icon was clicked. -->
+              <div class="lens-info-popover" id="rssiLensInfoPopover" role="dialog" hidden></div>
               <button type="button" class="lens-help" id="rssiLensHelp"
                       aria-label="About the three RSSI lenses"
                       aria-expanded="false" aria-controls="rssiLensHelpPopover">?</button>
@@ -515,6 +528,22 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
                  When null, no row exists; no empty container, no
                  "lenses agree" filler. Built to the engine's null contract. -->
             <div id="rssiDisagreementSlot"></div>
+
+            <!-- Three lens explanation rows. Body copy is static (per Spec
+                 §3.2 weight-vector descriptions); band pill updates with
+                 bandFor() against each lens's current score. -->
+            <div class="explain-row explain-lens" data-explain="lens_psychometric_core">
+              <div class="explain-head"><span class="explain-label">Psychometric Core lens</span><span class="explain-band" id="explainBand_lens_psychometric_core">—</span></div>
+              <p class="explain-text">Weights reliability, validity, factor structure, and construct alignment most, with the respondent-side domains contributing less. Captures how statistically sound the instrument is. A high score means scales hold together, constructs separate cleanly, and the data is factorable.</p>
+            </div>
+            <div class="explain-row explain-lens" data-explain="lens_respondent_centered">
+              <div class="explain-head"><span class="explain-label">Respondent-Centered lens <span class="lens-chip-badge">Headline</span></span><span class="explain-band" id="explainBand_lens_respondent_centered">—</span></div>
+              <p class="explain-text">Weights item quality, bias and clarity, and response design most, with the statistical domains contributing less. Captures how well the survey works for the people taking it. A high score means items read clearly, response scales are well-designed, and respondents engage seriously.</p>
+            </div>
+            <div class="explain-row explain-lens" data-explain="lens_validity_forward">
+              <div class="explain-head"><span class="explain-label">Validity-Forward lens <span class="lens-cap-pill" id="explainCapPill_validity_forward" hidden>Limited evidence</span></span><span class="explain-band" id="explainBand_lens_validity_forward">—</span></div>
+              <p class="explain-text">Treats validity as the most important property, weighting validity, construct alignment, and bias and clarity most. Captures whether there is evidence the survey measures what it claims. A high score means convergent and discriminant validity hold, scales align with their constructs, and items are unbiased.</p>
+            </div>
 
             <!-- Eight canonical domain rows, Spec §2 order.
                  JS populates band + interpretation copy. -->
@@ -629,6 +658,94 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
           .rssi-hero-row { grid-template-columns: 1fr; }
         }
       </style>
+
+      <!-- ────────────────────────────────────────────────────────────
+           Floating score display.
+           Engages on scroll past the inline hero (intersection observer
+           in rssi.js). Tier 1 (ring + 3 lens chips) always visible when
+           engaged; Tier 2 (8 domain dots) expanded by default with a
+           collapse toggle. Both surfaces — inline AND float — are
+           written by the same _paintLensSummary helper in the same
+           render() call, so values cannot drift.
+           ──────────────────────────────────────────────────────────── -->
+      <div class="rssi-score-float" id="rssiScoreFloat" hidden aria-hidden="true">
+        <div class="rssi-score-float-inner">
+
+          <div class="rssi-score-float-tier1">
+            <!-- Ring is intentionally absent from the float: the ring's
+                 number is the Respondent-Centered score, which already
+                 shows in the lens chip below. Keeping it inline at the
+                 top of the page; here it would be redundant. -->
+            <div class="rssi-float-lens" data-lens="psychometric_core">
+              <span class="rssi-float-lens-label">Psychometric Core</span>
+              <span class="rssi-float-lens-score" id="rssiFloatLens_psychometric_core">—</span>
+            </div>
+            <div class="rssi-float-lens rssi-float-lens-headline" data-lens="respondent_centered">
+              <span class="rssi-float-lens-label">Respondent-Centered</span>
+              <span class="rssi-float-lens-score" id="rssiFloatLens_respondent_centered">—</span>
+            </div>
+            <div class="rssi-float-lens" data-lens="validity_forward">
+              <span class="rssi-float-lens-label">Validity-Forward
+                <span class="lens-cap-pill" id="rssiFloatCapPill" hidden>Limited evidence</span>
+              </span>
+              <span class="rssi-float-lens-score" id="rssiFloatLens_validity_forward">—</span>
+            </div>
+
+            <button type="button" class="rssi-float-collapse" id="rssiFloatCollapse"
+                    aria-expanded="true" aria-controls="rssiFloatTier2"
+                    title="Collapse domain cards">▴</button>
+          </div>
+
+          <div class="rssi-score-float-tier2" id="rssiFloatTier2">
+            <!-- Eight compact domain dots. Order matches Spec §2:
+                 core psychometrics first (Reliability, Validity, Construct
+                 Alignment, Factor Readiness), then instrument design (Item
+                 / Prompt Quality, Bias & Clarity, Scale Structure, Response
+                 Scale Review). Each dot's color reflects status band; score
+                 updates in real time on toggle. -->
+            <div class="rssi-float-dot" data-domain="reliability" title="Reliability">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Reliability</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_reliability">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="validity" title="Validity">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Validity</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_validity">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="construct_alignment" title="Construct Alignment">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Construct</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_construct_alignment">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="factor_readiness" title="Factor Readiness">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Factor</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_factor_readiness">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="item_prompt_quality" title="Item / Prompt Quality">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Item Q</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_item_prompt_quality">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="bias_clarity" title="Bias &amp; Clarity Review">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Bias</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_bias_clarity">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="scale_structure" title="Scale Structure">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Scale</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_scale_structure">—</span>
+            </div>
+            <div class="rssi-float-dot" data-domain="response_scale_review" title="Response Scale Review">
+              <span class="rssi-float-dot-mark"></span>
+              <span class="rssi-float-dot-label">Resp Scale</span>
+              <span class="rssi-float-dot-score" id="rssiFloatDot_response_scale_review">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <!-- Mini diagnostic dimension graphs — sit directly under the tier scale -->
       <div class="dim-grid" id="rssiDimGrid"></div>
