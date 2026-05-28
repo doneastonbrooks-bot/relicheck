@@ -37,10 +37,28 @@ function dts_question_id(int $index, string $rawName): string
  *
  * `col_index` lets the caller iterate dataset rows and build correct answers.
  */
-function dts_build_questions_and_index(array $columnMeta, array $rows): array
+function dts_build_questions_and_index(array $columnMeta, array $rows, array $dsSettings = []): array
 {
     $questions = [];
     $colIndex  = [];
+
+    // Dataset-wide Likert anchor count (KNOWN_ISSUES.md §4 #4b). Baked onto
+    // each synthesized Likert question as q.likertPoints so the downstream
+    // _build_dataset.php transform emits v.anchor_count via the same
+    // per-question→survey-default fallback the Survey Builder path uses.
+    // Omit when absent/invalid — preserves the pre-#4 §4G/§4D skip behavior
+    // for legacy uploads with no recorded likertPoints rather than guessing
+    // a default. Future per-column override slot: column_meta.likertPoints
+    // (not read today; placeholder for the heterogeneous-Likert ceiling
+    // documented under §4b in KNOWN_ISSUES.md).
+    $dsLikertPoints = null;
+    if (array_key_exists('likertPoints', $dsSettings)) {
+        $kp = $dsSettings['likertPoints'];
+        if (is_numeric($kp)) {
+            $kpInt = (int)$kp;
+            if ($kpInt >= 2 && $kpInt <= 11) $dsLikertPoints = $kpInt;
+        }
+    }
 
     foreach ($columnMeta as $i => $c) {
         if (!is_array($c)) continue;
@@ -63,6 +81,16 @@ function dts_build_questions_and_index(array $columnMeta, array $rows): array
             // _build_dataset.php uses for q.construct. KNOWN_ISSUES.md §4 #1b.
             $construct = isset($c['construct']) ? trim((string)$c['construct']) : '';
             if ($construct !== '') $q['construct'] = $construct;
+            // Anchor count: future per-column override (column_meta.likertPoints)
+            // wins; falls back to dataset-wide settings.likertPoints. Omit when
+            // both are absent.
+            $colLikertPoints = null;
+            if (array_key_exists('likertPoints', $c) && is_numeric($c['likertPoints'])) {
+                $kpInt = (int)$c['likertPoints'];
+                if ($kpInt >= 2 && $kpInt <= 11) $colLikertPoints = $kpInt;
+            }
+            $effLikertPoints = $colLikertPoints ?? $dsLikertPoints;
+            if ($effLikertPoints !== null) $q['likertPoints'] = $effLikertPoints;
             $questions[] = $q;
             $colIndex[] = ['i' => (int)$i, 'qid' => $qid, 'type' => 'likert'];
         } elseif ($type === 'single') {

@@ -41,7 +41,7 @@ if (!is_array($columnMeta)) $columnMeta = [];
 if (!is_array($dsSettings)) $dsSettings = [];
 if (!is_array($dataRows))   $dataRows   = [];
 
-$built     = dts_build_questions_and_index($columnMeta, $dataRows);
+$built     = dts_build_questions_and_index($columnMeta, $dataRows, $dsSettings);
 $questions = $built['questions'];
 $colIndex  = $built['col_index'];
 

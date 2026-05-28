@@ -25,6 +25,19 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
     // map is the fallback for surveys built without per-question reverse
     // tags but with the wizard's scales step completed.
     $reverseMap = [];
+    // Survey-wide Likert anchor count fallback (KNOWN_ISSUES.md §4 #4).
+    // Sourced from surveys.settings.likertPoints (Survey Builder writes this
+    // at survey creation; dataset-import surveys inherit it from the
+    // dataset's settings via create_from_dataset.php). Per-question
+    // q.likertPoints (Builder per-item override) wins; this map is the
+    // fallback. Omit anchor_count from the emit when both are absent —
+    // preserves the pre-#4 engine skip behavior on §4G subs 1/2/4, §4E
+    // sub-3, and §4D normalization rather than substituting a default.
+    $surveyLikertPoints = null;
+    if (array_key_exists('likertPoints', $settings) && is_numeric($settings['likertPoints'])) {
+        $kpInt = (int)$settings['likertPoints'];
+        if ($kpInt >= 2 && $kpInt <= 11) $surveyLikertPoints = $kpInt;
+    }
     if (isset($settings['scales']) && is_array($settings['scales'])) {
         foreach ($settings['scales'] as $vname => $row) {
             if (!is_array($row)) continue;
@@ -66,6 +79,19 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
         $hasBuilderReverse = array_key_exists('reverse', $q);
         $builderReverse    = $hasBuilderReverse ? !empty($q['reverse']) : null;
 
+        // Per-question Likert anchor count override (q.likertPoints) wins
+        // over the survey-level default ($surveyLikertPoints). Same
+        // presence-of-key precedence as construct/reverse — but here the
+        // contract is value-based (omit when invalid) because the Builder
+        // never writes a sentinel "no opinion" value; it either writes a
+        // number from the dropdown or omits the key entirely.
+        $questionLikertPoints = null;
+        if (array_key_exists('likertPoints', $q) && is_numeric($q['likertPoints'])) {
+            $kpInt = (int)$q['likertPoints'];
+            if ($kpInt >= 2 && $kpInt <= 11) $questionLikertPoints = $kpInt;
+        }
+        $effLikertPoints = $questionLikertPoints ?? $surveyLikertPoints;
+
         // Collect one raw answer per response (null if missing)
         $raw = array_map(fn($r) => $r['answers'][$qid] ?? null, $responses);
 
@@ -98,6 +124,12 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
             } elseif (array_key_exists($vname, $reverseMap)) {
                 $var['reverse_coded'] = $reverseMap[$vname];
             }
+            // Anchor count (KNOWN_ISSUES.md §4 #4). Engine accepts
+            // `anchor_count` (int) — minimal shape per Phase 1 Q5. Omit
+            // when neither the per-question override nor the survey-level
+            // default is set, so legacy records preserve the pre-#4
+            // skip-and-rescale behavior on §4G/§4E/§4D.
+            if ($effLikertPoints !== null) $var['anchor_count'] = $effLikertPoints;
             $variables[] = $var;
 
         } elseif ($type === 'single') {
@@ -192,6 +224,12 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
                 } elseif (array_key_exists('q_' . $qid, $reverseMap)) {
                     $var['reverse_coded'] = $reverseMap['q_' . $qid];
                 }
+                // Matrix anchor count — single-level fallback per Phase 1
+                // Q6: parent q.likertPoints (already resolved into
+                // $effLikertPoints above the type dispatch) → survey-level
+                // default. Builder UI sets Likert points at the matrix-
+                // question level, so sub-rows share one anchor count.
+                if ($effLikertPoints !== null) $var['anchor_count'] = $effLikertPoints;
                 $variables[] = $var;
             }
 
