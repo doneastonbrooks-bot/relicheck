@@ -387,7 +387,7 @@ In v2 the standalone surface only uses `scaleCount` for the meta strip ("10 item
 
 ## 19. Studio-mount RSSI panel (render.php) has stale sidebar anchors that match neither v1 nor v2
 
-**Surfaced:** §16 v2 report-surface migration §17 three-step check (2026-05-27).
+**Surfaced:** §16 v2 report-surface migration §17 three-step check (2026-05-27). **RESOLVED 2026-05-28** by bringing render.php up to v2 parity: 8 canonical sidebar items (was 6), all anchors aligned to V2_DOMAINS keys, lens triplet + per-chip ⓘ + shared "?" + explain panel + disagreement readout slot added. The float bar, refined-scale print section, and interactive analyzer were intentionally NOT added — render.php is the view-only project report surface; those features belong on the analyst-side standalone dashboard.
 
 **Problem.** [apps/rssi/render.php](apps/rssi/render.php) is the studio-mount version of the RSSI panel (a separate surface from the standalone at [rssi-upload.php](rssi-upload.php)). Its sidebar nav points to anchors that don't correspond to any current taxonomy:
 
