@@ -319,6 +319,21 @@ $rssi_initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_
       </div>
     </section>
 
+    <!-- §8.1 methods paragraph card. Engine-composed research-methods
+         prose (KNOWN_ISSUES #21 fix). Hidden when null. Same DOM ids as
+         the standalone dashboard so rssi.js paints both surfaces
+         identically. -->
+    <section class="card rssi-methods-paragraph" id="rssiMethodsParagraph" hidden aria-hidden="true">
+      <div class="methods-head">
+        <h3>Methods paragraph</h3>
+        <button type="button" class="methods-copy-btn" id="rssiMethodsCopyBtn" aria-label="Copy methods paragraph to clipboard">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke-linecap="round"/></svg>
+          Copy
+        </button>
+      </div>
+      <p class="methods-body" id="rssiMethodsBody">—</p>
+    </section>
+
     <!-- Top issues -->
     <div class="section-head">
       <div>

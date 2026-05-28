@@ -817,6 +817,74 @@
 .rssi-print-footer { display: none; }
 .rssi-refined-scale-print { display: none; }
 
+/* =============================================================================
+   §8.1 methods paragraph card (KNOWN_ISSUES #21 fix).
+   Engine-composed research-methods prose with copy-to-clipboard.
+   Visible on screen; ALSO appears on the saved PDF — the spec says
+   this is the most useful artifact for researchers, so it gets
+   carried into the handout.
+   ============================================================================= */
+.rssi-app .rssi-methods-paragraph {
+  margin-bottom: 22px;
+  padding: 20px 24px;
+}
+.rssi-app .rssi-methods-paragraph[hidden] { display: none; }
+.rssi-app .rssi-methods-paragraph .methods-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.rssi-app .rssi-methods-paragraph .methods-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.rssi-app .methods-copy-btn {
+  appearance: none; -webkit-appearance: none;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 8px;
+  font: inherit; font-size: 12.5px; font-weight: 500;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: color 0.12s, border-color 0.12s, background 0.12s;
+}
+.rssi-app .methods-copy-btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue-soft-bg);
+}
+.rssi-app .methods-copy-btn.is-copied {
+  color: var(--good);
+  border-color: var(--good);
+  background: rgba(52, 199, 89, 0.08);
+}
+.rssi-app .rssi-methods-paragraph .methods-body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text);
+  /* Slight serif tilt to differentiate from the dashboard copy and
+     hint at the academic-paper destination. */
+  font-family: ui-serif, Georgia, 'Times New Roman', serif;
+  white-space: pre-wrap;
+}
+@media print {
+  .rssi-app .rssi-methods-paragraph {
+    display: block !important;
+    break-before: auto;
+    page-break-inside: avoid;
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+  .rssi-app .rssi-methods-paragraph[hidden] { display: none !important; }
+  .rssi-app .methods-copy-btn { display: none !important; }
+}
+
 /* -------------------- Responsive: collapse rail on narrow screens -------------------- */
 @media (max-width: 1280px) {
   .rssi-app .app { grid-template-columns: 240px 1fr 300px; }

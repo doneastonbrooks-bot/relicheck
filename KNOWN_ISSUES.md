@@ -439,7 +439,9 @@ Display-side note: the v2 standalone surface honors the engine's null contract c
 
 ## 21. Spec §8.1 `methods_paragraph` is not emitted by the engine
 
-**Surfaced:** §16 v2 handout-PDF Phase 1 audit (2026-05-27).
+**Surfaced:** §16 v2 handout-PDF Phase 1 audit (2026-05-27). **RESOLVED 2026-05-28** by adding `composeMethodsParagraph` to the engine and emitting at the top of `lensResult`. Composite α + composite ω only (per-scale α/ω would require iterating `computeReliability` over distinct constructs; logged as a separate engine extension below). Both surfaces (rssi-upload.php dashboard + apps/rssi/render.php report viewer) render the paragraph in a serif "Methods paragraph" card with a copy-to-clipboard button. Print stylesheet carries it into the saved PDF.
+
+**Per-scale α/ω follow-up.** The current composer reports composite α/ω across all Likert items. A real research methods paragraph often wants per-scale reliability ranges ("α ranged from 0.78 to 0.91 across the three scales"). Extending `computeReliability` to iterate over distinct constructs and emit a per-scale block alongside the composite would let the paragraph add a per-scale sentence. Real engine surgery — new contract on `domain_details.reliability.breakdown`, harness extension, etc. Worth doing when researcher-handout polish is the focus.
 
 **Problem.** [docs/relicheck_v2_build_spec.md:423](docs/relicheck_v2_build_spec.md:423) mandates the engine emit a `methods_paragraph` — an auto-generated paragraph (sample size, scale counts, α, ω, fit indices) that the user can copy directly into a research paper. Spec §13 test #1 also references it as part of the canonical taxonomy enforcement. Grep across the entire codebase (`grep -rn "methods_paragraph"` over `apps/` and `api/`) returns **zero matches** in actual code — the field is documented but unimplemented.
 

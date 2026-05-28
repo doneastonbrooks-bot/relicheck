@@ -65,6 +65,7 @@
     item_count: 32,
     scale_count: 6,
     response_count: 250,
+    methods_paragraph: 'Internal consistency of the instrument was evaluated using the ReliCheck Strength Survey Index (v2.0). The analysis comprised 24 Likert items grouped into 6 scales, with responses from 250 participants. Composite internal consistency was Cronbach’s α = 0.85 and McDonald’s ω = 0.87. Convergent validity assessed via mean corrected item-total correlations averaged 0.42 across scales; discriminant validity assessed via the Heterotrait-Monotrait ratio (Henseler, Ringle, & Sarstedt, 2015) reached a maximum of 0.62 across scale pairs. Confirmatory factor analysis per scale produced a mean CFI of 0.95 and a mean RMSEA of 0.052 across 6 scoreable scales. Factorability was supported by a Kaiser-Meyer-Olkin sampling adequacy of 0.82 and Bartlett’s test of sphericity, χ²(36) = 234.50, p < .001. Analysis was performed on 2026-05-28.',
     isSample: true,
   };
 
@@ -237,6 +238,11 @@
       response_count: (p.dataset && p.dataset.rowCount)   || 0,
       computed_at:    p.computed_at || block.addedAt,
       isSample:       false,
+      // Spec §8.1 — engine-composed research methods paragraph
+      // (KNOWN_ISSUES #21 fix). Null when minimum data missing.
+      methods_paragraph: (typeof p.methods_paragraph === 'string' && p.methods_paragraph.trim() !== '')
+        ? p.methods_paragraph
+        : null,
     };
   }
   function confidenceFor(p) {
@@ -287,6 +293,8 @@
     _paintScoreSummary(d);
     /* ─── v2 disagreement readout (Spec §3.5) ─── */
     renderDisagreementReadout(d.rssi || {});
+    /* ─── §8.1 methods paragraph (KNOWN_ISSUES #21 fix) ─── */
+    renderMethodsParagraph(d.methods_paragraph);
     document.getElementById('rssiItemCount').textContent  = d.item_count + ' items';
     document.getElementById('rssiRespCount').textContent  = d.response_count + ' responses';
     document.getElementById('rssiHeroMetaItems').textContent = d.item_count + ' items · ' + d.scale_count + ' scales';
@@ -575,6 +583,30 @@
         '</div>' +
         '<p class="explain-text"><strong>What the spread tells you:</strong> ' + esc(sentence) + '</p>' +
       '</div>';
+  }
+
+  /* ────────────────────────────────────────────────────────────
+   *  §8.1 methods paragraph (KNOWN_ISSUES #21).
+   *
+   *  Engine-composed research methods paragraph the user can paste
+   *  into a paper. Hidden when null (no minimum reliability data).
+   *  Two surfaces share the same DOM ids (rssi-upload.php dashboard
+   *  and apps/rssi/render.php report viewer) so this helper paints
+   *  both unconditionally.
+   * ──────────────────────────────────────────────────────────── */
+  function renderMethodsParagraph(text) {
+    const card = document.getElementById('rssiMethodsParagraph');
+    if (!card) return;
+    const body = document.getElementById('rssiMethodsBody');
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      card.hidden = true;
+      card.setAttribute('aria-hidden', 'true');
+      if (body) body.textContent = '';
+      return;
+    }
+    if (body) body.textContent = text;
+    card.hidden = false;
+    card.setAttribute('aria-hidden', 'false');
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -1185,6 +1217,45 @@
     wireScoreFloat();
     /* Print-report handlers (beforeprint + afterprint). */
     wirePrintReport();
+    /* Methods-paragraph copy-to-clipboard button (Spec §8.1). */
+    wireMethodsCopy();
+  }
+
+  function wireMethodsCopy() {
+    const btn = document.getElementById('rssiMethodsCopyBtn');
+    const body = document.getElementById('rssiMethodsBody');
+    if (!btn || !body || btn._rssiWired) return;
+    btn._rssiWired = true;
+    btn.addEventListener('click', function () {
+      const text = (body.textContent || '').trim();
+      if (!text) return;
+      const settle = function (ok) {
+        const orig = btn._rssiOrigText || (btn._rssiOrigText = btn.innerHTML);
+        btn.innerHTML = ok ? 'Copied ✓' : 'Press Ctrl+C';
+        btn.classList.add('is-copied');
+        setTimeout(function () {
+          btn.innerHTML = orig;
+          btn.classList.remove('is-copied');
+        }, 1500);
+      };
+      // Prefer the async clipboard API; fall back to execCommand which
+      // works on older browsers + when clipboard permissions deny.
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function () { settle(true); }, function () { settle(false); });
+        return;
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        document.body.appendChild(ta);
+        ta.focus(); ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        settle(!!ok);
+      } catch (e) { settle(false); }
+    });
   }
 
   /* ────────────────────────────────────────────────────────────

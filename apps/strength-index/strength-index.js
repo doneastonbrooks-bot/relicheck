@@ -1007,6 +1007,147 @@
     return sentence + buildCoverageSuffix(skippedDomains);
   }
 
+  // Spec §8.1 — methods_paragraph composer. Returns a single research-
+  // methods paragraph the user can paste into a paper, or null when the
+  // run lacks the minimum data (fewer than 2 Likert items, no reliability
+  // computed). Sentence-conditional: each statistic is included only
+  // when its inputs are real; partial-evaluation runs still produce
+  // coherent prose. Composite α / ω only (per-scale α/ω is a separate
+  // engine extension; see KNOWN_ISSUES #21 follow-up note).
+  //
+  // Style: third-person past tense, academic conventions. HTMT carries
+  // its canonical citation (Henseler, Ringle, & Sarstedt, 2015). Engine
+  // version (v2.0) is stated in-text. Computed_at appears as an ISO
+  // date footer.
+  function composeMethodsParagraph(domainDetails, dataset, weightsVersion, computedAt) {
+    if (!domainDetails || !dataset || !Array.isArray(dataset.variables)) return null;
+    const likertVars = dataset.variables.filter(function (v) {
+      return v && v.types && v.types[0] === 'likert';
+    });
+    if (likertVars.length < 2) return null;
+    const rel = domainDetails.reliability || {};
+    if (!rel.breakdown) return null;   // reliability skipped → paragraph null
+
+    // Distinct-construct count (mirrors KNOWN_ISSUES #18 fix). When 0
+    // constructs tagged, the engine treats Likert as one composite scale;
+    // the paragraph follows.
+    const constructs = new Set();
+    let untaggedLikert = 0;
+    likertVars.forEach(function (v) {
+      const c = (typeof v.construct === 'string') ? v.construct.trim() : '';
+      if (c) constructs.add(c);
+      else untaggedLikert++;
+    });
+    const scaleCount = constructs.size + (untaggedLikert > 0 ? 1 : 0);
+    const k = likertVars.length;
+    const N = (dataset.rowCount != null) ? dataset.rowCount : 0;
+
+    function fmt2(v)  { return (v == null || !isFinite(v)) ? null : (Math.round(v * 100) / 100).toFixed(2); }
+    function fmt3(v)  { return (v == null || !isFinite(v)) ? null : (Math.round(v * 1000) / 1000).toFixed(3); }
+    function fmtP(p)  {
+      if (p == null || !isFinite(p)) return null;
+      if (p < 0.001) return 'p < .001';
+      return 'p = ' + (Math.round(p * 1000) / 1000).toString().replace(/^0/, '');
+    }
+    function dateOnly(iso) {
+      if (!iso || typeof iso !== 'string') return null;
+      const m = iso.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return m ? (m[1] + '-' + m[2] + '-' + m[3]) : null;
+    }
+
+    const sentences = [];
+
+    // 1. Header — engine identification, weights version.
+    sentences.push('Internal consistency of the instrument was evaluated using the ReliCheck Strength Survey Index (' + (weightsVersion || 'v2.0') + ').');
+
+    // 2. Sample description.
+    const scalePhrase = scaleCount === 1
+      ? '1 scale'
+      : (scaleCount + ' scales');
+    const itemPhrase = k + ' Likert item' + (k === 1 ? '' : 's');
+    const sampleSentence = 'The analysis comprised ' + itemPhrase + ' grouped into ' + scalePhrase
+      + ', with responses from ' + N + ' participant' + (N === 1 ? '' : 's') + '.';
+    sentences.push(sampleSentence);
+
+    // 3. Reliability (composite α + ω). Only emitted when at least one
+    //    of α / ω is non-null; both treated as composite.
+    const alpha = rel.breakdown.alpha && rel.breakdown.alpha.value;
+    const omega = rel.breakdown.omega && rel.breakdown.omega.value;
+    const aStr = fmt2(alpha);
+    const oStr = fmt2(omega);
+    if (aStr != null && oStr != null) {
+      sentences.push('Composite internal consistency was Cronbach’s α = ' + aStr + ' and McDonald’s ω = ' + oStr + '.');
+    } else if (aStr != null) {
+      sentences.push('Composite internal consistency was Cronbach’s α = ' + aStr + '; McDonald’s ω was not estimable on this sample.');
+    } else if (oStr != null) {
+      sentences.push('Composite internal consistency was McDonald’s ω = ' + oStr + '; Cronbach’s α was not estimable on this sample.');
+    }
+
+    // 4. Convergent + 5. Discriminant + 6. Criterion (§4A bundle).
+    const val = domainDetails.validity || {};
+    if (val.breakdown) {
+      const conv = val.breakdown.convergent;
+      const disc = val.breakdown.discriminant_htmt;
+      const crit = val.breakdown.criterion;
+      const valSentenceParts = [];
+      if (conv && !conv.skipped && conv.mean_item_total != null) {
+        valSentenceParts.push('Convergent validity assessed via mean corrected item-total correlations averaged ' + fmt2(conv.mean_item_total) + ' across scales');
+      }
+      if (disc && !disc.skipped && disc.max_htmt != null && scaleCount >= 2) {
+        valSentenceParts.push('discriminant validity assessed via the Heterotrait-Monotrait ratio (Henseler, Ringle, & Sarstedt, 2015) reached a maximum of ' + fmt2(disc.max_htmt) + ' across scale pairs');
+      }
+      if (crit && !crit.skipped && crit.max_abs_r != null) {
+        const critN = (crit.n != null) ? (' (N = ' + crit.n + ' paired observations)') : '';
+        valSentenceParts.push('criterion validity against the configured outcome reached a maximum |r| of ' + fmt2(crit.max_abs_r) + critN);
+      }
+      if (valSentenceParts.length > 0) {
+        sentences.push(valSentenceParts.join('; ') + '.');
+      }
+    }
+
+    // 7. CFA fit (§4B model_fit). Average CFI / RMSEA across scored scales.
+    const ca = domainDetails.construct_alignment || {};
+    const fitBd = ca.breakdown && ca.breakdown.model_fit;
+    if (fitBd && Array.isArray(fitBd.per_scale)) {
+      const fitRows = fitBd.per_scale.filter(function (r) {
+        return r && r.cfi != null && r.rmsea != null;
+      });
+      if (fitRows.length > 0) {
+        const meanCFI   = fitRows.reduce(function (a, r) { return a + r.cfi;   }, 0) / fitRows.length;
+        const meanRMSEA = fitRows.reduce(function (a, r) { return a + r.rmsea; }, 0) / fitRows.length;
+        sentences.push('Confirmatory factor analysis per scale produced a mean CFI of ' + fmt2(meanCFI) + ' and a mean RMSEA of ' + fmt3(meanRMSEA) + ' across ' + fitRows.length + ' scoreable scale' + (fitRows.length === 1 ? '' : 's') + '.');
+      }
+    }
+
+    // 8. Factorability (§4F KMO + Bartlett).
+    const fac = domainDetails.factor_readiness || {};
+    if (fac.breakdown) {
+      const kmoVal = fac.breakdown.kmo && fac.breakdown.kmo.value;
+      const bart   = fac.breakdown.bartlett || {};
+      const factParts = [];
+      if (kmoVal != null) {
+        factParts.push('a Kaiser-Meyer-Olkin sampling adequacy of ' + fmt2(kmoVal));
+      }
+      if (bart.chi != null && bart.df != null && bart.p != null) {
+        factParts.push('Bartlett’s test of sphericity, χ²(' + bart.df + ') = ' + fmt2(bart.chi) + ', ' + fmtP(bart.p));
+      }
+      if (factParts.length > 0) {
+        sentences.push('Factorability was supported by ' + factParts.join(' and ') + '.');
+      }
+    }
+
+    // 9. Small-N caveat (Spec §12).
+    if (N > 0 && N < 100) {
+      sentences.push('With N = ' + N + ', results should be interpreted with the limitations of small-sample reliability estimation in mind.');
+    }
+
+    // 10. Footer.
+    const when = dateOnly(computedAt) || dateOnly(new Date().toISOString());
+    if (when) sentences.push('Analysis was performed on ' + when + '.');
+
+    return sentences.join(' ');
+  }
+
   // Spec §3.3 — pure lens math from a {domain_key: 0–100 | null} map.
   // Null sub-scores (the four un-built §4A/4B/4D/4E domains in this
   // build, or any domain skipped by edge-case logic) are excluded from
@@ -1141,6 +1282,14 @@
         scale_structure:       ss,
       },
       skipped_domains: lens.skipped_domains,
+      methods_paragraph: composeMethodsParagraph(
+        { reliability: rel, validity: val, construct_alignment: ca,
+          bias_clarity: bc, factor_readiness: fs, item_prompt_quality: iq,
+          response_scale_review: rq, scale_structure: ss },
+        ds,
+        RSSI_WEIGHTS_VERSION,
+        new Date().toISOString()
+      ),
       rssi_weights_version: RSSI_WEIGHTS_VERSION,
       computed_at: new Date().toISOString(),
     };
@@ -1163,6 +1312,7 @@
     computeLenses,
     computeLensesFromDataset,
     computeDisagreementReadout,
+    composeMethodsParagraph,
     applyValidityForwardCap,
     // Spec §4F harness exposure. computeFactorStructure closes over
     // likertVars/rowCount; expose a thin adapter that accepts a

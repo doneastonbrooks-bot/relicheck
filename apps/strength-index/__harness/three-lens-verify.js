@@ -2320,10 +2320,129 @@ console.log('--- §4B Construct Alignment ---');
     String(caStd.breakdown.primary_loading.per_scale[0].mean_loading));
 }
 
+// ── §8.1 methods_paragraph (KNOWN_ISSUES #21 fix) ──────────────────────
+// Spec §8.1: engine emits a research-methods paragraph from the run's
+// stats. composeMethodsParagraph is exposed for direct fixture access;
+// the lensResult also carries the emitted string at the top level.
+console.log('');
+console.log('--- §8.1 methods_paragraph ---');
+
+// runA carries the full-data fixture (4 un-built domains skipped, but
+// reliability + factor_readiness are scored). Confirm the lensResult
+// top-level field exists and the paragraph carries the expected
+// composite-stats sentences.
+const runAMP = runA.methods_paragraph;
+check('runA emits methods_paragraph at top of lensResult',
+  String(runAMP != null && typeof runAMP === 'string'), 'true');
+if (typeof runAMP === 'string') {
+  check('runA paragraph names the engine + weights version',
+    /ReliCheck Strength Survey Index \(v2\.0\)/.test(runAMP) ? 'true' : 'false', 'true');
+  check('runA paragraph reports sample size + scale count',
+    /\d+ Likert items? grouped into \d+ scales?, with responses from \d+ participants?/.test(runAMP) ? 'true' : 'false', 'true');
+  check('runA paragraph footers an analysis date',
+    /Analysis was performed on \d{4}-\d{2}-\d{2}\.$/.test(runAMP) ? 'true' : 'false', 'true');
+  // The 4-un-built fixture skips validity + construct_alignment +
+  // bias_clarity + scale_structure → those sentences must be absent.
+  // Reliability + Factor Readiness are scored → both should appear.
+  check('runA paragraph mentions Cronbach’s α (reliability scored)',
+    /Cronbach’s α =/.test(runAMP) ? 'true' : 'false', 'true');
+  check('runA paragraph does NOT include HTMT (validity skipped)',
+    /Heterotrait-Monotrait/.test(runAMP) ? 'true' : 'false', 'false');
+}
+
+// No-Likert fixture → paragraph must be null.
+const emptyOut = RSSI_MATH.composeMethodsParagraph(
+  {}, { rowCount: 50, variables: [
+    { name: 'x', types: ['open'], values: ['a', 'b'] },
+  ] }, 'v2.0', '2026-05-28T12:00:00.000Z'
+);
+check('no-Likert fixture returns null',
+  String(emptyOut), 'null');
+
+// Sub-2 Likert (1 item only) → also null (Spec §12).
+const singleItemOut = RSSI_MATH.composeMethodsParagraph(
+  { reliability: { breakdown: { alpha: { value: 0.85 }, omega: { value: 0.87 } } } },
+  { rowCount: 50, variables: [
+    { name: 'q1', types: ['likert'], construct: 'X', values: [1,2,3] },
+  ] }, 'v2.0', '2026-05-28T12:00:00.000Z'
+);
+check('single-Likert fixture returns null',
+  String(singleItemOut), 'null');
+
+// Full-data synthetic — composer driven directly. Covers all sentences.
+const fullSyntheticDD = {
+  reliability:           { breakdown: { alpha: { value: 0.85 }, omega: { value: 0.87 } } },
+  validity:              { breakdown: {
+    convergent:        { skipped: false, mean_item_total: 0.42 },
+    discriminant_htmt: { skipped: false, max_htmt: 0.62 },
+    criterion:         { skipped: false, max_abs_r: 0.31, n: 78 },
+  }},
+  construct_alignment:   { breakdown: { model_fit: { per_scale: [
+    { scale: 'Engagement',   cfi: 0.96, rmsea: 0.045 },
+    { scale: 'Satisfaction', cfi: 0.94, rmsea: 0.058 },
+  ] } } },
+  factor_readiness:      { breakdown: {
+    kmo:      { value: 0.82 },
+    bartlett: { chi: 234.5, df: 36, p: 0.0001 },
+  } },
+};
+const fullSyntheticDS = {
+  rowCount: 80,
+  variables: Array.from({ length: 6 }, (_, i) => ({
+    name: 'q' + (i+1), types: ['likert'],
+    construct: i < 3 ? 'Engagement' : 'Satisfaction',
+    values: Array.from({ length: 80 }, () => 1 + (i % 5)),
+  })),
+};
+const fullMP = RSSI_MATH.composeMethodsParagraph(fullSyntheticDD, fullSyntheticDS, 'v2.0', '2026-05-28T12:00:00.000Z');
+console.log('  full synthetic paragraph:');
+console.log('    ' + fullMP);
+check('full-data: composite α included',
+  /Cronbach’s α = 0\.85/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: composite ω included',
+  /McDonald’s ω = 0\.87/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: convergent mean included',
+  /item-total correlations averaged 0\.42/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: HTMT included with citation (2 scales present)',
+  /Heterotrait-Monotrait ratio \(Henseler, Ringle, & Sarstedt, 2015\) reached a maximum of 0\.62/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: criterion |r| + N included',
+  /maximum \|r\| of 0\.31 \(N = 78 paired observations\)/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: CFA mean CFI + RMSEA included',
+  /mean CFI of 0\.95 and a mean RMSEA of 0\.05[0-9]? across 2 scoreable scales/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: KMO included',
+  /Kaiser-Meyer-Olkin sampling adequacy of 0\.82/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: Bartlett χ² + df + p < .001 included',
+  /Bartlett’s test of sphericity, χ²\(36\) = 234\.50, p < \.001/.test(fullMP) ? 'true' : 'false', 'true');
+check('full-data: no small-N caveat at N=80? actually N=80 IS < 100 — caveat expected',
+  /With N = 80, results should be interpreted/.test(fullMP) ? 'true' : 'false', 'true');
+
+// Single-scale fixture: HTMT requires ≥ 2 scales — must be omitted.
+const singleScaleDS = {
+  rowCount: 200,
+  variables: Array.from({ length: 4 }, (_, i) => ({
+    name: 'q' + (i+1), types: ['likert'], construct: 'OnlyScale',
+    values: Array.from({ length: 200 }, () => 1 + (i % 5)),
+  })),
+};
+const singleScaleMP = RSSI_MATH.composeMethodsParagraph(fullSyntheticDD, singleScaleDS, 'v2.0', '2026-05-28T12:00:00.000Z');
+check('single-scale fixture: HTMT sentence omitted',
+  /Heterotrait-Monotrait/.test(singleScaleMP) ? 'true' : 'false', 'false');
+check('single-scale fixture: scale count reads "1 scale"',
+  /grouped into 1 scale,/.test(singleScaleMP) ? 'true' : 'false', 'true');
+check('single-scale fixture (N=200): no small-N caveat',
+  /should be interpreted with the limitations of small-sample/.test(singleScaleMP) ? 'true' : 'false', 'false');
+
+// Canonical taxonomy check — paragraph must not contain v1 labels.
+const v1Labels = ['Survey Structure','Reliability Readiness','Validity Alignment','Scale Strength','Response Risk','Question Quality','Item Quality','Factor Structure','Response Quality'];
+v1Labels.forEach(function (lbl) {
+  check('canonical taxonomy: paragraph does not name "' + lbl + '"',
+    fullMP.indexOf(lbl) === -1 ? 'true' : 'false', 'true');
+});
+
 console.log('');
 if (failed) {
   console.log('VERIFICATION FAILED — see FAIL rows above.');
   process.exit(1);
 } else {
-  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4B/§4D/§4E/§4F/§4G all check.');
+  console.log('VERIFICATION PASSED — lens output identical across surfaces; §3.3/§3.5/§3.6/§4A/§4B/§4D/§4E/§4F/§4G all check; §8.1 methods_paragraph composes correctly.');
 }
