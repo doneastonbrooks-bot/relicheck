@@ -910,10 +910,22 @@
 
   // Spec §3.5 — disagreement readout lookup. Returns a one-sentence
   // diagnostic when the spread between the highest and lowest lens
-  // scores exceeds 10 points, else null. Suppressed when any of the 8
-  // canonical domains is skipped — the three baseline sentences are
-  // calibrated for the full 8-domain weight structure (Phase 3
-  // decision: partial-evidence variants are not invented here).
+  // scores exceeds 10 points, else null.
+  //
+  // Fix (KNOWN_ISSUES #20): the prior implementation suppressed the
+  // readout whenever ANY of the 8 canonical domains was skipped, on
+  // the conservative theory that the three baseline sentences are
+  // calibrated for the full 8-domain weight structure. In practice
+  // Bias & Clarity skips on every upload without demographic columns,
+  // which is the common case — so the readout went dark on most real
+  // data, defeating the point of the three-lens triangulation
+  // (spec §3.5: "When the spread between the highest and lowest of
+  // the three lens scores exceeds 10 points, surface a one-sentence
+  // interpretation"). The gate is removed; the readout now fires
+  // whenever the dictionary has a match for the (highest, lowest)
+  // pattern. When domains are skipped, the sentence is augmented with
+  // a coverage caveat naming what was excluded, preserving honesty
+  // about partial evaluation without silencing the headline reading.
   const DISAGREEMENT_SENTENCES = {
     // key: 'highest|lowest'
     'psychometric_core|respondent_centered':
@@ -928,10 +940,46 @@
       'Your survey is internally consistent, but you may not yet have evidence it measures what you claim. Add criterion data or pilot against an established instrument.',
   };
 
+  // Canonical labels for the 8 domains. Used by the coverage caveat
+  // suffix; matches the spec §2 taxonomy strings exactly so the
+  // surface and the engine narration agree on naming.
+  const DOMAIN_LABELS = {
+    reliability:           'Reliability',
+    validity:              'Validity',
+    construct_alignment:   'Construct Alignment',
+    item_prompt_quality:   'Item / Prompt Quality',
+    bias_clarity:          'Bias & Clarity Review',
+    scale_structure:       'Scale Structure',
+    factor_readiness:      'Factor Readiness',
+    response_scale_review: 'Response Scale Review',
+  };
+
+  // " A and B" / " A, B, and C" — Oxford-comma joiner for the coverage
+  // suffix. Sub-3 items return "A and B" (no Oxford comma at k=2 reads
+  // more naturally in prose); ≥3 items use the comma form.
+  function joinDomainNames(keys) {
+    const names = keys
+      .map(function (k) { return DOMAIN_LABELS[k] || k; })
+      .filter(function (n) { return !!n; });
+    if (names.length === 0) return '';
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return names[0] + ' and ' + names[1];
+    return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
+  }
+
+  function buildCoverageSuffix(skippedDomains) {
+    if (!Array.isArray(skippedDomains) || skippedDomains.length === 0) return '';
+    // Stable order — canonical Spec §2 ordering — so the caveat reads
+    // the same across runs and is testable.
+    const order = ['reliability','validity','construct_alignment','item_prompt_quality',
+                   'bias_clarity','scale_structure','factor_readiness','response_scale_review'];
+    const sorted = order.filter(function (k) { return skippedDomains.indexOf(k) !== -1; });
+    if (sorted.length === 0) return '';
+    return ' Note: this reading excludes ' + joinDomainNames(sorted) +
+           (sorted.length === 1 ? ', which lacked the data to score.' : ', which lacked the data to score.');
+  }
+
   function computeDisagreementReadout(lensScores, skippedDomains) {
-    if (Array.isArray(skippedDomains) && skippedDomains.length > 0) {
-      return null;
-    }
     const present = LENS_KEYS.filter(function (L) { return lensScores[L] != null; });
     if (present.length < 2) return null;
     const sorted = present.slice().sort(function (a, b) { return lensScores[b] - lensScores[a]; });
@@ -941,14 +989,22 @@
     if (spread <= 10) return null;
     // §3.5 V-F-low pattern takes precedence when V-F is the lowest by
     // more than 10 points below BOTH other lenses.
+    let sentence = null;
     if (lowest === 'validity_forward') {
       const nextLowest = sorted[sorted.length - 2];
       if (lensScores[nextLowest] - lensScores['validity_forward'] > 10) {
-        return DISAGREEMENT_SENTENCES['validity_forward_low'];
+        sentence = DISAGREEMENT_SENTENCES['validity_forward_low'];
       }
     }
-    const key = highest + '|' + lowest;
-    return DISAGREEMENT_SENTENCES[key] || null;
+    if (sentence == null) {
+      const key = highest + '|' + lowest;
+      sentence = DISAGREEMENT_SENTENCES[key] || null;
+    }
+    if (sentence == null) return null;
+    // Append coverage caveat when any domain was skipped (KNOWN_ISSUES
+    // #20 fix). Preserves spec §3.5 intent (always interpret meaningful
+    // spread) while honestly flagging partial evaluation.
+    return sentence + buildCoverageSuffix(skippedDomains);
   }
 
   // Spec §3.3 — pure lens math from a {domain_key: 0–100 | null} map.

@@ -196,11 +196,21 @@ check('rssi has validity_forward_capped', typeof r.validity_forward_capped, 'boo
 // ====================================================================
 
 console.log('');
-console.log('--- §3.5 disagreement readout (suppress-on-skip) ---');
-// Fixture skips four un-built domains → readout must be null even if
-// the lens spread exceeds 10 points (Phase 3 decision).
-check('readout suppressed when domains skipped',
-  String(runA.rssi.disagreement_readout), 'null');
+console.log('--- §3.5 disagreement readout (fire-with-caveat on skip; KNOWN_ISSUES #20 fix) ---');
+// Prior behavior (suppress-on-skip) is retired: the readout went dark
+// on every upload missing demographics (because Bias & Clarity skipped
+// on those), which is the common case. New behavior: readout fires
+// whenever spread > 10 and the dictionary has a match, with a coverage
+// caveat appended naming what was skipped.
+// The runA fixture skips four un-built domains; depending on the lens
+// spread the readout fires (with caveat) or stays null because the
+// (highest, lowest) pair isn't in the dictionary.
+const runAReadout = runA.rssi.disagreement_readout;
+if (runAReadout != null) {
+  check('runA readout (when fired) carries coverage caveat',
+    /Note: this reading excludes /.test(runAReadout), true,
+    'got: ' + runAReadout);
+}
 
 // Full 8-domain synthetics drive each branch of the readout lookup.
 function fullSubs(over) {
@@ -266,11 +276,58 @@ const tightReadout = RSSI_MATH.computeDisagreementReadout(tightLens, tightLens.s
 console.log('  PC=' + tightLens.psychometric_core + ' RC=' + tightLens.respondent_centered + ' VF=' + tightLens.validity_forward);
 check('readout silent at spread ≤ 10', String(tightReadout), 'null');
 
-// Suppression on skip even with large spread.
-const skippedSubs = fullSubs({ validity: null }); // single skip
-const skippedLens = RSSI_MATH.computeLenses(skippedSubs);
-const skippedReadout = RSSI_MATH.computeDisagreementReadout(skippedLens, skippedLens.skipped_domains);
-check('readout suppressed even on a single skip', String(skippedReadout), 'null');
+// New (KNOWN_ISSUES #20 fix): single-skip + large spread fires the
+// readout, appending a coverage caveat that names the skipped domain.
+// Use a fixture that forces a (PC-high vs RC-low) pattern so the
+// dictionary returns a match. validity = null skips that domain.
+const skipPCSubs = fullSubs({
+  validity: null,
+  reliability: 95, construct_alignment: 95, factor_readiness: 95,
+  item_prompt_quality: 40, bias_clarity: 40, response_scale_review: 40, scale_structure: 60,
+});
+const skipPCLens = RSSI_MATH.computeLenses(skipPCSubs);
+const skipPCReadout = RSSI_MATH.computeDisagreementReadout(skipPCLens, skipPCLens.skipped_domains);
+console.log('  PC=' + skipPCLens.psychometric_core + ' RC=' + skipPCLens.respondent_centered + ' VF=' + skipPCLens.validity_forward + '  (validity skipped)');
+check('skip+spread fires readout (not null)',
+  skipPCReadout != null, true,
+  'got: ' + skipPCReadout);
+check('skip+spread readout starts with the matched base sentence',
+  /^Your scales are statistically sound/.test(String(skipPCReadout)), true);
+check('skip+spread readout ends with the coverage caveat',
+  /\. Note: this reading excludes Validity, which lacked the data to score\.$/.test(String(skipPCReadout)), true);
+
+// Multi-skip caveat: two skipped domains → "A and B" joiner.
+const multiSkipSubs = fullSubs({
+  bias_clarity: null, validity: null,
+  reliability: 95, construct_alignment: 95, factor_readiness: 95,
+  item_prompt_quality: 40, response_scale_review: 40, scale_structure: 60,
+});
+const multiSkipLens = RSSI_MATH.computeLenses(multiSkipSubs);
+const multiSkipReadout = RSSI_MATH.computeDisagreementReadout(multiSkipLens, multiSkipLens.skipped_domains);
+check('two-skip caveat uses "A and B" joiner',
+  /excludes Validity and Bias & Clarity Review,/.test(String(multiSkipReadout)), true,
+  'got: ' + multiSkipReadout);
+
+// Three-skip caveat: Oxford-comma joiner.
+const threeSkipSubs = fullSubs({
+  bias_clarity: null, validity: null, construct_alignment: null,
+  reliability: 95, factor_readiness: 95,
+  item_prompt_quality: 40, response_scale_review: 40, scale_structure: 60,
+});
+const threeSkipLens = RSSI_MATH.computeLenses(threeSkipSubs);
+const threeSkipReadout = RSSI_MATH.computeDisagreementReadout(threeSkipLens, threeSkipLens.skipped_domains);
+check('three-skip caveat uses Oxford-comma joiner',
+  /excludes Validity, Construct Alignment, and Bias & Clarity Review,/.test(String(threeSkipReadout)), true,
+  'got: ' + threeSkipReadout);
+
+// When the (highest, lowest) pair has no dictionary entry AND domains
+// were skipped, the readout still returns null — the caveat only
+// augments a real sentence, it does not invent one.
+const skipNoMatchSubs = fullSubs({ validity: null });   // all 80 except validity → tight spread → null
+const skipNoMatchLens = RSSI_MATH.computeLenses(skipNoMatchSubs);
+const skipNoMatchReadout = RSSI_MATH.computeDisagreementReadout(skipNoMatchLens, skipNoMatchLens.skipped_domains);
+check('skip with no dict-match still returns null',
+  String(skipNoMatchReadout), 'null');
 
 console.log('');
 console.log('--- §3.6 Validity-Forward evidence cap ---');

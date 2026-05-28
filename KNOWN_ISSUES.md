@@ -410,7 +410,7 @@ These are anchors to dim cards that no surface in the current codebase produces.
 
 ## 20. Disagreement readout suppressed whenever any domain skips — partial-evaluation gate
 
-**Surfaced:** §16 v2 report-surface migration smoke test (2026-05-27).
+**Surfaced:** §16 v2 report-surface migration smoke test (2026-05-27). **RESOLVED 2026-05-28** by removing the gate and appending a coverage-caveat suffix to the sentence (option 2 from the original entry).
 
 **Problem.** [apps/strength-index/strength-index.js:932-934](apps/strength-index/strength-index.js:932) gates the disagreement readout on `skipped_domains.length === 0`:
 
