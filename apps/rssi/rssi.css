@@ -930,13 +930,64 @@
      to JS for the document title swap on Save-as-PDF. */
   .rssi-app .rssi-view .title-row { display: none !important; }
 
-  /* Page-break discipline for the exec-board flow. */
+  /* Page-break discipline for the exec-board flow.
+     The prior version forced break-before: page on the issues block
+     and the methods paragraph. That produced a saved PDF where each
+     section sat on a near-empty page (page 1: cover alone; page 5:
+     one issue row alone). Removing the forced breaks lets content
+     flow naturally; break-inside: avoid still keeps the headline
+     units intact (cover, lens triplet, dim grid) without wasting
+     half a sheet between sections. */
   .rssi-app .rssi-print-cover,
-  .rssi-app .rssi-hero-row,
   .rssi-app .lens-triplet { break-inside: avoid; page-break-inside: avoid; }
   .rssi-app .dim-grid     { break-inside: avoid; page-break-inside: avoid; }
-  .rssi-app .rssi-issues-block.section-head { break-before: page; page-break-before: always; }
-  .rssi-app .rssi-methods-paragraph { break-before: page; page-break-before: always; }
+  /* Hero row: avoid breaking the ring + chips across pages, but DO
+     allow it to flow alongside the cover on page 1 (no break-before).
+     Combined with the smaller print-hero sizing below, this fits
+     cover + exec summary + ring + triplet on a single first page. */
+  .rssi-app .rssi-hero-row { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Print-only hero sizing: shrink the 200px ring to 120px so the
+     cover + exec summary + hero fit on page 1 instead of wasting
+     85% of the cover page. */
+  .rssi-app .ring-wrap { width: 120px !important; height: 120px !important; }
+  .rssi-app .ring-center .score { font-size: 38px !important; }
+  .rssi-app .ring-center .out-of { font-size: 9.5px !important; }
+  .rssi-app .ring-center .badge { font-size: 10px !important; padding: 2px 8px !important; }
+  .rssi-app .hero { padding: 16px 20px !important; }
+  .rssi-app .hero-copy h2 { font-size: 17px !important; margin: 0 0 4px !important; }
+  .rssi-app .hero-copy > p { font-size: 12px !important; line-height: 1.5 !important; margin: 0 0 10px !important; }
+
+  /* Explain panel critical fix: the on-screen .explain-scroll has
+     `max-height: 360px; overflow-y: auto` so users can scroll the
+     panel. On print that clip silently dropped the eight canonical
+     domain rows from the PDF — they sit past 360px and were being
+     cut off. Lift the cap for print so every row prints. */
+  .rssi-app .explain-scroll {
+    max-height: none !important;
+    overflow: visible !important;
+    padding-right: 0 !important;
+  }
+
+  /* Tier band fix: the gradient track was collapsing to a tiny dot
+     in the saved PDF because Chromium strips background-image on
+     print by default. print-color-adjust: exact forces the gradient
+     to render. Marker dot keeps its position. */
+  .rssi-app .tier-track {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+    opacity: 1 !important;
+  }
+  .rssi-app .tier-marker,
+  .rssi-app .ring-fg,
+  .rssi-app .lens-cap-pill,
+  .rssi-app .lens-chip-headline,
+  .rssi-app .dim-mini-ring svg circle,
+  .rssi-app .explain-band,
+  .rssi-app .pill {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
 
   /* @page running header + page numbers. Chrome (and other modern
      browsers) honor @top-center / @bottom-center margin boxes when

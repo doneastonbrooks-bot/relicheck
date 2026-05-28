@@ -321,13 +321,21 @@
     /* Print-only cover block (KNOWN_ISSUES #22 polish). Mirror the
        on-screen survey title + scored date into the .rssi-print-cover
        elements so the exec-board PDF reads them from the same source
-       of truth. Hidden on screen via CSS. */
+       of truth. The title is filename-derived and often arrives as
+       e.g. "MM Test Emotional_Intelligence_QuanHeavy" — strip the
+       file extension and replace underscores with spaces for the
+       cover treatment. Hidden on screen via CSS. */
     const coverTitleEl = document.getElementById('rssiPrintCoverTitle');
     if (coverTitleEl) {
       const sourceTitle = document.getElementById('rssiDashTitle');
-      coverTitleEl.textContent = (sourceTitle && sourceTitle.textContent && sourceTitle.textContent.trim())
-        ? sourceTitle.textContent
+      let title = (sourceTitle && sourceTitle.textContent && sourceTitle.textContent.trim())
+        ? sourceTitle.textContent.trim()
         : 'Survey report';
+      // Strip any lingering extension (handoff usually already does
+      // this, but Survey-Studio-loaded paths may not) and convert
+      // underscores to spaces for cover-quality display.
+      title = title.replace(/\.(csv|xlsx?|tsv|txt)$/i, '').replace(/_/g, ' ');
+      coverTitleEl.textContent = title;
     }
     const coverDateEl = document.getElementById('rssiPrintCoverDate');
     if (coverDateEl && d.computed_at) {
