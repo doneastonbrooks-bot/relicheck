@@ -931,32 +931,54 @@
   .rssi-app .rssi-view .title-row { display: none !important; }
 
   /* Page-break discipline for the exec-board flow.
-     The prior version forced break-before: page on the issues block
-     and the methods paragraph. That produced a saved PDF where each
-     section sat on a near-empty page (page 1: cover alone; page 5:
-     one issue row alone). Removing the forced breaks lets content
-     flow naturally; break-inside: avoid still keeps the headline
-     units intact (cover, lens triplet, dim grid) without wasting
-     half a sheet between sections. */
+     CRITICAL: .rssi-hero-row is a CSS grid containing TWO siblings
+     on screen — the hero card AND the explain panel — laid out
+     side-by-side. With break-inside: avoid on the row, Chromium
+     refused to break that grid across pages, and because hero +
+     explain combined are ~14in tall, it pushed the ENTIRE block
+     to page 2. That's why the cover sat alone on page 1.
+     Round-3 fix: keep break-inside: avoid only on the units that
+     individually should never split (cover, hero card alone, lens
+     triplet, dim grid). The .rssi-hero-row itself is allowed to
+     break, so the hero card lands on page 1 alongside the cover
+     and the explain panel flows onto page 2. */
   .rssi-app .rssi-print-cover,
-  .rssi-app .lens-triplet { break-inside: avoid; page-break-inside: avoid; }
-  .rssi-app .dim-grid     { break-inside: avoid; page-break-inside: avoid; }
-  /* Hero row: avoid breaking the ring + chips across pages, but DO
-     allow it to flow alongside the cover on page 1 (no break-before).
-     Combined with the smaller print-hero sizing below, this fits
-     cover + exec summary + ring + triplet on a single first page. */
-  .rssi-app .rssi-hero-row { break-inside: avoid; page-break-inside: avoid; }
+  .rssi-app .rssi-hero-score,
+  .rssi-app .lens-triplet,
+  .rssi-app .dim-grid { break-inside: avoid; page-break-inside: avoid; }
+
+  /* The hero-row + hero-side explicitly DO break — they're allowed
+     to flow across pages so content fills the available space. */
+  .rssi-app .rssi-hero-row,
+  .rssi-app .rssi-hero-side { break-inside: auto !important; page-break-inside: auto !important; }
 
   /* Print-only hero sizing: shrink the 200px ring to 120px so the
-     cover + exec summary + hero fit on page 1 instead of wasting
-     85% of the cover page. */
+     cover + hero card fit on page 1 together. */
   .rssi-app .ring-wrap { width: 120px !important; height: 120px !important; }
   .rssi-app .ring-center .score { font-size: 38px !important; }
   .rssi-app .ring-center .out-of { font-size: 9.5px !important; }
   .rssi-app .ring-center .badge { font-size: 10px !important; padding: 2px 8px !important; }
   .rssi-app .hero { padding: 16px 20px !important; }
-  .rssi-app .hero-copy h2 { font-size: 17px !important; margin: 0 0 4px !important; }
-  .rssi-app .hero-copy > p { font-size: 12px !important; line-height: 1.5 !important; margin: 0 0 10px !important; }
+  .rssi-app .hero-copy h2 { font-size: 17px !important; margin: 0 0 4px !important; color: #15171a !important; }
+  .rssi-app .hero-copy > p { font-size: 12px !important; line-height: 1.5 !important; margin: 0 0 10px !important; color: #15171a !important; }
+  /* The hero is a 2-col grid on screen (ring | copy). On print
+     under the < 800px breakpoint it collapses to 1 column. Force
+     that here in case Chromium's print viewport sits between
+     breakpoints. */
+  .rssi-app .hero {
+    grid-template-columns: 1fr !important;
+    text-align: center !important;
+  }
+  .rssi-app .hero .ring-wrap { margin: 0 auto !important; }
+  .rssi-app .hero .hero-copy { width: 100% !important; }
+  /* hero-meta (Confidence / items · scales) — ensure text visibility. */
+  .rssi-app .hero-meta { color: #5f6368 !important; font-size: 11.5px !important; justify-content: center !important; }
+  .rssi-app .hero-meta .item { color: #5f6368 !important; }
+  .rssi-app .hero-meta .item strong { color: #15171a !important; }
+  /* Tier band labels — also fell out of the visible page in the
+     prior PDF even though they were in the text layer. Lock colours. */
+  .rssi-app .tier-labels { color: #6E6E73 !important; font-size: 11px !important; }
+  .rssi-app .tier-labels .here { color: #0A6FE8 !important; font-weight: 600 !important; }
 
   /* Explain panel critical fix: the on-screen .explain-scroll has
      `max-height: 360px; overflow-y: auto` so users can scroll the
