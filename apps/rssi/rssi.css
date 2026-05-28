@@ -754,3 +754,174 @@
   .rssi-app .hero { grid-template-columns: 1fr; text-align: center; }
   .rssi-app .ring-wrap { margin: 0 auto; }
 }
+
+/* =============================================================================
+   Stage visibility — single source of truth (KNOWN_ISSUES §16 M2).
+   Hoisted out of rssi-upload.php's inline <style> so all three stages
+   (upload / tag / dashboard) share one selector set. Adding a fourth
+   stage in the future is a one-line CSS change here, not a hunt across
+   inline blocks.
+   ============================================================================= */
+.rssi-app .upload-stage    { display: flex; }   /* default-visible (data-stage="upload") */
+.rssi-app .tag-stage       { display: none; }
+.rssi-app .dashboard-stage { display: none; }
+
+.rssi-app[data-stage="tag"]       .upload-stage    { display: none; }
+.rssi-app[data-stage="tag"]       .tag-stage       { display: block; }
+.rssi-app[data-stage="tag"]       .dashboard-stage { display: none; }
+
+.rssi-app[data-stage="dashboard"] .upload-stage    { display: none; }
+.rssi-app[data-stage="dashboard"] .tag-stage       { display: none; }
+.rssi-app[data-stage="dashboard"] .dashboard-stage { display: block; }
+
+/* =============================================================================
+   Tag stage — KNOWN_ISSUES §16 M2.
+   Minimum-viable styling per the M2 scope note ("visual polish beyond
+   minimum readability" is M7). Layout is functional, not finished:
+   wide table, sticky bottom bar, no card chrome around the table itself.
+   ============================================================================= */
+.rssi-app .tag-stage {
+  padding: 20px 24px 120px;       /* bottom padding clears the sticky bar */
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+.rssi-app .tag-stage h2 {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+}
+.rssi-app .tag-stage .tag-lede {
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 0 0 22px;
+  max-width: 72ch;
+}
+.rssi-app .tag-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.rssi-app .tag-table thead th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  padding: 10px 12px;
+  background: var(--surface-muted);
+  border-bottom: 1px solid var(--hairline);
+}
+.rssi-app .tag-table tbody td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--hairline);
+  vertical-align: middle;
+}
+.rssi-app .tag-table tbody tr:last-child td { border-bottom: none; }
+.rssi-app .tag-table .col-name {
+  font-weight: 500;
+  color: var(--text);
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rssi-app .tag-table .col-sample {
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rssi-app .tag-table select,
+.rssi-app .tag-table input[type="text"],
+.rssi-app .tag-table input[type="number"] {
+  font: inherit;
+  padding: 5px 8px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+.rssi-app .tag-table select          { min-width: 130px; }
+.rssi-app .tag-table input[type="text"]   { width: 160px; }
+.rssi-app .tag-table input[type="number"] { width: 56px;  text-align: center; }
+.rssi-app .tag-table input[type="checkbox"] { transform: translateY(1px); }
+.rssi-app .tag-auto-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: var(--blue-tint);
+  color: var(--blue);
+  border-radius: 999px;
+  vertical-align: middle;
+}
+.rssi-app .tag-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11.5px;
+  color: var(--fair);
+  line-height: 1.35;
+}
+.rssi-app .tag-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  margin-top: 22px;
+  background: var(--surface);
+  border-top: 1px solid var(--hairline);
+  padding: 14px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.rssi-app .reverse-confirm {
+  padding: 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  max-width: 560px;
+}
+.rssi-app .reverse-confirm label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: pointer;
+}
+.rssi-app .reverse-confirm input[type="checkbox"] { margin-top: 3px; }
+.rssi-app .reverse-confirm .copy {
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.rssi-app .reverse-confirm .copy .muted { color: var(--text-2); }
+.rssi-app .tag-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.rssi-app .tag-blocker-msg {
+  font-size: 12.5px;
+  color: var(--weak);
+  max-width: 280px;
+  text-align: right;
+}
+.rssi-app .tag-blocker-msg:empty { display: none; }
+.rssi-app #rssiScoreBtn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

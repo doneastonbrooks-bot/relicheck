@@ -24,6 +24,7 @@ $rssi_back_url = '/app-2026v4.php';
 
 $_css_ver  = filemtime(__DIR__ . '/apps/rssi/rssi.css');
 $_js_ver   = filemtime(__DIR__ . '/apps/rssi/rssi.js');
+$_tag_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-tag-core.js') ? filemtime(__DIR__ . '/apps/rssi/rssi-tag-core.js') : time();
 $_up_ver   = file_exists(__DIR__ . '/apps/rssi/rssi-upload.js') ? filemtime(__DIR__ . '/apps/rssi/rssi-upload.js') : time();
 $_rel_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-reliability.js') ? filemtime(__DIR__ . '/apps/rssi/rssi-reliability.js') : time();
 $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime(__DIR__ . '/apps/rssi/rssi-analyses.js')    : time();
@@ -141,10 +142,8 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
       margin-top: 4px;
     }
 
-    /* Dashboard wrapper starts hidden; revealed after upload */
-    .rssi-app .dashboard-stage { display: none; }
-    .rssi-app[data-stage="dashboard"] .upload-stage { display: none; }
-    .rssi-app[data-stage="dashboard"] .dashboard-stage { display: block; }
+    /* Stage visibility rules live in apps/rssi/rssi.css (§16 M2,
+       single source of truth across upload / tag / dashboard). */
   </style>
 </head>
 <body>
@@ -333,7 +332,60 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
       </div>
     </div>
 
-    <!-- ============ STAGE 2: DASHBOARD ============ -->
+    <!-- ============ STAGE 2: TAG ============ -->
+    <!-- (Hidden until a file is parsed; KNOWN_ISSUES §16 M2.) -->
+    <div class="tag-stage" id="rssiTagStage">
+      <h2>Tag your columns</h2>
+      <p class="tag-lede">
+        We auto-detected a starting role for each column. Adjust where needed,
+        give each Likert item a construct name, and confirm reverse-coding.
+        Your work auto-saves to this browser.
+      </p>
+
+      <!-- Shared datalist: live-rebuilt from constructs already used in the file. -->
+      <datalist id="rssiConstructsUsed"></datalist>
+
+      <table class="tag-table" id="rssiTagTable">
+        <thead>
+          <tr>
+            <th>Column</th>
+            <th>Role</th>
+            <th>Construct</th>
+            <th>Reverse</th>
+            <th>Anchors</th>
+            <th>Sample values</th>
+          </tr>
+        </thead>
+        <tbody id="rssiTagTbody"><!-- rows injected by rssi-upload.js --></tbody>
+      </table>
+
+      <div class="tag-bottom-bar">
+        <!-- Survey-level reverse-coding confirmation. Copy mirrors
+             survey-wizard.php Step 3 verbatim per Phase 1 Q5. Required for
+             §4E Scale Structure sub-2 to evaluate reverse-coded balance. -->
+        <div class="reverse-confirm">
+          <label>
+            <input type="checkbox" id="rssiReverseConfirmed">
+            <span class="copy">
+              <strong>I&rsquo;ve reviewed every item for reverse-coding.</strong>
+              <span class="muted">Confirms the reverse checkboxes above are complete.
+              Required for &sect;4E Scale Structure to evaluate reverse-coded
+              balance; without this confirmation the sub-component is skipped.</span>
+            </span>
+          </label>
+        </div>
+
+        <div class="tag-actions">
+          <div class="tag-blocker-msg" id="rssiTagBlockerMsg"></div>
+          <button class="btn btn-primary" type="button" id="rssiScoreBtn" disabled>
+            Score my data
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h8m0 0L8 4m3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STAGE 3: DASHBOARD ============ -->
     <!-- (Hidden until upload completes; render.php sections injected below) -->
     <div class="dashboard-stage" id="rssiDashboardStage">
 
@@ -352,6 +404,10 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
           </div>
         </div>
         <div class="actions">
+          <button class="btn" type="button" id="rssiRetagBtn">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 5v3a3 3 0 0 0 3 3h5m0 0L8 8m3 3-3 3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Re-tag columns
+          </button>
           <button class="btn" type="button" onclick="window.print()">
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8.5V11a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V8.5M7 2v6.5m0 0L4.5 6M7 8.5 9.5 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Print / Save PDF
@@ -683,6 +739,9 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
       // is set (which is the case on this page). The standalone RSSI surface
       // consumes the math from here per v2 build spec §6. ?>
 <script src="/apps/strength-index/strength-index.js?v=<?= file_exists(__DIR__ . '/apps/strength-index/strength-index.js') ? filemtime(__DIR__ . '/apps/strength-index/strength-index.js') : time() ?>" defer></script>
+<?php // Pure tag-core functions (KNOWN_ISSUES §16). Loaded BEFORE rssi-upload.js
+      // so window.RSSI_TAG_CORE is available when the upload module runs. ?>
+<script src="/apps/rssi/rssi-tag-core.js?v=<?= $_tag_ver ?>" defer></script>
 <script src="/apps/rssi/rssi-upload.js?v=<?= $_up_ver ?>" defer></script>
 <script src="/apps/rssi/rssi-reliability.js?v=<?= $_rel_ver ?>" defer></script>
 <?php // The instrument-quality engine exposes window.IQ_ENGINE so the Option-3
