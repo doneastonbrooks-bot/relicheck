@@ -513,16 +513,20 @@
    * ──────────────────────────────────────────────────────────── */
 
   /* ────────────────────────────────────────────────────────────
-   * Compose the full RSSI score blob.
+   * Compose the full RSSI score blob — v2-native shape.
    *
-   * Delegates the lens math to the canonical engine
-   * (window.RSSI_MATH.computeLensesFromDataset) per Spec §6. The
-   * standalone surface used to compute its own weighted-mean over
-   * six v1-labelled components; that path is retired. The legacy
-   * `components` map is rebuilt here from canonical sub-scores
-   * for backward-compat with the existing rssi.js renderer (which
-   * still reads the v1 keys), and will be retired once that
-   * renderer is migrated to the canonical 8-domain taxonomy.
+   * The legacy six-key v1 `components` map is retired. The standalone
+   * report surface now consumes the engine's canonical output directly:
+   * three lenses, eight domains, disagreement readout, validity-forward
+   * cap flag (Spec §3.2, §3.3, §3.5, §3.6). Per Spec §2, v1 labels
+   * ("Survey Structure", "Reliability Readiness", "Scale Strength",
+   * "Validity Alignment", "Response Risk", "Question Quality") are not
+   * preserved — the renderer reads the canonical 8 domain keys directly.
+   *
+   * The headline `strength` field is the Respondent-Centered lens score
+   * (Spec §3.4 default headline). The ring renders it; the lens triplet
+   * elsewhere on the surface shows all three. `verdict` is the band of
+   * that headline number.
    * ──────────────────────────────────────────────────────────── */
   function computeRSSI(dataset) {
     const likertVars = dataset.variables.filter(function (v) { return v.types[0] === 'likert'; });
@@ -530,17 +534,10 @@
     if (typeof engine !== 'function') {
       throw new Error('Canonical lens engine not loaded — apps/strength-index/strength-index.js must be included before apps/rssi/rssi-upload.js (Spec §6).');
     }
-    // Pass dataset.config through to the engine for parity with the
-    // studio strength-index host (strength-index.js:3421). The standalone
-    // RSSI surface has no UI to populate config today (KNOWN_ISSUES.md §16),
-    // so dataset.config will be empty in practice — keeping the signature
-    // consistent so when §16's UI work lands the integration seam is
-    // already correct.
     const lensResult = engine(dataset, (dataset && dataset.config) || {});
-    const rssi = lensResult.rssi;
-    const d    = lensResult.domain_details || {};
+    const rssi = lensResult.rssi || {};
 
-    // Headline = Respondent-Centered lens (Spec §3.4 default).
+    // Headline number = Respondent-Centered lens (Spec §3.4).
     const strength = rssi.respondent_centered == null
       ? 0
       : Math.round(rssi.respondent_centered);
@@ -550,50 +547,30 @@
                   : strength >= 40 ? 'Fair'
                   : 'Weak';
 
-    // Backward-compat legacy components map. Each v1 key inherits
-    // its 0–100 score (and note when available) from the canonical
-    // domain it maps to. The four canonical domains not yet built
-    // (validity, construct_alignment, bias_clarity, scale_structure)
-    // surface as `skip: true` so rssi.js excludes them from any
-    // local rollups it still performs.
-    function from(canonical, label, weight) {
-      const det = d[canonical];
-      if (!det || det.score == null) {
-        return { label: label, weight: weight, score: null, note: 'Not yet computed in this build (Spec §' +
-          (canonical === 'validity' ? '4A'
-           : canonical === 'construct_alignment' ? '4B'
-           : canonical === 'bias_clarity' ? '4D'
-           : canonical === 'scale_structure' ? '4E'
-           : '4F') + ').', skip: true };
-      }
-      return { label: label, weight: weight, score: det.score, note: det.note, raw: det.raw, max: det.max, interp: det.interp, tone: det.tone };
-    }
-    const components = {
-      survey_structure:      from('scale_structure',        'Survey Structure',      15),
-      question_quality:      from('item_prompt_quality',    'Question Quality',      20),
-      scale_strength:        from('factor_readiness',       'Scale Strength',        15),
-      reliability_readiness: from('reliability',            'Reliability Readiness', 25),
-      validity_alignment:    from('validity',               'Validity Alignment',    15),
-      response_risk:         from('response_scale_review',  'Response Risk',         10),
-    };
-
     const summary = 'At ' + strength + ', this survey is in ' + verdict.toLowerCase() + ' shape. ' +
       (strength >= 70
         ? 'A few targeted fixes would move it into excellent territory.'
         : 'Focused revisions to the lowest-scoring dimensions would meaningfully lift the score.');
 
+    // scaleCount is a heuristic carried over from v1. The engine emits a
+    // real scales[] block (Spec §10) that any v2 surface needing a true
+    // count must read from. KNOWN_ISSUES carries the global cleanup
+    // follow-up; this surface keeps the heuristic for now because the
+    // dim-grid + lens triplet do not depend on it.
     return {
       app_key: 'strength_index',
       app_name: 'ReliCheck Strength Survey Index',
       summary: summary,
       strength: strength,
       verdict: verdict,
-      components: components,
-      // Three-lens RSSI output (Spec §3.2–3.3) — identical to the
-      // in-studio mount's output for the same dataset (Spec §6).
+      // Three-lens RSSI output (Spec §3.2–3.3). Pass through verbatim;
+      // the surface reads psychometric_core / respondent_centered /
+      // validity_forward / headline_lens / disagreement_readout /
+      // validity_forward_capped directly.
       rssi:                 rssi,
-      domain_subscores:     lensResult.domain_subscores,
-      skipped_domains:      lensResult.skipped_domains,
+      domain_subscores:     lensResult.domain_subscores || {},
+      domain_details:       lensResult.domain_details   || {},
+      skipped_domains:      lensResult.skipped_domains  || [],
       rssi_weights_version: lensResult.rssi_weights_version,
       dataset: {
         source: dataset.source,

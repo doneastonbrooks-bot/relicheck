@@ -1,7 +1,7 @@
 /* =============================================================================
    rssi-reliability.js — Interactive Cronbach analyzer
 
-   Lives inside the Reliability Readiness detail view on /rssi-upload.php.
+   Lives inside the Reliability detail view on /rssi-upload.php (Spec §4).
    Renders a per-item table that lets the user toggle items in/out and
    watch Cronbach's alpha + scale stats recompute in real time. Exports the
    revised scale spec as JSON, CSV, DOCX, or PDF.

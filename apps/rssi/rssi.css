@@ -925,3 +925,162 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* =============================================================================
+   v2 three-lens triplet (Spec §3.2, §3.4, §3.6).
+   Sits inside .hero-copy below the headline summary; flows above the
+   .hero-meta row. The headline chip (Respondent-Centered) gets a subtle
+   tint so the ring + chip read as the same headline; the other two
+   chips read as siblings, not afterthoughts.
+   ============================================================================= */
+.rssi-app .lens-triplet {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px 0 14px;
+  padding-right: 32px;            /* leave room for the "?" affordance */
+}
+.rssi-app .lens-chip {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rssi-app .lens-chip-headline {
+  background: var(--blue-soft-bg);
+  border-color: var(--blue-tint-2);
+}
+.rssi-app .lens-chip-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.rssi-app .lens-chip-headline .lens-chip-label { color: var(--blue); }
+.rssi-app .lens-chip-badge {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--blue);
+  color: #fff;
+}
+.rssi-app .lens-chip-score {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1.1;
+}
+.rssi-app .lens-chip-headline .lens-chip-score { color: var(--blue); }
+
+/* "Limited evidence" pill on the Validity-Forward chip when the
+   criterion sub-component is skipped (Spec §3.6). Visible by default
+   when capped; hover surfaces a tooltip explaining the cap is a data-
+   availability issue, not a validity failure. */
+.rssi-app .lens-cap-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(255, 159, 10, 0.16);
+  color: #B26A00;
+  border: 1px solid rgba(255, 159, 10, 0.3);
+  cursor: help;
+}
+.rssi-app .lens-cap-pill[hidden] { display: none; }
+
+/* "?" affordance — required by Spec §3.5 ("Always show a small ?
+   affordance that opens an explanation of the three lenses"). */
+.rssi-app .lens-help {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--hairline-strong);
+  background: var(--surface);
+  color: var(--text-2);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+}
+.rssi-app .lens-help:hover { color: var(--blue); border-color: var(--blue); }
+.rssi-app .lens-help-popover {
+  position: absolute;
+  top: 30px;
+  right: 0;
+  width: min(360px, 90vw);
+  background: var(--surface);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 14px 16px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text);
+  z-index: 20;
+}
+.rssi-app .lens-help-popover[hidden] { display: none; }
+.rssi-app .lens-help-popover p { margin: 0 0 8px; }
+.rssi-app .lens-help-popover p:last-child { margin-bottom: 0; }
+.rssi-app .lens-help-popover ul { margin: 0 0 8px; padding-left: 18px; }
+.rssi-app .lens-help-popover li { margin-bottom: 4px; }
+
+/* Disagreement readout row — distinct from the per-domain explain
+   rows so it reads as the headline interpretation when it fires
+   (Spec §3.5). When the engine returns null, the JS leaves the slot
+   empty — there is no .explain-disagreement element in the DOM at all. */
+.rssi-app .explain-disagreement {
+  background: linear-gradient(180deg, #FFF8EE 0%, #FFFDF7 100%);
+  border: 1px solid rgba(255, 159, 10, 0.22);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+.rssi-app .explain-disagreement .explain-label { color: #B26A00; }
+.rssi-app .explain-disagreement .explain-text { color: var(--text); }
+
+/* 4×2 dim-grid (Spec §2 — 8 canonical domains). On narrow viewports
+   collapse to 2×4 then 1×8 so the cards stay readable. */
+.rssi-app .dim-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 1100px) {
+  .rssi-app .dim-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .rssi-app .dim-grid { grid-template-columns: 1fr; }
+}
+
+/* Triplet collapse below the existing 1100 breakpoint so the chips
+   don't squish next to the ring on tablet widths. */
+@media (max-width: 1100px) {
+  .rssi-app .lens-triplet { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+  .rssi-app .lens-triplet { grid-template-columns: 1fr; padding-right: 0; }
+  .rssi-app .lens-help { position: static; margin-top: 4px; }
+  .rssi-app .lens-help-popover { right: auto; left: 0; }
+}

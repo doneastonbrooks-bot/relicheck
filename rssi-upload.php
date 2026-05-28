@@ -440,6 +440,40 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
           <div class="hero-copy">
             <h2 id="rssiHeroH2">Scoring your survey...</h2>
             <p id="rssiHeroP">A plain-language read of the score will appear here.</p>
+
+            <!-- v2 three-lens triplet (Spec §3.2). All three lens scores
+                 render here; the ring shows the headline (Respondent-
+                 Centered, Spec §3.4). The "?" affordance is mandated by
+                 Spec §3.5 and opens the explainer on click. The "Limited
+                 evidence" pill on Validity-Forward fires when the
+                 criterion sub-component was skipped (Spec §3.6 cap). -->
+            <div class="lens-triplet" id="rssiLensTriplet" role="group" aria-label="Three RSSI lens scores">
+              <div class="lens-chip" data-lens="psychometric_core">
+                <span class="lens-chip-label">Psychometric Core</span>
+                <span class="lens-chip-score" id="rssiLens_psychometric_core">—</span>
+              </div>
+              <div class="lens-chip lens-chip-headline" data-lens="respondent_centered">
+                <span class="lens-chip-label">Respondent-Centered <span class="lens-chip-badge">Headline</span></span>
+                <span class="lens-chip-score" id="rssiLens_respondent_centered">—</span>
+              </div>
+              <div class="lens-chip" data-lens="validity_forward">
+                <span class="lens-chip-label">Validity-Forward <span class="lens-cap-pill" id="rssiLensCapPill" hidden>Limited evidence</span></span>
+                <span class="lens-chip-score" id="rssiLens_validity_forward">—</span>
+              </div>
+              <button type="button" class="lens-help" id="rssiLensHelp"
+                      aria-label="About the three RSSI lenses"
+                      aria-expanded="false" aria-controls="rssiLensHelpPopover">?</button>
+              <div class="lens-help-popover" id="rssiLensHelpPopover" role="dialog" aria-label="About the three RSSI lenses" hidden>
+                <p><strong>Three lenses, one set of sub-scores.</strong> Each lens applies a different weight vector to the same eight domain scores (Spec §3.2):</p>
+                <ul>
+                  <li><strong>Psychometric Core</strong> — favors Reliability, Validity, and Factor Readiness. Reads "how statistically sound is this instrument?"</li>
+                  <li><strong>Respondent-Centered (headline)</strong> — favors Item / Prompt Quality, Bias &amp; Clarity, and Response Scale Review. Reads "how well does this survey work for the people taking it?"</li>
+                  <li><strong>Validity-Forward</strong> — favors Validity, Construct Alignment, and Bias &amp; Clarity. Reads "is there evidence this instrument measures what it claims to?"</li>
+                </ul>
+                <p>When the three lenses disagree by more than 10 points, an interpretation appears at the top of <em>What Do These Numbers Mean?</em> explaining why.</p>
+              </div>
+            </div>
+
             <div class="hero-meta">
               <span class="item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5.5"/><path d="M5 7.5 6.5 9 9.5 5.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Confidence <strong id="rssiConfidence">—</strong></span>
               <span class="item"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 11V3h10v8M2 11h10M5 11v2h4v-2" stroke-linejoin="round"/></svg> <span id="rssiHeroMetaItems">— items · — scales</span></span>
@@ -466,6 +500,7 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
         <section class="card rssi-hero-side" aria-labelledby="explainTitle">
           <h3 class="explain-title" id="explainTitle">What Do These Numbers Mean?</h3>
           <div class="explain-scroll">
+            <!-- Overall = the headline (Respondent-Centered) interpretation. -->
             <div class="explain-row" data-explain="overall">
               <div class="explain-head">
                 <span class="explain-label">Overall Strength Score</span>
@@ -473,47 +508,47 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
               </div>
               <p class="explain-text" id="explain_overall">Upload a survey to see your live explanation here.</p>
             </div>
-            <div class="explain-row" data-explain="survey_structure">
-              <div class="explain-head">
-                <span class="explain-label">Survey Structure</span>
-                <span class="explain-band" id="explainBand_survey_structure">—</span>
-              </div>
-              <p class="explain-text" id="explain_survey_structure">—</p>
+
+            <!-- Disagreement readout slot. JS owns visibility — the row
+                 is created and inserted here only when the engine
+                 returns a non-null rssi.disagreement_readout (Spec §3.5).
+                 When null, no row exists; no empty container, no
+                 "lenses agree" filler. Built to the engine's null contract. -->
+            <div id="rssiDisagreementSlot"></div>
+
+            <!-- Eight canonical domain rows, Spec §2 order.
+                 JS populates band + interpretation copy. -->
+            <div class="explain-row" data-explain="reliability">
+              <div class="explain-head"><span class="explain-label">Reliability</span><span class="explain-band" id="explainBand_reliability">—</span></div>
+              <p class="explain-text" id="explain_reliability">—</p>
             </div>
-            <div class="explain-row" data-explain="question_quality">
-              <div class="explain-head">
-                <span class="explain-label">Question Quality</span>
-                <span class="explain-band" id="explainBand_question_quality">—</span>
-              </div>
-              <p class="explain-text" id="explain_question_quality">—</p>
+            <div class="explain-row" data-explain="validity">
+              <div class="explain-head"><span class="explain-label">Validity</span><span class="explain-band" id="explainBand_validity">—</span></div>
+              <p class="explain-text" id="explain_validity">—</p>
             </div>
-            <div class="explain-row" data-explain="scale_strength">
-              <div class="explain-head">
-                <span class="explain-label">Scale Strength</span>
-                <span class="explain-band" id="explainBand_scale_strength">—</span>
-              </div>
-              <p class="explain-text" id="explain_scale_strength">—</p>
+            <div class="explain-row" data-explain="construct_alignment">
+              <div class="explain-head"><span class="explain-label">Construct Alignment</span><span class="explain-band" id="explainBand_construct_alignment">—</span></div>
+              <p class="explain-text" id="explain_construct_alignment">—</p>
             </div>
-            <div class="explain-row" data-explain="reliability_readiness">
-              <div class="explain-head">
-                <span class="explain-label">Reliability Readiness</span>
-                <span class="explain-band" id="explainBand_reliability_readiness">—</span>
-              </div>
-              <p class="explain-text" id="explain_reliability_readiness">—</p>
+            <div class="explain-row" data-explain="item_prompt_quality">
+              <div class="explain-head"><span class="explain-label">Item / Prompt Quality</span><span class="explain-band" id="explainBand_item_prompt_quality">—</span></div>
+              <p class="explain-text" id="explain_item_prompt_quality">—</p>
             </div>
-            <div class="explain-row" data-explain="validity_alignment">
-              <div class="explain-head">
-                <span class="explain-label">Validity Alignment</span>
-                <span class="explain-band" id="explainBand_validity_alignment">—</span>
-              </div>
-              <p class="explain-text" id="explain_validity_alignment">—</p>
+            <div class="explain-row" data-explain="bias_clarity">
+              <div class="explain-head"><span class="explain-label">Bias &amp; Clarity Review</span><span class="explain-band" id="explainBand_bias_clarity">—</span></div>
+              <p class="explain-text" id="explain_bias_clarity">—</p>
             </div>
-            <div class="explain-row" data-explain="response_risk">
-              <div class="explain-head">
-                <span class="explain-label">Response Risk</span>
-                <span class="explain-band" id="explainBand_response_risk">—</span>
-              </div>
-              <p class="explain-text" id="explain_response_risk">—</p>
+            <div class="explain-row" data-explain="scale_structure">
+              <div class="explain-head"><span class="explain-label">Scale Structure</span><span class="explain-band" id="explainBand_scale_structure">—</span></div>
+              <p class="explain-text" id="explain_scale_structure">—</p>
+            </div>
+            <div class="explain-row" data-explain="factor_readiness">
+              <div class="explain-head"><span class="explain-label">Factor Readiness</span><span class="explain-band" id="explainBand_factor_readiness">—</span></div>
+              <p class="explain-text" id="explain_factor_readiness">—</p>
+            </div>
+            <div class="explain-row" data-explain="response_scale_review">
+              <div class="explain-head"><span class="explain-label">Response Scale Review</span><span class="explain-band" id="explainBand_response_scale_review">—</span></div>
+              <p class="explain-text" id="explain_response_scale_review">—</p>
             </div>
           </div>
         </section>

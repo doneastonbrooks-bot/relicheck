@@ -331,7 +331,9 @@ The CFA-with-EFA-fallback path the spec describes (§4B and §11) is structurall
 
 **Status after M2 (2026-05-27).** The standalone surface now has a tag stage between parse and score where the user assigns each column a role (Likert / Numeric / Demographic / Criterion / Identifier / Free text / Ignore), names a construct for each Likert item, flags reverse-coded items, and ticks a survey-level "I've reviewed every item for reverse-coding" confirmation. The tag stage materializes via `RSSI_TAG_CORE.materializeDataset` with the user's confirmed tags, populating `v.construct`, `v.reverse_coded`, `v.anchor_count`, `dataset.config.demographic_columns`, `dataset.config.criterion_column`, and `dataset.config.reverse_coded_confirmed`. The three previously-skipped domains (§4A, §4B, §4E) now activate when the user tags — the activation contract is locked by [apps/__harness/rssi_tag_emit.test.js](apps/__harness/rssi_tag_emit.test.js) with 96 assertions across three engine-activation scenarios and tag-core unit checks.
 
-**M3–M7 still pending.** Per the milestone plan: M3 dashboard rewidening (the dim-grid migrates to the canonical 8-domain taxonomy; construct_alignment lands as the 7th card), M4 parse normalizations (BOM strip, sentinel-null mapping, locale-decimal toggle) and richer error handling, M5 real fileContentHash (M2 ships an FNV-1a stub; M5 replaces with the spec'd SHA-256 + sampled-large-file rule), M6 authenticated persistence (M2 saves tags to localStorage only), M7 identifier auto-detect and visual polish.
+**M3 partial — v2 report surface landed 2026-05-27.** What was scoped as the M3 "dim-grid migration to the canonical 8-domain taxonomy with construct_alignment as the 7th card" now ships as the eight-card grid (Bias & Clarity also added — the v1 components map dropped *two* domains, not one). The standalone report surface now consumes the engine's v2 output directly: the three lens scores render as a labelled triplet next to the headline ring (Respondent-Centered = ring number per Spec §3.4), the disagreement readout fires at the top of the explain panel when the engine returns a non-null sentence (Spec §3.5; built to the null contract — no row exists in the DOM when null), the validity-forward cap surfaces as a "Limited evidence" pill on the VF chip (Spec §3.6), and the legacy v1 component labels are gone from every surface (Spec §2). The "?" affordance explaining the three lenses opens a popover next to the triplet.
+
+**M4–M7 still pending.** Per the milestone plan: M3 remaining (bulk-tag toolbar, iframe-scrape audit), M4 parse normalizations (BOM strip, sentinel-null mapping, locale-decimal toggle) and richer error handling, M5 real fileContentHash (M2 ships an FNV-1a stub; M5 replaces with the spec'd SHA-256 + sampled-large-file rule), M6 authenticated persistence (M2 saves tags to localStorage only; v2-display saved blocks also localStorage-only), M7 identifier auto-detect and visual polish.
 
 **Activation impact of M2.** Users who upload to the standalone RSSI surface and complete the tag stage now see §4A/§4B/§4E score, matching the studio-mount path. Users who score with auto-detected roles only (no construct names entered) see the pre-M2 behavior: those three domains whole-domain-skip because `v.construct` is absent. The hard-gate that previously refused datasets with < 3 auto-detected Likert columns is retired — `validateTags` now blocks "Score my data" only when zero columns are tagged Likert, and the more meaningful `construct_too_small` hint (< 3 items per construct) surfaces inline at the row.
 
@@ -364,3 +366,71 @@ The end-to-end harness shim is a necessary check but not a sufficient one. Treat
 **Resolve during.** Process-only change — applies to every future platform-side commit. The first commit it applies retroactively to is the #1c follow-up tracking commit that surfaced this issue.
 
 **Code touch-points.** No code change. This entry exists as a documented step in the platform-side workflow. Reference it in commit-message checklists or pre-commit reviewer notes.
+
+---
+
+## 18. `dataset.scaleCount` is a heuristic — v2 surfaces must read engine `scales[]` instead
+
+**Surfaced:** §16 v2 report-surface migration (2026-05-27, Q4-i finding).
+
+**Problem.** [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) computes `dataset.scaleCount = Math.max(1, Math.ceil(likertVars.length / 5))` and stuffs it into the result blob. This is a v1-era heuristic — "assume scales of ~5 items, count Likert vars / 5." It has no relationship to the actual scales the user tagged in the tag stage, the constructs the engine sees, or the `scales[]` block Spec §10 says the engine emits.
+
+In v2 the standalone surface only uses `scaleCount` for the meta strip ("10 items · 2 scales"), so the cosmetic mismatch is small. But any future v2 surface that needs a true scale count (improvement priorities, "your X scales scored …", per-scale drill-ins) must NOT consume this heuristic — it must read the engine's `scales[]` per Spec §10.
+
+**Implication.** A user with three tagged constructs sees "2 scales" in the meta strip because 6 Likert / 5 = 2 (rounded up). The heuristic is consistently wrong in small directions; it doesn't undermine the headline score, but it does undermine the "we know what your scales are" trust signal.
+
+**Resolve during.** Standalone-surface cleanup. Replace the heuristic with `dataset.scaleCount = lensResult.scales ? lensResult.scales.length : null` once the engine's `scales[]` emission is confirmed to be populated on the standalone path (currently the engine emits it for the studio mount but standalone may need a parallel wiring check). The Phase 1 audit on this work called this out as "out of scope for the v2-display migration"; landing this is the natural follow-up.
+
+**Code touch-points.** [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) `computeRSSI` — `dataset.scaleCount` line. [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) — verify `lensResult.scales` is populated on the standalone path.
+
+---
+
+## 19. Studio-mount RSSI panel (render.php) has stale sidebar anchors that match neither v1 nor v2
+
+**Surfaced:** §16 v2 report-surface migration §17 three-step check (2026-05-27).
+
+**Problem.** [apps/rssi/render.php](apps/rssi/render.php) is the studio-mount version of the RSSI panel (a separate surface from the standalone at [rssi-upload.php](rssi-upload.php)). Its sidebar nav points to anchors that don't correspond to any current taxonomy:
+
+| Sidebar link in render.php | Anchor href | Status |
+|---|---|---|
+| Item Quality | `#dim-item_quality` | Not a v1 components key, not a canonical v2 key |
+| Scale Structure | `#dim-scale_strength` | v1 components key (now retired) |
+| Factor Analysis | `#dim-factor_structure` | Not a v1 components key, not a canonical v2 key |
+| Response Quality | `#dim-response_quality` | Not a v1 components key, not a canonical v2 key |
+
+These are anchors to dim cards that no surface in the current codebase produces. The render.php sidebar predates both the v1 components map AND the v2 canonical taxonomy — it's its own third taxonomy. Reliability and Validity anchors (`#dim-reliability`, `#dim-validity`) happen to match the v2 canonical keys by accident.
+
+**Implication.** Studio-mount users who click any of those four sidebar links land on `#dim-*` anchors that don't exist. The browser silently scrolls to nothing. No error, no fallback, just a dead link. The standalone-surface v2-display migration (§16 v2 work, 2026-05-27) does not affect the studio-mount path — the standalone uses the inline sidebar in [rssi-upload.php](rssi-upload.php), which carries canonical labels with a mixed-v1/v2 data-dimension key set that's normalized in JS via SIDEBAR_KEY_TO_V2 at the click boundary.
+
+**Resolve during.** Studio-mount v2-display migration. The same three-step pattern as the standalone migration: rewrite the studio-mount `computeRSSI`-equivalent surface (likely inline in `_studio_mount.php` or wherever the studio mount currently calls `RSSI_MATH.computeLensesFromDataset`), emit the v2 shape, fix render.php's sidebar to canonical-key anchors. **Separate migration, separate conversation** per the standalone v2 work's directive.
+
+**Code touch-points.** [apps/rssi/render.php](apps/rssi/render.php) sidebar markup. [_studio_mount.php](_studio_mount.php) — studio-side score-emission path. Engine untouched (same v2 shape, same canonical keys).
+
+---
+
+## 20. Disagreement readout suppressed whenever any domain skips — partial-evaluation gate
+
+**Surfaced:** §16 v2 report-surface migration smoke test (2026-05-27).
+
+**Problem.** [apps/strength-index/strength-index.js:932-934](apps/strength-index/strength-index.js:932) gates the disagreement readout on `skipped_domains.length === 0`:
+
+```js
+if (Array.isArray(skippedDomains) && skippedDomains.length > 0) {
+  return null;
+}
+```
+
+If ANY of the eight domains whole-domain-skipped on this run, the readout returns null — regardless of how large the lens spread is, regardless of whether the dictionary has the matching sentence. Real-world example from the v2 migration smoke run: lens scores PC 34 / RC 50 / VF 37 (16-point spread, well over the spec §3.5 threshold of 10), with `bias_clarity` whole-domain-skipped because the user didn't tag any demographic columns. The dictionary at [strength-index.js:917-929](apps/strength-index/strength-index.js:917) contains the matching `respondent_centered|psychometric_core` sentence ("Your items read well, but the underlying scales are not holding together statistically. Consider adding items or refining constructs."), but the skip-gate suppressed it.
+
+**Implication.** A user with a meaningful lens disagreement but one partially-evaluated domain — which is the default state for most standalone-tagged datasets, since at least one of {demographic columns for §4D fairness, criterion column for §4A criterion validity, multi-construct tagging for §4B} is typically absent — sees silence where the spec promises a one-sentence interpretation. The exact case the spec §3.5 readout exists to handle is the case the gate disables. A 16-point spread silently producing nothing is exactly the user-visible failure: the user looks at three lens numbers, sees they disagree, and the surface doesn't say why.
+
+**Resolve during.** Engine-side. Options:
+1. Remove the skip-gate entirely. The readout fires on lens spread alone (subject to dictionary coverage). Risk: lens scores computed with one domain dropped may be unstable, and pinning a sentence to them may overstate what the data supports.
+2. Replace the binary gate with a sentence-suffix that names what's missing ("… though the validity-forward lens excludes Bias & Clarity, which was skipped").
+3. Keep the gate but extend the dictionary to cover partial-evaluation patterns explicitly.
+
+Recommended: option 2, which preserves spec §3.5 intent (always interpret meaningful spread) while honestly flagging the data-coverage caveat.
+
+Display-side note: the v2 standalone surface honors the engine's null contract correctly — when the engine returns null, no `.explain-row` exists for the readout (Q3 directive). The fix lives behind the engine seam, not the surface.
+
+**Code touch-points.** [apps/strength-index/strength-index.js](apps/strength-index/strength-index.js) `computeDisagreementReadout`. [apps/strength-index/__harness/three-lens-verify.js](apps/strength-index/__harness/three-lens-verify.js) — readout cases to extend.
