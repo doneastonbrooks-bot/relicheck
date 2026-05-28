@@ -17,11 +17,22 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
     // variable to match the Survey Builder path's contract (engine accepts
     // either `construct` or `scale`).
     $scaleMap = [];
+    // Per-variable wizard reverse map (paired with $scaleMap). Wizard Step 3
+    // captures per-row reverse checkboxes alongside scale names; both
+    // propagate together through the same settings.scales shape.
+    // KNOWN_ISSUES.md §4 #2 (per-item reverse_coded). The Survey Builder's
+    // q.reverse wins (same precedence convention as construct); the wizard
+    // map is the fallback for surveys built without per-question reverse
+    // tags but with the wizard's scales step completed.
+    $reverseMap = [];
     if (isset($settings['scales']) && is_array($settings['scales'])) {
         foreach ($settings['scales'] as $vname => $row) {
             if (!is_array($row)) continue;
             $s = is_string($row['scale'] ?? null) ? trim($row['scale']) : '';
             if ($s !== '') $scaleMap[(string)$vname] = $s;
+            if (array_key_exists('reverse', $row)) {
+                $reverseMap[(string)$vname] = !empty($row['reverse']);
+            }
         }
     }
 
@@ -41,6 +52,19 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
         // Structure. Field name `construct` matches q.construct verbatim;
         // engine accepts either `construct` or `scale`.
         $construct = is_string($q['construct'] ?? null) ? trim($q['construct']) : '';
+
+        // Per-question reverse-coding flag from the Survey Builder
+        // (app.html "Reverse-scored" checkbox writes q.reverse). When the
+        // question shape is the synthesized output of the uploaded-datasets
+        // transform (api/_dataset_to_survey.php), the same field is also
+        // populated from column_meta.reverse. Tri-state semantics: presence
+        // of the key signals "Builder has an opinion" (true OR explicit
+        // false); absence falls back to the wizard map. The engine's
+        // boolean coercion downstream is fine with both shapes; what we
+        // need to preserve is whether the Builder set it at all, not the
+        // truthiness alone.
+        $hasBuilderReverse = array_key_exists('reverse', $q);
+        $builderReverse    = $hasBuilderReverse ? !empty($q['reverse']) : null;
 
         // Collect one raw answer per response (null if missing)
         $raw = array_map(fn($r) => $r['answers'][$qid] ?? null, $responses);
@@ -63,6 +87,17 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
             // wizard intentionally overrides Builder tags.
             $eff = $construct !== '' ? $construct : ($scaleMap[$vname] ?? '');
             if ($eff !== '') $var['construct'] = $eff;
+            // Reverse-coded flag — same precedence as construct: Builder's
+            // q.reverse wins; wizard's settings.scales[vname].reverse is
+            // fallback. Omit the key entirely when neither side set it
+            // (engine defaults to false; absent key is the signal that no
+            // platform-side surface has reviewed reverse-coding for this
+            // item, distinct from an explicit false).
+            if ($hasBuilderReverse) {
+                $var['reverse_coded'] = $builderReverse;
+            } elseif (array_key_exists($vname, $reverseMap)) {
+                $var['reverse_coded'] = $reverseMap[$vname];
+            }
             $variables[] = $var;
 
         } elseif ($type === 'single') {
@@ -143,6 +178,20 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
                 $eff = $construct !== '' ? $construct
                      : ($scaleMap[$vname] ?? $scaleMap['q_' . $qid] ?? '');
                 if ($eff !== '') $var['construct'] = $eff;
+                // Reverse-coded three-level fallback mirrors the construct
+                // rule: Builder's parent-question q.reverse wins → per-row
+                // wizard tag → parent-question wizard tag. The Builder UI
+                // sets reverse at the matrix-question level (one checkbox
+                // for the whole matrix), so sub-items inherit it; the
+                // wizard offers per-sub-row reverse checkboxes for finer
+                // control on uploaded matrices.
+                if ($hasBuilderReverse) {
+                    $var['reverse_coded'] = $builderReverse;
+                } elseif (array_key_exists($vname, $reverseMap)) {
+                    $var['reverse_coded'] = $reverseMap[$vname];
+                } elseif (array_key_exists('q_' . $qid, $reverseMap)) {
+                    $var['reverse_coded'] = $reverseMap['q_' . $qid];
+                }
                 $variables[] = $var;
             }
 
@@ -201,10 +250,27 @@ function relicheck_survey_build_dataset(string $title, array $questions, array $
         ];
     }
 
+    // Engine-config block (KNOWN_ISSUES.md §4 #3). The survey-level
+    // reverse_coded_confirmed flag lives in surveys.settings and the
+    // engine reads it from config.reverse_coded_confirmed. The two engine
+    // entry points (strength-index.js:3421 host call and
+    // apps/rssi/rssi-upload.js:186 standalone) both consume dataset.config
+    // and pass it through as the second argument to
+    // computeLensesFromDataset. We emit a boolean only when the survey-
+    // level setting is present (truthy or explicitly false); a missing
+    // key signals "platform has not captured the confirmation yet" and
+    // the engine's §4E sub-2 skip-and-rescale absorbs it. Tri-state per
+    // spec §4E.
+    $config = [];
+    if (array_key_exists('reverse_coded_confirmed', $settings)) {
+        $config['reverse_coded_confirmed'] = !empty($settings['reverse_coded_confirmed']);
+    }
+
     return [
         'source'    => $title,
         'variables' => $variables,
         'rowCount'  => count($responses),
+        'config'    => $config,
     ];
 }
 

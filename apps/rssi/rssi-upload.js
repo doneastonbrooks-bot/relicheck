@@ -183,7 +183,13 @@
     if (typeof engine !== 'function') {
       throw new Error('Canonical lens engine not loaded — apps/strength-index/strength-index.js must be included before apps/rssi/rssi-upload.js (Spec §6).');
     }
-    const lensResult = engine(dataset);
+    // Pass dataset.config through to the engine for parity with the
+    // studio strength-index host (strength-index.js:3421). The standalone
+    // RSSI surface has no UI to populate config today (KNOWN_ISSUES.md §16),
+    // so dataset.config will be empty in practice — keeping the signature
+    // consistent so when §16's UI work lands the integration seam is
+    // already correct.
+    const lensResult = engine(dataset, (dataset && dataset.config) || {});
     const rssi = lensResult.rssi;
     const d    = lensResult.domain_details || {};
 

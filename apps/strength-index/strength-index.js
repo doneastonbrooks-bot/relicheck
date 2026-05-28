@@ -3418,7 +3418,13 @@
   // so the existing 6 component cards keep rendering until the studio
   // template is migrated to the canonical 8-domain taxonomy (separate
   // conversation per Spec §2).
-  const lensResult = computeLensesFromDataset(dataset);
+  // dataset.config carries engine-level configuration (e.g.,
+  // reverse_coded_confirmed) populated by the platform transform
+  // (api/surveys/_build_dataset.php). Per KNOWN_ISSUES.md §4 #3, this is
+  // the only seam by which survey-level config reaches the engine — no
+  // parallel window global. Default to {} so untransformed datasets
+  // (legacy localStorage payloads, ad-hoc test inputs) still load.
+  const lensResult = computeLensesFromDataset(dataset, (dataset && dataset.config) || {});
   const components = {
     reliability:      lensResult.domain_details.reliability,
     factor_structure: lensResult.domain_details.factor_readiness,
