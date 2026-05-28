@@ -880,11 +880,35 @@
         ? 'A few targeted fixes would move it into excellent territory.'
         : 'Focused revisions to the lowest-scoring dimensions would meaningfully lift the score.');
 
-    // scaleCount is a heuristic carried over from v1. The engine emits a
-    // real scales[] block (Spec §10) that any v2 surface needing a true
-    // count must read from. KNOWN_ISSUES carries the global cleanup
-    // follow-up; this surface keeps the heuristic for now because the
-    // dim-grid + lens triplet do not depend on it.
+    // scaleCount (KNOWN_ISSUES #18 fix): derive from distinct
+    // `v.construct` values across Likert variables — the same grouping
+    // the engine itself uses internally (§4 reliability + §4A validity
+    // + §4B construct alignment + §4E scale structure all group items
+    // by `v.construct || v.scale`, see strength-index.js around line
+    // 2119 / 2327 / 2543). This replaces the v1-era heuristic
+    // `Math.ceil(likertVars.length / 5)` which assumed scales of ~5
+    // items and had no relationship to the actual constructs the user
+    // tagged in the tag stage.
+    //
+    // Edge cases mirror the engine:
+    //   - 0 Likert items → 0 scales.
+    //   - Likert items present, none with a construct → 1 implicit
+    //     scale (the engine groups untagged Likert as a single scale
+    //     when no constructs are assigned, even if §4B + §4A skip
+    //     for lack of construct labels).
+    //   - Mixed tagged + untagged Likert → distinct constructs + 1
+    //     for the untagged group.
+    const distinctConstructs = new Set();
+    let untaggedLikertCount = 0;
+    likertVars.forEach(function (v) {
+      const c = (typeof v.construct === 'string') ? v.construct.trim() : '';
+      if (c) distinctConstructs.add(c);
+      else untaggedLikertCount++;
+    });
+    const scaleCount = likertVars.length === 0
+      ? 0
+      : distinctConstructs.size + (untaggedLikertCount > 0 ? 1 : 0);
+
     return {
       app_key: 'strength_index',
       app_name: 'ReliCheck Strength Survey Index',
@@ -901,10 +925,10 @@
       skipped_domains:      lensResult.skipped_domains  || [],
       rssi_weights_version: lensResult.rssi_weights_version,
       dataset: {
-        source: dataset.source,
-        rowCount: dataset.rowCount,
-        itemCount: dataset.variables.length,
-        scaleCount: likertVars.length > 0 ? Math.max(1, Math.ceil(likertVars.length / 5)) : 0,
+        source:     dataset.source,
+        rowCount:   dataset.rowCount,
+        itemCount:  dataset.variables.length,
+        scaleCount: scaleCount,
       },
       computed_at: lensResult.computed_at,
     };

@@ -371,7 +371,7 @@ The end-to-end harness shim is a necessary check but not a sufficient one. Treat
 
 ## 18. `dataset.scaleCount` is a heuristic — v2 surfaces must read engine `scales[]` instead
 
-**Surfaced:** §16 v2 report-surface migration (2026-05-27, Q4-i finding).
+**Surfaced:** §16 v2 report-surface migration (2026-05-27, Q4-i finding). **RESOLVED 2026-05-28** by deriving scaleCount from distinct `v.construct` values across Likert variables — the same grouping the engine itself uses internally for §4 / §4A / §4B / §4E. The engine doesn't emit a top-level `scales[]` block (Spec §10 schema not implemented), but it does group items by construct, so reading the constructs from the materialized dataset produces the same count the engine sees.
 
 **Problem.** [apps/rssi/rssi-upload.js](apps/rssi/rssi-upload.js) computes `dataset.scaleCount = Math.max(1, Math.ceil(likertVars.length / 5))` and stuffs it into the result blob. This is a v1-era heuristic — "assume scales of ~5 items, count Likert vars / 5." It has no relationship to the actual scales the user tagged in the tag stage, the constructs the engine sees, or the `scales[]` block Spec §10 says the engine emits.
 
