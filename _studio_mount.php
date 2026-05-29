@@ -114,6 +114,11 @@ $_route_maps = [
     'themes_codes'=>'/theme-analysis.php','exemplar_quotes'=>'/quote-extractor.php',
     'project_snapshot'=>'/project-snapshot.php','sample_sources'=>'/sample-profile.php','data_quality'=>'/data-quality.php','overall_findings'=>'/overall-findings.php','data_readiness'=>'/data-readiness.php','recommended_analyses'=>'/recommended-analyses.php','purpose'=>'/purpose.php','missing_data'=>'/missing-data.php',
     'strength_index'=>'/strength-index.php','reliability'=>'/reliability.php','inter_rater_agreement'=>'/inter-rater-agreement.php','coding_agreement'=>'/inter-rater-agreement.php','trustworthiness'=>'/trustworthiness.php','construct_alignment'=>'/construct-alignment.php','validity'=>'/validity.php','item_quality'=>'/item-quality.php',
+    'dignity_framing'=>'/dignity-framing.php','access'=>'/access.php',
+    'construct_definition'=>'/construct-definition.php','purpose_alignment'=>'/purpose-alignment.php','dimension_coverage'=>'/dimension-coverage.php','item_construct_alignment'=>'/item-construct-alignment.php','response_option_validity'=>'/response-option-validity.php',
+    'scale_structure_readiness'=>'/scale-structure-readiness.php','item_clarity'=>'/item-clarity-readiness.php','response_scale_consistency'=>'/response-scale-consistency.php','redundancy_balance'=>'/redundancy-balance.php','administration_consistency'=>'/administration-consistency-reliability.php',
+    'respondent_instructions'=>'/respondent-instructions-readiness.php','consent_privacy'=>'/consent-privacy-readiness.php','fielding_plan'=>'/fielding-plan-readiness.php','sensitive_safety'=>'/sensitive-safety-readiness.php','completion_burden'=>'/completion-burden-readiness.php','administration_readiness'=>'/administration-readiness.php',
+    'validity_readiness'=>'/validity-readiness.php','reliability_readiness'=>'/reliability-readiness.php','siri_dashboard'=>'/siri-readiness.php',
     'scale_structure'=>'/scale-structure.php','factor_readiness'=>'/factor-readiness.php','bias_review'=>'/bias-clarity.php',
     'response_scale_review'=>'/response-scale.php','frequencies'=>'/frequencies.php','means_distributions'=>'/distributions.php',
     'cross_tabs'=>'/cross-tabs.php','group_summaries'=>'/group-summaries.php','item_theme_summaries'=>'/open-ended-summary.php',
@@ -724,7 +729,15 @@ endif;
   // this, Apache's default heuristic caching means browsers can hold onto
   // old JS for hours after a deploy. The mtime version changes the URL on
   // every save, forcing browsers to refetch.
-  if (!empty($_app['js'])) {
+  //
+  // Only emit the engine JS when the engine's DOM is actually on the page.
+  // Pages that opt into the template-level workspace layout
+  // ($mount_workspace / $mount_workspace_empty) suppress the engine's
+  // render.php include above (see lines 366-376) — loading the engine JS
+  // in that case crashes on the engine's first getElementById call against
+  // a DOM that was never emitted.
+  $_engine_dom_rendered = empty($mount_workspace) && empty($mount_workspace_empty);
+  if (!empty($_app['js']) && $_engine_dom_rendered) {
     $_js_url = $_app['js'];
     $_js_path = __DIR__ . $_app['js'];
     $_js_ver = is_file($_js_path) ? filemtime($_js_path) : time();

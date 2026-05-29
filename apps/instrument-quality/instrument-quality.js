@@ -357,6 +357,82 @@
   // .iq-source / #iqEmpty / .iq-lens markup.
   if (!document.getElementById('iqEmpty')) return;
 
+  // ── Dignity / Framing Readiness is a PRE-DATA validity subdomain: it
+  //    reviews the instrument's item text against AI-proposed, human-settled
+  //    flags and scores deterministically via window.DignityEngine. It never
+  //    reads the response dataset, so short-circuit here, before the dataset
+  //    guard, so it renders even when the survey has no responses yet. ──
+  if ((window.IQ_LENS || '') === 'dignity_framing') {
+    document.querySelectorAll('.iq-lens').forEach(function (el) {
+      el.hidden = el.getAttribute('data-lens') !== 'dignity_framing';
+    });
+    var _dfSrc = document.getElementById('iqSource');
+    if (_dfSrc) { _dfSrc.hidden = true; _dfSrc.style.display = 'none'; }
+    renderDignityFraming();
+    return;
+  }
+
+  // ── Access Readiness is the second PRE-DATA validity lens: same pattern as
+  //    Dignity (AI-proposed, human-settled barriers scored by window.AccessEngine),
+  //    so short-circuit it here too, before the dataset guard. ──
+  if ((window.IQ_LENS || '') === 'access') {
+    document.querySelectorAll('.iq-lens').forEach(function (el) {
+      el.hidden = el.getAttribute('data-lens') !== 'access';
+    });
+    var _acSrc = document.getElementById('iqSource');
+    if (_acSrc) { _acSrc.hidden = true; _acSrc.style.display = 'none'; }
+    renderAccess();
+    return;
+  }
+
+  // ── The five remaining Validity Readiness components are PRE-DATA factory
+  //    lenses (construct_definition, purpose_alignment, dimension_coverage,
+  //    item_construct_alignment, response_option_validity). They share one
+  //    engine + one generic renderer; short-circuit here before the dataset
+  //    guard, exactly like Dignity and Access. ──
+  if (window.SDSI_VALIDITY_LENSES && window.SDSI_VALIDITY_LENSES[window.IQ_LENS || '']) {
+    var _vc = window.IQ_LENS;
+    document.querySelectorAll('.iq-lens').forEach(function (el) {
+      el.hidden = el.getAttribute('data-lens') !== _vc;
+    });
+    var _vcSrc = document.getElementById('iqSource');
+    if (_vcSrc) { _vcSrc.hidden = true; _vcSrc.style.display = 'none'; }
+    renderValidityLens(_vc);
+    return;
+  }
+
+  // ── The five Reliability Readiness components are PRE-DATA factory lenses
+  //    (scale_structure_readiness, item_clarity, response_scale_consistency,
+  //    redundancy_balance, administration_consistency). They share the same
+  //    factory engine + a generic renderer; short-circuit here before the
+  //    dataset guard, exactly like the validity lenses. ──
+  if (window.SDSI_RELIABILITY_LENSES && window.SDSI_RELIABILITY_LENSES[window.IQ_LENS || '']) {
+    var _rc = window.IQ_LENS;
+    document.querySelectorAll('.iq-lens').forEach(function (el) {
+      el.hidden = el.getAttribute('data-lens') !== _rc;
+    });
+    var _rcSrc = document.getElementById('iqSource');
+    if (_rcSrc) { _rcSrc.hidden = true; _rcSrc.style.display = 'none'; }
+    renderReliabilityLens(_rc);
+    return;
+  }
+
+  // ── The five Administration Readiness components are PRE-LAUNCH factory
+  //    lenses (respondent_instructions, consent_privacy, fielding_plan,
+  //    sensitive_safety, completion_burden). They share the same factory engine
+  //    + a generic renderer; short-circuit here before the dataset guard,
+  //    exactly like the validity and reliability lenses. ──
+  if (window.SDSI_ADMINISTRATION_LENSES && window.SDSI_ADMINISTRATION_LENSES[window.IQ_LENS || '']) {
+    var _ac = window.IQ_LENS;
+    document.querySelectorAll('.iq-lens').forEach(function (el) {
+      el.hidden = el.getAttribute('data-lens') !== _ac;
+    });
+    var _acSrc = document.getElementById('iqSource');
+    if (_acSrc) { _acSrc.hidden = true; _acSrc.style.display = 'none'; }
+    renderAdministrationLens(_ac);
+    return;
+  }
+
   // ==================================================================
   // Dataset
   // ==================================================================
@@ -557,6 +633,1782 @@
     case 'factor_readiness':    safeRender(renderFactorReadiness,    'Factor Readiness');    break;
     case 'bias_clarity':        safeRender(renderBiasClarity,        'Bias & Clarity');      break;
     case 'response_scale':      safeRender(renderResponseScale,      'Response Scale');      break;
+  }
+
+  // ==================================================================
+  // LENS: dignity_framing  (pre-data; dispatched by the short-circuit above)
+  // AI proposes flags; the human keeps / dismisses / re-grades each; the
+  // deterministic DignityEngine produces the score, SDSI points, evidence
+  // ledger, and an ORTHOGONAL launch gate that never moves the number.
+  // ==================================================================
+  function dfDefaultProposal() {
+    // Sample K-12 family survey — reproduces the agreed worked example
+    // (−44 capped penalty, +6 credit → 62/100 → 5.0/8) and fires blockers
+    // on the unprotected sensitive items so the gate is visible.
+    return {
+      title: 'Sample K-12 family survey',
+      population: { minors: true, peopleFacing: true, communities: ['multilingual learners', 'special education'] },
+      flags: [
+        { check: 'deficit_framing', item_ref: 'q3',
+          quote: 'How far behind are the at-risk students in your class?', severity: 'major',
+          rationale: 'Frames students by deficiency before the respondent answers, pushing a deficit interpretation and distorting the construct.',
+          suggested_revision: 'What academic supports would help your students make progress?' },
+        { check: 'identity_erasure', item_ref: 'q8', topic: 'race',
+          quote: 'Race: White / Black / Other', severity: 'major',
+          rationale: 'Collapses distinct identities into "Other" and forces misclassification, biasing who gets counted.',
+          suggested_revision: 'Offer multi-select with a write-in option matched to your community.',
+          blocker_candidate: true, blocker_condition: 'forced_misclassification' },
+        { check: 'extractive_disclosure', item_ref: 'q14', topic: 'legal_status', section: 'demographics',
+          quote: 'Is anyone in your household undocumented?', severity: 'critical',
+          rationale: 'Demands legal status from families with no stated purpose or decline path — real risk to respondents and a driver of nonresponse bias.',
+          suggested_revision: 'Remove the item, or state a clear purpose and add a "Prefer not to answer" option on this item.',
+          blocker_candidate: true, blocker_condition: 'unguarded_legal_status' },
+        { check: 'judging_respondent', item_ref: 'q20',
+          quote: 'How often do you neglect to read with your child?', severity: 'moderate',
+          rationale: 'Moralizing wording shames the respondent before they answer, suppressing honest response.',
+          suggested_revision: 'In a typical week, how often do you read with your child?' }
+      ],
+      // Mitigations sit on the "intro" section — they earn score credit (+6)
+      // but are NOT attached to the sensitive demographics items, so they do
+      // not clear those items' blockers. Move them onto an item/section to see
+      // the gate clear.
+      mitigations: [
+        { type: 'clear_purpose',  item_ref: 'qIntro', section: 'intro',
+          evidence: 'The survey intro states a general purpose.' },
+        { type: 'decline_option', item_ref: 'qIntro', section: 'intro',
+          evidence: 'A general "you may skip questions" note appears in the intro.' }
+      ]
+    };
+  }
+
+  function renderDignityFraming() {
+    var Eng = window.DignityEngine;
+    var titleEl  = document.getElementById('iqDfTitle');
+    var subEl    = document.getElementById('iqDfSub');
+    var bodyEl   = document.getElementById('iqDfBody');
+    var interpEl = document.getElementById('iqDfInterp');
+    if (!Eng) {
+      titleEl.textContent = 'Dignity / Framing Readiness';
+      subEl.textContent = 'engine unavailable';
+      bodyEl.innerHTML = '<p class="iq-rel-plain">DignityEngine (apps/sdsi/dignity-engine.js) did not load.</p>';
+      return;
+    }
+
+    var CHECKS = Eng.CHECKS;
+    var SEVS   = ['minor', 'moderate', 'major', 'critical'];
+
+    // Live survey when mounted under the survey studio with a project_id.
+    // (For surveys, project_id IS the survey id.) Without one — e.g. the
+    // standalone harness — we fall back to the worked-example sample and hide
+    // the server-backed Run / Save actions.
+    var studio   = window.RELICHECK_STUDIO || '';
+    var surveyId = ((studio === 'survey' || studio === 'strength-survey') && window.RELICHECK_PROJECT_ID)
+      ? Number(window.RELICHECK_PROJECT_ID) || 0 : 0;
+    var live = surveyId > 0;
+
+    // ── Mutable review state ──
+    var population  = {};
+    var flags       = [];
+    var mitigations = [];
+    var notes       = '';
+
+    function seedFlags(arr) {
+      flags = (arr || []).map(function (f, i) {
+        return Object.assign({}, f, {
+          flag_id: f.flag_id || ('f' + (i + 1)),
+          decision: f.decision || 'accepted',
+          _origSeverity: (f._origSeverity != null ? f._origSeverity : f.severity),
+          blocker_reviewed: !!f.blocker_reviewed
+        });
+      });
+    }
+    function seedMitigations(arr) {
+      mitigations = (arr || []).map(function (m, i) {
+        return Object.assign({}, m, {
+          mitigation_id: m.mitigation_id || ('m' + (i + 1)),
+          decision: m.decision || 'accepted'
+        });
+      });
+    }
+    function seedFromProposal(p) {
+      if (p.population) population = Object.assign({}, p.population);
+      seedFlags(p.flags);
+      seedMitigations(p.mitigations);
+      notes = p.notes || '';
+    }
+
+    // Sample seed for the harness / no-survey case.
+    if (!live) {
+      seedFromProposal(dfDefaultProposal());
+    } else {
+      population = { minors: false, peopleFacing: true, communities: [] };
+    }
+
+    function findFlag(id) { for (var i = 0; i < flags.length; i++) if (flags[i].flag_id === id) return flags[i]; return null; }
+
+    // ── Status line + button refs (set after setup HTML is rendered) ──
+    var statusEl = null, runBtn = null, saveBtn = null, resultEl = null;
+    function status(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.setAttribute('data-tone', isErr ? 'err' : 'ok');
+    }
+
+    function commListToStr(c) { return Array.isArray(c) ? c.join(', ') : (c || ''); }
+    function strToCommList(s) {
+      return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 12);
+    }
+
+    function setupHtml() {
+      return '' +
+        '<div class="iq-df-setup">' +
+          '<div class="iq-df-pop">' +
+            '<span class="iq-df-pop-h">Population</span>' +
+            '<label class="iq-df-pop-opt"><input type="checkbox" class="iq-df-pop-minors"' + (population.minors ? ' checked' : '') + '> Respondents include minors</label>' +
+            '<label class="iq-df-pop-opt"><input type="checkbox" class="iq-df-pop-people"' + (population.peopleFacing !== false ? ' checked' : '') + '> People-facing (asked of people about themselves or their families)</label>' +
+            '<label class="iq-df-pop-comm">Communities present ' +
+              '<input type="text" class="iq-df-pop-communities" placeholder="e.g. multilingual learners, special education" value="' + esc(commListToStr(population.communities)) + '">' +
+            '</label>' +
+          '</div>' +
+          '<div class="iq-df-actions">' +
+            (live
+              ? '<button type="button" class="iq-df-run">Run AI review</button>' +
+                '<button type="button" class="iq-df-save">Save review</button>'
+              : '<span class="iq-df-sample">Sample instrument — connect a survey to run the AI review and save.</span>') +
+            '<span class="iq-df-status" data-tone="ok"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="iq-df-result"></div>';
+    }
+
+    function draw() {
+      var res = Eng.assess({ flags: flags, mitigations: mitigations, population: population });
+      var m = res.math;
+
+      titleEl.textContent = 'Dignity / Framing Score: ' + res.score + '/100  ·  ' +
+        res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points';
+      subEl.textContent = res.band.label;
+
+      var mathLine = 'Started at ' + m.startedAt + '   −' + Math.abs(m.cappedPenalty) +
+        ' capped penalties   +' + m.credit + ' mitigation credit   =   ' + m.raw +
+        (m.raw !== m.final ? '   (clamped to ' + m.final + ')' : '');
+
+      var gateHtml;
+      if (res.blockers.length === 0) {
+        gateHtml = '<div class="iq-df-gate" data-state="clear">No launch blockers — the dignity/framing gate is clear.</div>';
+      } else {
+        gateHtml = '<div class="iq-df-gate" data-state="' + (res.launchReady ? 'reviewed' : 'blocked') + '">' +
+          '<strong>' + (res.launchReady
+            ? 'All blockers reviewed — gate cleared.'
+            : 'Critical dignity/framing issue detected — review before launch.') + '</strong>' +
+          '<span class="iq-df-gate-note">The launch gate is orthogonal: it does not change the ' + res.score + '/100 score.</span>' +
+          '<ul class="iq-df-blockers">' + res.blockers.map(function (b) {
+            return '<li>' +
+              '<span class="iq-flag" data-tone="alert">Blocker</span> ' + esc(b.label) +
+              ' <em>(' + esc(b.item_ref) + ')</em> ' +
+              (b.reviewed
+                ? '<span class="iq-df-reviewed">reviewed</span>'
+                : '<button type="button" class="iq-df-btn" data-act="review" data-flag="' + esc(b.triggeredBy) + '">Mark reviewed</button>') +
+            '</li>';
+          }).join('') + '</ul>' +
+        '</div>';
+      }
+
+      var cards = flags.map(function (f) {
+        var counted = (f.decision === 'accepted' || f.decision === 'severity_overridden');
+        var pen = counted ? Eng.SEVERITY_PENALTY[f.severity] : 0;
+        var stateTxt = f.decision === 'dismissed' ? 'dismissed (0 pts · kept in ledger)'
+                     : f.decision === 'severity_overridden' ? 'severity overridden'
+                     : 'kept';
+        return '<div class="iq-df-card" data-decision="' + esc(f.decision) + '">' +
+          '<div class="iq-df-card-head">' +
+            '<span class="iq-flag" data-tone="' + (counted ? 'alert' : 'ok') + '">' + esc(CHECKS[f.check] || f.check) + '</span>' +
+            '<span class="iq-df-ref">' + esc(f.item_ref) + (f.topic ? ' · ' + esc(f.topic) : '') + '</span>' +
+            '<span class="iq-df-pen">' + pen + ' pts</span>' +
+          '</div>' +
+          '<blockquote class="iq-df-quote">' + esc(f.quote) + '</blockquote>' +
+          '<p class="iq-df-why"><strong>Why it matters.</strong> ' + esc(f.rationale) + '</p>' +
+          (f.suggested_revision ? '<p class="iq-df-fix"><strong>Suggested revision.</strong> ' + esc(f.suggested_revision) + '</p>' : '') +
+          '<div class="iq-df-controls">' +
+            '<label class="iq-df-sevlabel">Severity ' +
+              '<select class="iq-df-sev" data-flag="' + esc(f.flag_id) + '">' +
+                SEVS.map(function (s) {
+                  return '<option value="' + s + '"' + (s === f.severity ? ' selected' : '') + '>' +
+                    s + ' (' + Eng.SEVERITY_PENALTY[s] + ')</option>';
+                }).join('') +
+              '</select>' +
+            '</label>' +
+            '<button type="button" class="iq-df-btn" data-act="accept" data-flag="' + esc(f.flag_id) + '"' + (f.decision !== 'dismissed' ? ' data-on="1"' : '') + '>Keep</button>' +
+            '<button type="button" class="iq-df-btn" data-act="dismiss" data-flag="' + esc(f.flag_id) + '"' + (f.decision === 'dismissed' ? ' data-on="1"' : '') + '>Dismiss</button>' +
+            '<span class="iq-df-state">' + esc(stateTxt) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var ledgerRows = res.ledger.map(function (l) {
+        return '<tr data-counted="' + l.counted + '">' +
+          '<td class="iq-rel-item">' + esc(l.item_ref) + '</td>' +
+          '<td>' + esc(l.checkLabel) + '</td>' +
+          '<td>' + esc(l.severity) + '</td>' +
+          '<td>' + l.penalty + '</td>' +
+          '<td>' + esc(l.decision) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      if (!resultEl) return;
+      resultEl.innerHTML =
+        '<div class="iq-rel-summary">' +
+          '<p class="iq-rel-summary-line"><strong>' + esc(res.band.label) + '</strong></p>' +
+          '<p class="iq-df-math">' + esc(mathLine) + '</p>' +
+          '<p class="iq-rel-plain">Dignity / Framing is judged on <em>how</em> the instrument handles people, identity, risk, and difference — not on whether it asks about sensitive topics. The AI proposes the flags below with the exact wording that triggered each; you keep, dismiss, or re-grade them, and the score recomputes from your decisions.</p>' +
+          (notes ? '<p class="iq-df-notes"><strong>AI notes.</strong> ' + esc(notes) + '</p>' : '') +
+        '</div>' +
+        gateHtml +
+        '<h4 class="iq-block-h">Flags to review</h4>' +
+        '<div class="iq-df-cards">' + (cards || '<p class="iq-rel-plain">No flags proposed — dignity/framing reads clean.</p>') + '</div>' +
+        '<h4 class="iq-block-h">Evidence ledger</h4>' +
+        '<div class="iq-rel-table-wrap"><table class="iq-table iq-table-rel">' +
+          '<thead><tr><th>Item</th><th>Check</th><th>Severity</th><th>Penalty</th><th>Decision</th></tr></thead>' +
+          '<tbody>' + ledgerRows + '</tbody>' +
+        '</table></div>';
+
+      interpEl.innerHTML =
+        '<div class="iq-jema">' +
+          '<div class="iq-jema-row"><strong>Judgment.</strong> ' + esc(res.band.label) + ' — ' + res.sdsiPoints.toFixed(1) + ' of ' + res.sdsiWeight + ' validity points.</div>' +
+          '<div class="iq-jema-row"><strong>Evidence.</strong> ' + res.ledger.filter(function (l) { return l.counted; }).length + ' counted flag(s); ' + res.blockers.length + ' launch blocker(s).</div>' +
+          '<div class="iq-jema-row"><strong>Meaning.</strong> Framing problems are measurement error, not only ethics — deficit, othering, erasure, and shaming wording push respondents before they answer.</div>' +
+          '<div class="iq-jema-row"><strong>Action.</strong> ' + (res.launchReady
+            ? 'No unreviewed blockers. Address the remaining flags to raise the score before launch.'
+            : 'Resolve or review the launch blocker(s) before this instrument is launch-ready — regardless of the score.') + '</div>' +
+        '</div>';
+    }
+
+    // Render the setup region (population + actions) ONCE so its inputs keep
+    // focus, then let draw() repaint only the .iq-df-result child below it.
+    bodyEl.innerHTML = setupHtml();
+    resultEl = bodyEl.querySelector('.iq-df-result');
+    statusEl = bodyEl.querySelector('.iq-df-status');
+    runBtn   = bodyEl.querySelector('.iq-df-run');
+    saveBtn  = bodyEl.querySelector('.iq-df-save');
+
+    // ── Population inputs → state ──
+    var minorsEl = bodyEl.querySelector('.iq-df-pop-minors');
+    var peopleEl = bodyEl.querySelector('.iq-df-pop-people');
+    var commEl   = bodyEl.querySelector('.iq-df-pop-communities');
+    if (minorsEl) minorsEl.addEventListener('change', function () { population.minors = minorsEl.checked; draw(); });
+    if (peopleEl) peopleEl.addEventListener('change', function () { population.peopleFacing = peopleEl.checked; draw(); });
+    if (commEl)   commEl.addEventListener('change', function () { population.communities = strToCommList(commEl.value); });
+
+    // ── Run AI review (live only) ──
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        population.communities = strToCommList(commEl ? commEl.value : '');
+        runBtn.disabled = true;
+        status('Running AI review of the instrument…');
+        fetch('/api/sdsi/dignity-propose.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ survey_id: surveyId, population: population })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Proposal failed.');
+            seedFromProposal(o.j);
+            status((flags.length || 0) + ' flag(s) proposed' + (mitigations.length ? ', ' + mitigations.length + ' mitigation(s)' : '') + '. Review, then Save.');
+            draw();
+          })
+          .catch(function (e) { status('AI review failed: ' + e.message, true); })
+          .then(function () { runBtn.disabled = false; });
+      });
+    }
+
+    // ── Save settled review (live only) ──
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var res = Eng.assess({ flags: flags, mitigations: mitigations, population: population });
+        saveBtn.disabled = true;
+        status('Saving review…');
+        fetch('/api/sdsi/dignity-save.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            survey_id: surveyId,
+            population: population,
+            flags: flags,
+            mitigations: mitigations,
+            result: {
+              score: res.score, sdsiPoints: res.sdsiPoints, band: res.band.key,
+              launchReady: res.launchReady, blockerCount: res.blockers.length
+            }
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Save failed.');
+            status('Saved · ' + res.score + '/100 · ' + res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points.');
+          })
+          .catch(function (e) { status('Save failed: ' + e.message, true); })
+          .then(function () { saveBtn.disabled = false; });
+      });
+    }
+
+    // ── Flag card + severity delegation on the persistent result region ──
+    resultEl.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.iq-df-btn') : null;
+      if (!btn) return;
+      var f = findFlag(btn.getAttribute('data-flag'));
+      if (!f) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'accept')      f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      else if (act === 'dismiss') f.decision = 'dismissed';
+      else if (act === 'review')  f.blocker_reviewed = true;
+      draw();
+    });
+    resultEl.addEventListener('change', function (e) {
+      var sel = e.target.closest ? e.target.closest('.iq-df-sev') : null;
+      if (!sel) return;
+      var f = findFlag(sel.getAttribute('data-flag'));
+      if (!f) return;
+      f.severity = sel.value;
+      if (f.decision !== 'dismissed') f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      draw();
+    });
+
+    // ── Bootstrap: in live mode, load any saved review before first paint ──
+    if (live) {
+      status('Loading saved review…');
+      fetch('/api/sdsi/dignity-get.php?survey_id=' + encodeURIComponent(surveyId), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.exists && j.review) {
+            seedFromProposal(j.review);
+            if (minorsEl) minorsEl.checked = !!population.minors;
+            if (peopleEl) peopleEl.checked = population.peopleFacing !== false;
+            if (commEl)   commEl.value = commListToStr(population.communities);
+            status('Loaded saved review (updated ' + (j.review.updatedAt || 'previously') + ').');
+          } else {
+            status('No saved review yet. Set the population, then Run AI review.');
+          }
+          draw();
+        })
+        .catch(function () { status('Could not load a saved review — start a new one.', true); draw(); });
+    }
+
+    draw();
+  }
+
+  // ==================================================================
+  // LENS: access  (pre-data; dispatched by the short-circuit above)
+  // Second validity lens. Same shape as dignity_framing: the AI proposes
+  // access barriers; the human keeps / dismisses / re-grades each; the
+  // deterministic AccessEngine produces the score, SDSI points, evidence
+  // ledger, and an ORTHOGONAL launch gate that never moves the number.
+  // Reuses the iq-df-* presentation classes (purely visual primitives).
+  // ==================================================================
+  function acDefaultProposal() {
+    // Sample K-12 family survey — reproduces the agreed worked example
+    // (−44 capped penalty, +6 credit → 62/100 → 5.0/8) and fires blockers
+    // on the unprotected unreachable items so the gate is visible.
+    return {
+      title: 'Sample K-12 family survey',
+      population: { minors: true, peopleFacing: true, communities: ['multilingual learners', 'special education'] },
+      flags: [
+        { check: 'reading_load', item_ref: 'q3',
+          quote: 'To what extent do you perceive the pedagogical interventions to be efficacious?', severity: 'major',
+          rationale: 'College-level vocabulary and abstract phrasing sit far above many family respondents, so answers reflect reading ability rather than the intended attitude.',
+          suggested_revision: 'Do you think the extra help your child gets is working?' },
+        { check: 'language_barrier', item_ref: 'q7', section: 'background',
+          quote: 'Please describe your family’s experience with the enrollment process.', severity: 'major',
+          rationale: 'Open English prose for a community that includes multilingual families excludes non-English readers and biases the sample toward English readers.',
+          suggested_revision: 'Offer this item in the family’s home language plus a short plain-language version with checkbox options and an open field.',
+          blocker_candidate: true, blocker_condition: 'language_excludes_population' },
+        { check: 'format_inaccessibility', item_ref: 'q12', section: 'background',
+          quote: 'Drag the slider to indicate how strongly you agree.', severity: 'critical',
+          rationale: 'A drag-only slider assumes a pointer device and fine motor control; respondents on phones or with motor differences cannot answer, dropping them from the data.',
+          suggested_revision: 'Offer labeled radio buttons (Strongly disagree … Strongly agree) as the primary control, with the slider optional.',
+          blocker_candidate: true, blocker_condition: 'inaccessible_no_alt' },
+        { check: 'response_burden', item_ref: 'q18',
+          quote: 'List every school event you attended this year and what you learned at each.', severity: 'moderate',
+          rationale: 'Long open recall over a full year is high-effort and drives fatigue and dropout, thinning later responses.',
+          suggested_revision: 'About how many school events did you attend this year? (none / 1–2 / 3–5 / 6+) with an optional comment.' }
+      ],
+      // Mitigations sit on the "intro" section — they earn score credit (+6)
+      // but are NOT attached to the unreachable background items, so they do
+      // not clear those items' blockers. Move them onto an item/section to see
+      // the gate clear.
+      mitigations: [
+        { type: 'plain_language_alt', item_ref: 'qIntro', section: 'intro',
+          evidence: 'The intro offers a simpler-wording version of the opening items.' },
+        { type: 'accommodation_path', item_ref: 'qIntro', section: 'intro',
+          evidence: 'The intro notes families can request help completing the survey.' }
+      ]
+    };
+  }
+
+  function renderAccess() {
+    var Eng = window.AccessEngine;
+    var titleEl  = document.getElementById('iqAcTitle');
+    var subEl    = document.getElementById('iqAcSub');
+    var bodyEl   = document.getElementById('iqAcBody');
+    var interpEl = document.getElementById('iqAcInterp');
+    if (!Eng) {
+      titleEl.textContent = 'Access Readiness';
+      subEl.textContent = 'engine unavailable';
+      bodyEl.innerHTML = '<p class="iq-rel-plain">AccessEngine (apps/sdsi/access-engine.js) did not load.</p>';
+      return;
+    }
+
+    var CHECKS = Eng.CHECKS;
+    var SEVS   = ['minor', 'moderate', 'major', 'critical'];
+
+    var studio   = window.RELICHECK_STUDIO || '';
+    var surveyId = ((studio === 'survey' || studio === 'strength-survey') && window.RELICHECK_PROJECT_ID)
+      ? Number(window.RELICHECK_PROJECT_ID) || 0 : 0;
+    var live = surveyId > 0;
+
+    // ── Mutable review state ──
+    var population  = {};
+    var flags       = [];
+    var mitigations = [];
+    var notes       = '';
+
+    function seedFlags(arr) {
+      flags = (arr || []).map(function (f, i) {
+        return Object.assign({}, f, {
+          flag_id: f.flag_id || ('f' + (i + 1)),
+          decision: f.decision || 'accepted',
+          _origSeverity: (f._origSeverity != null ? f._origSeverity : f.severity),
+          blocker_reviewed: !!f.blocker_reviewed
+        });
+      });
+    }
+    function seedMitigations(arr) {
+      mitigations = (arr || []).map(function (m, i) {
+        return Object.assign({}, m, {
+          mitigation_id: m.mitigation_id || ('m' + (i + 1)),
+          decision: m.decision || 'accepted'
+        });
+      });
+    }
+    function seedFromProposal(p) {
+      if (p.population) population = Object.assign({}, p.population);
+      seedFlags(p.flags);
+      seedMitigations(p.mitigations);
+      notes = p.notes || '';
+    }
+
+    if (!live) {
+      seedFromProposal(acDefaultProposal());
+    } else {
+      population = { minors: false, peopleFacing: true, communities: [] };
+    }
+
+    function findFlag(id) { for (var i = 0; i < flags.length; i++) if (flags[i].flag_id === id) return flags[i]; return null; }
+
+    var statusEl = null, runBtn = null, saveBtn = null, resultEl = null;
+    function status(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.setAttribute('data-tone', isErr ? 'err' : 'ok');
+    }
+
+    function commListToStr(c) { return Array.isArray(c) ? c.join(', ') : (c || ''); }
+    function strToCommList(s) {
+      return String(s || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 12);
+    }
+
+    function setupHtml() {
+      return '' +
+        '<div class="iq-df-setup">' +
+          '<div class="iq-df-pop">' +
+            '<span class="iq-df-pop-h">Population</span>' +
+            '<label class="iq-df-pop-opt"><input type="checkbox" class="iq-df-pop-minors"' + (population.minors ? ' checked' : '') + '> Respondents include minors</label>' +
+            '<label class="iq-df-pop-opt"><input type="checkbox" class="iq-df-pop-people"' + (population.peopleFacing !== false ? ' checked' : '') + '> People-facing (asked of people about themselves or their families)</label>' +
+            '<label class="iq-df-pop-comm">Communities / languages present ' +
+              '<input type="text" class="iq-df-pop-communities" placeholder="e.g. multilingual learners, Spanish, special education" value="' + esc(commListToStr(population.communities)) + '">' +
+            '</label>' +
+          '</div>' +
+          '<div class="iq-df-actions">' +
+            (live
+              ? '<button type="button" class="iq-df-run">Run AI review</button>' +
+                '<button type="button" class="iq-df-save">Save review</button>'
+              : '<span class="iq-df-sample">Sample instrument — connect a survey to run the AI review and save.</span>') +
+            '<span class="iq-df-status" data-tone="ok"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="iq-df-result"></div>';
+    }
+
+    function draw() {
+      var res = Eng.assess({ flags: flags, mitigations: mitigations, population: population });
+      var m = res.math;
+
+      titleEl.textContent = 'Access Score: ' + res.score + '/100  ·  ' +
+        res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points';
+      subEl.textContent = res.band.label;
+
+      var mathLine = 'Started at ' + m.startedAt + '   −' + Math.abs(m.cappedPenalty) +
+        ' capped penalties   +' + m.credit + ' mitigation credit   =   ' + m.raw +
+        (m.raw !== m.final ? '   (clamped to ' + m.final + ')' : '');
+
+      var gateHtml;
+      if (res.blockers.length === 0) {
+        gateHtml = '<div class="iq-df-gate" data-state="clear">No launch blockers — the access gate is clear.</div>';
+      } else {
+        gateHtml = '<div class="iq-df-gate" data-state="' + (res.launchReady ? 'reviewed' : 'blocked') + '">' +
+          '<strong>' + (res.launchReady
+            ? 'All blockers reviewed — gate cleared.'
+            : 'Critical access barrier detected — review before launch.') + '</strong>' +
+          '<span class="iq-df-gate-note">The launch gate is orthogonal: it does not change the ' + res.score + '/100 score.</span>' +
+          '<ul class="iq-df-blockers">' + res.blockers.map(function (b) {
+            return '<li>' +
+              '<span class="iq-flag" data-tone="alert">Blocker</span> ' + esc(b.label) +
+              ' <em>(' + esc(b.item_ref) + ')</em> ' +
+              (b.reviewed
+                ? '<span class="iq-df-reviewed">reviewed</span>'
+                : '<button type="button" class="iq-df-btn" data-act="review" data-flag="' + esc(b.triggeredBy) + '">Mark reviewed</button>') +
+            '</li>';
+          }).join('') + '</ul>' +
+        '</div>';
+      }
+
+      var cards = flags.map(function (f) {
+        var counted = (f.decision === 'accepted' || f.decision === 'severity_overridden');
+        var pen = counted ? Eng.SEVERITY_PENALTY[f.severity] : 0;
+        var stateTxt = f.decision === 'dismissed' ? 'dismissed (0 pts · kept in ledger)'
+                     : f.decision === 'severity_overridden' ? 'severity overridden'
+                     : 'kept';
+        return '<div class="iq-df-card" data-decision="' + esc(f.decision) + '">' +
+          '<div class="iq-df-card-head">' +
+            '<span class="iq-flag" data-tone="' + (counted ? 'alert' : 'ok') + '">' + esc(CHECKS[f.check] || f.check) + '</span>' +
+            '<span class="iq-df-ref">' + esc(f.item_ref) + (f.section ? ' · ' + esc(f.section) : '') + '</span>' +
+            '<span class="iq-df-pen">' + pen + ' pts</span>' +
+          '</div>' +
+          '<blockquote class="iq-df-quote">' + esc(f.quote) + '</blockquote>' +
+          '<p class="iq-df-why"><strong>Why it matters.</strong> ' + esc(f.rationale) + '</p>' +
+          (f.suggested_revision ? '<p class="iq-df-fix"><strong>Suggested revision.</strong> ' + esc(f.suggested_revision) + '</p>' : '') +
+          '<div class="iq-df-controls">' +
+            '<label class="iq-df-sevlabel">Severity ' +
+              '<select class="iq-df-sev" data-flag="' + esc(f.flag_id) + '">' +
+                SEVS.map(function (s) {
+                  return '<option value="' + s + '"' + (s === f.severity ? ' selected' : '') + '>' +
+                    s + ' (' + Eng.SEVERITY_PENALTY[s] + ')</option>';
+                }).join('') +
+              '</select>' +
+            '</label>' +
+            '<button type="button" class="iq-df-btn" data-act="accept" data-flag="' + esc(f.flag_id) + '"' + (f.decision !== 'dismissed' ? ' data-on="1"' : '') + '>Keep</button>' +
+            '<button type="button" class="iq-df-btn" data-act="dismiss" data-flag="' + esc(f.flag_id) + '"' + (f.decision === 'dismissed' ? ' data-on="1"' : '') + '>Dismiss</button>' +
+            '<span class="iq-df-state">' + esc(stateTxt) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var ledgerRows = res.ledger.map(function (l) {
+        return '<tr data-counted="' + l.counted + '">' +
+          '<td class="iq-rel-item">' + esc(l.item_ref) + '</td>' +
+          '<td>' + esc(l.checkLabel) + '</td>' +
+          '<td>' + esc(l.severity) + '</td>' +
+          '<td>' + l.penalty + '</td>' +
+          '<td>' + esc(l.decision) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      if (!resultEl) return;
+      resultEl.innerHTML =
+        '<div class="iq-rel-summary">' +
+          '<p class="iq-rel-summary-line"><strong>' + esc(res.band.label) + '</strong></p>' +
+          '<p class="iq-df-math">' + esc(mathLine) + '</p>' +
+          '<p class="iq-rel-plain">Access asks whether the intended respondents can actually <em>reach</em> the items — read them, understand them, answer them in their language, and finish without undue burden. A construct you cannot reach is a construct you cannot measure. The AI proposes the barriers below with the exact wording that triggered each; you keep, dismiss, or re-grade them, and the score recomputes from your decisions.</p>' +
+          (notes ? '<p class="iq-df-notes"><strong>AI notes.</strong> ' + esc(notes) + '</p>' : '') +
+        '</div>' +
+        gateHtml +
+        '<h4 class="iq-block-h">Barriers to review</h4>' +
+        '<div class="iq-df-cards">' + (cards || '<p class="iq-rel-plain">No barriers proposed — access reads clean.</p>') + '</div>' +
+        '<h4 class="iq-block-h">Evidence ledger</h4>' +
+        '<div class="iq-rel-table-wrap"><table class="iq-table iq-table-rel">' +
+          '<thead><tr><th>Item</th><th>Check</th><th>Severity</th><th>Penalty</th><th>Decision</th></tr></thead>' +
+          '<tbody>' + ledgerRows + '</tbody>' +
+        '</table></div>';
+
+      interpEl.innerHTML =
+        '<div class="iq-jema">' +
+          '<div class="iq-jema-row"><strong>Judgment.</strong> ' + esc(res.band.label) + ' — ' + res.sdsiPoints.toFixed(1) + ' of ' + res.sdsiWeight + ' validity points.</div>' +
+          '<div class="iq-jema-row"><strong>Evidence.</strong> ' + res.ledger.filter(function (l) { return l.counted; }).length + ' counted barrier(s); ' + res.blockers.length + ' launch blocker(s).</div>' +
+          '<div class="iq-jema-row"><strong>Meaning.</strong> Access barriers are measurement error, not only fairness — when reading load, language, burden, or format push respondents out, the missing answers bias the result.</div>' +
+          '<div class="iq-jema-row"><strong>Action.</strong> ' + (res.launchReady
+            ? 'No unreviewed blockers. Address the remaining barriers to raise the score before launch.'
+            : 'Resolve or review the launch blocker(s) before this instrument is launch-ready — regardless of the score.') + '</div>' +
+        '</div>';
+    }
+
+    bodyEl.innerHTML = setupHtml();
+    resultEl = bodyEl.querySelector('.iq-df-result');
+    statusEl = bodyEl.querySelector('.iq-df-status');
+    runBtn   = bodyEl.querySelector('.iq-df-run');
+    saveBtn  = bodyEl.querySelector('.iq-df-save');
+
+    var minorsEl = bodyEl.querySelector('.iq-df-pop-minors');
+    var peopleEl = bodyEl.querySelector('.iq-df-pop-people');
+    var commEl   = bodyEl.querySelector('.iq-df-pop-communities');
+    if (minorsEl) minorsEl.addEventListener('change', function () { population.minors = minorsEl.checked; draw(); });
+    if (peopleEl) peopleEl.addEventListener('change', function () { population.peopleFacing = peopleEl.checked; draw(); });
+    if (commEl)   commEl.addEventListener('change', function () { population.communities = strToCommList(commEl.value); });
+
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        population.communities = strToCommList(commEl ? commEl.value : '');
+        runBtn.disabled = true;
+        status('Running AI review of the instrument…');
+        fetch('/api/sdsi/access-propose.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ survey_id: surveyId, population: population })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Proposal failed.');
+            seedFromProposal(o.j);
+            status((flags.length || 0) + ' barrier(s) proposed' + (mitigations.length ? ', ' + mitigations.length + ' mitigation(s)' : '') + '. Review, then Save.');
+            draw();
+          })
+          .catch(function (e) { status('AI review failed: ' + e.message, true); })
+          .then(function () { runBtn.disabled = false; });
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        var res = Eng.assess({ flags: flags, mitigations: mitigations, population: population });
+        saveBtn.disabled = true;
+        status('Saving review…');
+        fetch('/api/sdsi/access-save.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            survey_id: surveyId,
+            population: population,
+            flags: flags,
+            mitigations: mitigations,
+            result: {
+              score: res.score, sdsiPoints: res.sdsiPoints, band: res.band.key,
+              launchReady: res.launchReady, blockerCount: res.blockers.length
+            }
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Save failed.');
+            status('Saved · ' + res.score + '/100 · ' + res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points.');
+          })
+          .catch(function (e) { status('Save failed: ' + e.message, true); })
+          .then(function () { saveBtn.disabled = false; });
+      });
+    }
+
+    resultEl.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.iq-df-btn') : null;
+      if (!btn) return;
+      var f = findFlag(btn.getAttribute('data-flag'));
+      if (!f) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'accept')      f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      else if (act === 'dismiss') f.decision = 'dismissed';
+      else if (act === 'review')  f.blocker_reviewed = true;
+      draw();
+    });
+    resultEl.addEventListener('change', function (e) {
+      var sel = e.target.closest ? e.target.closest('.iq-df-sev') : null;
+      if (!sel) return;
+      var f = findFlag(sel.getAttribute('data-flag'));
+      if (!f) return;
+      f.severity = sel.value;
+      if (f.decision !== 'dismissed') f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      draw();
+    });
+
+    if (live) {
+      status('Loading saved review…');
+      fetch('/api/sdsi/access-get.php?survey_id=' + encodeURIComponent(surveyId), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.exists && j.review) {
+            seedFromProposal(j.review);
+            if (minorsEl) minorsEl.checked = !!population.minors;
+            if (peopleEl) peopleEl.checked = population.peopleFacing !== false;
+            if (commEl)   commEl.value = commListToStr(population.communities);
+            status('Loaded saved review (updated ' + (j.review.updatedAt || 'previously') + ').');
+          } else {
+            status('No saved review yet. Set the population, then Run AI review.');
+          }
+          draw();
+        })
+        .catch(function () { status('Could not load a saved review — start a new one.', true); draw(); });
+    }
+
+    draw();
+  }
+
+  // ==================================================================
+  // GENERIC PRE-DATA VALIDITY LENS (the five factory components).
+  // One renderer for construct_definition, purpose_alignment,
+  // dimension_coverage, item_construct_alignment, response_option_validity.
+  // Mirrors renderAccess's settle-and-score loop, but: (a) it reads the spec
+  // + engine from window.SDSI_VALIDITY_{SPECS,LENSES}; (b) the setup form is
+  // the spec's reviewer-declared CONTEXT fields (construct/definition/purpose/
+  // dimensions…), not population checkboxes; (c) these lenses define NO
+  // mitigations, so there is no credit UI. Element IDs are derived per
+  // component as iqV_<component>_{title,sub,body,interp}.
+  // ==================================================================
+  function renderValidityLens(component) {
+    var spec = (window.SDSI_VALIDITY_SPECS || {})[component];
+    var Eng  = (window.SDSI_VALIDITY_LENSES || {})[component];
+    function vid(s) { return document.getElementById('iqV_' + component + '_' + s); }
+    var titleEl = vid('title'), subEl = vid('sub'), bodyEl = vid('body'), interpEl = vid('interp');
+    if (!spec || !Eng || !titleEl) {
+      if (titleEl) titleEl.textContent = (spec ? spec.name : component);
+      if (subEl) subEl.textContent = 'engine unavailable';
+      if (bodyEl) bodyEl.innerHTML = '<p class="iq-rel-plain">The validity lens factory (apps/sdsi/validity-lens-engine.js + validity-specs.js) did not load.</p>';
+      return;
+    }
+
+    var CHECKS = Eng.CHECKS;
+    var SEVS   = ['minor', 'moderate', 'major', 'critical'];
+    var fields = spec.contextFields || [];
+
+    var studio   = window.RELICHECK_STUDIO || '';
+    var surveyId = ((studio === 'survey' || studio === 'strength-survey') && window.RELICHECK_PROJECT_ID)
+      ? Number(window.RELICHECK_PROJECT_ID) || 0 : 0;
+    var live = surveyId > 0;
+
+    // ── Mutable review state ──
+    var context = {};
+    var flags   = [];
+    var notes   = '';
+
+    function listToStr(v) { return Array.isArray(v) ? v.join(', ') : (v || ''); }
+    function strToList(s) {
+      return String(s || '').split(/[\r\n,]+/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 24);
+    }
+
+    function seedFlags(arr) {
+      flags = (arr || []).map(function (f, i) {
+        return Object.assign({}, f, {
+          flag_id: f.flag_id || ('f' + (i + 1)),
+          decision: f.decision || 'accepted',
+          _origSeverity: (f._origSeverity != null ? f._origSeverity : f.severity),
+          blocker_reviewed: !!f.blocker_reviewed
+        });
+      });
+    }
+    function seedFromProposal(p) {
+      if (p.context) context = Object.assign({}, p.context);
+      // Live denominator for report-level warnings (e.g. scale-interpretation
+      // risk): the count of items the proposal actually reviewed. Not a reviewer
+      // field, not persisted — recomputed each render from current data.
+      if (Array.isArray(p.items)) context.item_count = p.items.length;
+      seedFlags(p.flags);
+      notes = p.notes || '';
+    }
+
+    if (!live && spec.sample) {
+      seedFromProposal({ context: spec.sample.context, flags: spec.sample.flags });
+    }
+
+    function findFlag(id) { for (var i = 0; i < flags.length; i++) if (flags[i].flag_id === id) return flags[i]; return null; }
+
+    var statusEl = null, runBtn = null, saveBtn = null, resultEl = null;
+    function status(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.setAttribute('data-tone', isErr ? 'err' : 'ok');
+    }
+
+    function fieldHtml(f) {
+      var val = context[f.key];
+      if (f.type === 'textarea') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<textarea class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="textarea" rows="2">' + esc(val || '') + '</textarea></label>';
+      }
+      if (f.type === 'list') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="list" value="' + esc(listToStr(val)) + '"></label>';
+      }
+      if (f.type === 'select') {
+        var opts = (f.options || []).map(function (o) {
+          return '<option value="' + esc(o.value) + '"' + (o.value === val ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+        }).join('');
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<select class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="select">' + opts + '</select></label>';
+      }
+      return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+        '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="text" value="' + esc(val || '') + '"></label>';
+    }
+
+    function setupHtml() {
+      var fieldsHtml = fields.length
+        ? fields.map(fieldHtml).join('')
+        : '<span class="iq-df-sample">This component reads the items directly — no context to declare.</span>';
+      return '' +
+        '<div class="iq-df-setup">' +
+          '<div class="iq-df-pop">' +
+            '<span class="iq-df-pop-h">Declared context</span>' +
+            (spec.reviewerPrompt ? '<p class="iq-vc-prompt">' + esc(spec.reviewerPrompt) + '</p>' : '') +
+            fieldsHtml +
+          '</div>' +
+          '<div class="iq-df-actions">' +
+            (live
+              ? '<button type="button" class="iq-df-run">Run AI review</button>' +
+                '<button type="button" class="iq-df-save">Save review</button>'
+              : '<span class="iq-df-sample">Sample instrument — connect a survey to run the AI review and save.</span>') +
+            '<span class="iq-df-status" data-tone="ok"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="iq-df-result"></div>';
+    }
+
+    function draw() {
+      var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+      var m = res.math;
+
+      titleEl.textContent = spec.name + ' Score: ' + res.score + '/100  ·  ' +
+        res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points';
+      subEl.textContent = res.band.label;
+
+      var mathLine = 'Started at ' + m.startedAt + '   −' + Math.abs(m.cappedPenalty) +
+        ' capped penalties   =   ' + (m.startedAt + m.cappedPenalty) +
+        (m.raw !== m.final ? '   (clamped to ' + m.final + ')' : '');
+
+      var gateHtml;
+      if (res.blockers.length === 0) {
+        gateHtml = '<div class="iq-df-gate" data-state="clear">No launch blockers — the validity gate is clear.</div>';
+      } else {
+        gateHtml = '<div class="iq-df-gate" data-state="' + (res.launchReady ? 'reviewed' : 'blocked') + '">' +
+          '<strong>' + (res.launchReady
+            ? 'All blockers reviewed — gate cleared.'
+            : 'Validity blocker detected — review before launch.') + '</strong>' +
+          '<span class="iq-df-gate-note">The launch gate is orthogonal: it does not change the ' + res.score + '/100 score.</span>' +
+          '<ul class="iq-df-blockers">' + res.blockers.map(function (b) {
+            return '<li>' +
+              '<span class="iq-flag" data-tone="alert">Blocker</span> ' + esc(b.label) +
+              ' <em>(' + esc(b.item_ref) + ')</em> ' +
+              (b.reviewed
+                ? '<span class="iq-df-reviewed">reviewed</span>'
+                : '<button type="button" class="iq-df-btn" data-act="review" data-flag="' + esc(b.triggeredBy) + '">Mark reviewed</button>') +
+            '</li>';
+          }).join('') + '</ul>' +
+        '</div>';
+      }
+
+      // Report-level cautions: advisory only — never change the score or block launch.
+      var warnHtml = (res.warnings && res.warnings.length)
+        ? '<div class="iq-df-gate" data-state="warn">' +
+            '<strong>Report-level caution</strong>' +
+            '<span class="iq-df-gate-note">Advisory only — does not change the ' + res.score + '/100 score or block launch.</span>' +
+            '<ul class="iq-df-blockers">' + res.warnings.map(function (w) {
+              return '<li><span class="iq-flag" data-tone="warn">Caution</span> ' + esc(w.label) + '</li>';
+            }).join('') + '</ul>' +
+          '</div>'
+        : '';
+
+      var cards = flags.map(function (f) {
+        var counted = (f.decision === 'accepted' || f.decision === 'severity_overridden');
+        var pen = counted ? Eng.SEVERITY_PENALTY[f.severity] : 0;
+        var stateTxt = f.decision === 'dismissed' ? 'dismissed (0 pts · kept in ledger)'
+                     : f.decision === 'severity_overridden' ? 'severity overridden'
+                     : 'kept';
+        return '<div class="iq-df-card" data-decision="' + esc(f.decision) + '">' +
+          '<div class="iq-df-card-head">' +
+            '<span class="iq-flag" data-tone="' + (counted ? 'alert' : 'ok') + '">' + esc(CHECKS[f.check] || f.check) + '</span>' +
+            '<span class="iq-df-ref">' + esc(f.item_ref) + (f.section ? ' · ' + esc(f.section) : '') + '</span>' +
+            '<span class="iq-df-pen">' + pen + ' pts</span>' +
+          '</div>' +
+          '<blockquote class="iq-df-quote">' + esc(f.quote) + '</blockquote>' +
+          '<p class="iq-df-why"><strong>Why it matters.</strong> ' + esc(f.rationale) + '</p>' +
+          (f.suggested_revision ? '<p class="iq-df-fix"><strong>Suggested revision.</strong> ' + esc(f.suggested_revision) + '</p>' : '') +
+          '<div class="iq-df-controls">' +
+            '<label class="iq-df-sevlabel">Severity ' +
+              '<select class="iq-df-sev" data-flag="' + esc(f.flag_id) + '">' +
+                SEVS.map(function (s) {
+                  return '<option value="' + s + '"' + (s === f.severity ? ' selected' : '') + '>' +
+                    s + ' (' + Eng.SEVERITY_PENALTY[s] + ')</option>';
+                }).join('') +
+              '</select>' +
+            '</label>' +
+            '<button type="button" class="iq-df-btn" data-act="accept" data-flag="' + esc(f.flag_id) + '"' + (f.decision !== 'dismissed' ? ' data-on="1"' : '') + '>Keep</button>' +
+            '<button type="button" class="iq-df-btn" data-act="dismiss" data-flag="' + esc(f.flag_id) + '"' + (f.decision === 'dismissed' ? ' data-on="1"' : '') + '>Dismiss</button>' +
+            '<span class="iq-df-state">' + esc(stateTxt) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var ledgerRows = res.ledger.map(function (l) {
+        return '<tr data-counted="' + l.counted + '">' +
+          '<td class="iq-rel-item">' + esc(l.item_ref) + '</td>' +
+          '<td>' + esc(l.checkLabel) + '</td>' +
+          '<td>' + esc(l.severity) + '</td>' +
+          '<td>' + l.penalty + '</td>' +
+          '<td>' + esc(l.decision) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      if (!resultEl) return;
+      resultEl.innerHTML =
+        '<div class="iq-rel-summary">' +
+          '<p class="iq-rel-summary-line"><strong>' + esc(res.band.label) + '</strong></p>' +
+          '<p class="iq-df-math">' + esc(mathLine) + '</p>' +
+          '<p class="iq-rel-plain">' + esc(spec.intro || '') + ' The AI proposes the issues below with the exact wording that triggered each; you keep, dismiss, or re-grade them, and the score recomputes from your decisions.</p>' +
+          (notes ? '<p class="iq-df-notes"><strong>AI notes.</strong> ' + esc(notes) + '</p>' : '') +
+        '</div>' +
+        gateHtml +
+        warnHtml +
+        '<h4 class="iq-block-h">Issues to review</h4>' +
+        '<div class="iq-df-cards">' + (cards || '<p class="iq-rel-plain">No issues proposed — this component reads clean.</p>') + '</div>' +
+        '<h4 class="iq-block-h">Evidence ledger</h4>' +
+        '<div class="iq-rel-table-wrap"><table class="iq-table iq-table-rel">' +
+          '<thead><tr><th>Item</th><th>Check</th><th>Severity</th><th>Penalty</th><th>Decision</th></tr></thead>' +
+          '<tbody>' + ledgerRows + '</tbody>' +
+        '</table></div>';
+
+      interpEl.innerHTML =
+        '<div class="iq-jema">' +
+          '<div class="iq-jema-row"><strong>Judgment.</strong> ' + esc(res.band.label) + ' — ' + res.sdsiPoints.toFixed(1) + ' of ' + res.sdsiWeight + ' validity points.</div>' +
+          '<div class="iq-jema-row"><strong>Evidence.</strong> ' + res.ledger.filter(function (l) { return l.counted; }).length + ' counted issue(s); ' + res.blockers.length + ' launch blocker(s).</div>' +
+          '<div class="iq-jema-row"><strong>Meaning.</strong> This is a validity-readiness check on the instrument before any data — it never uses reliability statistics (alpha, omega, item-total). It asks whether the construct-to-item chain holds.</div>' +
+          '<div class="iq-jema-row"><strong>Action.</strong> ' + (res.launchReady
+            ? 'No unreviewed blockers. Address the remaining issues to raise the score before launch.'
+            : 'Resolve or review the launch blocker(s) before this component is launch-ready — regardless of the score.') + '</div>' +
+        '</div>';
+    }
+
+    bodyEl.innerHTML = setupHtml();
+    resultEl = bodyEl.querySelector('.iq-df-result');
+    statusEl = bodyEl.querySelector('.iq-df-status');
+    runBtn   = bodyEl.querySelector('.iq-df-run');
+    saveBtn  = bodyEl.querySelector('.iq-df-save');
+
+    function readContextFields() {
+      bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+        var k = el.getAttribute('data-key');
+        context[k] = el.getAttribute('data-type') === 'list' ? strToList(el.value) : el.value;
+      });
+    }
+    bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var k = el.getAttribute('data-key');
+        context[k] = el.getAttribute('data-type') === 'list' ? strToList(el.value) : el.value;
+      });
+    });
+
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        readContextFields();
+        runBtn.disabled = true;
+        status('Running AI review of the instrument…');
+        fetch('/api/sdsi/validity-propose.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ survey_id: surveyId, component: component, context: context })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Proposal failed.');
+            seedFromProposal(o.j);
+            status((flags.length || 0) + ' issue(s) proposed. Review, then Save.');
+            draw();
+          })
+          .catch(function (e) { status('AI review failed: ' + e.message, true); })
+          .then(function () { runBtn.disabled = false; });
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        readContextFields();
+        var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+        saveBtn.disabled = true;
+        status('Saving review…');
+        fetch('/api/sdsi/validity-save.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            survey_id: surveyId,
+            component: component,
+            context: context,
+            flags: flags,
+            result: {
+              score: res.score, sdsiPoints: res.sdsiPoints, band: res.band.key,
+              launchReady: res.launchReady, blockerCount: res.blockers.length
+            }
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Save failed.');
+            status('Saved · ' + res.score + '/100 · ' + res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' validity points.');
+          })
+          .catch(function (e) { status('Save failed: ' + e.message, true); })
+          .then(function () { saveBtn.disabled = false; });
+      });
+    }
+
+    resultEl.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.iq-df-btn') : null;
+      if (!btn) return;
+      var f = findFlag(btn.getAttribute('data-flag'));
+      if (!f) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'accept')      f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      else if (act === 'dismiss') f.decision = 'dismissed';
+      else if (act === 'review')  f.blocker_reviewed = true;
+      draw();
+    });
+    resultEl.addEventListener('change', function (e) {
+      var sel = e.target.closest ? e.target.closest('.iq-df-sev') : null;
+      if (!sel) return;
+      var f = findFlag(sel.getAttribute('data-flag'));
+      if (!f) return;
+      f.severity = sel.value;
+      if (f.decision !== 'dismissed') f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      draw();
+    });
+
+    if (live) {
+      status('Loading saved review…');
+      fetch('/api/sdsi/validity-get.php?survey_id=' + encodeURIComponent(surveyId) + '&component=' + encodeURIComponent(component), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.exists && j.review) {
+            seedFromProposal(j.review);
+            bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+              var k = el.getAttribute('data-key');
+              el.value = el.getAttribute('data-type') === 'list' ? listToStr(context[k]) : (context[k] || '');
+            });
+            status('Loaded saved review (updated ' + (j.review.updatedAt || 'previously') + ').');
+          } else {
+            status('No saved review yet. Declare the context, then Run AI review.');
+          }
+          draw();
+        })
+        .catch(function () { status('Could not load a saved review — start a new one.', true); draw(); });
+    }
+
+    draw();
+  }
+
+  // ==================================================================
+  // GENERIC PRE-DATA RELIABILITY READINESS LENS (the five factory components).
+  // One renderer for scale_structure_readiness, item_clarity,
+  // response_scale_consistency, redundancy_balance, administration_consistency.
+  // A near-twin of renderValidityLens, but: (a) it reads the spec + engine from
+  // window.SDSI_RELIABILITY_{SPECS,LENSES}; (b) it hits the reliability-*
+  // endpoints; (c) element IDs are iqR_<component>_{title,sub,body,interp};
+  // (d) the language says "reliability points" and the Meaning row states the
+  // ALPHA FENCE (pre-data design review — never alpha/omega/item-total/
+  // inter-item/factor analysis). Some lenses carry an advisory warning and/or an
+  // orthogonal launch blocker; both are surfaced exactly as the engine reports.
+  // ==================================================================
+  function renderReliabilityLens(component) {
+    var spec = (window.SDSI_RELIABILITY_SPECS || {})[component];
+    var Eng  = (window.SDSI_RELIABILITY_LENSES || {})[component];
+    function vid(s) { return document.getElementById('iqR_' + component + '_' + s); }
+    var titleEl = vid('title'), subEl = vid('sub'), bodyEl = vid('body'), interpEl = vid('interp');
+    if (!spec || !Eng || !titleEl) {
+      if (titleEl) titleEl.textContent = (spec ? spec.name : component);
+      if (subEl) subEl.textContent = 'engine unavailable';
+      if (bodyEl) bodyEl.innerHTML = '<p class="iq-rel-plain">The reliability lens factory (apps/sdsi/validity-lens-engine.js + reliability-specs.js) did not load.</p>';
+      return;
+    }
+
+    var CHECKS = Eng.CHECKS;
+    var SEVS   = ['minor', 'moderate', 'major', 'critical'];
+    var fields = spec.contextFields || [];
+
+    var studio   = window.RELICHECK_STUDIO || '';
+    var surveyId = ((studio === 'survey' || studio === 'strength-survey') && window.RELICHECK_PROJECT_ID)
+      ? Number(window.RELICHECK_PROJECT_ID) || 0 : 0;
+    var live = surveyId > 0;
+
+    // ── Mutable review state ──
+    var context = {};
+    var flags   = [];
+    var notes   = '';
+
+    function listToStr(v) { return Array.isArray(v) ? v.join(', ') : (v || ''); }
+    function strToList(s) {
+      return String(s || '').split(/[\r\n,]+/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 24);
+    }
+
+    function seedFlags(arr) {
+      flags = (arr || []).map(function (f, i) {
+        return Object.assign({}, f, {
+          flag_id: f.flag_id || ('f' + (i + 1)),
+          decision: f.decision || 'accepted',
+          _origSeverity: (f._origSeverity != null ? f._origSeverity : f.severity),
+          blocker_reviewed: !!f.blocker_reviewed
+        });
+      });
+    }
+    function seedFromProposal(p) {
+      if (p.context) context = Object.assign({}, p.context);
+      // Live denominator for the widespread_*_risk advisory warnings: the count
+      // of items the proposal actually reviewed. Not a reviewer field; recomputed
+      // each render. The reviewer may also type item_count directly.
+      if (Array.isArray(p.items) && p.items.length) context.item_count = p.items.length;
+      seedFlags(p.flags);
+      notes = p.notes || '';
+    }
+
+    if (!live && spec.sample) {
+      seedFromProposal({ context: spec.sample.context, flags: spec.sample.flags });
+    }
+
+    function findFlag(id) { for (var i = 0; i < flags.length; i++) if (flags[i].flag_id === id) return flags[i]; return null; }
+
+    var statusEl = null, runBtn = null, saveBtn = null, resultEl = null;
+    function status(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.setAttribute('data-tone', isErr ? 'err' : 'ok');
+    }
+
+    function fieldHtml(f) {
+      var val = context[f.key];
+      if (f.type === 'textarea') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<textarea class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="textarea" rows="2">' + esc(val || '') + '</textarea></label>';
+      }
+      if (f.type === 'list') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="list" value="' + esc(listToStr(val)) + '"></label>';
+      }
+      if (f.type === 'number') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<input type="number" min="0" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="number" value="' + esc(val == null ? '' : val) + '"></label>';
+      }
+      if (f.type === 'select') {
+        var opts = (f.options || []).map(function (o) {
+          return '<option value="' + esc(o.value) + '"' + (o.value === val ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+        }).join('');
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<select class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="select"><option value="">—</option>' + opts + '</select></label>';
+      }
+      return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+        '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="text" value="' + esc(val || '') + '"></label>';
+    }
+
+    function setupHtml() {
+      var fieldsHtml = fields.length
+        ? fields.map(fieldHtml).join('')
+        : '<span class="iq-df-sample">This component reads the items directly — no context to declare.</span>';
+      return '' +
+        '<div class="iq-df-setup">' +
+          '<div class="iq-df-pop">' +
+            '<span class="iq-df-pop-h">Declared context</span>' +
+            (spec.reviewerPrompt ? '<p class="iq-vc-prompt">' + esc(spec.reviewerPrompt) + '</p>' : '') +
+            fieldsHtml +
+          '</div>' +
+          '<div class="iq-df-actions">' +
+            (live
+              ? '<button type="button" class="iq-df-run">Run AI review</button>' +
+                '<button type="button" class="iq-df-save">Save review</button>'
+              : '<span class="iq-df-sample">Sample instrument — connect a survey to run the AI review and save.</span>') +
+            '<span class="iq-df-status" data-tone="ok"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="iq-df-result"></div>';
+    }
+
+    function draw() {
+      var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+      var m = res.math;
+
+      titleEl.textContent = spec.name + ' Score: ' + res.score + '/100  ·  ' +
+        res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' reliability points';
+      subEl.textContent = res.band.label;
+
+      var mathLine = 'Started at ' + m.startedAt + '   −' + Math.abs(m.cappedPenalty) +
+        ' capped penalties   =   ' + (m.startedAt + m.cappedPenalty) +
+        (m.raw !== m.final ? '   (clamped to ' + m.final + ')' : '');
+
+      var gateHtml;
+      if (res.blockers.length === 0) {
+        gateHtml = '<div class="iq-df-gate" data-state="clear">No launch blockers — the reliability gate is clear.</div>';
+      } else {
+        gateHtml = '<div class="iq-df-gate" data-state="' + (res.launchReady ? 'reviewed' : 'blocked') + '">' +
+          '<strong>' + (res.launchReady
+            ? 'All blockers reviewed — gate cleared.'
+            : 'Reliability blocker detected — review before launch.') + '</strong>' +
+          '<span class="iq-df-gate-note">The launch gate is orthogonal: it does not change the ' + res.score + '/100 score.</span>' +
+          '<ul class="iq-df-blockers">' + res.blockers.map(function (b) {
+            return '<li>' +
+              '<span class="iq-flag" data-tone="alert">Blocker</span> ' + esc(b.label) +
+              ' <em>(' + esc(b.item_ref) + ')</em> ' +
+              (b.reviewed
+                ? '<span class="iq-df-reviewed">reviewed</span>'
+                : '<button type="button" class="iq-df-btn" data-act="review" data-flag="' + esc(b.triggeredBy) + '">Mark reviewed</button>') +
+            '</li>';
+          }).join('') + '</ul>' +
+        '</div>';
+      }
+
+      // Report-level cautions: advisory only — never change the score or block launch.
+      var warnHtml = (res.warnings && res.warnings.length)
+        ? '<div class="iq-df-gate" data-state="warn">' +
+            '<strong>Report-level caution</strong>' +
+            '<span class="iq-df-gate-note">Advisory only — does not change the ' + res.score + '/100 score or block launch.</span>' +
+            '<ul class="iq-df-blockers">' + res.warnings.map(function (w) {
+              return '<li><span class="iq-flag" data-tone="warn">Caution</span> ' + esc(w.label) + '</li>';
+            }).join('') + '</ul>' +
+          '</div>'
+        : '';
+
+      var cards = flags.map(function (f) {
+        var counted = (f.decision === 'accepted' || f.decision === 'severity_overridden');
+        var pen = counted ? Eng.SEVERITY_PENALTY[f.severity] : 0;
+        var stateTxt = f.decision === 'dismissed' ? 'dismissed (0 pts · kept in ledger)'
+                     : f.decision === 'severity_overridden' ? 'severity overridden'
+                     : 'kept';
+        return '<div class="iq-df-card" data-decision="' + esc(f.decision) + '">' +
+          '<div class="iq-df-card-head">' +
+            '<span class="iq-flag" data-tone="' + (counted ? 'alert' : 'ok') + '">' + esc(CHECKS[f.check] || f.check) + '</span>' +
+            '<span class="iq-df-ref">' + esc(f.item_ref) + (f.section ? ' · ' + esc(f.section) : '') + '</span>' +
+            '<span class="iq-df-pen">' + pen + ' pts</span>' +
+          '</div>' +
+          '<blockquote class="iq-df-quote">' + esc(f.quote) + '</blockquote>' +
+          '<p class="iq-df-why"><strong>Why it matters.</strong> ' + esc(f.rationale) + '</p>' +
+          (f.suggested_revision ? '<p class="iq-df-fix"><strong>Suggested revision.</strong> ' + esc(f.suggested_revision) + '</p>' : '') +
+          '<div class="iq-df-controls">' +
+            '<label class="iq-df-sevlabel">Severity ' +
+              '<select class="iq-df-sev" data-flag="' + esc(f.flag_id) + '">' +
+                SEVS.map(function (s) {
+                  return '<option value="' + s + '"' + (s === f.severity ? ' selected' : '') + '>' +
+                    s + ' (' + Eng.SEVERITY_PENALTY[s] + ')</option>';
+                }).join('') +
+              '</select>' +
+            '</label>' +
+            '<button type="button" class="iq-df-btn" data-act="accept" data-flag="' + esc(f.flag_id) + '"' + (f.decision !== 'dismissed' ? ' data-on="1"' : '') + '>Keep</button>' +
+            '<button type="button" class="iq-df-btn" data-act="dismiss" data-flag="' + esc(f.flag_id) + '"' + (f.decision === 'dismissed' ? ' data-on="1"' : '') + '>Dismiss</button>' +
+            '<span class="iq-df-state">' + esc(stateTxt) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var ledgerRows = res.ledger.map(function (l) {
+        return '<tr data-counted="' + l.counted + '">' +
+          '<td class="iq-rel-item">' + esc(l.item_ref) + '</td>' +
+          '<td>' + esc(l.checkLabel) + '</td>' +
+          '<td>' + esc(l.severity) + '</td>' +
+          '<td>' + l.penalty + '</td>' +
+          '<td>' + esc(l.decision) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      if (!resultEl) return;
+      resultEl.innerHTML =
+        '<div class="iq-rel-summary">' +
+          '<p class="iq-rel-summary-line"><strong>' + esc(res.band.label) + '</strong></p>' +
+          '<p class="iq-df-math">' + esc(mathLine) + '</p>' +
+          '<p class="iq-rel-plain">' + esc(spec.intro || '') + ' The AI proposes the issues below with the exact wording that triggered each; you keep, dismiss, or re-grade them, and the score recomputes from your decisions.</p>' +
+          (notes ? '<p class="iq-df-notes"><strong>AI notes.</strong> ' + esc(notes) + '</p>' : '') +
+        '</div>' +
+        gateHtml +
+        warnHtml +
+        '<h4 class="iq-block-h">Issues to review</h4>' +
+        '<div class="iq-df-cards">' + (cards || '<p class="iq-rel-plain">No issues proposed — this component reads clean.</p>') + '</div>' +
+        '<h4 class="iq-block-h">Evidence ledger</h4>' +
+        '<div class="iq-rel-table-wrap"><table class="iq-table iq-table-rel">' +
+          '<thead><tr><th>Item</th><th>Check</th><th>Severity</th><th>Penalty</th><th>Decision</th></tr></thead>' +
+          '<tbody>' + ledgerRows + '</tbody>' +
+        '</table></div>';
+
+      interpEl.innerHTML =
+        '<div class="iq-jema">' +
+          '<div class="iq-jema-row"><strong>Judgment.</strong> ' + esc(res.band.label) + ' — ' + res.sdsiPoints.toFixed(1) + ' of ' + res.sdsiWeight + ' reliability points.</div>' +
+          '<div class="iq-jema-row"><strong>Evidence.</strong> ' + res.ledger.filter(function (l) { return l.counted; }).length + ' counted issue(s); ' + res.blockers.length + ' launch blocker(s); ' + (res.warnings ? res.warnings.length : 0) + ' advisory caution(s).</div>' +
+          '<div class="iq-jema-row"><strong>Meaning.</strong> This is a PRE-DATA reliability-readiness check on the instrument design — it never uses Cronbach’s alpha, omega, item-total or inter-item correlations, or factor analysis (those belong to RSSI after data collection). It asks whether the design supports consistent, stable, interpretable responses.</div>' +
+          '<div class="iq-jema-row"><strong>Action.</strong> ' + (res.launchReady
+            ? 'No unreviewed blockers. Address the remaining issues to raise the score before launch.'
+            : 'Resolve or review the launch blocker(s) before this component is launch-ready — regardless of the score.') + '</div>' +
+        '</div>';
+    }
+
+    bodyEl.innerHTML = setupHtml();
+    resultEl = bodyEl.querySelector('.iq-df-result');
+    statusEl = bodyEl.querySelector('.iq-df-status');
+    runBtn   = bodyEl.querySelector('.iq-df-run');
+    saveBtn  = bodyEl.querySelector('.iq-df-save');
+
+    function readContextFields() {
+      bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+        var k = el.getAttribute('data-key');
+        var t = el.getAttribute('data-type');
+        context[k] = t === 'list' ? strToList(el.value)
+                   : t === 'number' ? (el.value === '' ? '' : Math.max(0, parseInt(el.value, 10) || 0))
+                   : el.value;
+      });
+    }
+    bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var k = el.getAttribute('data-key');
+        var t = el.getAttribute('data-type');
+        context[k] = t === 'list' ? strToList(el.value)
+                   : t === 'number' ? (el.value === '' ? '' : Math.max(0, parseInt(el.value, 10) || 0))
+                   : el.value;
+        if (k === 'item_count') draw();
+      });
+    });
+
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        readContextFields();
+        runBtn.disabled = true;
+        status('Running AI review of the instrument…');
+        fetch('/api/sdsi/reliability-propose.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ survey_id: surveyId, component: component, context: context })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Proposal failed.');
+            seedFromProposal(o.j);
+            status((flags.length || 0) + ' issue(s) proposed. Review, then Save.');
+            draw();
+          })
+          .catch(function (e) { status('AI review failed: ' + e.message, true); })
+          .then(function () { runBtn.disabled = false; });
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        readContextFields();
+        var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+        saveBtn.disabled = true;
+        status('Saving review…');
+        fetch('/api/sdsi/reliability-save.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            survey_id: surveyId,
+            component: component,
+            context: context,
+            flags: flags,
+            result: {
+              score: res.score, sdsiPoints: res.sdsiPoints, band: res.band.key,
+              launchReady: res.launchReady, blockerCount: res.blockers.length
+            }
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Save failed.');
+            status('Saved · ' + res.score + '/100 · ' + res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' reliability points.');
+          })
+          .catch(function (e) { status('Save failed: ' + e.message, true); })
+          .then(function () { saveBtn.disabled = false; });
+      });
+    }
+
+    resultEl.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.iq-df-btn') : null;
+      if (!btn) return;
+      var f = findFlag(btn.getAttribute('data-flag'));
+      if (!f) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'accept')      f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      else if (act === 'dismiss') f.decision = 'dismissed';
+      else if (act === 'review')  f.blocker_reviewed = true;
+      draw();
+    });
+    resultEl.addEventListener('change', function (e) {
+      var sel = e.target.closest ? e.target.closest('.iq-df-sev') : null;
+      if (!sel) return;
+      var f = findFlag(sel.getAttribute('data-flag'));
+      if (!f) return;
+      f.severity = sel.value;
+      if (f.decision !== 'dismissed') f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      draw();
+    });
+
+    if (live) {
+      status('Loading saved review…');
+      fetch('/api/sdsi/reliability-get.php?survey_id=' + encodeURIComponent(surveyId) + '&component=' + encodeURIComponent(component), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.exists && j.review) {
+            seedFromProposal(j.review);
+            bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+              var k = el.getAttribute('data-key');
+              var t = el.getAttribute('data-type');
+              el.value = t === 'list' ? listToStr(context[k]) : (context[k] == null ? '' : context[k]);
+            });
+            status('Loaded saved review (updated ' + (j.review.updatedAt || 'previously') + ').');
+          } else {
+            status('No saved review yet. Declare the context, then Run AI review.');
+          }
+          draw();
+        })
+        .catch(function () { status('Could not load a saved review — start a new one.', true); draw(); });
+    }
+
+    draw();
+  }
+
+  // ==================================================================
+  // Administration Readiness — generic renderer for the five PRE-LAUNCH
+  // factory lenses. A structural twin of renderReliabilityLens: same factory
+  // engine, same settled-flag workflow, same orthogonal launch gate. Reads
+  // window.SDSI_ADMINISTRATION_{SPECS,LENSES}; element IDs iqA_<component>_*;
+  // hits /api/sdsi/administration-{propose,save,get}.php. PRE-LAUNCH SCOPE:
+  // never reviews survey results or post-administration data quality (RSSI).
+  // ==================================================================
+  function renderAdministrationLens(component) {
+    var spec = (window.SDSI_ADMINISTRATION_SPECS || {})[component];
+    var Eng  = (window.SDSI_ADMINISTRATION_LENSES || {})[component];
+    function vid(s) { return document.getElementById('iqA_' + component + '_' + s); }
+    var titleEl = vid('title'), subEl = vid('sub'), bodyEl = vid('body'), interpEl = vid('interp');
+    if (!spec || !Eng || !titleEl) {
+      if (titleEl) titleEl.textContent = (spec ? spec.name : component);
+      if (subEl) subEl.textContent = 'engine unavailable';
+      if (bodyEl) bodyEl.innerHTML = '<p class="iq-rel-plain">The administration lens factory (apps/sdsi/validity-lens-engine.js + administration-specs.js) did not load.</p>';
+      return;
+    }
+
+    var CHECKS = Eng.CHECKS;
+    var SEVS   = ['minor', 'moderate', 'major', 'critical'];
+    var fields = spec.contextFields || [];
+
+    var studio   = window.RELICHECK_STUDIO || '';
+    var surveyId = ((studio === 'survey' || studio === 'strength-survey') && window.RELICHECK_PROJECT_ID)
+      ? Number(window.RELICHECK_PROJECT_ID) || 0 : 0;
+    var live = surveyId > 0;
+
+    // ── Mutable review state ──
+    var context = {};
+    var flags   = [];
+    var notes   = '';
+
+    function listToStr(v) { return Array.isArray(v) ? v.join(', ') : (v || ''); }
+    function strToList(s) {
+      return String(s || '').split(/[\r\n,]+/).map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 24);
+    }
+
+    function seedFlags(arr) {
+      flags = (arr || []).map(function (f, i) {
+        return Object.assign({}, f, {
+          flag_id: f.flag_id || ('f' + (i + 1)),
+          decision: f.decision || 'accepted',
+          _origSeverity: (f._origSeverity != null ? f._origSeverity : f.severity),
+          blocker_reviewed: !!f.blocker_reviewed
+        });
+      });
+    }
+    function seedFromProposal(p) {
+      if (p.context) context = Object.assign({}, p.context);
+      // Live denominator for the widespread_*_risk advisory warnings: the count
+      // of items the proposal actually reviewed. Not a reviewer field; recomputed
+      // each render. The reviewer may also type item_count directly.
+      if (Array.isArray(p.items) && p.items.length) context.item_count = p.items.length;
+      seedFlags(p.flags);
+      notes = p.notes || '';
+    }
+
+    if (!live && spec.sample) {
+      seedFromProposal({ context: spec.sample.context, flags: spec.sample.flags });
+    }
+
+    function findFlag(id) { for (var i = 0; i < flags.length; i++) if (flags[i].flag_id === id) return flags[i]; return null; }
+
+    var statusEl = null, runBtn = null, saveBtn = null, resultEl = null;
+    function status(msg, isErr) {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.setAttribute('data-tone', isErr ? 'err' : 'ok');
+    }
+
+    function fieldHtml(f) {
+      var val = context[f.key];
+      if (f.type === 'textarea') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<textarea class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="textarea" rows="2">' + esc(val || '') + '</textarea></label>';
+      }
+      if (f.type === 'list') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="list" value="' + esc(listToStr(val)) + '"></label>';
+      }
+      if (f.type === 'number') {
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<input type="number" min="0" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="number" value="' + esc(val == null ? '' : val) + '"></label>';
+      }
+      if (f.type === 'select') {
+        var opts = (f.options || []).map(function (o) {
+          return '<option value="' + esc(o.value) + '"' + (o.value === val ? ' selected' : '') + '>' + esc(o.label) + '</option>';
+        }).join('');
+        return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+          '<select class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="select"><option value="">—</option>' + opts + '</select></label>';
+      }
+      return '<label class="iq-df-pop-comm iq-vc-field-wrap">' + esc(f.label) +
+        '<input type="text" class="iq-vc-field" data-key="' + esc(f.key) + '" data-type="text" value="' + esc(val || '') + '"></label>';
+    }
+
+    function setupHtml() {
+      var fieldsHtml = fields.length
+        ? fields.map(fieldHtml).join('')
+        : '<span class="iq-df-sample">This component reads the items directly — no context to declare.</span>';
+      return '' +
+        '<div class="iq-df-setup">' +
+          '<div class="iq-df-pop">' +
+            '<span class="iq-df-pop-h">Declared context</span>' +
+            (spec.reviewerPrompt ? '<p class="iq-vc-prompt">' + esc(spec.reviewerPrompt) + '</p>' : '') +
+            fieldsHtml +
+          '</div>' +
+          '<div class="iq-df-actions">' +
+            (live
+              ? '<button type="button" class="iq-df-run">Run AI review</button>' +
+                '<button type="button" class="iq-df-save">Save review</button>'
+              : '<span class="iq-df-sample">Sample instrument — connect a survey to run the AI review and save.</span>') +
+            '<span class="iq-df-status" data-tone="ok"></span>' +
+          '</div>' +
+        '</div>' +
+        '<div class="iq-df-result"></div>';
+    }
+
+    function draw() {
+      var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+      var m = res.math;
+
+      titleEl.textContent = spec.name + ' Score: ' + res.score + '/100  ·  ' +
+        res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' administration points';
+      subEl.textContent = res.band.label;
+
+      var mathLine = 'Started at ' + m.startedAt + '   −' + Math.abs(m.cappedPenalty) +
+        ' capped penalties   =   ' + (m.startedAt + m.cappedPenalty) +
+        (m.raw !== m.final ? '   (clamped to ' + m.final + ')' : '');
+
+      var gateHtml;
+      if (res.blockers.length === 0) {
+        gateHtml = '<div class="iq-df-gate" data-state="clear">No launch blockers — the administration gate is clear.</div>';
+      } else {
+        gateHtml = '<div class="iq-df-gate" data-state="' + (res.launchReady ? 'reviewed' : 'blocked') + '">' +
+          '<strong>' + (res.launchReady
+            ? 'All blockers reviewed — gate cleared.'
+            : 'Administration blocker detected — review before launch.') + '</strong>' +
+          '<span class="iq-df-gate-note">The launch gate is orthogonal: it does not change the ' + res.score + '/100 score.</span>' +
+          '<ul class="iq-df-blockers">' + res.blockers.map(function (b) {
+            return '<li>' +
+              '<span class="iq-flag" data-tone="alert">Blocker</span> ' + esc(b.label) +
+              ' <em>(' + esc(b.item_ref) + ')</em> ' +
+              (b.reviewed
+                ? '<span class="iq-df-reviewed">reviewed</span>'
+                : '<button type="button" class="iq-df-btn" data-act="review" data-flag="' + esc(b.triggeredBy) + '">Mark reviewed</button>') +
+            '</li>';
+          }).join('') + '</ul>' +
+        '</div>';
+      }
+
+      // Report-level cautions: advisory only — never change the score or block launch.
+      var warnHtml = (res.warnings && res.warnings.length)
+        ? '<div class="iq-df-gate" data-state="warn">' +
+            '<strong>Report-level caution</strong>' +
+            '<span class="iq-df-gate-note">Advisory only — does not change the ' + res.score + '/100 score or block launch.</span>' +
+            '<ul class="iq-df-blockers">' + res.warnings.map(function (w) {
+              return '<li><span class="iq-flag" data-tone="warn">Caution</span> ' + esc(w.label) + '</li>';
+            }).join('') + '</ul>' +
+          '</div>'
+        : '';
+
+      var cards = flags.map(function (f) {
+        var counted = (f.decision === 'accepted' || f.decision === 'severity_overridden');
+        var pen = counted ? Eng.SEVERITY_PENALTY[f.severity] : 0;
+        var stateTxt = f.decision === 'dismissed' ? 'dismissed (0 pts · kept in ledger)'
+                     : f.decision === 'severity_overridden' ? 'severity overridden'
+                     : 'kept';
+        return '<div class="iq-df-card" data-decision="' + esc(f.decision) + '">' +
+          '<div class="iq-df-card-head">' +
+            '<span class="iq-flag" data-tone="' + (counted ? 'alert' : 'ok') + '">' + esc(CHECKS[f.check] || f.check) + '</span>' +
+            '<span class="iq-df-ref">' + esc(f.item_ref) + (f.section ? ' · ' + esc(f.section) : '') + '</span>' +
+            '<span class="iq-df-pen">' + pen + ' pts</span>' +
+          '</div>' +
+          '<blockquote class="iq-df-quote">' + esc(f.quote) + '</blockquote>' +
+          '<p class="iq-df-why"><strong>Why it matters.</strong> ' + esc(f.rationale) + '</p>' +
+          (f.suggested_revision ? '<p class="iq-df-fix"><strong>Suggested revision.</strong> ' + esc(f.suggested_revision) + '</p>' : '') +
+          '<div class="iq-df-controls">' +
+            '<label class="iq-df-sevlabel">Severity ' +
+              '<select class="iq-df-sev" data-flag="' + esc(f.flag_id) + '">' +
+                SEVS.map(function (s) {
+                  return '<option value="' + s + '"' + (s === f.severity ? ' selected' : '') + '>' +
+                    s + ' (' + Eng.SEVERITY_PENALTY[s] + ')</option>';
+                }).join('') +
+              '</select>' +
+            '</label>' +
+            '<button type="button" class="iq-df-btn" data-act="accept" data-flag="' + esc(f.flag_id) + '"' + (f.decision !== 'dismissed' ? ' data-on="1"' : '') + '>Keep</button>' +
+            '<button type="button" class="iq-df-btn" data-act="dismiss" data-flag="' + esc(f.flag_id) + '"' + (f.decision === 'dismissed' ? ' data-on="1"' : '') + '>Dismiss</button>' +
+            '<span class="iq-df-state">' + esc(stateTxt) + '</span>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+
+      var ledgerRows = res.ledger.map(function (l) {
+        return '<tr data-counted="' + l.counted + '">' +
+          '<td class="iq-rel-item">' + esc(l.item_ref) + '</td>' +
+          '<td>' + esc(l.checkLabel) + '</td>' +
+          '<td>' + esc(l.severity) + '</td>' +
+          '<td>' + l.penalty + '</td>' +
+          '<td>' + esc(l.decision) + '</td>' +
+        '</tr>';
+      }).join('');
+
+      if (!resultEl) return;
+      resultEl.innerHTML =
+        '<div class="iq-rel-summary">' +
+          '<p class="iq-rel-summary-line"><strong>' + esc(res.band.label) + '</strong></p>' +
+          '<p class="iq-df-math">' + esc(mathLine) + '</p>' +
+          '<p class="iq-rel-plain">' + esc(spec.intro || '') + ' The AI proposes the issues below with the exact wording that triggered each; you keep, dismiss, or re-grade them, and the score recomputes from your decisions.</p>' +
+          (notes ? '<p class="iq-df-notes"><strong>AI notes.</strong> ' + esc(notes) + '</p>' : '') +
+        '</div>' +
+        gateHtml +
+        warnHtml +
+        '<h4 class="iq-block-h">Issues to review</h4>' +
+        '<div class="iq-df-cards">' + (cards || '<p class="iq-rel-plain">No issues proposed — this component reads clean.</p>') + '</div>' +
+        '<h4 class="iq-block-h">Evidence ledger</h4>' +
+        '<div class="iq-rel-table-wrap"><table class="iq-table iq-table-rel">' +
+          '<thead><tr><th>Item</th><th>Check</th><th>Severity</th><th>Penalty</th><th>Decision</th></tr></thead>' +
+          '<tbody>' + ledgerRows + '</tbody>' +
+        '</table></div>';
+
+      interpEl.innerHTML =
+        '<div class="iq-jema">' +
+          '<div class="iq-jema-row"><strong>Judgment.</strong> ' + esc(res.band.label) + ' — ' + res.sdsiPoints.toFixed(1) + ' of ' + res.sdsiWeight + ' administration points.</div>' +
+          '<div class="iq-jema-row"><strong>Evidence.</strong> ' + res.ledger.filter(function (l) { return l.counted; }).length + ' counted issue(s); ' + res.blockers.length + ' launch blocker(s); ' + (res.warnings ? res.warnings.length : 0) + ' advisory caution(s).</div>' +
+          '<div class="iq-jema-row"><strong>Meaning.</strong> This is a PRE-LAUNCH administration-readiness check on whether the survey is ready to be fielded responsibly, clearly, safely, and practically. It never evaluates survey results or post-administration data quality — that belongs to RSSI, after data collection. SIRI asks whether the survey is ready to collect interpretable data before launch.</div>' +
+          '<div class="iq-jema-row"><strong>Action.</strong> ' + (res.launchReady
+            ? 'No unreviewed blockers. Address the remaining issues to raise the score before launch.'
+            : 'Resolve or review the launch blocker(s) before this component is launch-ready — regardless of the score.') + '</div>' +
+        '</div>';
+    }
+
+    bodyEl.innerHTML = setupHtml();
+    resultEl = bodyEl.querySelector('.iq-df-result');
+    statusEl = bodyEl.querySelector('.iq-df-status');
+    runBtn   = bodyEl.querySelector('.iq-df-run');
+    saveBtn  = bodyEl.querySelector('.iq-df-save');
+
+    function readContextFields() {
+      bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+        var k = el.getAttribute('data-key');
+        var t = el.getAttribute('data-type');
+        context[k] = t === 'list' ? strToList(el.value)
+                   : t === 'number' ? (el.value === '' ? '' : Math.max(0, parseInt(el.value, 10) || 0))
+                   : el.value;
+      });
+    }
+    bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+      el.addEventListener('change', function () {
+        var k = el.getAttribute('data-key');
+        var t = el.getAttribute('data-type');
+        context[k] = t === 'list' ? strToList(el.value)
+                   : t === 'number' ? (el.value === '' ? '' : Math.max(0, parseInt(el.value, 10) || 0))
+                   : el.value;
+        if (k === 'item_count' || k === 'denominator_reviewed' || k === 'page_count') draw();
+      });
+    });
+
+    if (runBtn) {
+      runBtn.addEventListener('click', function () {
+        readContextFields();
+        runBtn.disabled = true;
+        status('Running AI review of the instrument…');
+        fetch('/api/sdsi/administration-propose.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ survey_id: surveyId, component: component, context: context })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Proposal failed.');
+            seedFromProposal(o.j);
+            status((flags.length || 0) + ' issue(s) proposed. Review, then Save.');
+            draw();
+          })
+          .catch(function (e) { status('AI review failed: ' + e.message, true); })
+          .then(function () { runBtn.disabled = false; });
+      });
+    }
+
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function () {
+        readContextFields();
+        var res = Eng.assess({ flags: flags, mitigations: [], context: context });
+        saveBtn.disabled = true;
+        status('Saving review…');
+        fetch('/api/sdsi/administration-save.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({
+            survey_id: surveyId,
+            component: component,
+            context: context,
+            flags: flags,
+            result: {
+              score: res.score, sdsiPoints: res.sdsiPoints, band: res.band.key,
+              launchReady: res.launchReady, blockerCount: res.blockers.length
+            }
+          })
+        }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, j: j }; }); })
+          .then(function (o) {
+            if (!o.ok || !o.j || !o.j.ok) throw new Error((o.j && o.j.message) || 'Save failed.');
+            status('Saved · ' + res.score + '/100 · ' + res.sdsiPoints.toFixed(1) + '/' + res.sdsiWeight + ' administration points.');
+          })
+          .catch(function (e) { status('Save failed: ' + e.message, true); })
+          .then(function () { saveBtn.disabled = false; });
+      });
+    }
+
+    resultEl.addEventListener('click', function (e) {
+      var btn = e.target.closest ? e.target.closest('.iq-df-btn') : null;
+      if (!btn) return;
+      var f = findFlag(btn.getAttribute('data-flag'));
+      if (!f) return;
+      var act = btn.getAttribute('data-act');
+      if (act === 'accept')      f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      else if (act === 'dismiss') f.decision = 'dismissed';
+      else if (act === 'review')  f.blocker_reviewed = true;
+      draw();
+    });
+    resultEl.addEventListener('change', function (e) {
+      var sel = e.target.closest ? e.target.closest('.iq-df-sev') : null;
+      if (!sel) return;
+      var f = findFlag(sel.getAttribute('data-flag'));
+      if (!f) return;
+      f.severity = sel.value;
+      if (f.decision !== 'dismissed') f.decision = (f.severity !== f._origSeverity) ? 'severity_overridden' : 'accepted';
+      draw();
+    });
+
+    if (live) {
+      status('Loading saved review…');
+      fetch('/api/sdsi/administration-get.php?survey_id=' + encodeURIComponent(surveyId) + '&component=' + encodeURIComponent(component), { credentials: 'same-origin' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          if (j && j.ok && j.exists && j.review) {
+            seedFromProposal(j.review);
+            bodyEl.querySelectorAll('.iq-vc-field').forEach(function (el) {
+              var k = el.getAttribute('data-key');
+              var t = el.getAttribute('data-type');
+              el.value = t === 'list' ? listToStr(context[k]) : (context[k] == null ? '' : context[k]);
+            });
+            status('Loaded saved review (updated ' + (j.review.updatedAt || 'previously') + ').');
+          } else {
+            status('No saved review yet. Declare the context, then Run AI review.');
+          }
+          draw();
+        })
+        .catch(function () { status('Could not load a saved review — start a new one.', true); draw(); });
+    }
+
+    draw();
   }
 
   // ==================================================================
