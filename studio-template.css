@@ -477,9 +477,14 @@ a { color: var(--accent); text-decoration: none; }
   color: var(--text-3);
   flex-shrink: 0;
 }
-.sb-item-tag.qual, .sb-item-tag.QUAL { background: rgba(175, 82, 222, 0.14); color: var(--qual-color); }
-.sb-item-tag.mm,   .sb-item-tag.MM   { background: rgba(255, 149, 0,  0.16); color: var(--mm-color); }
-.sb-item-tag.quant,.sb-item-tag.QUANT{ background: rgba(0, 122, 255, 0.12); color: var(--quant-color); }
+/* Strand tags — colors come from the shared token source (platform-shell.css)
+   so the studio adds nothing to a parallel system. The three strands read as
+   peers; RSSI is a neutral source marker, not a strand. */
+.sb-item-tag.quan, .sb-item-tag.QUAN { background: var(--quan-soft);   color: var(--quan-color); }
+.sb-item-tag.quant,.sb-item-tag.QUANT{ background: var(--quan-soft);   color: var(--quan-color); }
+.sb-item-tag.qual, .sb-item-tag.QUAL { background: var(--qual-soft);   color: var(--qual-color); }
+.sb-item-tag.mm,   .sb-item-tag.MM   { background: var(--mm-tag-soft); color: var(--mm-color); }
+.sb-item-tag.rssi, .sb-item-tag.RSSI { background: var(--rssi-soft);   color: var(--rssi-color); }
 
 .sb-item.hero::before {
   content: "";

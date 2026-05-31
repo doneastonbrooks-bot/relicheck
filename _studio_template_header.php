@@ -144,15 +144,20 @@ $_section_icons = [
             <?php foreach ($_visible_items as $_item):
               $_is_active = ($_item['key'] === $current_item);
               $_hero      = !empty($_item['hero']) || ($_item['key'] === 'strength_index');
-              $_badge     = $_item['badge'] ?? '';
-              $_badge_cls = strtolower(preg_replace('/[^a-zA-Z]/', '', (string)$_badge));
+              // Strand tags (QUAN / QUAL / MM / RSSI) are an MM Studio rail
+              // feature only; the other studios keep their existing badges.
+              // When an item carries a strand it supersedes its badge in the
+              // display so the rail shows one tag, not two.
+              $_strand    = ($current_studio === 'mm') ? ($_item['strand'] ?? '') : '';
+              $_tag       = $_strand !== '' ? $_strand : ($_item['badge'] ?? '');
+              $_tag_cls   = strtolower(preg_replace('/[^a-zA-Z]/', '', (string)$_tag));
             ?>
               <a class="sb-item<?= $_is_active ? ' active' : '' ?><?= $_hero ? ' hero' : '' ?>"
                  href="<?= htmlspecialchars($_item['route'] ?? '#') ?>"
                  <?= $_is_active ? ' aria-current="page"' : '' ?>>
                 <span class="sb-item-title"><?= $_item['label'] /* may contain entities like &kappa; */ ?></span>
-                <?php if ($_badge !== ''): ?>
-                  <span class="sb-item-tag <?= htmlspecialchars($_badge_cls) ?>"><?= htmlspecialchars(strtoupper((string)$_badge)) ?></span>
+                <?php if ($_tag !== ''): ?>
+                  <span class="sb-item-tag <?= htmlspecialchars($_tag_cls) ?>"><?= htmlspecialchars(strtoupper((string)$_tag)) ?></span>
                 <?php endif; ?>
               </a>
             <?php endforeach; ?>
