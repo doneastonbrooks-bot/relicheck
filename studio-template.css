@@ -723,6 +723,31 @@ body[data-current-section="overview"] .ov-lens .ov-sp-card {
 }
 
 /* =====================================================================
+   Step 3 — document-first page surface (Instrument Quality stage)
+   ---------------------------------------------------------------------
+   Same pattern as Overview. The instrument-quality engine renders one
+   visible .iq-lens section (the others stay [hidden]); the lens already
+   self-cards with an accent-tint gradient, so wrap it in the neutral
+   document card to match the rest of the site. Inner engine cards/tables
+   keep their own styling (they are bordered, so they read cleanly on the
+   white surface). Scoped to [data-current-section="instrument_quality"].
+   Presentation only — engine markup wrapped, not regenerated; no computed
+   value touched; no new colors. RSSI / Strength Index remains read-only. */
+body[data-current-section="instrument_quality"] .iq-lens:not([hidden]) {
+  background: var(--rc-card-bg, var(--surface, #ffffff));
+  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
+  border-radius: var(--rc-radius-xl, var(--r-lg));
+  padding: 32px 36px;
+  box-shadow: var(--rc-shadow-soft);
+  margin: 0 0 24px;
+}
+@media (max-width: 900px) {
+  body[data-current-section="instrument_quality"] .iq-lens:not([hidden]) {
+    padding: 24px 20px;
+  }
+}
+
+/* =====================================================================
    Cards
    ===================================================================== */
 /* Cards — premium workspace scale, neutral border + soft shadow.
