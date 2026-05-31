@@ -808,6 +808,36 @@ body[data-current-section="inferential"] .mm-lens:not([hidden]) {
 }
 
 /* =====================================================================
+   Step 3 — document-first page surface (Interpretation stage)
+   ---------------------------------------------------------------------
+   Unlike the lens engines, the interpretation engine renders its content
+   (head, body, foot) as flat siblings inside .interp-app, which is reset
+   to no surface. Wrap .interp-app in the neutral document card so the page
+   matches the site. The inner empty-state tiles (.interp-empty-card) and
+   the AI hook (.interp-ai) self-card, so calm them to quiet insets to
+   avoid card-in-card. Scoped to [data-current-section="interpretation"];
+   other stages untouched. Presentation only — engine markup wrapped, not
+   regenerated; no computed value touched; no new colors. */
+body[data-current-section="interpretation"] .interp-app {
+  background: var(--rc-card-bg, var(--surface, #ffffff));
+  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
+  border-radius: var(--rc-radius-xl, var(--r-lg));
+  padding: 32px 36px;
+  box-shadow: var(--rc-shadow-soft);
+  margin: 0 0 24px;
+}
+@media (max-width: 900px) {
+  body[data-current-section="interpretation"] .interp-app {
+    padding: 24px 20px;
+  }
+}
+body[data-current-section="interpretation"] .interp-empty-card {
+  background: var(--bg-soft, var(--surface-2));
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+/* =====================================================================
    Cards
    ===================================================================== */
 /* Cards — premium workspace scale, neutral border + soft shadow.
