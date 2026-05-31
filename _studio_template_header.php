@@ -119,49 +119,65 @@ $_section_icons = [
       <div class="sb-project-meta"><?= htmlspecialchars($studio_context_label) ?></div>
     </div>
 
-    <!-- Methodology arc -->
-    <nav class="sb-nav" aria-label="Methodology arc">
-      <?php foreach ($_catalog as $_section): ?>
-        <?php
-          $_visible_items = array_values(array_filter($_section['items'], function ($it) use ($current_studio) {
+    <!-- Two-level navigation — left rail shows ONLY the active stage's pages.
+         The six stages live in the tab bar across the top of .main (below).
+         Every stage's group is rendered here so a tab click can reveal it
+         client-side; all but the active stage start hidden. Sub-pages are
+         alphabetical and carry their strand tags. -->
+    <?php
+      // Resolve the active stage; default to the first stage with visible items.
+      $_active_sec = null;
+      foreach ($_catalog as $_s) {
+        if (($_s['key'] ?? '') === $current_section) { $_active_sec = $_s; break; }
+      }
+      if ($_active_sec === null) {
+        foreach ($_catalog as $_s) {
+          $_has = array_filter($_s['items'], function ($it) use ($current_studio) {
             return relicheck_item_visible($it, $current_studio);
-          }));
-          if (empty($_visible_items)) continue;
-          $_sec_key      = $_section['key'];
-          $_is_current   = ($_sec_key === $current_section);
-          $_section_icon = $_section_icons[$_sec_key] ?? '';
-        ?>
-        <div class="sb-section<?= $_is_current ? ' open' : '' ?>" data-section="<?= htmlspecialchars($_sec_key) ?>">
-          <div class="sb-section-header<?= $_is_current ? ' active' : '' ?>" data-toggle="<?= htmlspecialchars($_sec_key) ?>">
-            <?= $_section_icon ?>
-            <div style="flex: 1; min-width: 0;">
-              <div class="sb-section-title"><?= htmlspecialchars($_section['label']) ?></div>
-              <div class="sb-section-question"><?= htmlspecialchars($_section['question']) ?></div>
-            </div>
-            <svg class="sb-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>
-          </div>
-          <div class="sb-items">
-            <?php foreach ($_visible_items as $_item):
-              $_is_active = ($_item['key'] === $current_item);
-              $_hero      = !empty($_item['hero']) || ($_item['key'] === 'strength_index');
-              // Strand tags (QUAN / QUAL / MM / RSSI) are an MM Studio rail
-              // feature only; the other studios keep their existing badges.
-              // When an item carries a strand it supersedes its badge in the
-              // display so the rail shows one tag, not two.
-              $_strand    = ($current_studio === 'mm') ? ($_item['strand'] ?? '') : '';
-              $_tag       = $_strand !== '' ? $_strand : ($_item['badge'] ?? '');
-              $_tag_cls   = strtolower(preg_replace('/[^a-zA-Z]/', '', (string)$_tag));
-            ?>
-              <a class="sb-item<?= $_is_active ? ' active' : '' ?><?= $_hero ? ' hero' : '' ?>"
-                 href="<?= htmlspecialchars($_item['route'] ?? '#') ?>"
-                 <?= $_is_active ? ' aria-current="page"' : '' ?>>
-                <span class="sb-item-title"><?= $_item['label'] /* may contain entities like &kappa; */ ?></span>
-                <?php if ($_tag !== ''): ?>
-                  <span class="sb-item-tag <?= htmlspecialchars($_tag_cls) ?>"><?= htmlspecialchars(strtoupper((string)$_tag)) ?></span>
-                <?php endif; ?>
-              </a>
-            <?php endforeach; ?>
-          </div>
+          });
+          if (!empty($_has)) { $_active_sec = $_s; break; }
+        }
+      }
+      $_active_key = $_active_sec['key'] ?? '';
+      // Sort labels by their visible text (ignore HTML entities / tags).
+      $_rail_sort = function ($a, $b) {
+        return strcasecmp(
+          strip_tags(html_entity_decode((string)($a['label'] ?? ''))),
+          strip_tags(html_entity_decode((string)($b['label'] ?? '')))
+        );
+      };
+    ?>
+    <nav class="sb-nav" aria-label="<?= htmlspecialchars(($_active_sec['label'] ?? '') . ' pages') ?>">
+      <?php foreach ($_catalog as $_section):
+        $_visible_items = array_values(array_filter($_section['items'], function ($it) use ($current_studio) {
+          return relicheck_item_visible($it, $current_studio);
+        }));
+        if (empty($_visible_items)) continue;
+        usort($_visible_items, $_rail_sort);
+        $_sec_key       = $_section['key'];
+        $_is_active_grp = ($_sec_key === $_active_key);
+      ?>
+        <div class="sb-railgroup" data-stage="<?= htmlspecialchars($_sec_key) ?>"<?= $_is_active_grp ? '' : ' hidden' ?>>
+          <?php foreach ($_visible_items as $_item):
+            $_is_active = ($_item['key'] === $current_item);
+            $_hero      = !empty($_item['hero']) || ($_item['key'] === 'strength_index');
+            // Strand tags (QUAN / QUAL / MM / RSSI) are an MM Studio rail
+            // feature only; the other studios keep their existing badges.
+            // When an item carries a strand it supersedes its badge in the
+            // display so the rail shows one tag, not two.
+            $_strand    = ($current_studio === 'mm') ? ($_item['strand'] ?? '') : '';
+            $_tag       = $_strand !== '' ? $_strand : ($_item['badge'] ?? '');
+            $_tag_cls   = strtolower(preg_replace('/[^a-zA-Z]/', '', (string)$_tag));
+          ?>
+            <a class="sb-item<?= $_is_active ? ' active' : '' ?><?= $_hero ? ' hero' : '' ?>"
+               href="<?= htmlspecialchars($_item['route'] ?? '#') ?>"
+               <?= $_is_active ? ' aria-current="page"' : '' ?>>
+              <span class="sb-item-title"><?= $_item['label'] /* may contain entities like &kappa; */ ?></span>
+              <?php if ($_tag !== ''): ?>
+                <span class="sb-item-tag <?= htmlspecialchars($_tag_cls) ?>"><?= htmlspecialchars(strtoupper((string)$_tag)) ?></span>
+              <?php endif; ?>
+            </a>
+          <?php endforeach; ?>
         </div>
       <?php endforeach; ?>
     </nav>
@@ -223,6 +239,27 @@ $_section_icons = [
       </button>
     </div>
 
+    <!-- Stage tabs: top level of the two-level nav. Each tab reveals that
+         stage's sub-pages in the left rail; the active tab uses the studio
+         accent. Built from the same catalog stages as the rail. -->
+    <nav class="stage-tabs" role="tablist" aria-label="Stages">
+      <?php foreach ($_catalog as $_section):
+        $_vis = array_filter($_section['items'], function ($it) use ($current_studio) {
+          return relicheck_item_visible($it, $current_studio);
+        });
+        if (empty($_vis)) continue;
+        $_sec_key = $_section['key'];
+        $_is_cur  = ($_sec_key === $_active_key);
+      ?>
+        <button type="button" class="stage-tab<?= $_is_cur ? ' active' : '' ?>"
+                data-stage="<?= htmlspecialchars($_sec_key) ?>"
+                role="tab" aria-selected="<?= $_is_cur ? 'true' : 'false' ?>">
+          <span class="stage-tab-label"><?= htmlspecialchars($_section['label']) ?></span>
+          <span class="stage-tab-q"><?= htmlspecialchars($_section['question']) ?></span>
+        </button>
+      <?php endforeach; ?>
+    </nav>
+
     <div class="page">
       <section class="studio-work" aria-label="Work area">
 <?php
@@ -231,11 +268,20 @@ $_section_icons = [
 ?>
         <script>
         (function () {
-          document.addEventListener('click', function (e) {
-            const h = e.target.closest('.sb-section-header');
-            if (!h) return;
-            const sec = h.closest('.sb-section');
-            if (sec) sec.classList.toggle('open');
+          // Two-level nav: clicking a stage tab reveals that stage's sub-pages
+          // in the left rail. Choosing a sub-page still navigates via its link.
+          const tabs   = Array.prototype.slice.call(document.querySelectorAll('.stage-tab'));
+          const groups = Array.prototype.slice.call(document.querySelectorAll('.sb-railgroup'));
+          function activate(stage) {
+            tabs.forEach(function (t) {
+              const on = t.getAttribute('data-stage') === stage;
+              t.classList.toggle('active', on);
+              t.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            groups.forEach(function (g) { g.hidden = (g.getAttribute('data-stage') !== stage); });
+          }
+          tabs.forEach(function (t) {
+            t.addEventListener('click', function () { activate(t.getAttribute('data-stage')); });
           });
         })();
         </script>
