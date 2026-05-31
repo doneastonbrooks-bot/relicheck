@@ -776,6 +776,38 @@ body[data-current-section="descriptive"] .mm-lens:not([hidden]) {
 }
 
 /* =====================================================================
+   Step 3 — document-first page surface (Inferential Analysis stage)
+   ---------------------------------------------------------------------
+   Same pattern. The Inferential stage shows the test results card
+   (.inf-results), the extensions results (.ix-results), the effect-size
+   results (.es-results), and in MM studio the integration pages
+   (.mm-lens: joint display, integration quality, pattern matching). Each
+   self-cards; wrap whichever is visible in the neutral document card. The
+   setup pickers / input panes above keep their own card styling. Scoped
+   to [data-current-section="inferential"]; other stages untouched.
+   Presentation only — engine markup wrapped, not regenerated; no computed
+   value touched; no new colors. */
+body[data-current-section="inferential"] .inf-results:not([hidden]),
+body[data-current-section="inferential"] .ix-results:not([hidden]),
+body[data-current-section="inferential"] .es-results:not([hidden]),
+body[data-current-section="inferential"] .mm-lens:not([hidden]) {
+  background: var(--rc-card-bg, var(--surface, #ffffff));
+  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
+  border-radius: var(--rc-radius-xl, var(--r-lg));
+  padding: 32px 36px;
+  box-shadow: var(--rc-shadow-soft);
+  margin: 0 0 24px;
+}
+@media (max-width: 900px) {
+  body[data-current-section="inferential"] .inf-results:not([hidden]),
+  body[data-current-section="inferential"] .ix-results:not([hidden]),
+  body[data-current-section="inferential"] .es-results:not([hidden]),
+  body[data-current-section="inferential"] .mm-lens:not([hidden]) {
+    padding: 24px 20px;
+  }
+}
+
+/* =====================================================================
    Cards
    ===================================================================== */
 /* Cards — premium workspace scale, neutral border + soft shadow.
