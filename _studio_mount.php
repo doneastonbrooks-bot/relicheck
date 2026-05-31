@@ -664,6 +664,9 @@ if (empty($mount_no_save_to_report) && $mount_stub_resolved !== false && !empty(
 .rc-draft-foot { padding: 14px 18px; border-top: 1px solid var(--line, #ebeef3); }
 .rc-draft-open { display: inline-block; font-size: 13.5px; font-weight: 700; color: var(--accent, #e85d3a); }
 .rc-draft-open:hover { text-decoration: underline; }
+/* The display rules above would otherwise beat the [hidden] attribute, so the
+   tab/overlay/panel must re-assert display:none while hidden. */
+.rc-draft-tab[hidden], .rc-draft-overlay[hidden], .rc-draft-panel[hidden] { display: none !important; }
 </style>
 
 <script>
