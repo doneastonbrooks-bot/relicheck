@@ -685,6 +685,44 @@ body[data-current-studio] .strength-source {
 .studio-work { display: block; }
 
 /* =====================================================================
+   Step 3 — document-first page surface (Overview stage only)
+   ---------------------------------------------------------------------
+   The mount partial already emits the document head (uppercase
+   "STAGE · QUESTION" eyebrow, large page title, description) and the
+   data-context strip above the work area. This block completes the
+   Pages-style surface by wrapping each Overview lens's existing engine
+   output in a card, so the page reads as a document: head + context
+   strip, then content on a card.
+
+   Scoped to the Overview section via [data-current-section="overview"]
+   so the other stages are unchanged until their own pass. Presentation
+   only — the engine markup and every computed value are untouched, and
+   no new colors are introduced (shared surface / line / shadow tokens).
+   ===================================================================== */
+body[data-current-section="overview"] .ov-lens:not([hidden]) {
+  background: var(--rc-card-bg, var(--surface, #ffffff));
+  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
+  border-radius: var(--rc-radius-xl, var(--r-lg));
+  padding: 32px 36px;
+  box-shadow: var(--rc-shadow-soft);
+  margin: 0 0 24px;
+}
+@media (max-width: 900px) {
+  body[data-current-section="overview"] .ov-lens:not([hidden]) {
+    padding: 24px 20px;
+  }
+}
+/* The snapshot tiles are themselves small bordered cards. Inside the
+   document card, calm them to quiet insets so the surface does not read
+   as harsh card-in-card. Structure and values are unchanged. */
+body[data-current-section="overview"] .ov-lens .ov-snap-card,
+body[data-current-section="overview"] .ov-lens .ov-sp-card {
+  background: var(--bg-soft, var(--surface-2));
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+/* =====================================================================
    Cards
    ===================================================================== */
 /* Cards — premium workspace scale, neutral border + soft shadow.
