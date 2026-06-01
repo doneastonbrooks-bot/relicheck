@@ -41,6 +41,12 @@
 
 .as-empty-tool { padding:36px 24px; text-align:center; color:var(--ink-3,#8a8f98); border:1.5px dashed var(--line,#e6e8ec); border-radius:14px; }
 
+/* Scale Scores item picker — chips that wrap in rows, not one per line */
+.sc-items { display:flex; flex-wrap:wrap; gap:8px 10px; margin-top:6px; }
+.sc-item { display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:500; border:1px solid var(--line,#e6e8ec); border-radius:9px; padding:7px 11px; cursor:pointer; background:#fff; }
+.sc-item input { margin:0; }
+.sc-item.on { border-color:var(--acc,#c2271b); background:var(--acc-soft,#fbe9e7); color:var(--acc-deep,#a11f15); }
+
 /* ---- Upload popup ---- */
 .au-overlay { position:fixed; inset:0; background:rgba(15,23,42,.42); z-index:9999; display:flex; align-items:center; justify-content:center; padding:24px; }
 .au-panel { background:#fff; border-radius:18px; width:100%; max-width:640px; max-height:84vh; overflow:auto; box-shadow:0 24px 70px rgba(15,23,42,.32); padding:26px 28px; position:relative; }
