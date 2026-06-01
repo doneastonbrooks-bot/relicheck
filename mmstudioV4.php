@@ -420,58 +420,53 @@ label .tt-hint{margin-left:6px}
 .ed-in{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
 .ed-in:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
 .ed-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-/* MM Studio — cinematic intro / Start screen */
-@keyframes mm-shift{0%,100%{background-position:0% 60%}50%{background-position:100% 40%}}
-@keyframes mm-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.mm-launch{animation:mm-up .45s ease both}
-.mm-launch-hero{margin:-30px -4px 0 0;padding:72px 52px 60px;background:linear-gradient(135deg,#08080f 0%,#130a2c 30%,#0c1535 65%,#08080f 100%);background-size:300% 300%;animation:mm-shift 16s ease infinite;position:relative;overflow:hidden}
-.mm-launch-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 25%,rgba(108,63,196,.15) 0%,transparent 60%);pointer-events:none}
-.mm-launch-badge{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:32px}
-.mm-launch-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--btn);display:block;flex:none}
-.mm-launch-h1{font-size:56px;font-weight:900;line-height:1.05;letter-spacing:-.04em;color:#fff;margin:0 0 28px;max-width:24ch}
-.mm-launch-h1 em{color:var(--btn);font-style:normal}
-.mm-launch-tag{font-size:14.5px;color:rgba(255,255,255,.48);line-height:1.7;max-width:50ch;margin:0;padding-top:22px;border-top:1px solid rgba(255,255,255,.1)}
-@media(max-width:720px){.mm-launch-hero{padding:48px 26px 44px;margin:-30px -4px 0 0}.mm-launch-h1{font-size:36px}}
-/* Pillars row */
-.mm-pillars{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:38px}
-.mm-pillar{padding:20px 22px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
-.mm-pillar:last-child{border-right:none}
-.mp-num{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--btn);margin-bottom:2px}
-.mp-title{font-size:14.5px;font-weight:800;color:var(--ink)}
-.mp-desc{font-size:12px;color:var(--ink-3);line-height:1.4}
-@media(max-width:760px){.mm-pillars{grid-template-columns:repeat(2,1fr)}.mm-pillar:nth-child(2){border-right:none}.mm-pillar:nth-child(1),.mm-pillar:nth-child(2){border-bottom:1px solid var(--line)}}
-/* Design cards */
-.mm-sec-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
-.mm-design-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 36px}
-@media(max-width:760px){.mm-design-grid{grid-template-columns:1fr}}
-.mm-dcard{text-align:left;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.14s;box-shadow:var(--shadow)}
-.mm-dcard:hover,.mm-dcard.on{border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
-.mdc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}
-.mdc-name{font-size:14.5px;font-weight:800;color:var(--ink)}
-.mdc-pill{font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--btn);background:var(--accent-soft);padding:3px 9px;border-radius:999px;flex:none}
-.mm-dcard p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0}
-/* Upload CTA */
-.mm-upload-cta{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;display:flex;align-items:center;gap:20px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);margin-bottom:24px;width:100%;text-align:left}
-.mm-upload-cta:hover{border-color:var(--btn)}
-.mm-upload-ico{width:48px;height:48px;border-radius:14px;background:var(--accent-soft);color:var(--btn);display:grid;place-items:center;font-size:22px;flex:none}
-.mm-upload-cta h4{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 5px}
-.mm-upload-cta p{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin:0}
-.mm-upload-cta .muc-go{font-size:13px;font-weight:800;color:var(--btn);display:block;margin-top:8px}
-/* Secondary entry cards */
-.mm-alt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
-@media(max-width:900px){.mm-alt-grid{grid-template-columns:1fr}}
-.mm-alt-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;text-align:left}
-.mm-alt-card:hover{border-color:var(--btn);transform:translateY(-2px)}
-.mm-alt-card .mac-ico{font-size:19px;margin-bottom:4px}
-.mm-alt-card h4{font-size:14px;font-weight:800;color:var(--ink);margin:0}
-.mm-alt-card p{font-size:12px;color:var(--ink-2);line-height:1.45;margin:0;flex:1}
-.mm-alt-card .mac-go{font-size:12px;font-weight:800;color:var(--ink-3);margin-top:6px}
-/* Project-loaded bar + project select (shared) */
+/* Start step — bold landing-style hero + SIRI begin layout */
+.start-hero-wrap{text-align:center;max-width:800px;margin:14px auto 30px}
+.start-beta{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--btn);margin-bottom:18px}
+.start-beta .sb-dot{width:20px;height:20px;border-radius:6px;background:var(--btn)}
+.start-hero{font-size:46px;font-weight:900;letter-spacing:-.035em;line-height:1.06;margin:0 auto 16px;max-width:17ch}
+.start-hero .accent{color:var(--btn)}
+.start-sub{font-size:15.5px;color:var(--ink-2);line-height:1.6;max-width:620px;margin:0 auto}
+@media(max-width:640px){.start-hero{font-size:32px}}
+/* Start intro — what MM is + how it works + the 3 designs */
+.start-intro{text-align:center;font-size:15px;color:var(--ink-2);line-height:1.6;max-width:640px;margin:0 auto 28px}
+.start-flow{display:flex;align-items:stretch;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 auto 32px;max-width:900px}
+.sf-step{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);flex:1;min-width:175px}
+.sf-step .sf-n{width:24px;height:24px;border-radius:50%;background:var(--btn);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;flex:none}
+.sf-step b{display:block;font-size:13.5px;color:var(--ink)}
+.sf-step .sf-d{display:block;font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.4}
+.sf-arrow{display:flex;align-items:center;color:var(--ink-3);font-weight:800}
+.start-sec{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin:0 0 12px}
+.start-designs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 32px}
+@media(max-width:760px){.start-designs{grid-template-columns:1fr}}
+.start-design{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.13s;box-shadow:var(--shadow)}
+.start-design:hover{border-color:var(--btn)}
+.start-design.on{border-color:var(--btn);box-shadow:0 0 0 2px var(--accent-soft)}
+.sd-h{font-size:14.5px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.sd-lead{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--btn);background:var(--accent-soft);padding:2px 7px;border-radius:999px;flex:none}
+.start-design p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0}
 .begin-loaded{display:flex;align-items:center;gap:10px;padding:11px 16px;border:1px solid var(--line);background:var(--panel);border-radius:12px;font-size:13.5px;color:var(--ink-2);margin-bottom:20px;box-shadow:var(--shadow)}
 .begin-loaded .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
 .begin-loaded .bl-k{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
 .proj-select{font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:7px 30px 7px 12px;cursor:pointer;max-width:380px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='3' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
 .proj-select:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
+.bc-ico{width:40px;height:40px;border-radius:11px;background:var(--accent-soft);color:var(--ink-2);display:grid;place-items:center;font-size:18px;flex:none}
+.begin-feature{display:flex;gap:18px;align-items:flex-start;text-align:left;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);margin-bottom:26px}
+.begin-feature:hover{border-color:var(--btn)}
+.begin-feature .bc-ico{width:44px;height:44px;font-size:20px}
+.begin-feature h4{font-size:18px;font-weight:800;margin-bottom:6px}
+.begin-feature p{font-size:14px;color:var(--ink-2);line-height:1.55;margin:0 0 12px;max-width:72ch}
+.begin-feature .bc-go{font-size:14px;font-weight:800;color:var(--btn)}
+.begin-sec{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+.begin-grid2{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:980px){.begin-grid2{grid-template-columns:1fr}}
+.begin-grid2 .begin-card2{padding:18px}
+.begin-card2{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:5px}
+.begin-card2:hover{border-color:var(--btn);transform:translateY(-2px)}
+.begin-card2 .bc-ico{margin-bottom:8px}
+.begin-card2 h4{font-size:15.5px;font-weight:800}
+.begin-card2 p{font-size:13px;color:var(--ink-2);line-height:1.5;margin:0;flex:1}
+.begin-card2 .bc-go{font-size:13px;font-weight:800;color:var(--ink-2);margin-top:10px}
 .work-surface{border:1.5px dashed var(--line);border-radius:13px;background:var(--bg);padding:24px;color:var(--ink-2);font-size:13.5px;line-height:1.6}
 .btn{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:11px;transition:.12s;display:inline-flex;align-items:center;gap:7px}
 .btn:hover{background:var(--bg);color:var(--ink)}
@@ -643,49 +638,38 @@ function renderRail(){
 function startPickDesign(k){state.design=k;persistDesign(k);render();$(".center").scrollTop=0;}
 function renderStart(s){
   const loaded = BOOT.projectId>0;
-  const designs = DESIGN_ORDER.map(k=>{
-    const d=DESIGNS[k];
-    let desc=(d.why||'').replace(/^You chose <b>[^<]*<\/b>:\s*/,'').replace(/<[^>]+>/g,'');
-    desc=desc.charAt(0).toUpperCase()+desc.slice(1);
-    return `<button class="mm-dcard ${state.design===k?'on':''}" onclick="startPickDesign('${k}')">
-      <div class="mdc-top"><span class="mdc-name">${esc(d.short)}</span><span class="mdc-pill">${esc(d.leadLabel)}</span></div>
-      <p>${esc(desc)}</p></button>`;
-  }).join('');
-  const projectBar = loaded ? `<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
-    <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
-      ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
-    </select>
-    <button class="btn primary" style="margin-left:auto" onclick="stepBy(1)">Continue to analysis →</button></div>` : '';
   $("#centerInner").innerHTML=`
-    <div class="mm-launch">
-      <div class="mm-launch-hero">
-        <div class="mm-launch-badge">Mixed Methods Studio · ReliCheck</div>
-        <h1 class="mm-launch-h1">You're not here for the data.<br>You're here because <em>something matters.</em></h1>
-        <p class="mm-launch-tag">Mixed methods research is how you find out why — and prove it. Numbers show what happened. Narratives show why. Together, they show what it means for the people who matter.</p>
-      </div>
-      <div class="mm-pillars">
-        <div class="mm-pillar"><span class="mp-num">01 · Discover</span><span class="mp-title">Map &amp; Check</span><span class="mp-desc">Organize variables. Audit data quality before you analyze.</span></div>
-        <div class="mm-pillar"><span class="mp-num">02 · Analyze</span><span class="mp-title">Both Strands</span><span class="mp-desc">Run statistics. Surface themes. Build and test constructs.</span></div>
-        <div class="mm-pillar"><span class="mp-num">03 · Integrate</span><span class="mp-title">Joint Display</span><span class="mp-desc">Convergence, divergence, and higher-order meta-inferences.</span></div>
-        <div class="mm-pillar"><span class="mp-num">04 · Report</span><span class="mp-title">Findings</span><span class="mp-desc">Evidence-backed write-up, ready to download and share.</span></div>
-      </div>
-      ${projectBar}
-      <div class="mm-sec-label">Choose your research design</div>
-      <div class="mm-design-grid">${designs}</div>
-      <button class="mm-upload-cta" onclick="go('/mm-wizard.php?return=mmstudioV4')">
-        <span class="mm-upload-ico">⤓</span>
-        <div>
-          <h4>Bring in your data</h4>
-          <p>Have a survey plus interviews or open-ended responses? Upload a CSV or Excel file and build your project — then come back here to analyze.</p>
-          <span class="muc-go">Upload data →</span>
-        </div>
-      </button>
-      <div class="mm-sec-label">Or start another way</div>
-      <div class="mm-alt-grid">
-        <button class="mm-alt-card" onclick="go('/studio-mm-projects.php')"><span class="mac-ico">▦</span><h4>Open a saved project</h4><p>Return to a mixed-methods study already in ReliCheck.</p><span class="mac-go">Open projects →</span></button>
-        <button class="mm-alt-card" onclick="go('/develop.php?db=1&amp;start=choose')"><span class="mac-ico">✎</span><h4>Build a survey</h4><p>Design and strengthen a new survey in SIRI, then bring its responses here.</p><span class="mac-go">Go to SIRI →</span></button>
-        <button class="mm-alt-card" onclick="go('/rssi.php')"><span class="mac-ico">◉</span><h4>Check survey strength</h4><p>Run RSSI to gauge how strong and reliable your survey evidence is.</p><span class="mac-go">Go to RSSI →</span></button>
-      </div>
+    <div class="start-hero-wrap"><div class="start-beta"><span class="sb-dot"></span>Beta</div>
+      <h1 class="start-hero">Connect numbers, narratives, <span class="accent">and meaning.</span></h1>
+      <p class="start-sub">${esc(s.lede)}</p></div>
+    <p class="start-intro">Mixed methods brings your quantitative results and qualitative responses together, so each strand explains and strengthens the other.</p>
+    <div class="start-flow">
+      <div class="sf-step"><span class="sf-n">1</span><div><b>Map &amp; check</b><span class="sf-d">Organize your variables, then check data quality.</span></div></div>
+      <div class="sf-arrow">→</div>
+      <div class="sf-step"><span class="sf-n">2</span><div><b>Analyze both strands</b><span class="sf-d">Run the statistics and discover the themes.</span></div></div>
+      <div class="sf-arrow">→</div>
+      <div class="sf-step"><span class="sf-n">3</span><div><b>Integrate</b><span class="sf-d">Joint displays, convergence, meta-inferences.</span></div></div>
+      <div class="sf-arrow">→</div>
+      <div class="sf-step"><span class="sf-n">4</span><div><b>Report</b><span class="sf-d">Assemble and download the write-up.</span></div></div>
+    </div>
+    <div class="start-sec">Choose your design</div>
+    <div class="start-designs">${DESIGN_ORDER.map(k=>{const d=DESIGNS[k];let desc=(d.why||'').replace(/^You chose <b>[^<]*<\/b>:\s*/,'').replace(/<[^>]+>/g,'');desc=desc.charAt(0).toUpperCase()+desc.slice(1);return `<button class="start-design ${state.design===k?'on':''}" onclick="startPickDesign('${k}')"><div class="sd-h">${esc(d.short)}<span class="sd-lead">${esc(d.leadLabel)}</span></div><p>${esc(desc)}</p></button>`;}).join('')}</div>
+    ${loaded?`<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
+      <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
+        ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
+      </select>
+      <button class="btn primary" style="margin-left:auto" onclick="stepBy(1)">Continue to analysis →</button></div>`:''}
+    <button class="begin-feature" onclick="go('/mm-wizard.php?return=mmstudioV4')">
+      <span class="bc-ico">⤓</span>
+      <div><h4>Bring in your data</h4>
+        <p>Already have a survey plus interviews or open-ended responses? Upload a CSV or Excel file to create a project and build its dataset, then come back to analyze.</p>
+        <span class="bc-go">Upload data →</span></div>
+    </button>
+    <div class="begin-sec">Or start another way</div>
+    <div class="begin-grid2">
+      <button class="begin-card2" onclick="go('/studio-mm-projects.php')"><span class="bc-ico">▦</span><h4>Open a saved project</h4><p>Go to your projects and open a mixed-methods study already in ReliCheck.</p><span class="bc-go">Open projects →</span></button>
+      <button class="begin-card2" onclick="go('/develop.php?db=1&start=choose')"><span class="bc-ico">✎</span><h4>Create a survey</h4><p>Build and strengthen a new survey in SIRI, then bring its responses back here.</p><span class="bc-go">Go to SIRI →</span></button>
+      <button class="begin-card2" onclick="go('/rssi.php')"><span class="bc-ico">◉</span><h4>Check your survey strength</h4><p>Run RSSI to gauge how strong and reliable your survey evidence is.</p><span class="bc-go">Go to RSSI →</span></button>
     </div>`;
 }
 const DK_LABEL={survey_plus_open:"Survey + open-ended",survey_plus_interviews:"Survey + interviews",quant_plus_interpretation:"Quant + interpretation",open_only:"Open-ended only",build_from_scratch:"Build from scratch"};
