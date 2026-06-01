@@ -97,3 +97,11 @@
 .cb-k { display:flex; align-items:center; gap:7px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-3,#8a8f98); margin-bottom:4px; }
 .cb-i { width:18px; height:18px; border-radius:5px; background:var(--ink-3,#8a8f98); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex:none; }
 .cb-t { font-size:13.5px; color:var(--ink-2,#5f6368); line-height:1.55; }
+
+/* Coach "Intelligence" tab (ReliCheck Intelligence) */
+.intel-head { display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-2,#5f6368); margin-bottom:12px; }
+.intel-i { width:22px; height:22px; border-radius:7px; background:var(--ink,#15171a); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; flex:none; }
+.intel-prompt { background:var(--bg,#f5f6f8); border-radius:12px; padding:13px 15px; font-size:13.5px; color:var(--ink-2,#5f6368); line-height:1.5; margin-bottom:14px; }
+.intel-sug { display:block; width:100%; text-align:left; background:#fff; border:1px solid var(--line,#e6e8ec); border-radius:12px; padding:13px 15px; margin-bottom:10px; font-family:inherit; font-size:13.5px; font-weight:600; color:var(--ink,#15171a); cursor:pointer; }
+.intel-sug:hover { border-color:var(--acc,#c2271b); }
+.intel-out { background:var(--bg,#f5f6f8); border-radius:12px; padding:14px 16px; font-size:13.5px; color:var(--ink-2,#5f6368); line-height:1.55; margin-top:4px; }

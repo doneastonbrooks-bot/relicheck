@@ -138,6 +138,24 @@
     top_bottom_items:{ measures:'Every numeric item’s mean and SD, ranked, with ceiling / floor / low-variance flags.', use:'To spot the strongest and weakest items, and items that may not discriminate.' },
     scale_scores:{ measures:'A composite (average of chosen items per respondent) with its N, mean, SD, and range.', use:'To summarize a set of items as one score. Whether the set is reliable lives in RSSI.' },
   };
+  // Report-ready sentence drafts per step (the "Draft a sentence" suggestion).
+  const DRAFT = {
+    overview:'The dataset comprised the respondents and variables summarized above, with missing values noted per variable.',
+    frequencies:'Frequencies were computed to describe how respondents were distributed across each category of the variable.',
+    distributions:'Means, standard deviations, and ranges were calculated for each numeric variable to describe central tendency and spread.',
+    cross_tabs:'A cross-tabulation examined how the two categorical variables were jointly distributed, with row percentages reported.',
+    group_summaries:'Group means were compared descriptively across the grouping variable, with each group’s gap from the overall mean noted.',
+    top_bottom_items:'Items were ranked by mean to identify the highest- and lowest-scoring items, flagging ceiling and low-variance items.',
+    scale_scores:'A composite scale score was computed as the mean of the selected items for each respondent.',
+  };
+  // ReliCheck Intelligence — deterministic, content-aware responses (no fake AI).
+  AS.intel = function(kind, key, label){
+    const h=HELP[key]||{}, c=COACH[key]||{};
+    if (kind==='explain') return esc(h.what || ('This step summarizes part of your data ('+(label||'')+').'));
+    if (kind==='draft')   return esc(DRAFT[key] || ('Add a sentence summarizing '+(label||'this step')+' to your report.'));
+    if (kind==='next')    return esc(c.use ? (c.use+' Then use Save to report to keep the result.') : 'Run this step, then Save to report and continue to the next step in the rail.');
+    return '';
+  };
   AS.coachExplain = function(key){
     const h=HELP[key]||{}, c=COACH[key]||{};
     function blk(letter,label,text){ return '<div class="cb"><div class="cb-k"><span class="cb-i">'+letter+'</span>'+label+'</div><div class="cb-t">'+text+'</div></div>'; }

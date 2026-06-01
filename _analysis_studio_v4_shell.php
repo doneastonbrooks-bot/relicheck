@@ -231,6 +231,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
       <div class="comp-tabs">
         <button class="comp-tab on" data-tab="explain">Explain</button>
         <button class="comp-tab" data-tab="notes">Notes</button>
+        <button class="comp-tab" data-tab="intelligence">Intelligence</button>
       </div>
       <div class="comp-body" id="compBody"></div>
     </aside>
@@ -381,8 +382,24 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       return;
     }
     const s = activeStep();
-    // Rich per-step explanation (What it is / measures / when), like MM's Coach.
     const key = s.mode==='overview' ? 'overview' : (s.mode==='work' ? s.tool : null);
+
+    if (state.compTab==='intelligence') {
+      const label = esc(s.label);
+      const can = key && window.AnalysisStudio && window.AnalysisStudio.intel;
+      body.innerHTML = '<div class="intel-head"><span class="intel-i">&#10022;</span> ReliCheck Intelligence</div>'
+        + '<div class="intel-prompt">Ask about <strong>'+label+'</strong>, or pick a suggestion.</div>'
+        + '<button class="intel-sug" data-k="explain">Explain this step in plain language</button>'
+        + '<button class="intel-sug" data-k="draft">Draft a sentence for my report</button>'
+        + '<button class="intel-sug" data-k="next">What should I do next?</button>'
+        + '<div class="intel-out" id="intelOut">This step adds to your project. Run it, then use <strong>Save to report</strong> to keep the result in your findings.</div>';
+      if (can) body.querySelectorAll('.intel-sug').forEach(function(b){
+        b.addEventListener('click', function(){ document.getElementById('intelOut').innerHTML = window.AnalysisStudio.intel(b.getAttribute('data-k'), key, s.label); });
+      });
+      return;
+    }
+
+    // Rich per-step explanation (What it is / measures / when), like MM's Coach.
     if (key && window.AnalysisStudio && window.AnalysisStudio.coachExplain) {
       const html = window.AnalysisStudio.coachExplain(key);
       if (html) { body.innerHTML = html; return; }
