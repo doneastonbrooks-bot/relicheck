@@ -72,6 +72,15 @@
   function isCategoricalVar(v){ const t=(v.types||[]).join(',').toLowerCase(); if(/single|multi|categor|demograph|identifier/.test(t)) return true; const nm=nonMissing(v.values); const d=new Set(nm); return d.size>1 && d.size<=20; }
   function numericVars(ds){ return ds.variables.filter(isNumericVar); }
   function catVars(ds){ return ds.variables.filter(isCategoricalVar); }
+  // Variables you can sensibly take a FREQUENCY of: categorical or Likert
+  // (discrete) — never open-ended free text, identifiers, or dates.
+  function discreteVars(ds){ return ds.variables.filter(function(v){
+    const t=(v.types||[]).join(',').toLowerCase();
+    if(/open|identifier|free_text|date/.test(t)) return false;
+    if(/likert|single|multi|categor|demograph/.test(t)) return true;
+    const nm=nonMissing(v.values); const d=new Set(nm).size;
+    return d>1 && d<=15 && d < nm.length*0.6; // discrete-ish, not mostly-unique text
+  }); }
   function varByName(ds,name){ return ds.variables.find(function(v){return v.name===name;}); }
 
   // ---- "How to use this" help (mirrors MM's per-step guidance) ----
@@ -119,6 +128,26 @@
   };
   AS.helpButton = helpButton;
 
+  // Coach "Explain" content per step (mirrors MM's What is / measures / when).
+  const COACH = {
+    overview:{ measures:'Row and variable counts, each variable’s role, and how much data is missing.', use:'At the start of any analysis, to understand your dataset before drawing conclusions.' },
+    frequencies:{ measures:'The count, the percent of the whole, the valid percent (excluding missing), and the running cumulative percent for each category.', use:'To see how a sample is distributed across a category, such as role or education, before comparing groups.' },
+    distributions:{ measures:'Center (mean, median), spread (SD), and range (min–max) for each numeric variable, plus group means by a category.', use:'To understand the shape of numeric variables before choosing a statistical test.' },
+    cross_tabs:{ measures:'Joint counts and row percentages for two categorical variables.', use:'To explore whether two categories appear related — before testing it with chi-square.' },
+    group_summaries:{ measures:'Each group’s mean, SD, and gap from the overall mean on a numeric outcome.', use:'To compare a numeric outcome across groups, descriptively.' },
+    top_bottom_items:{ measures:'Every numeric item’s mean and SD, ranked, with ceiling / floor / low-variance flags.', use:'To spot the strongest and weakest items, and items that may not discriminate.' },
+    scale_scores:{ measures:'A composite (average of chosen items per respondent) with its N, mean, SD, and range.', use:'To summarize a set of items as one score. Whether the set is reliable lives in RSSI.' },
+  };
+  AS.coachExplain = function(key){
+    const h=HELP[key]||{}, c=COACH[key]||{};
+    function blk(letter,label,text){ return '<div class="cb"><div class="cb-k"><span class="cb-i">'+letter+'</span>'+label+'</div><div class="cb-t">'+text+'</div></div>'; }
+    let s='';
+    if(h.what) s+=blk('i','What it is',esc(h.what));
+    if(c.measures) s+=blk('M','What it measures',esc(c.measures));
+    if(c.use) s+=blk('✓','When to use it',esc(c.use));
+    return s;
+  };
+
   function header(eyebrow, title, lede, helpKey){
     return '<div class="ws-header"><div class="eyebrow">'+esc(eyebrow)+' <span class="strand-chip">QUAN</span></div>'
       + '<h1 class="title">'+esc(title)+'</h1>'
@@ -153,7 +182,7 @@
 
   // ---- Frequencies ----
   function renderFreq(host, ds){
-    const cands = catVars(ds).length ? catVars(ds) : ds.variables;
+    const cands = discreteVars(ds).length ? discreteVars(ds) : (catVars(ds).length ? catVars(ds) : ds.variables);
     const chosen = (sel.frequencies && varByName(ds, sel.frequencies)) ? sel.frequencies : cands[0].name;
     sel.frequencies = chosen;
     host.innerHTML = header('Descriptive Analysis', 'Frequencies', 'Counts and percentages for a categorical or Likert variable.', 'frequencies')
@@ -215,9 +244,42 @@
     const inner = (VIEW==='graph')
       ? chartWrap(svgBarsH(rows.filter(function(r){return r.n>0;}).map(function(r){ return {label:r.name, value:r.mean}; }), { valueFmt:n2 }))
       : '<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variable</th><th>N</th><th>Mean</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th><th>Missing</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+
+    // Table 2 · Mean of [a numeric variable] by [a group] (like MM).
+    const cv = catVars(ds);
+    let t2html = '';
+    if (nv.length && cv.length) {
+      sel.means_out = (sel.means_out && varByName(ds,sel.means_out)) ? sel.means_out : nv[0].name;
+      sel.means_grp = (sel.means_grp && varByName(ds,sel.means_grp)) ? sel.means_grp : cv[0].name;
+      t2html = '<div class="panel"><div class="panel-b">'
+        + '<div class="as-pickgrid" style="margin-bottom:6px">'
+        + selectField('mOut','Variable','numeric', nv, sel.means_out)
+        + selectField('mGrp','By group','', cv, sel.means_grp)
+        + '</div><h3 style="font-size:14px;font-weight:700;margin:8px 0 0" id="m2title"></h3><div id="m2out"></div></div></div>';
+    }
+
     host.innerHTML = header('Descriptive Analysis','Means & Distributions','Center, spread, and range for every numeric variable.','distributions')
-      + '<div class="panel"><div class="panel-h"><h3>'+(VIEW==='graph'?'Mean by variable':'Table 1 · Summary statistics')+'</h3></div><div class="panel-b">'
-      + inner + layers(layerBlocks) + '</div></div>';
+      + '<div class="panel"><div class="panel-h"><h3>'+(VIEW==='graph'?'Mean by variable':'Table 1 · Summary statistics for numeric variables')+'</h3></div><div class="panel-b">'
+      + inner + layers(layerBlocks) + '</div></div>' + t2html;
+
+    if (nv.length && cv.length) {
+      const drawM2 = function(){
+        const ov=varByName(ds,sel.means_out), gv=varByName(ds,sel.means_grp); const out=host.querySelector('#m2out'); if(!ov||!gv||!out) return;
+        const tt=host.querySelector('#m2title'); if(tt) tt.textContent = 'Table 2 · Mean of '+ov.name+' by '+gv.name;
+        const n=Math.min(ov.values.length,gv.values.length); const groups={};
+        for(let i=0;i<n;i++){ const g=gv.values[i], y=num(ov.values[i]); if(isMissing(g)||y===null) continue; (groups[g]=groups[g]||[]).push(y); }
+        const all=[].concat.apply([],Object.keys(groups).map(function(k){return groups[k];})); const grand=mean(all);
+        const grows=Object.keys(groups).map(function(g){ const a=groups[g]; const m=mean(a); return {group:g,n:a.length,mean:m,sd:sd(a),delta:m-grand}; }).sort(function(a,b){return b.mean-a.mean;});
+        if (VIEW==='graph'){ out.innerHTML = chartWrap(svgBarsH(grows.map(function(r){return {label:r.group,value:r.mean};}),{valueFmt:n2})); return; }
+        const gbody=grows.map(function(r){ return '<tr><td class="dx-name">'+esc(r.group)+'</td><td>'+r.n+'</td><td>'+n2(r.mean)+'</td><td>'+n2(r.sd)+'</td><td class="'+(r.delta<0?'dx-neg':'dx-pos')+'">'+(r.delta>0?'+':'')+n2(r.delta)+'</td></tr>'; }).join('');
+        out.innerHTML='<div class="dx-scroll" style="margin-top:8px"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th><th>Δ from overall</th></tr></thead><tbody>'
+          + gbody + '<tr class="dx-total"><td class="dx-name">Overall</td><td>'+all.length+'</td><td>'+n2(grand)+'</td><td>'+n2(sd(all))+'</td><td>—</td></tr></tbody></table></div>';
+      };
+      const mo=host.querySelector('#mOut'), mg=host.querySelector('#mGrp');
+      if(mo) mo.addEventListener('change',function(e){ sel.means_out=e.target.value; drawM2(); });
+      if(mg) mg.addEventListener('change',function(e){ sel.means_grp=e.target.value; drawM2(); });
+      drawM2();
+    }
   }
 
   // ---- Cross-Tabs ----

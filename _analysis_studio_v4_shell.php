@@ -381,9 +381,15 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       return;
     }
     const s = activeStep();
+    // Rich per-step explanation (What it is / measures / when), like MM's Coach.
+    const key = s.mode==='overview' ? 'overview' : (s.mode==='work' ? s.tool : null);
+    if (key && window.AnalysisStudio && window.AnalysisStudio.coachExplain) {
+      const html = window.AnalysisStudio.coachExplain(key);
+      if (html) { body.innerHTML = html; return; }
+    }
     body.innerHTML = '<p><strong>'+esc(s.label)+'</strong></p><p>'
       + (s.mode==='start' ? 'Pick a data source to begin. '+esc(BOOT.name)+' never computes reliability — that lives in RSSI.'
-         : 'This step runs on your loaded dataset. Results you run can be saved to the project and recalled later.')
+         : 'This step runs on your loaded dataset.')
       + '</p>';
   }
 
