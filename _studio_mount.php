@@ -38,7 +38,7 @@ $mount_user = current_user();
 if (!$mount_user) { $_SESSION = []; session_destroy(); header('Location: /login.html'); exit; }
 
 // ---------- Validate studio + project ----------
-$valid_studios = ['survey', 'mm', 'tia', '360', 'strength-survey'];
+$valid_studios = ['survey', 'mm', 'tia', '360', 'strength-survey', 'descriptive', 'inferential'];
 $studio_slug   = $_GET['studio'] ?? 'survey';
 if (!in_array($studio_slug, $valid_studios, true)) $studio_slug = 'survey';
 $projectId = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
@@ -46,8 +46,12 @@ $projectId = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
 // Verify ownership per studio's project table.
 // 'strength-survey' shares the surveys table with 'survey' (it's a parallel
 // UI on the same data shape, not a separate project type).
+// Descriptive & Inferential are dataset-based analysis studios: they read the
+// dataset from localStorage (by project_id) and have no server project table,
+// so skip the ownership lookup for them.
+$dataset_studios = ['descriptive', 'inferential'];
 $mount_project = null;
-if ($projectId > 0) {
+if ($projectId > 0 && !in_array($studio_slug, $dataset_studios, true)) {
   $pdo = db();
   try {
     if ($studio_slug === 'survey' || $studio_slug === 'strength-survey') {
@@ -66,7 +70,8 @@ if ($projectId > 0) {
   }
 }
 // If a project_id was supplied but ownership failed, bounce to the picker.
-if ($projectId > 0 && !$mount_project) {
+// (Dataset studios never reach here — they skip the lookup above.)
+if ($projectId > 0 && !$mount_project && !in_array($studio_slug, $dataset_studios, true)) {
   header('Location: /studio-' . $studio_slug . '-projects.php');
   exit;
 }
@@ -176,6 +181,20 @@ $_route_maps = [
 ];
 // 'strength-survey' is a parallel UI on the same data as 'survey' — share its route map.
 if ($studio_slug === 'strength-survey') $_route_maps['strength-survey'] = $_route_maps['survey'];
+
+// Descriptive Analysis Studio — the six descriptive lenses on the current dataset.
+$_route_maps['descriptive'] = [
+  'frequencies'=>'/frequencies.php','means_distributions'=>'/distributions.php','cross_tabs'=>'/cross-tabs.php',
+  'group_summaries'=>'/group-summaries.php','item_theme_summaries'=>'/open-ended-summary.php',
+  'top_bottom_items'=>'/top-bottom-items.php','scale_scores'=>'/scale-scores.php','missing_data'=>'/missing-data.php',
+];
+// Inferential Statistics Studio — the test/estimation lenses on the current dataset.
+$_route_maps['inferential'] = [
+  'recommended_analyses'=>'/recommended-analyses.php','t_test'=>'/t-test.php','anova'=>'/anova.php',
+  'chi_square'=>'/chi-square.php','correlation'=>'/correlation.php','effect_sizes'=>'/effect-size.php',
+  'paired_t_test'=>'/paired-t-test.php','welch_anova'=>'/welch-anova.php','post_hoc'=>'/post-hoc.php',
+  'regression'=>'/regression.php','confidence_interval'=>'/confidence-interval.php','assumption_checks'=>'/assumption-checks.php',
+];
 $route_map = $_route_maps[$studio_slug] ?? [];
 $qsuffix   = '?studio=' . $studio_slug . ($projectId ? '&project_id=' . $projectId : '');
 
