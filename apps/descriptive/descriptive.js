@@ -939,18 +939,27 @@
     });
     const mScale = mean(scores), sScale = sd(scores);
 
-    // Cronbach's α
-    const k = items.length;
-    const itemVar = validCols.reduce((s, col) => s + variance(col), 0);
-    const totals  = validRows.map((_, idx) => validCols.reduce((s, col) => s + col[idx], 0));
-    const totalVar = variance(totals);
-    const alpha = totalVar ? (k / (k - 1)) * (1 - itemVar / totalVar) : 0;
-    let alphaRating;
-    if      (alpha >= 0.90) alphaRating = 'Excellent';
-    else if (alpha >= 0.80) alphaRating = 'Strong';
-    else if (alpha >= 0.70) alphaRating = 'Acceptable';
-    else if (alpha >= 0.60) alphaRating = 'Needs strengthening';
-    else                    alphaRating = 'Weak';
+    // Reliability boundary: in the Descriptive Analysis Studio, reliability
+    // lives in RSSI only. When window.DESCRIPTIVE_OPTIONS.reliabilityHidden is
+    // set, we do NOT compute Cronbach's α at all (skipped, not just hidden) and
+    // render a descriptive-only scale summary. The old Survey Studio roof
+    // leaves the flag unset and keeps the full α-bearing behavior.
+    const reliabilityHidden = !!(window.DESCRIPTIVE_OPTIONS && window.DESCRIPTIVE_OPTIONS.reliabilityHidden);
+
+    let alpha = null, alphaRating = null;
+    if (!reliabilityHidden) {
+      // Cronbach's α
+      const k = items.length;
+      const itemVar = validCols.reduce((s, col) => s + variance(col), 0);
+      const totals  = validRows.map((_, idx) => validCols.reduce((s, col) => s + col[idx], 0));
+      const totalVar = variance(totals);
+      alpha = totalVar ? (k / (k - 1)) * (1 - itemVar / totalVar) : 0;
+      if      (alpha >= 0.90) alphaRating = 'Excellent';
+      else if (alpha >= 0.80) alphaRating = 'Strong';
+      else if (alpha >= 0.70) alphaRating = 'Acceptable';
+      else if (alpha >= 0.60) alphaRating = 'Needs strengthening';
+      else                    alphaRating = 'Weak';
+    }
 
     // Compact histogram of scale scores
     const nBins = 8;
@@ -984,25 +993,41 @@
         statBox('SD',              fmt(sScale, 2)) +
         statBox('Min',             fmt(lo, 2)) +
         statBox('Max',             fmt(hi, 2)) +
-        statBox("Cronbach's α",    fmt(alpha, 2)) +
-        statBox('Reliability',     alphaRating) +
+        (reliabilityHidden ? '' :
+          statBox("Cronbach's α",    fmt(alpha, 2)) +
+          statBox('Reliability',     alphaRating)) +
       '</div>';
     const body = stats + '<h4 class="dx-block-h">Composite distribution</h4>' + histHtml;
-    const judgment = items.length + ' items combined into a ' + (mode === 'sum' ? 'sum' : 'mean') + ' composite, Cronbach\'s α = ' + fmt(alpha, 2) + ' (' + alphaRating.toLowerCase() + ').';
-    const plainPara = 'A scale score is a single number that combines several items into one composite. The histogram shows how the composite is distributed across respondents; α tells you whether the items hang together as a single underlying scale.';
-    const researchPara = 'The composite is a ' + (mode === 'sum' ? 'simple sum' : 'mean across items') + ' for the ' + validRows.length + ' respondents who answered every selected item. Cronbach\'s α is computed from the item variances and the total-score variance; it ranges from 0 (no internal consistency) to 1 (perfect consistency), with the conventional cut at 0.70 for use in research and 0.80 for high-stakes decisions.';
-    const closingPara = alpha >= 0.80
-      ? 'The selected items hang together strongly. The composite is a defensible single-score summary of this construct, suitable for reporting and for use as an outcome in inferential tests.'
-      : alpha >= 0.70
-        ? 'The selected items hang together well enough to summarize as a single score for most research uses. For high-stakes decisions, run McDonald\'s ω in the Instrument Quality section to confirm.'
-        : 'The selected items do not cohere strongly. Review whether they really measure the same construct, or whether one or two items should be dropped before treating this composite as a scale.';
+
+    let judgment, plainPara, researchPara, closingPara, subtitle;
+    if (reliabilityHidden) {
+      // Descriptive-only summary. No α, no reliability interpretation — that
+      // lives in RSSI.
+      judgment = items.length + ' items combined into a ' + (mode === 'sum' ? 'sum' : 'mean') + ' composite (mean = ' + fmt(mScale, 2) + ', SD = ' + fmt(sScale, 2) + ').';
+      plainPara = 'A scale score is a single number that combines several items into one composite. The histogram shows how the composite is distributed across respondents.';
+      researchPara = 'The composite is a ' + (mode === 'sum' ? 'simple sum' : 'mean across items') + ' for the ' + validRows.length + ' respondents who answered every selected item. This is a descriptive summary of the composite\'s distribution only.';
+      closingPara = 'This view summarizes how the composite is distributed. Whether these items hang together as a reliable scale — Cronbach\'s α, item-total correlations, and reliability interpretation — is computed in RSSI, not here.';
+      subtitle = validRows.length + ' valid rows · mean = ' + fmt(mScale, 2) + ' · SD = ' + fmt(sScale, 2);
+    } else {
+      judgment = items.length + ' items combined into a ' + (mode === 'sum' ? 'sum' : 'mean') + ' composite, Cronbach\'s α = ' + fmt(alpha, 2) + ' (' + alphaRating.toLowerCase() + ').';
+      plainPara = 'A scale score is a single number that combines several items into one composite. The histogram shows how the composite is distributed across respondents; α tells you whether the items hang together as a single underlying scale.';
+      researchPara = 'The composite is a ' + (mode === 'sum' ? 'simple sum' : 'mean across items') + ' for the ' + validRows.length + ' respondents who answered every selected item. Cronbach\'s α is computed from the item variances and the total-score variance; it ranges from 0 (no internal consistency) to 1 (perfect consistency), with the conventional cut at 0.70 for use in research and 0.80 for high-stakes decisions.';
+      closingPara = alpha >= 0.80
+        ? 'The selected items hang together strongly. The composite is a defensible single-score summary of this construct, suitable for reporting and for use as an outcome in inferential tests.'
+        : alpha >= 0.70
+          ? 'The selected items hang together well enough to summarize as a single score for most research uses. For high-stakes decisions, run McDonald\'s ω in the Instrument Quality section to confirm.'
+          : 'The selected items do not cohere strongly. Review whether they really measure the same construct, or whether one or two items should be dropped before treating this composite as a scale.';
+      subtitle = validRows.length + ' valid rows · α = ' + fmt(alpha, 2) + ' (' + alphaRating.toLowerCase() + ')';
+    }
     show(
       'Scale: ' + items.map(v => v.name).join(' + '),
-      validRows.length + ' valid rows · α = ' + fmt(alpha, 2) + ' (' + alphaRating.toLowerCase() + ')',
+      subtitle,
       unifyBody({ summaryTitle: 'Scale composite summary', judgment: judgment, plainPara: plainPara, researchPara: researchPara, body: body, closingPara: closingPara }),
       unifyInterp({ judgment: judgment, plainPara: plainPara, closingPara: closingPara })
     );
-    exposeAppState({ kind: 'scale_scores', items: items.map(v => v.name), mode: mode, alpha: alpha, meanScale: mScale, sdScale: sScale });
+    const appState = { kind: 'scale_scores', items: items.map(v => v.name), mode: mode, meanScale: mScale, sdScale: sScale };
+    if (!reliabilityHidden) appState.alpha = alpha;
+    exposeAppState(appState);
   }
 
   // ==================================================================
@@ -1024,7 +1049,7 @@
     if (p.kind === 'distributions')    return p.variable + ': n = ' + p.n + ', mean = ' + fmt(p.mean, 2) + ', SD = ' + fmt(p.sd, 2) + '.';
     if (p.kind === 'group_summaries')  return p.outcome + ' by ' + p.group + ': grand mean = ' + fmt(p.grandMean, 2) + '.';
     if (p.kind === 'top_bottom_items') return (p.items ? p.items.length : 0) + ' Likert items ranked.';
-    if (p.kind === 'scale_scores')     return p.items.length + '-item ' + p.mode + ' composite, α = ' + fmt(p.alpha, 2) + '.';
+    if (p.kind === 'scale_scores')     return p.items.length + '-item ' + p.mode + ' composite' + (p.alpha != null ? ', α = ' + fmt(p.alpha, 2) : ', mean = ' + fmt(p.meanScale, 2)) + '.';
     return 'Descriptive output';
   }
 })();
