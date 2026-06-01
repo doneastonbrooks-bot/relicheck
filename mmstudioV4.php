@@ -844,6 +844,12 @@ function renderTTest(s){
    no em dashes. Keyed by palette tool name (quant tests, descriptives) or by
    step id (qualitative and other steps). ---- */
 const AHELP={
+  'q2q':{title:`Qual → Quant`,
+    what:`Qual → Quant turns the themes you built from open-ended responses into measurable variables, so the quantitative phase can test them.`,
+    measures:`For each theme it can create a per-respondent variable: theme presence (was the theme in their response, 0/1), theme intensity (how strongly, 0 to 3), plus sentiment and response length. These become numeric columns you can run tests on.`,
+    use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
+    steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
+    example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
   'joint':{title:`Joint Displays`,
     what:`A joint display lays your quantitative and qualitative evidence side by side, one row per theme, so you can see how the numbers and the narratives line up.`,
     measures:`For each theme it shows the quantitative picture (how often it appears, its intensity, and the strongest statistical result tied to it) next to the qualitative picture (the sentiment balance and a representative participant quote).`,
@@ -1770,6 +1776,37 @@ function renderJoint(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each row is one theme seen through both strands at once: how common and how strong it is in the numbers, and the tone and a real quote from the narratives. Rows where the number and the quote agree are convergence; rows where they disagree are what you explain next.</div></div></div>`;
   $("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+bar+table+jdCandidatePanel()+layers+jdNav();
 }
+/* ============ Qual → Quant (q2q) — quantitize themes into measurable variables ============
+   Turns each theme into per-respondent variables (presence 0/1, intensity 0-3,
+   sentiment, length) via dataset.php, linked back to the theme by
+   source_category_id so they can be tested and feed the Joint Display. */
+const q2={base:null,busy:false,err:'',building:false,result:null,vars:{presence:true,intensity:false,sentiment:true,length:false}};
+function q2Fetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function q2Toggle(k){q2.vars[k]=!q2.vars[k];renderQ2Q(activeStep());}
+function q2Build(){if(q2.building)return;q2.building=true;renderQ2Q(activeStep());const v=q2.vars;const variables={presence:!!v.presence,intensity:!!v.intensity,sentiment_cat:!!v.sentiment,sentiment_num:!!v.sentiment,length_chars:!!v.length,length_words:!!v.length};fetch('/api/mm/dataset.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,title:'Quantitized themes',variables:variables})}).then(r=>r.json()).then(j=>{q2.building=false;if(j&&j.ok){q2.result=j;toast('Created '+(j.col_count||0)+' variables');renderQ2Q(activeStep());}else{toast((j&&(j.message||j.error))||'Could not build variables.');renderQ2Q(activeStep());}}).catch(()=>{q2.building=false;toast('Build failed.');renderQ2Q(activeStep());});}
+function q2Head(s){return `<div class="ws-header"><div class="eyebrow">Qual → Quant · make themes measurable <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function q2Nav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function q2Msg(s,msg){$("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+q2Nav();}
+function q2Opt(k,label,desc){const on=!!q2.vars[k];return `<label class="dq-row" style="cursor:pointer"><input type="checkbox" ${on?'checked':''} onchange="q2Toggle('${k}')" style="margin-right:4px"><div class="dq-body"><div class="dq-name">${esc(label)}</div><div class="dq-risk">${esc(desc)}</div></div></label>`;}
+function renderQ2Q(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<p class="lede">Connect a project with themes to turn them into measurable variables.</p>`+q2Nav();return;}
+  if(q2.err){q2Msg(s,q2.err);return;}
+  if(!q2.base){
+    if(!q2.busy){q2.busy=true;q2Fetch().then(j=>{q2.busy=false;if(j&&j.ok){q2.base=j;}else{q2.err=(j&&(j.message||j.error))||'Could not load themes.';}renderQ2Q(activeStep());}).catch(()=>{q2.busy=false;q2.err='Could not load your data.';renderQ2Q(activeStep());});}
+    q2Msg(s,'Loading your themes…');return;
+  }
+  const themes=q2.base.entries||[];
+  if(!themes.length){$("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<div class="th-empty"><h3>No themes yet</h3><p>Build themes on the Qualitative Themes step first, then return here to turn them into measurable variables.</p></div>`+q2Nav();return;}
+  const nameById={};themes.forEach(t=>nameById[t.category_id]=t.name);
+  const opts=`<div class="dq-card">${q2Opt('presence','Theme presence (0/1)','For each respondent, whether each theme appears in their response.')}${q2Opt('intensity','Theme intensity (0–3)','How strongly each theme appears (needs intensity coding).')}${q2Opt('sentiment','Sentiment','The sentiment of each response, as a label and a number.')}${q2Opt('length','Response length','How long each open-ended response is (characters and words).')}</div>`;
+  const anySel=q2.vars.presence||q2.vars.intensity||q2.vars.sentiment||q2.vars.length;
+  const buildBar=`<div class="dm-save"><button class="btn primary" ${q2.building||!anySel?'disabled':''} onclick="q2Build()">${q2.building?'Creating variables…':'Create measurable variables'}</button><span class="dm-note">Creates per-respondent variables from your ${themes.length} themes, linked back to each theme.</span></div>`;
+  let resultCard='';
+  if(q2.result&&q2.result.columns){const cols=q2.result.columns;const rows=cols.map(c=>`<tr><td class="dx-name">${esc(c.label||c.var_name)}</td><td class="dx-interp">${esc(c.type||'')}</td><td class="dx-interp">${c.category_id&&nameById[c.category_id]?esc(nameById[c.category_id]):'—'}</td></tr>`).join('');
+    resultCard=`<div class="panel"><div class="panel-h"><div><h3>${cols.length} variables created</h3><div class="ph-sub">Now testable in Build & Test Measures</div></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variable</th><th class="l">Type</th><th class="l">From theme</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;}
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What happens next</div><div class="dx-l-t">These quantitized variables join your dataset linked to the themes they came from. Test them on Build & Test Measures (for example, does a theme appear more in one group?), and the result will appear beside the theme in the Joint Display.</div></div></div>`;
+  $("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<div class="ov-sec" style="margin-top:2px">Choose what to create from your ${themes.length} themes</div>`+opts+buildBar+resultCard+layers+q2Nav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1781,6 +1818,7 @@ function renderCenter(){
   if(s.id==='l_book'){ return renderBook(s); }
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderTTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
+  if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
