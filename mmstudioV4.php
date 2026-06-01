@@ -850,6 +850,12 @@ const AHELP={
     use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
     steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
     example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
+  'meta':{title:`Meta-inferences`,
+    what:`Meta-inferences are the higher-order conclusions that only the combined quantitative and qualitative evidence supports — the takeaways neither strand could establish on its own.`,
+    measures:`It gathers your per-theme convergence readings and gives you a space to write the study's overarching inferences, which then carry into the report.`,
+    use:`Use it last in the analysis, after convergence and divergence: step back from the individual themes and name what the whole study concludes.`,
+    steps:[`<b>Review</b> your convergence readings.`,`<b>Ask what the combined evidence shows</b> that the numbers or the narratives alone could not.`,`<b>Write each meta-inference</b> in plain language.`,`<b>Save;</b> these flow into the Report Builder.`],
+    example:`<p><b>Reading it:</b> that equity concern is frequent in comments and that scores are lower for under-resourced groups combine into the meta-inference that access gaps are both felt and measured — a stronger claim than either alone.</p>`},
   'converge':{title:`Convergence & Divergence`,
     what:`This step puts each theme's quantitative and qualitative evidence side by side so you can name where the two strands agree (converge), add to each other (nuanced), or contradict (diverge).`,
     measures:`For each theme it shows the quantitative picture (how often it appears and any statistical result) next to the qualitative picture (sentiment and a quote), and lets you record your reading of how they align.`,
@@ -1879,6 +1885,30 @@ function renderConverge(s){
   const aiBar=`<div class="dm-save"><button class="btn" ${cv.aibusy?'disabled':''} onclick="cvSuggest()">${cv.aibusy?'Analyzing…':'✦ Suggest alignment with ReliCheck Intelligence'}</button><span class="dm-note">Classify each theme yourself above, or get a suggested alignment from the quant-linked findings.</span></div>`;
   $("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+cards+aiBar+cvAiPanel()+cvNav();
 }
+/* ============ Meta-inferences (meta) — study-level synthesis ============
+   The higher-order conclusions only the combined evidence supports. Reuses the
+   convergence readings (joint-display notes) as raw material; the synthesis saves
+   to the project notes (project.php), which the Report Builder reads. Manual-first. */
+const mi={notes:'',rows:null,loaded:false,busy:false,err:'',saving:false};
+function miFetch(){return Promise.all([fetch('/api/mm/project.php?id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null),fetch('/api/mm/joint-display.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)]);}
+function miScaffold(){const el=document.getElementById('miText');if(!el)return;const reads=(mi.rows||[]).filter(r=>r.notes&&r.notes.trim()).map(r=>'• '+r.theme_name+': '+r.notes.trim());if(!reads.length){toast('No convergence readings yet');return;}el.value=(el.value.trim()?el.value.trim()+'\n\n':'')+'From my convergence readings:\n'+reads.join('\n');el.focus();}
+function miSave(){const el=document.getElementById('miText');const notes=el?el.value:'';mi.saving=true;renderMeta(activeStep());fetch('/api/mm/project.php',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:BOOT.projectId,notes:notes})}).then(r=>r.json()).then(j=>{mi.saving=false;mi.notes=notes;if(j&&j.ok){toast('Meta-inferences saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderMeta(activeStep());}).catch(()=>{mi.saving=false;toast('Save failed.');renderMeta(activeStep());});}
+function miHead(s){return `<div class="ws-header"><div class="eyebrow">Meta-inferences · what the whole study concludes <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function miNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function miMsg(s,msg){$("#centerInner").innerHTML=miHead(s)+helpBar('meta')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+miNav();}
+function renderMeta(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=miHead(s)+helpBar('meta')+`<p class="lede">Connect a project to draw the study's meta-inferences.</p>`+miNav();return;}
+  if(mi.err){miMsg(s,mi.err);return;}
+  if(!mi.loaded){
+    if(!mi.busy){mi.busy=true;miFetch().then(a=>{mi.busy=false;mi.loaded=true;const p=a[0],j=a[1];mi.notes=(p&&p.ok&&p.project&&p.project.notes)?p.project.notes:'';mi.rows=(j&&j.ok)?(j.rows||[]):[];renderMeta(activeStep());}).catch(()=>{mi.busy=false;mi.err='Could not load your data.';renderMeta(activeStep());});}
+    miMsg(s,'Loading your readings…');return;
+  }
+  const reads=(mi.rows||[]).filter(r=>r.notes&&r.notes.trim());
+  const refPanel=reads.length?`<div class="panel"><div class="panel-h"><div><h3>Your convergence readings</h3><div class="ph-sub">The per-theme judgments to synthesize from</div></div></div><div class="panel-b">${reads.map(r=>`<div class="ov-row" style="padding:8px 0"><div class="ov-k" style="width:210px">${esc(r.theme_name)}</div><div class="ov-v">${esc(r.notes)}</div></div>`).join('')}</div></div>`:`<div class="dm-note" style="margin-bottom:12px">Tip: record convergence readings on the previous step first; they feed your meta-inferences.</div>`;
+  const composer=`<div class="panel"><div class="panel-h"><div><h3>Meta-inferences</h3><div class="ph-sub">The higher-order conclusions only the combined evidence supports</div></div></div><div class="panel-b"><textarea id="miText" class="ed-in" rows="8" placeholder="What can you conclude from the whole study that neither the numbers nor the narratives could show alone?">${esc(mi.notes||'')}</textarea><div class="dm-save"><button class="btn primary" ${mi.saving?'disabled':''} onclick="miSave()">${mi.saving?'Saving…':'Save meta-inferences'}</button><button class="btn" onclick="miScaffold()">Start from my readings</button><span class="dm-note">Saved to the project and carried into the Report Builder.</span></div></div></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">A meta-inference is a conclusion the combined evidence supports that neither strand could establish on its own. Draw on where the strands converged and diverged.</div></div></div>`;
+  $("#centerInner").innerHTML=miHead(s)+helpBar('meta')+refPanel+composer+layers+miNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1892,6 +1922,7 @@ function renderCenter(){
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='converge'){ return renderConverge(s); }
+  if(s.id==='meta'){ return renderMeta(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
