@@ -420,31 +420,8 @@ label .tt-hint{margin-left:6px}
 .ed-in{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
 .ed-in:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
 .ed-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-/* Start step — bold landing-style hero + SIRI begin layout */
-.start-hero-wrap{text-align:center;max-width:800px;margin:14px auto 30px}
-.start-beta{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--btn);margin-bottom:18px}
-.start-beta .sb-dot{width:20px;height:20px;border-radius:6px;background:var(--btn)}
-.start-hero{font-size:46px;font-weight:900;letter-spacing:-.035em;line-height:1.06;margin:0 auto 16px;max-width:17ch}
+.start-hero{font-size:28px;font-weight:650;letter-spacing:-.02em;line-height:1.25;margin-bottom:10px;max-width:30ch}
 .start-hero .accent{color:var(--btn)}
-.start-sub{font-size:15.5px;color:var(--ink-2);line-height:1.6;max-width:620px;margin:0 auto}
-@media(max-width:640px){.start-hero{font-size:32px}}
-/* Start intro — what MM is + how it works + the 3 designs */
-.start-intro{text-align:center;font-size:15px;color:var(--ink-2);line-height:1.6;max-width:640px;margin:0 auto 28px}
-.start-flow{display:flex;align-items:stretch;justify-content:center;gap:10px;flex-wrap:wrap;margin:0 auto 32px;max-width:900px}
-.sf-step{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);flex:1;min-width:175px}
-.sf-step .sf-n{width:24px;height:24px;border-radius:50%;background:var(--btn);color:#fff;font-size:12px;font-weight:800;display:grid;place-items:center;flex:none}
-.sf-step b{display:block;font-size:13.5px;color:var(--ink)}
-.sf-step .sf-d{display:block;font-size:12px;color:var(--ink-3);margin-top:2px;line-height:1.4}
-.sf-arrow{display:flex;align-items:center;color:var(--ink-3);font-weight:800}
-.start-sec{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);text-align:center;margin:0 0 12px}
-.start-designs{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 32px}
-@media(max-width:760px){.start-designs{grid-template-columns:1fr}}
-.start-design{text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;cursor:pointer;transition:.13s;box-shadow:var(--shadow)}
-.start-design:hover{border-color:var(--btn)}
-.start-design.on{border-color:var(--btn);box-shadow:0 0 0 2px var(--accent-soft)}
-.sd-h{font-size:14.5px;font-weight:800;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.sd-lead{font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--btn);background:var(--accent-soft);padding:2px 7px;border-radius:999px;flex:none}
-.start-design p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0}
 .begin-loaded{display:flex;align-items:center;gap:10px;padding:11px 16px;border:1px solid var(--line);background:var(--panel);border-radius:12px;font-size:13.5px;color:var(--ink-2);margin-bottom:20px;box-shadow:var(--shadow)}
 .begin-loaded .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
 .begin-loaded .bl-k{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
@@ -639,21 +616,9 @@ function startPickDesign(k){state.design=k;persistDesign(k);render();$(".center"
 function renderStart(s){
   const loaded = BOOT.projectId>0;
   $("#centerInner").innerHTML=`
-    <div class="start-hero-wrap"><div class="start-beta"><span class="sb-dot"></span>Beta</div>
+    <div class="ws-header"><div class="eyebrow">New project</div>
       <h1 class="start-hero">Connect numbers, narratives, <span class="accent">and meaning.</span></h1>
-      <p class="start-sub">${esc(s.lede)}</p></div>
-    <p class="start-intro">Mixed methods brings your quantitative results and qualitative responses together, so each strand explains and strengthens the other.</p>
-    <div class="start-flow">
-      <div class="sf-step"><span class="sf-n">1</span><div><b>Map &amp; check</b><span class="sf-d">Organize your variables, then check data quality.</span></div></div>
-      <div class="sf-arrow">→</div>
-      <div class="sf-step"><span class="sf-n">2</span><div><b>Analyze both strands</b><span class="sf-d">Run the statistics and discover the themes.</span></div></div>
-      <div class="sf-arrow">→</div>
-      <div class="sf-step"><span class="sf-n">3</span><div><b>Integrate</b><span class="sf-d">Joint displays, convergence, meta-inferences.</span></div></div>
-      <div class="sf-arrow">→</div>
-      <div class="sf-step"><span class="sf-n">4</span><div><b>Report</b><span class="sf-d">Assemble and download the write-up.</span></div></div>
-    </div>
-    <div class="start-sec">Choose your design</div>
-    <div class="start-designs">${DESIGN_ORDER.map(k=>{const d=DESIGNS[k];let desc=(d.why||'').replace(/^You chose <b>[^<]*<\/b>:\s*/,'').replace(/<[^>]+>/g,'');desc=desc.charAt(0).toUpperCase()+desc.slice(1);return `<button class="start-design ${state.design===k?'on':''}" onclick="startPickDesign('${k}')"><div class="sd-h">${esc(d.short)}<span class="sd-lead">${esc(d.leadLabel)}</span></div><p>${esc(desc)}</p></button>`;}).join('')}</div>
+      <p class="lede">${esc(s.lede)}</p></div>
     ${loaded?`<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
       <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
         ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
