@@ -95,11 +95,12 @@ $TOOLS = [
     'title'=>'Trustworthiness','lede'=>'Document the credibility of the qualitative work, the qualitative parallel to instrument quality.',
     'palette'=>['intro'=>'Credibility checks:','groups'=>[['name'=>'Rigor','items'=>[
       ['name'=>'Audit trail','strand'=>'qual'],['name'=>'Member checking','strand'=>'qual'],['name'=>'Coding agreement (κ)','strand'=>'qual']]]]]],
-  'l_themes'=>['label'=>'Qualitative Themes','strand'=>'qual','mode'=>'work','route'=>'/comment-theme.php',
+  // Native Qualitative Themes view (renderThemes) wired to codebook.php /
+  // coded-responses.php / build.php. route=null so it does NOT mount the legacy
+  // 360 /comment-theme.php engine, which is a different feature.
+  'l_themes'=>['label'=>'Qualitative Themes','strand'=>'qual','mode'=>'work','route'=>null,
     'title'=>'Qualitative Themes','lede'=>'Build and review the themes that carry the meaning behind the responses.',
-    'palette'=>['intro'=>'Open a theme to code it:','groups'=>[
-      ['name'=>'Themes','items'=>[['name'=>'Theme one','strand'=>'qual'],['name'=>'Theme two','strand'=>'qual'],['name'=>'Theme three','strand'=>'qual']]],
-      ['name'=>'Build','items'=>[['name'=>'+ New theme','strand'=>'qual'],['name'=>'Codebook','strand'=>'qual']]]]]],
+    'palette'=>['intro'=>'Themes','groups'=>[]]],
   'l_bygroup'=>['label'=>'Theme by Group','strand'=>'qual','mode'=>'work','route'=>null,
     'title'=>'Theme by Group','lede'=>'See how each theme distributes across the groups the quantitative side compared.',
     'palette'=>['intro'=>'Group the themes:','groups'=>[['name'=>'Crosscuts','items'=>[

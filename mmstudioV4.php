@@ -385,6 +385,19 @@ label .tt-hint{margin-left:6px}
 .dm-fit-sel td:first-child{box-shadow:inset 3px 0 0 var(--btn)}
 .dm-note{font-size:12.5px;color:var(--ink-3)}
 .dm-save{display:flex;align-items:center;gap:12px;margin:14px 0 4px}
+/* Qualitative Themes — coverage meter, sentiment chips, quotes */
+.th-bar{height:7px;border-radius:999px;background:var(--line-2);overflow:hidden;min-width:90px;margin-top:5px}
+.th-bar > i{display:block;height:100%;background:var(--qual);border-radius:999px}
+.th-cov{font-size:12.5px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+.th-sent{font-size:11.5px;font-weight:700;color:var(--ink-3);white-space:nowrap}
+.th-sent b.pos{color:var(--mm-ink)} .th-sent b.neg{color:#b3402f} .th-sent b.neu{color:var(--ink-3)}
+.th-quotes{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:6px 18px;margin:14px 0 18px}
+.th-quote{padding:13px 0;border-bottom:1px solid var(--line-2)}
+.th-quote:last-child{border-bottom:none}
+.th-quote-t{font-size:14px;color:var(--ink);line-height:1.55}
+.th-quote-m{font-size:11.5px;font-weight:700;color:var(--ink-3);margin-top:5px;display:flex;gap:8px;flex-wrap:wrap}
+.th-empty{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:26px;text-align:center}
+.th-empty h3{font-size:16px;margin-bottom:6px}.th-empty p{font-size:13.5px;color:var(--ink-2);max-width:520px;margin:0 auto 16px}
 /* Overview step — review of setup (data + answered questions + design) */
 .ov-title{font-size:24px;font-weight:650;letter-spacing:-.02em;margin-bottom:6px}
 .ov-sec{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:4px 0 12px}
@@ -1617,6 +1630,52 @@ function renderTrust(s){
   else body=trBodyAudit(tr.base);
   $("#centerInner").innerHTML=trHead(s)+helpBar('l_trust')+body+trNav();
 }
+/* ============ Qualitative Themes (l_themes) — native, on the real engine ============
+   Wired to codebook.php (themes + coverage + sentiment in ONE call),
+   coded-responses.php (quotes per theme), and build.php (AI discovery). Studio
+   pattern only: summary cards + dx-table + tt-status badges + a quotes panel. */
+const th={base:null,busy:false,err:'',building:false,sel:null,quotes:null,qbusy:false};
+function thFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function thQuotesFetch(cid){return fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+cid+'&limit=8',{credentials:'same-origin'}).then(r=>r.json());}
+function thBuildReq(){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto'})}).then(r=>r.json());}
+function thHead(s){return `<div class="ws-header"><div class="eyebrow">Qualitative themes · what the responses mean <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function thNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function thMsg(s,msg){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+thNav();}
+function thConf(c){return `<span class="tt-status ${c==='high'?'ok':'rev'}">${esc(c||'—')}</span>`;}
+function thSent(mix){mix=mix||{};const p=mix.positive||0,g=mix.negative||0,n=(mix.neutral||0)+(mix.mixed||0);const parts=[];if(p)parts.push('<b class="pos">'+p+' +</b>');if(g)parts.push('<b class="neg">'+g+' −</b>');if(n)parts.push('<b class="neu">'+n+' ·</b>');return parts.length?parts.join(' '):'—';}
+function thSelect(cid){if(th.sel===cid){th.sel=null;th.quotes=null;renderThemes(activeStep());return;}th.sel=cid;th.quotes=null;th.qbusy=true;renderThemes(activeStep());thQuotesFetch(cid).then(j=>{th.qbusy=false;th.quotes=(j&&j.ok)?j:null;renderThemes(activeStep());}).catch(()=>{th.qbusy=false;th.quotes=null;renderThemes(activeStep());});}
+function thBuild(){if(th.building)return;th.building=true;renderThemes(activeStep());thBuildReq().then(j=>{th.building=false;if(j&&j.ok){th.base=null;toast('Themes discovered');renderThemes(activeStep());}else{toast((j&&(j.message||j.error))||'Could not discover themes.');renderThemes(activeStep());}}).catch(()=>{th.building=false;toast('Discovery failed or timed out.');renderThemes(activeStep());});}
+function thQuotesPanel(){
+  if(th.sel==null)return '';
+  if(th.qbusy)return `<div class="th-quotes" style="padding:16px 18px">Loading quotes…</div>`;
+  const q=th.quotes;
+  if(!q||!q.responses||!q.responses.length)return `<div class="th-quotes" style="padding:16px 18px">No coded quotes for this theme yet.</div>`;
+  const rows=q.responses.map(r=>`<div class="th-quote"><div class="th-quote-t">“${esc(r.text)}”</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}${r.quote_worthy?'<span>· ★ quote-worthy</span>':''}</div></div>`).join('');
+  return `<div class="ov-sec" style="margin-top:2px">Example quotes · ${esc(q.category?q.category.name:'')} (${q.total} coded)</div><div class="th-quotes">${rows}</div>`;
+}
+function renderThemes(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+`<p class="lede">Connect a project with open-ended responses to discover and review themes.</p>`+thNav();return;}
+  if(th.err){thMsg(s,th.err);return;}
+  if(!th.base){
+    if(!th.busy){th.busy=true;thFetch().then(j=>{th.busy=false;if(j&&j.ok){th.base=j;}else{th.err=(j&&(j.message||j.error))||'Could not load themes.';}renderThemes(activeStep());}).catch(()=>{th.busy=false;th.err='Could not load your data.';renderThemes(activeStep());});}
+    thMsg(s,'Loading your themes…');return;
+  }
+  const d=th.base,themes=d.entries||[],total=d.total_responses||0;
+  if(!themes.length){
+    const body=`<div class="th-empty"><h3>No themes yet</h3><p>${total?('Your project has '+total+' open-ended responses. Discover the themes that run through them — the analysis reads a sample, proposes themes, and tags each response. This can take a minute.'):'No open-ended responses are linked to this project yet. Add qualitative data first.'}</p>${total?`<button class="btn primary" ${th.building?'disabled':''} onclick="thBuild()">${th.building?'Discovering themes…':'✦ Discover themes'}</button>`:''}</div>`;
+    $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+body+thNav();return;
+  }
+  const coded=themes.reduce((a,t)=>a+(t.coded_count||0),0);
+  const cards=`<div class="dm-cards">
+    <div class="dm-card"><div class="dm-card-k">Themes</div><div class="dm-card-v">${themes.length}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Open-Ended Responses</div><div class="dm-card-v">${total}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Coded Tags</div><div class="dm-card-v">${coded}</div></div></div>`;
+  const rows=themes.map(t=>{const pct=t.percent||0;const sel=t.category_id===th.sel;
+    return `<tr${sel?' class="dm-fit-sel"':''}><td class="dx-name">${esc(t.name)}${t.description?`<div class="th-sent" style="font-weight:600;margin-top:3px;white-space:normal">${esc(t.description)}</div>`:''}</td><td><div class="th-cov">${t.coded_count||0} <span style="color:var(--ink-3)">(${pct}%)</span></div><div class="th-bar"><i style="width:${Math.min(100,pct)}%"></i></div></td><td class="th-sent">${thSent(t.sentiment_mix)}</td><td>${thConf(t.confidence)}</td><td><button class="btn" style="padding:5px 11px" onclick="thSelect(${t.category_id})">${sel?'Hide quotes':'View quotes'}</button></td></tr>`;}).join('');
+  const table=`<div class="panel"><div class="panel-h"><div><h3>Themes</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Theme</th><th class="l">Coverage</th><th class="l">Sentiment</th><th class="l">Confidence</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each theme is a pattern of meaning found across your open-ended responses. Coverage is how many responses were tagged with it; sentiment shows the balance of positive, negative, and neutral tone. Open a theme to read the participant quotes behind it.</div></div></div>`;
+  $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+cards+table+thQuotesPanel()+layers+thNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1624,6 +1683,7 @@ function renderCenter(){
   if(s.mode==='datamap'){ return renderDataMap(s); }
   if(s.mode==='quality'){ return renderQuality(s); }
   if(s.id==='l_trust'){ return renderTrust(s); }
+  if(s.id==='l_themes'){ return renderThemes(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
