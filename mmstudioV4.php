@@ -1737,6 +1737,7 @@ function renderCenter(){
   if(s.id==='l_trust'){ return renderTrust(s); }
   if(s.id==='l_themes'){ return renderThemes(s); }
   if(s.id==='l_book'){ return renderBook(s); }
+  if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderTTest(s):renderReliability(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
