@@ -116,14 +116,17 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 /* Rail (numbered pipeline) — keeps the studio accent */
 .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;overflow-y:auto;--accent:var(--acc);--accent-soft:var(--acc-soft);--accent-ink:var(--acc-deep)}
 .rail-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);padding:6px 10px 10px}
-.step{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;cursor:pointer;border:none;background:none;width:100%;text-align:left;font-family:inherit}
-.step:hover{background:var(--acc-soft)}
-.step .num{flex:none;width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;background:var(--line-2);color:var(--ink-2)}
-.step .lbl{flex:1;font-size:13.5px;font-weight:600;color:var(--ink-2)}
-.step .sdot{flex:none;width:7px;height:7px;border-radius:50%;background:var(--quan)}
-.step[data-active="1"] .num{background:var(--acc);color:#fff}
-.step[data-active="1"] .lbl{color:var(--acc-deep)}
-.step[data-done="1"] .num{background:var(--green);color:#fff}
+/* Rail step system mirrors SIRI (develop.php): circular num, right-side green
+   tick when done, accent-soft pill when active. Same check treatment app-wide. */
+.step{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:10px;color:var(--ink-2);font-size:14px;font-weight:600;border:1px solid transparent;transition:background .12s,color .12s;text-align:left;width:100%;background:none;cursor:pointer;font-family:inherit}
+.step:hover{background:var(--bg);color:var(--ink)}
+.step .num{width:24px;height:24px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--ink-3);border:1px solid var(--line)}
+.step .lbl{flex:1;font-size:14px;font-weight:600}
+.step .tick{display:none;color:var(--green)}
+.step[data-done="1"] .num{background:var(--green-soft);color:var(--green);border-color:transparent}
+.step[data-done="1"] .tick{display:block}
+.step[data-active="1"]{background:var(--acc-soft);color:var(--acc-deep);border-color:rgba(0,0,0,.06)}
+.step[data-active="1"] .num{background:var(--acc);color:#fff;border-color:transparent}
 
 /* Center */
 .stage{display:flex;min-width:0;overflow:hidden}
@@ -232,6 +235,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
 (function(){
   'use strict';
   const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null };
+  const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function steps(){ return BOOT.pipeline; }
   function activeStep(){ return steps().find(s=>s.id===state.stepId) || steps()[0]; }
@@ -245,9 +249,9 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       const active = s.id===state.stepId ? '1':'0';
       const done = i<idx ? '1':'0';
       return '<button class="step" data-active="'+active+'" data-done="'+done+'" data-step="'+esc(s.id)+'">'
-        + '<span class="num">'+(done==='1'?'&#10003;':(i+1))+'</span>'
+        + '<span class="num">'+(done==='1'?CHECK:(i+1))+'</span>'
         + '<span class="lbl">'+esc(s.label)+'</span>'
-        + '<span class="sdot"></span></button>';
+        + '<span class="tick">'+CHECK+'</span></button>';
     }).join('');
     rail.querySelectorAll('.step').forEach(function(b){
       b.addEventListener('click', function(){ state.stepId=b.getAttribute('data-step'); render(); });
