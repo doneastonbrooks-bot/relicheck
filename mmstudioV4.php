@@ -1820,7 +1820,7 @@ function renderPalette(){
   let html=`<div class="palette-h">${head}</div><div class="palette-intro">${p.intro||""}</div>`;
   if(!p.groups||!p.groups.length){html+=`<div class="pal-empty">Nothing to select on this step. Work in the center panel.</div>`;}
   else{const cur=currentTool(s);p.groups.forEach(g=>{html+=`<div class="pal-group">${g.name}</div>`;
-    html+=g.items.map(it=>`<div class="pal-item ${it.strand} ${cur&&it.name===cur.name?'active':''}" onclick="selPal('${it.name.replace(/'/g,"\\'")}')"><span class="pdot"></span>${it.name}</div>`).join("");});}
+    html+=g.items.map(it=>`<div class="pal-item ${it.strand} ${cur&&it.name===cur.name?'active':''}" onclick="${it.action||("selPal('"+it.name.replace(/'/g,"\\'")+"')")}"><span class="pdot"></span>${it.name}</div>`).join("");});}
   $("#palette").innerHTML=html;
 }
 function renderCompanion(){

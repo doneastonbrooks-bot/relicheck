@@ -100,15 +100,18 @@ $TOOLS = [
   // 360 /comment-theme.php engine, which is a different feature.
   'l_themes'=>['label'=>'Qualitative Themes','strand'=>'qual','mode'=>'work','route'=>null,
     'title'=>'Qualitative Themes','lede'=>'Build and review the themes that carry the meaning behind the responses.',
-    'palette'=>['intro'=>'Themes','groups'=>[]]],
+    'palette'=>['intro'=>'Themes','groups'=>[
+      ['name'=>'Build','items'=>[['name'=>'Tag responses','strand'=>'qual','action'=>'thCode()']]],
+      ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Discover themes','strand'=>'qual','action'=>'thBuild()']]]]]],
   'l_bygroup'=>['label'=>'Theme by Group','strand'=>'qual','mode'=>'work','route'=>null,
     'title'=>'Theme by Group','lede'=>'See how each theme distributes across the groups the quantitative side compared.',
     'palette'=>['intro'=>'Group the themes:','groups'=>[['name'=>'Crosscuts','items'=>[
       ['name'=>'by Group A','strand'=>'qual'],['name'=>'by Group B','strand'=>'qual']]]]]],
   'l_book'=>['label'=>'Codebook & Evidence','strand'=>'qual','mode'=>'work','route'=>null,
     'title'=>'Codebook & Evidence','lede'=>'Define the codes and the evidence behind each theme.',
-    'palette'=>['intro'=>'Structure the codes:','groups'=>[['name'=>'Codebook','items'=>[
-      ['name'=>'Code list','strand'=>'qual'],['name'=>'Coding rules','strand'=>'qual'],['name'=>'Co-occurrence matrix','strand'=>'qual']]]]]],
+    'palette'=>['intro'=>'Codebook','groups'=>[
+      ['name'=>'Code','items'=>[['name'=>'Save code','strand'=>'qual','action'=>'bkSave()']]],
+      ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Draft this code','strand'=>'qual','action'=>'bkDraft()']]]]]],
   'l_exemp'=>['label'=>'Exemplar Quotes','strand'=>'qual','mode'=>'work','route'=>'/open-ended-summary.php',
     'title'=>'Exemplar Quotes','lede'=>'Select the quotes that best represent each theme for the report.',
     'palette'=>['intro'=>'Pull quotes:','groups'=>[['name'=>'Quotes','items'=>[
@@ -117,7 +120,8 @@ $TOOLS = [
   // so it does NOT iframe the API endpoint (which would show raw JSON).
   'joint'=>['label'=>'Joint Displays','strand'=>'both','mode'=>'work','route'=>null,
     'title'=>'Joint Displays','lede'=>"Lay each theme's two strands side by side in one display.",
-    'palette'=>['intro'=>'Joint display','groups'=>[]]],
+    'palette'=>['intro'=>'Joint display','groups'=>[
+      ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Pick all quotes','strand'=>'both','action'=>'jdPickAll()']]]]]],
   'converge'=>['label'=>'Convergence & Divergence','strand'=>'both','mode'=>'work','route'=>null,
     'title'=>'Convergence & Divergence','lede'=>'Name where the strands agree, expand on each other, or contradict.',
     'palette'=>['intro'=>'Inspect the alignment:','groups'=>[['name'=>'Patterns','items'=>[
