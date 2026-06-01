@@ -93,7 +93,7 @@ $BOOT = [
   --acc:<?= htmlspecialchars($sd_accent) ?>; --acc-soft:<?= htmlspecialchars($sd_soft) ?>; --acc-deep:<?= htmlspecialchars($sd_deep) ?>;
   --green:#1f9e44; --green-soft:#e9f7ee; --quan:#0A6FE8; --quan-soft:#EEF3FA; --quan-ink:#085fcc;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
-  --rail:220px; --companion:288px;
+  --rail:208px; --companion:260px;
   --shadow:0 1px 2px rgba(20,28,45,.04),0 4px 16px rgba(20,28,45,.05);
 }
 *{box-sizing:border-box}
@@ -132,9 +132,9 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 /* Center */
 .stage{display:flex;min-width:0;overflow:hidden}
 .center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 36px 80px}
-.center-inner{max-width:860px;margin:0 auto}
+.center-inner{max-width:1100px;margin:0 auto}
 /* View toggle ABOVE the center panel (Table / Graph) — no side palette. */
-.view-bar{max-width:860px;margin:0 auto 14px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.view-bar{max-width:1100px;margin:0 auto 14px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
 .view-bar:empty{display:none}
 .vb-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;box-sizing:border-box}
