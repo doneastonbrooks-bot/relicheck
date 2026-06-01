@@ -146,7 +146,7 @@ function lp_card(array $s, string $open_label): void {
               studio: e.studio, studioLabel: e.label, id: p.id,
               title: p.title || p.name || 'Untitled',
               updated_at: p.updated_at || p.modified_at || p.created_at || null,
-              href: e.studio === 'mm'     ? '/studio-mm.php?project_id='     + encodeURIComponent(p.id) :
+              href: e.studio === 'mm'     ? '/mmstudioV4.php?project_id='     + encodeURIComponent(p.id) :
                     e.studio === 'survey' ? '/studio-survey.php?project_id=' + encodeURIComponent(p.id) :
                     e.studio === '360'    ? '/studio-360.php?project_id='    + encodeURIComponent(p.id) : '#',
             };
