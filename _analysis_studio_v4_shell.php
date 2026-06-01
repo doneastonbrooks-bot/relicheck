@@ -59,6 +59,12 @@ $pipeline  = $pipelines[$sd_slug] ?? [];
 $user_full = $user['name'] ?? $user['email'] ?? 'You';
 $initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U', 0, 2));
 
+// Cache-bust the work-step presentation module by file mtime.
+$_as_css = '/apps/analysis-studio/analysis-studio.css';
+$_as_js  = '/apps/analysis-studio/analysis-studio.js';
+$_as_css_v = is_file(__DIR__ . $_as_css) ? filemtime(__DIR__ . $_as_css) : time();
+$_as_js_v  = is_file(__DIR__ . $_as_js)  ? filemtime(__DIR__ . $_as_js)  : time();
+
 $BOOT = [
   'slug'         => $sd_slug,
   'name'         => $sd_name,
@@ -177,6 +183,8 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .dock-chip .gdot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .placeholder{padding:40px;text-align:center;color:var(--ink-3);border:1.5px dashed var(--line);border-radius:14px}
 </style>
+<link rel="stylesheet" href="<?= htmlspecialchars($_as_css . '?v=' . $_as_css_v) ?>">
+<script src="<?= htmlspecialchars($_as_js . '?v=' . $_as_js_v) ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -268,7 +276,9 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       html += '<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>'
         + '<span>' + esc(BOOT.projectLabel) + '</span>'
         + '<button class="btn primary" style="margin-left:auto" id="stBegin">Continue to analysis &rarr;</button></div>';
-      html += '<div class="placeholder" id="dataState">Checking for this project’s data&hellip;</div>';
+      html += '<div class="placeholder" id="dataState">' + (state.dataset
+        ? ('<strong>Data loaded.</strong> ' + (state.dataset.rowCount||0) + ' rows — pick a step from the left to analyze.')
+        : 'Checking for this project’s data&hellip;') + '</div>';
     } else {
       html += '<button class="begin-feature" id="stUpload"><span class="bc-ico">&#8681;</span>'
         + '<div><h4>Bring in your data</h4><p>Upload a CSV or Excel file and tag your columns — the same way RSSI does.</p>'
@@ -283,7 +293,6 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const u = document.getElementById('stUpload'); if (u) u.addEventListener('click', openUpload);
     const si = document.getElementById('stSiri'); if (si) si.addEventListener('click', openSiri);
     const pr = document.getElementById('stProjects'); if (pr) pr.addEventListener('click', function(){ window.location.href = BOOT.projectsUrl; });
-    if (loaded) loadDataset();
   }
 
   function renderWork(host, s){
@@ -293,7 +302,13 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
         + '<div class="placeholder">Load data to run <strong>'+esc(s.label)+'</strong>. Use the Data bar below.</div>';
       return;
     }
-    // MM-style presentation for each tool lands in the next build chunk.
+    // Descriptive tools render through the shared presentation module
+    // (MM-style dx-table + interpretation layers).
+    if (BOOT.slug === 'descriptive' && window.AnalysisStudio) {
+      window.AnalysisStudio.renderWork(host, { kind: BOOT.slug, tool: s.tool, dataset: state.dataset });
+      return;
+    }
+    // Inferential presentations land in the next build chunk.
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+' <span class="strand-chip">QUAN</span></div>'
       + '<h1 class="title">'+esc(s.label)+'</h1>'
       + '<p class="lede">Dataset loaded: '+ (state.dataset.rowCount||0) +' rows, '+ ((state.dataset.variables||[]).length) +' variables.</p></div>'
@@ -326,21 +341,39 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   function openUpload(){ window.location.href = '/evidence-intake.php?studio=survey&return=' + encodeURIComponent(BOOT.slug==='descriptive'?'/descriptive-analysis-workspace.php':'/inferential-statistics-workspace.php'); }
   function openSiri(){ alert('SIRI source picker — wired in the data-intake chunk.'); }
 
+  // Most-recent localStorage dataset (engine shape), as a fallback when the
+  // project has no server-saved data yet — lets uploads made elsewhere show
+  // up immediately. Server data always wins.
+  function findLocalDataset(){
+    let best=null;
+    try {
+      for (let i=0;i<window.localStorage.length;i++){
+        const k=window.localStorage.key(i);
+        if(!k || k.indexOf('relicheck.dataset.')!==0) continue;
+        const w=JSON.parse(window.localStorage.getItem(k));
+        const dsv=w&&w.payload&&w.payload.dataset;
+        if(dsv && (dsv.rowCount||0)>0 && (!best || (w.savedAt||0)>(best.savedAt||0))) best={savedAt:w.savedAt||0, ds:dsv};
+      }
+    } catch(e){}
+    return best;
+  }
+  function applyDataset(ds){
+    state.dataset = ds;
+    showChip((ds.rowCount||0) + ' rows · ' + ((ds.variables||[]).length) + ' variables');
+    render();
+  }
+  let _loaded=false;
   function loadDataset(){
-    if (!BOOT.projectId) return;
+    if (_loaded) return; _loaded=true;
+    function fallback(){ const local=findLocalDataset(); if(local) applyDataset(local.ds); else render(); }
+    if (!BOOT.projectId){ fallback(); return; }
     fetch('/api/analysis/dataset.php?project_id=' + encodeURIComponent(BOOT.projectId), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
-        const st = document.getElementById('dataState');
-        if (d && d.ok && d.has_data && d.dataset) {
-          state.dataset = d.dataset;
-          showChip((d.dataset.rowCount||0) + ' rows · ' + ((d.dataset.variables||[]).length) + ' variables');
-          if (st) st.innerHTML = '<strong>Data loaded.</strong> ' + (d.dataset.rowCount||0) + ' rows. Pick a step from the left to analyze.';
-        } else if (st) {
-          st.innerHTML = 'No data yet for this project. Use the <strong>Data</strong> bar below to upload or pull from SIRI.';
-        }
+        if (d && d.ok && d.has_data && d.dataset) applyDataset(d.dataset);
+        else fallback();
       })
-      .catch(function(){});
+      .catch(fallback);
   }
   function showChip(text){ const c=document.getElementById('dkChip'); const t=document.getElementById('dkChipText'); if(c&&t){c.hidden=false;t.textContent=text;} }
 
@@ -353,7 +386,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
 
   function render(){ renderRail(); renderCenter(); renderCompanion(); }
   render();
-  if (BOOT.canPersist) loadDataset();
+  loadDataset();
 })();
 </script>
 </body>
