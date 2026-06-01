@@ -220,8 +220,9 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 
   <footer class="studio-dock">
     <span class="dock-lbl">Data</span>
+    <button class="dock-btn" id="dkSiri">&#9889; Open from SIRI responses</button>
     <button class="dock-btn" id="dkUpload">&#8681; Upload data</button>
-    <button class="dock-btn" id="dkSiri">&#9889; From SIRI responses</button>
+    <button class="dock-btn" id="dkSaved">&#9638; Open saved project</button>
     <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
   </footer>
 </div>
@@ -295,7 +296,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const b = document.getElementById('stBegin'); if (b) b.addEventListener('click', function(){ state.stepId=steps()[1].id; render(); });
     const u = document.getElementById('stUpload'); if (u) u.addEventListener('click', openUpload);
     const si = document.getElementById('stSiri'); if (si) si.addEventListener('click', openSiri);
-    const pr = document.getElementById('stProjects'); if (pr) pr.addEventListener('click', function(){ window.location.href = BOOT.projectsUrl; });
+    const pr = document.getElementById('stProjects'); if (pr) pr.addEventListener('click', openSaved);
   }
 
   function renderWork(host, s){
@@ -347,14 +348,18 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     window.AnalysisUpload.open({
       kind: BOOT.slug,
       projectId: BOOT.projectId,
-      onLoaded: function(dataset, pid){
-        // A new project was created → reopen project-scoped so it persists.
-        if (pid && pid !== BOOT.projectId) { window.location.href = WORKSPACE_ROUTE + '?v4=1&project_id=' + encodeURIComponent(pid); return; }
-        applyDataset(dataset);
-        if (state.stepId === 'start') { state.stepId = steps()[1].id; }
-        render();
-      }
+      onLoaded: openProject
     });
+  }
+  function openSaved(){
+    if (!window.AnalysisUpload) return;
+    window.AnalysisUpload.openSaved({ kind: BOOT.slug, projectId: BOOT.projectId, onLoaded: openProject });
+  }
+  // Data was saved/linked to project `pid` → open it project-scoped so the
+  // workspace loads it from the server (and it persists on reopen).
+  function openProject(_dataset, pid){
+    if (!pid) return;
+    window.location.href = WORKSPACE_ROUTE + '?v4=1&project_id=' + encodeURIComponent(pid);
   }
   function openSiri(){ alert('SIRI source picker — wired in the data-intake chunk.'); }
 
@@ -397,6 +402,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   // ---- Wiring ----
   document.getElementById('dkUpload').addEventListener('click', openUpload);
   document.getElementById('dkSiri').addEventListener('click', openSiri);
+  document.getElementById('dkSaved').addEventListener('click', openSaved);
   document.querySelectorAll('.comp-tab').forEach(function(b){
     b.addEventListener('click', function(){ state.compTab=b.getAttribute('data-tab'); document.querySelectorAll('.comp-tab').forEach(function(x){x.classList.toggle('on', x===b);}); renderCompanion(); });
   });

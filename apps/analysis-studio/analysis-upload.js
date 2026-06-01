@@ -17,6 +17,9 @@
     { v: 'ignore',      label: 'Ignore' },
   ];
   const ROLE_TO_TYPE = { id:'identifier', categorical:'single', likert:'likert', numeric:'numeric', open:'open', date:'open' };
+  // datasets-table type allowlist (api/datasets/create.php). Data persists to
+  // the shared `datasets` pool — the user's general, cross-studio saved data.
+  const ROLE_TO_DSTYPE = { id:'identifier', categorical:'single', likert:'likert', numeric:'numeric', open:'open', date:'open' };
 
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function num(v){ if(v===''||v==null) return null; const x=parseFloat(v); return isFinite(x)?x:null; }
@@ -76,6 +79,22 @@
       variables.push({ name: name, types: [ROLE_TO_TYPE[role] || 'open'], values: values });
     });
     return { source: source || 'Uploaded data', variables: variables, rowCount: parsed.rows.length };
+  }
+
+  // Build the shared datasets-table payload (column_meta + 2-D data, column
+  // order == column_meta) for /api/datasets/create.php — the RSSI method.
+  function buildTablePayload(parsed, roles, title){
+    const keep = [];
+    parsed.headers.forEach(function(name, ci){ if (roles[ci] !== 'ignore') keep.push({ ci: ci, name: name, type: ROLE_TO_DSTYPE[roles[ci]] || 'open' }); });
+    const column_meta = keep.map(function(k){ return { name: k.name, type: k.type, reverse: false }; });
+    const data = parsed.rows.map(function(r){ return keep.map(function(k){ return r[k.ci] != null ? r[k.ci] : ''; }); });
+    return {
+      title: title || 'Uploaded data',
+      source_format: 'csv',
+      column_meta: column_meta,
+      settings: { likertPoints: 5, likertLow: 'Strongly disagree', likertHigh: 'Strongly agree' },
+      data: data,
+    };
   }
 
   // ---- Modal ----
@@ -140,35 +159,82 @@
       stage.querySelector('#auUse').addEventListener('click', function(){
         const sels = stage.querySelectorAll('.au-role');
         const roles2 = []; sels.forEach(function(s){ roles2[+s.getAttribute('data-col')] = s.value; });
-        const dataset = buildDataset(parsed, roles2, fileName);
-        if (!dataset.variables.length){ stage.querySelector('#auMsg').textContent = 'Every column is set to Ignore — keep at least one.'; return; }
-        persist(dataset, stage.querySelector('#auUse'), stage.querySelector('#auMsg'));
+        const payload = buildTablePayload(parsed, roles2, fileName);
+        if (!payload.column_meta.length){ stage.querySelector('#auMsg').textContent = 'Every column is set to Ignore — keep at least one.'; return; }
+        persist(payload, stage.querySelector('#auUse'), stage.querySelector('#auMsg'));
       });
     }
 
-    function persist(dataset, btn, msg){
+    // Save to the shared datasets pool, then attach to an analysis project
+    // (link an existing one, or create a new one) and open it project-scoped.
+    function persist(payload, btn, msg){
       btn.disabled = true; btn.textContent = 'Saving…';
-      const payload = { studio: ctx.kind, dataset: dataset };
-      function save(pid){
-        return fetch('/api/analysis/save-dataset.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project_id: pid, payload: payload }) })
-          .then(function(r){ return r.json(); })
-          .then(function(d){
-            if (!d || !d.ok) throw new Error('save failed');
-            try { window.localStorage.setItem('relicheck.dataset.'+pid, JSON.stringify({ savedAt: Date.now(), studio: ctx.kind, payload: payload })); } catch(e){}
-            close();
-            if (ctx.onLoaded) ctx.onLoaded(dataset, pid);
-          });
+      fetch('/api/datasets/create.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          const ds = d && (d.dataset || d); const datasetId = ds && ds.id;
+          if (!datasetId) throw new Error('create failed');
+          return attachAndOpen(datasetId, payload.title);
+        })
+        .catch(function(){ btn.disabled=false; btn.textContent='Use this data →'; if(msg) msg.textContent='Could not save your data. Please try again.'; });
+    }
+
+    function attachAndOpen(datasetId, title){
+      function done(pid){ close(); if (ctx.onLoaded) ctx.onLoaded(null, pid); }
+      if (ctx.projectId) {
+        return fetch('/api/analysis/link-dataset.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project_id: ctx.projectId, dataset_id: datasetId }) })
+          .then(function(r){ return r.json(); }).then(function(d){ if(!d||!d.ok) throw new Error('link failed'); done(ctx.projectId); });
       }
-      const go = ctx.projectId
-        ? save(ctx.projectId)
-        : fetch('/api/analysis/projects.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ kind: ctx.kind, title: dataset.source }) })
-            .then(function(r){ return r.json(); })
-            .then(function(d){ if(!d||!d.ok||!d.project) throw new Error('create failed'); return save(d.project.id); });
-      go.catch(function(){ btn.disabled=false; btn.textContent='Use this data →'; if(msg) msg.textContent='Could not save your data. Please try again.'; });
+      return fetch('/api/analysis/projects.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ kind: ctx.kind, title: title, dataset_id: datasetId }) })
+        .then(function(r){ return r.json(); }).then(function(d){ if(!d||!d.ok||!d.project) throw new Error('create-project failed'); done(d.project.id); });
     }
 
     showDrop();
   }
 
-  window.AnalysisUpload = { open: open };
+  // ---- "Open a saved project" — the user's GENERAL, cross-studio data pool ----
+  // Lists every dataset the user has saved anywhere (the shared `datasets`
+  // table) — regardless of which studio created it — and opens the chosen one
+  // in the current studio.
+  function openSaved(ctx){
+    ctx = ctx || {};
+    const overlay = document.createElement('div');
+    overlay.className = 'au-overlay';
+    overlay.innerHTML = '<div class="au-panel" role="dialog" aria-label="Open a saved project">'
+      + '<button class="au-close" aria-label="Close">&times;</button>'
+      + '<h2 class="au-title">Open a saved project</h2>'
+      + '<p class="au-sub">Your saved data, from any ReliCheck studio. Pick one to analyze here.</p>'
+      + '<div class="au-list" id="auList"><p class="au-sample" style="padding:10px">Loading…</p></div></div>';
+    document.body.appendChild(overlay);
+    const close = function(){ overlay.remove(); };
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) close(); });
+    overlay.querySelector('.au-close').addEventListener('click', close);
+    const list = overlay.querySelector('#auList');
+
+    fetch('/api/datasets/list.php', { credentials:'same-origin', headers:{Accept:'application/json'} })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        const items = (d && Array.isArray(d.datasets)) ? d.datasets : [];
+        if (!items.length){ list.innerHTML = '<p class="au-sample" style="padding:10px">No saved data yet. Upload data to start.</p>'; return; }
+        list.innerHTML = items.map(function(s){
+          return '<button class="au-row" data-id="'+s.id+'" data-title="'+esc(s.title||'Untitled')+'">'
+            + '<span class="au-row-title">'+esc(s.title||'Untitled dataset')+'</span>'
+            + '<span class="au-row-meta">'+(s.row_count||0)+' rows · '+(s.column_count||0)+' columns · '+esc(String(s.updated_at||'').slice(0,10))+'</span></button>';
+        }).join('');
+        list.querySelectorAll('.au-row').forEach(function(b){
+          b.addEventListener('click', function(){
+            const datasetId = +b.getAttribute('data-id'); const title = b.getAttribute('data-title');
+            b.disabled = true; b.querySelector('.au-row-meta').textContent = 'Opening…';
+            function done(pid){ close(); if (ctx.onLoaded) ctx.onLoaded(null, pid); }
+            const go = ctx.projectId
+              ? fetch('/api/analysis/link-dataset.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project_id: ctx.projectId, dataset_id: datasetId }) }).then(function(r){return r.json();}).then(function(d){ if(!d||!d.ok) throw 0; done(ctx.projectId); })
+              : fetch('/api/analysis/projects.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ kind: ctx.kind, title: title, dataset_id: datasetId }) }).then(function(r){return r.json();}).then(function(d){ if(!d||!d.ok||!d.project) throw 0; done(d.project.id); });
+            go.catch(function(){ b.disabled=false; b.querySelector('.au-row-meta').textContent='Could not open — try again.'; });
+          });
+        });
+      })
+      .catch(function(){ list.innerHTML = '<p class="au-msg" style="padding:10px">Could not load your saved data.</p>'; });
+  }
+
+  window.AnalysisUpload = { open: open, openSaved: openSaved };
 })();
