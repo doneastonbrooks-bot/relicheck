@@ -850,6 +850,12 @@ const AHELP={
     use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
     steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
     example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
+  'report':{title:`Report Builder`,
+    what:`The report builder assembles your whole mixed methods study — methods, qualitative and quantitative results, integration, and recommendations — into one editable write-up.`,
+    measures:`It pulls each section from your analysis: templated sections (methods, results) fill from your data, and the ReliCheck Intelligence sections (executive summary, integration, recommendations) draft from your findings. You can edit every section yourself.`,
+    use:`Use it last: build the full report, then read and edit each section so it reads in your voice before you export or share it.`,
+    steps:[`<b>Build the full report</b> to draft every section.`,`<b>Read each section</b> and edit it in your own words.`,`<b>Regenerate any section</b> you want redone.`,`<b>Save</b> your edits.`],
+    example:`<p><b>Reading it:</b> the Integration section weaves your themes and statistical results into prose; you tighten it, and the Methods section already lists your sample and coding approach from the data.</p>`},
   'evidence_strength':{title:`Evidence Strength`,
     what:`This step gauges how strong your integrated mixed methods evidence is before you report it — a set of checks across the quantitative, qualitative, and integration work.`,
     measures:`It runs checks on things like sample size, coding coverage, quote quality, and whether the strands were integrated, and flags each as pass, needs a fix, or not yet run.`,
@@ -1984,6 +1990,40 @@ function renderStrength(s){
   const layers=rows.length?`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each check looks at one way your evidence could be weak — too small a sample, thin coding, unintegrated strands. Clear the high-severity fixes before you write the report.</div></div></div>`:'';
   $("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+note+runBar+table+layers+sgNav();
 }
+/* ============ Report Builder (report) — assemble the write-up ============
+   report.php's 7-section model. Templated sections fill from data; AI sections
+   (exec summary, integration, recommendations) draft from findings; every
+   section is editable + saved (save_section). Manual-first; "Build the full
+   report" (generate_all) and per-section generate are the assists. */
+const rp={base:null,busy:false,err:'',edits:{},saving:'',gen:'',genAll:false};
+function rpFetch(){return fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function rpRowByKey(){const m={};((rp.base&&rp.base.rows)||[]).forEach(r=>m[r.section_key]=r);return m;}
+function rpVal(key,row){return (rp.edits[key]!=null)?rp.edits[key]:((row&&row.body_text)||'');}
+function rpCapture(){((rp.base&&rp.base.sections)||[]).forEach(sec=>{const el=document.getElementById('rp_'+sec.key);if(el)rp.edits[sec.key]=el.value;});}
+function rpSave(key){rpCapture();const text=rp.edits[key]||'';rp.saving=key;renderReport(activeStep());fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_section',section_key:key,body_text:text})}).then(r=>r.json()).then(j=>{rp.saving='';if(j&&j.ok){toast('Section saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderReport(activeStep());}).catch(()=>{rp.saving='';toast('Save failed.');renderReport(activeStep());});}
+function rpGenerate(key,isAi){if(rp.gen)return;rpCapture();rp.gen=key;if(isAi)toast('Working with ReliCheck Intelligence…');renderReport(activeStep());fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_section',section_key:key})}).then(r=>r.json()).then(j=>{rp.gen='';if(j&&j.ok){rp.base=null;delete rp.edits[key];toast('Section generated');}else{toast((j&&(j.message||j.error))||'Could not generate.');}renderReport(activeStep());}).catch(()=>{rp.gen='';toast('Generate failed.');renderReport(activeStep());});}
+function rpGenerateAll(){if(rp.genAll)return;rpCapture();rp.genAll=true;toast('Building the report…');renderReport(activeStep());fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_all'})}).then(r=>r.json()).then(j=>{rp.genAll=false;if(j&&j.ok){rp.base=null;rp.edits={};toast('Report assembled');}else{toast((j&&(j.message||j.error))||'Could not build the report.');}renderReport(activeStep());}).catch(()=>{rp.genAll=false;toast('Build failed or timed out.');renderReport(activeStep());});}
+function rpHead(s){return `<div class="ws-header"><div class="eyebrow">Report builder · assemble the write-up <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function rpNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function rpMsg(s,msg){$("#centerInner").innerHTML=rpHead(s)+helpBar('report')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+rpNav();}
+function renderReport(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=rpHead(s)+helpBar('report')+`<p class="lede">Connect a project to assemble its report.</p>`+rpNav();return;}
+  if(rp.err){rpMsg(s,rp.err);return;}
+  if(!rp.base){
+    if(!rp.busy){rp.busy=true;rpFetch().then(j=>{rp.busy=false;if(j&&j.ok){rp.base=j;}else{rp.err=(j&&(j.message||j.error))||'Could not load the report.';}renderReport(activeStep());}).catch(()=>{rp.busy=false;rp.err='Could not load your data.';renderReport(activeStep());});}
+    rpMsg(s,'Loading the report…');return;
+  }
+  const d=rp.base,noTable=(d.has_table===false),byKey=rpRowByKey(),secs=d.sections||[];
+  const note=noTable?`<div class="dm-note" style="margin-bottom:12px">Report storage needs a one-time database migration before sections can be saved.</div>`:'';
+  const bulkBar=`<div class="dm-save"><button class="btn primary" ${rp.genAll||noTable?'disabled':''} onclick="rpGenerateAll()">${rp.genAll?'Building…':'✦ Build the full report'}</button><span class="dm-note">Drafts every section from your analysis with ReliCheck Intelligence; edit any of them below, or write each yourself.</span></div>`;
+  const cards=secs.map(sec=>{const row=byKey[sec.key];const isAi=sec.source==='ai';const sv=rp.saving===sec.key;const gn=rp.gen===sec.key;const srcBadge=isAi?'<span class="tt-status rev">ReliCheck Intelligence</span>':'<span class="tt-status ok">Template</span>';const userBadge=(row&&row.source==='user')?' <span class="tt-status ok">Edited</span>':'';
+    return `<div class="panel"><div class="panel-b">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:700">${esc(sec.title)}</div><div>${srcBadge}${userBadge}</div></div>
+      <textarea id="rp_${sec.key}" class="ed-in" rows="5" style="margin-top:8px" placeholder="${esc(sec.title)} — build it from your analysis, or write it yourself.">${esc(rpVal(sec.key,row))}</textarea>
+      <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="rpSave('${sec.key}')">${sv?'Saving…':'Save section'}</button><button class="btn" ${gn?'disabled':''} onclick="rpGenerate('${sec.key}',${isAi})">${gn?(isAi?'Generating…':'Refreshing…'):(isAi?'✦ Generate with ReliCheck Intelligence':'Refresh from data')}</button></div>
+    </div></div>`;}).join('');
+  $("#centerInner").innerHTML=rpHead(s)+helpBar('report')+note+bulkBar+cards+rpNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -2000,6 +2040,7 @@ function renderCenter(){
   if(s.id==='meta'){ return renderMeta(s); }
   if(s.id==='interp'){ return renderInterp(s); }
   if(s.id==='evidence_strength'){ return renderStrength(s); }
+  if(s.id==='report'){ return renderReport(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }

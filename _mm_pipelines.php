@@ -62,10 +62,12 @@ $CONCLUDE = [
    'title'=>'Evidence Strength','lede'=>'Gauge how strong the integrated evidence is before you report it.',
    'palette'=>['intro'=>'Strength views:','groups'=>[['name'=>'Strength','items'=>[
      ['name'=>'Per finding','strand'=>'both'],['name'=>'Overall','strand'=>'both']]]]]],
-  ['id'=>'report','label'=>'Report Builder','strand'=>'neutral','mode'=>'work','route'=>'/executive-summary.php',
+  // Native report builder (renderReport) on report.php's section model. route=null
+  // so it does NOT iframe the legacy 360 executive-summary stub.
+  ['id'=>'report','label'=>'Report Builder','strand'=>'neutral','mode'=>'work','route'=>null,
    'title'=>'Report Builder','lede'=>'Assemble findings, limitations, and quotes into the report.',
-   'palette'=>['intro'=>'Report sections:','groups'=>[['name'=>'Sections','items'=>[
-     ['name'=>'Findings','strand'=>'both'],['name'=>'Limitations','strand'=>'neutral'],['name'=>'Quotes','strand'=>'qual']]]]]],
+   'palette'=>['intro'=>'Report','groups'=>[
+     ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Build the full report','strand'=>'both','action'=>'rpGenerateAll()']]]]]],
 ];
 
 // ---------- Step library (the design-specific middle) ----------
