@@ -34,6 +34,8 @@ $sd_accent = $studio_def['accent'];
 $sd_deep   = $studio_def['accent_deep'] ?? $studio_def['accent'];
 $sd_soft   = $studio_def['accent_soft'];
 $sd_mark   = $studio_def['mark'] ?? '/logo-brand.svg';
+// Long-form studio wordmark for the topbar, sized like MM's (.brand img 70px).
+$sd_longlogo = $sd_slug === 'descriptive' ? '/DA-Studio-long.png' : '/IS-Studio-long.png';
 $sd_self   = $studio_def['self'];
 
 $projectId = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
@@ -100,10 +102,9 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
 
 /* Topbar */
-.topbar{display:flex;align-items:center;gap:14px;height:72px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line)}
-.tb-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
-.tb-logo img{height:26px;width:auto;display:block}
-.tb-name{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.topbar{display:flex;align-items:center;gap:14px;height:90px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+.tb-logo{display:flex;align-items:center;text-decoration:none;color:var(--ink)}
+.tb-logo img{height:70px;width:auto;display:block}
 .tb-ctx{margin-left:8px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
 .tb-ctx .dot{width:8px;height:8px;border-radius:50%;background:#cdd6e4}
 .tb-ctx.is-live .dot{background:var(--green)}
@@ -180,8 +181,12 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .comp-body{padding:16px 18px;overflow-y:auto;font-size:13.5px;color:var(--ink-2);line-height:1.55}
 
 /* Studio dock — SIRI/RSSI data intake */
-.studio-dock{padding:12px 22px;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(12px);border-top:1px solid var(--line);box-shadow:0 -4px 22px rgba(15,23,42,.07);display:flex;align-items:center;gap:12px}
+.studio-dock{position:relative;padding:12px 22px;background:rgba(255,255,255,.92);backdrop-filter:saturate(1.4) blur(12px);border-top:1px solid var(--line);box-shadow:0 -4px 22px rgba(15,23,42,.07)}
+.studio-dock-logo{position:absolute;left:22px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;text-decoration:none}
+.studio-dock-logo img{height:24px;width:auto;display:block}
+.studio-dock-inner{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;min-height:34px}
 .dock-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3)}
+@media(max-width:820px){.studio-dock-logo{display:none}}
 .dock-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
 .dock-btn:hover{border-color:var(--acc)}
 .dock-chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-left:auto}
@@ -196,8 +201,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 <div class="app">
   <header class="topbar">
     <a class="tb-logo" href="/app-2026v4.php">
-      <img src="<?= htmlspecialchars($sd_mark) ?>" alt="">
-      <span class="tb-name"><?= htmlspecialchars($sd_name) ?></span>
+      <img src="<?= htmlspecialchars($sd_longlogo) ?>" alt="<?= htmlspecialchars($sd_name) ?>">
     </a>
     <div class="tb-ctx<?= $projectId ? ' is-live' : '' ?>">
       <span class="dot"></span>
@@ -222,11 +226,14 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
   </div>
 
   <footer class="studio-dock">
-    <span class="dock-lbl">Data</span>
-    <button class="dock-btn" id="dkSiri">&#9889; Open from SIRI responses</button>
-    <button class="dock-btn" id="dkUpload">&#8681; Upload data</button>
-    <button class="dock-btn" id="dkSaved">&#9638; Open saved project</button>
-    <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
+    <a class="studio-dock-logo" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/logo-brand.svg" alt="ReliCheck"></a>
+    <div class="studio-dock-inner">
+      <span class="dock-lbl">Data</span>
+      <button class="dock-btn" id="dkSiri">&#9889; Open from SIRI responses</button>
+      <button class="dock-btn" id="dkUpload">&#8681; Upload data</button>
+      <button class="dock-btn" id="dkSaved">&#9638; Open saved project</button>
+      <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
+    </div>
   </footer>
 </div>
 
