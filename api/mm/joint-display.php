@@ -281,6 +281,29 @@ if ($action === 'save_notes') {
     json_out(['ok' => true, 'notes' => $notes]);
 }
 
+// Manual quote selection — the human-led alternative to the AI pick_quote.
+// No AI, no rate limit. The response must already be coded to the theme.
+if ($action === 'set_quote') {
+    $themeId    = (int)($body['theme_id'] ?? 0);
+    $responseId = (int)($body['response_id'] ?? 0);
+    if ($themeId <= 0 || $responseId <= 0) fail('bad_input', 'theme_id and response_id are required.');
+    $ck = $pdo->prepare(
+        'SELECT r.text FROM mm_coded_responses cr
+           JOIN mm_text_responses r ON r.id = cr.response_id
+          WHERE cr.project_id = :p AND cr.category_id = :t AND cr.response_id = :r LIMIT 1'
+    );
+    $ck->execute([':p' => $projectId, ':t' => $themeId, ':r' => $responseId]);
+    $row = $ck->fetch(PDO::FETCH_ASSOC);
+    if (!$row) fail('mm_quote_not_coded', 'That response is not coded to this theme.', 404);
+    $up = $pdo->prepare(
+        'INSERT INTO mm_joint_display_rows (project_id, theme_id, quote_response_id, quote_text)
+         VALUES (:p, :t, :rid, :txt)
+         ON DUPLICATE KEY UPDATE quote_response_id = VALUES(quote_response_id), quote_text = VALUES(quote_text)'
+    );
+    $up->execute([':p' => $projectId, ':t' => $themeId, ':rid' => $responseId, ':txt' => mb_substr((string)$row['text'], 0, 800)]);
+    json_out(['ok' => true, 'theme_id' => $themeId, 'quote' => ['response_id' => $responseId, 'text' => (string)$row['text']]]);
+}
+
 check_rate_limit('mm_joint_display:user:' . $uid, 60, 3600);
 
 if ($action === 'pick_quote') {
