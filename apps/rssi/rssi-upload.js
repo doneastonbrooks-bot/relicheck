@@ -698,15 +698,23 @@
     const titleEl = document.getElementById('rssiDashTitle');
     if (titleEl && fileName) titleEl.textContent = fileName.replace(/\.(csv|xlsx?|tsv|txt)$/i, '');
 
-    if (_isTagComplete(window.RSSI_TAG_STATE)) {
-      // Straight to score → dashboard.
-      const dataset = _materializeFromState();
-      if (dataset) {
-        const result = computeRSSI(dataset);
-        handoffToDashboard(result, dataset, window.RSSI_TAG_STATE.fileName || '');
-      }
+    // Reopening a SAVED report should land on the report with a WORKING
+    // Reliability Lab, not the tag stage. Materialize + score from the saved
+    // raw responses so the interactive analyzer (rssi-reliability.js) has real
+    // item rows. Construct tags are optional for the Lab (it explores the
+    // Likert items directly); users can still refine tags via "Re-tag columns".
+    // Only fall back to the tag stage when there is no scoreable Likert data.
+    // This re-uses the exact materialize→score→handoff path that the manual
+    // "Score my data" button runs, so no scoring value changes.
+    const dataset = _materializeFromState();
+    const hasLikert = dataset && Array.isArray(dataset.variables) &&
+      dataset.variables.some(function (v) { return v.types && v.types.indexOf('likert') !== -1; });
+    if (dataset && hasLikert) {
+      const result = computeRSSI(dataset);
+      handoffToDashboard(result, dataset, window.RSSI_TAG_STATE.fileName || '');
     } else {
-      // Show the tag stage pre-populated.
+      // Nothing scoreable yet — show the tag stage (pre-populated) so the user
+      // can mark Likert columns or fix the data.
       _renderTagTable();
       _wireTagTableHandlers();
       const root = document.getElementById('rssiAppRoot');
@@ -1081,6 +1089,18 @@
     const root = document.getElementById('rssiAppRoot');
     if (root) root.setAttribute('data-stage', 'dashboard');
     if (window.RSSI_RENDER_FROM_RESULT) window.RSSI_RENDER_FROM_RESULT(null); // null → use SAMPLE
+    // The demo auto-runs on load, sometimes before rssi-reliability.js has
+    // parsed. Re-mount the analyzer once it is available so the Reliability
+    // Lab shows its fallback (the sample has no raw responses) instead of an
+    // empty box. Retries briefly, then gives up.
+    (function reMountWhenReady(tries) {
+      const m = document.getElementById('rssiOverviewAnalyzerMount');
+      if (window.RSSI_RELIABILITY && m) {
+        try { window.RSSI_RELIABILITY.mount(m, { projectKey: 'demo' }); } catch (e) {}
+      } else if (tries < 20) {
+        setTimeout(function () { reMountWhenReady(tries + 1); }, 100);
+      }
+    })(0);
     const wb = document.getElementById('rssiWhatBlock');
     const pb = document.getElementById('rssiPrioritiesBlock');
     if (wb) wb.style.display = '';

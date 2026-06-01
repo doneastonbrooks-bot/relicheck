@@ -220,7 +220,7 @@
       '<div class="rsa-iframe-loading">' +
         '<div class="rsa-spinner" aria-hidden="true"></div>' +
         '<div>Loading Validity analysis from the engine&hellip;</div>' +
-        '<div class="rsa-iframe-method-tag">Option 1 &middot; iframe scrape</div>' +
+        '' +
       '</div>';
 
     const iframe = document.createElement('iframe');
@@ -276,7 +276,7 @@
         }
         container.innerHTML = [
           '<div class="rssi-analysis">',
-            '<div class="rsa-method-tag rsa-method-tag-iframe">Method: <strong>Option 1 &mdash; iframe scrape</strong> &middot; narrative pulled live from the engine page</div>',
+            '',
             '<div class="rsa-header rsa-tone-', tone, '">',
               '<div class="rsa-status-pill">', esc(title), '</div>',
               '<h3 class="rsa-judgment">', esc(sub), '</h3>',
@@ -371,7 +371,7 @@
     }
     container.innerHTML = [
       '<div class="rssi-analysis">',
-        '<div class="rsa-method-tag rsa-method-tag-ported">Method: <strong>Option 2 &mdash; ported narrative</strong> &middot; logic copied from the engine, rendered natively in RSSI</div>',
+        '',
         '<div class="rsa-header rsa-tone-', r.statusTone, '">',
           '<div class="rsa-status-pill">', esc(r.status), '</div>',
           '<h3 class="rsa-judgment">', esc(r.judgment), '</h3>',
@@ -500,7 +500,7 @@
 
     container.innerHTML = [
       '<div class="rssi-analysis">',
-        '<div class="rsa-method-tag rsa-method-tag-engine">Method: <strong>Option 3 &mdash; engine API</strong> &middot; <code>window.IQ_ENGINE.constructAlignmentNarrative()</code> returns a plain object, RSSI renders it</div>',
+        '',
 
         // Headline banner
         '<div class="rsa-header rsa-tone-', r.statusTone, '">',
@@ -637,7 +637,7 @@
       '<div class="rsa-iframe-loading">' +
         '<div class="rsa-spinner" aria-hidden="true"></div>' +
         '<div>Loading ' + esc(config.label) + ' from the engine&hellip;</div>' +
-        '<div class="rsa-iframe-method-tag">Option 1 &middot; iframe scrape</div>' +
+        '' +
       '</div>';
 
     const iframe = document.createElement('iframe');
@@ -692,7 +692,7 @@
         }
         container.innerHTML = [
           '<div class="rssi-analysis">',
-            '<div class="rsa-method-tag rsa-method-tag-iframe">Method: <strong>Option 1 &mdash; iframe scrape</strong> &middot; narrative pulled live from the engine page</div>',
+            '',
             '<div class="rsa-header rsa-tone-', tone, '">',
               '<div class="rsa-status-pill">', esc(title), '</div>',
               '<h3 class="rsa-judgment">', esc(sub), '</h3>',

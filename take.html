@@ -164,6 +164,149 @@
   .center .glyph { font-size: 42px; margin-bottom: 10px; }
   .muted { color: var(--text-mute); font-size: 13px; }
   .footer-note { text-align: center; color: var(--text-mute); font-size: 12px; margin-top: 24px; }
+
+  /* ── Star rating ── */
+  .star-rating { display: flex; gap: 6px; flex-wrap: wrap; }
+  .star-rating label {
+    font-size: 32px; cursor: pointer; line-height: 1;
+    color: var(--border-strong);
+    transition: color .1s, transform .1s;
+    user-select: none;
+  }
+  .star-rating label input { position: absolute; opacity: 0; pointer-events: none; }
+  .star-rating label:hover,
+  .star-rating label.lit { color: #f5a623; transform: scale(1.12); }
+  .star-rating label.lit { transform: scale(1.0); }
+  .star-rating-hint { font-size: 12px; color: var(--text-mute); margin-top: 8px; }
+
+  /* ── Slider ── */
+  .slider-wrap { padding: 4px 0; }
+  .slider-track-row { display: flex; align-items: center; gap: 14px; }
+  .slider-track-row input[type="range"] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px; outline: none;
+    background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--pct,50%), var(--border-strong) var(--pct,50%), var(--border-strong) 100%);
+    cursor: pointer;
+  }
+  .slider-track-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18); cursor: pointer;
+  }
+  .slider-track-row input[type="range"]::-moz-range-thumb {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18); cursor: pointer;
+  }
+  .slider-val {
+    min-width: 42px; text-align: center; font-weight: 700; font-size: 16px;
+    color: var(--primary); background: var(--primary-soft);
+    border-radius: 8px; padding: 3px 8px;
+  }
+  .slider-edge-labels { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--text-mute); margin-top: 6px; }
+
+  /* ── Matrix ── */
+  .matrix-scroll { overflow-x: auto; }
+  .matrix-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .matrix-table th {
+    padding: 8px 10px; font-weight: 600; color: var(--text-soft);
+    background: var(--bg-soft); border-bottom: 1px solid var(--border);
+    text-align: center; font-size: 12px;
+  }
+  .matrix-table th:first-child { text-align: left; min-width: 140px; }
+  .matrix-table td {
+    padding: 10px 10px; border-bottom: 1px solid var(--border); vertical-align: middle;
+  }
+  .matrix-table tr:last-child td { border-bottom: none; }
+  .matrix-table td:first-child { font-weight: 500; color: var(--ink-7); padding-left: 0; }
+  .matrix-table td:not(:first-child) { text-align: center; }
+  .matrix-radio {
+    width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary);
+  }
+  .matrix-table tr:hover td { background: var(--bg-soft); }
+
+  /* ── Ranking ── */
+  .ranking-list { display: flex; flex-direction: column; gap: 6px; }
+  .rank-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px; background: white;
+    border: 1px solid var(--border-strong); border-radius: var(--r-sm);
+    transition: box-shadow .15s, background .1s;
+  }
+  .rank-item.dragging { opacity: 0.5; }
+  .rank-item.drag-over { background: var(--primary-soft); border-color: var(--primary); }
+  .rank-num {
+    font-size: 12px; font-weight: 700; color: var(--primary);
+    background: var(--primary-soft); border-radius: 6px;
+    width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rank-label { flex: 1; font-size: 14px; font-weight: 500; color: var(--ink-9); }
+  .rank-handle {
+    cursor: grab; color: var(--text-mute); font-size: 16px;
+    padding: 2px 4px; user-select: none;
+  }
+  .rank-handle:active { cursor: grabbing; }
+  .rank-btns { display: flex; flex-direction: column; gap: 2px; }
+  .rank-btn {
+    background: none; border: 1px solid var(--border); border-radius: 4px;
+    width: 24px; height: 20px; cursor: pointer; font-size: 11px;
+    color: var(--text-mute); display: flex; align-items: center; justify-content: center;
+    transition: background .1s, color .1s;
+  }
+  .rank-btn:hover { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+  .rank-btn:disabled { opacity: 0.3; cursor: default; }
+  .ranking-hint { font-size: 12px; color: var(--text-mute); margin-top: 6px; }
+
+  /* ── Priority allocation ── */
+  .priority-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; font-size: 13.5px;
+  }
+  .priority-total-label { color: var(--text-soft); }
+  .priority-remaining {
+    font-weight: 700; padding: 3px 10px; border-radius: 999px;
+    font-size: 13px;
+  }
+  .priority-remaining.ok  { background: #ecfdf3; color: var(--good); }
+  .priority-remaining.over { background: #fef0f3; color: var(--bad); }
+  .priority-items { display: flex; flex-direction: column; gap: 10px; }
+  .priority-item { display: flex; flex-direction: column; gap: 4px; }
+  .priority-item-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .priority-item-label { font-size: 14px; font-weight: 500; color: var(--ink-9); }
+  .priority-item-val {
+    font-size: 13px; font-weight: 700; color: var(--primary);
+    min-width: 32px; text-align: right;
+  }
+  .priority-item input[type="range"] {
+    width: 100%; -webkit-appearance: none; appearance: none;
+    height: 6px; border-radius: 3px; outline: none; cursor: pointer;
+    background: linear-gradient(to right, var(--primary) 0%, var(--primary) var(--pct,0%), var(--border-strong) var(--pct,0%), var(--border-strong) 100%);
+  }
+  .priority-item input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; border: 2px solid var(--primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.18); cursor: pointer;
+  }
+
+  /* Phase 3C: Section headings and consent checkbox. */
+  .qsection { padding: 24px 0 6px; }
+  .qsection-heading {
+    font-size: 16px; font-weight: 700; color: var(--ink-9);
+    letter-spacing: -0.01em;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .consent-check {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 12px 14px; border: 1px solid var(--border-strong);
+    border-radius: var(--r-sm); cursor: pointer; background: white;
+    font-size: 15px; line-height: 1.5;
+    transition: border-color .15s, background .15s;
+  }
+  .consent-check:has(input:checked) { border-color: var(--primary); background: var(--primary-soft); }
+  .consent-check input { margin-top: 3px; flex-shrink: 0; accent-color: var(--primary); }
+
   /* Phase 147: Powered-by footer shown to every respondent on every survey. */
   .powered-by {
     margin: 36px auto 40px;
@@ -316,6 +459,16 @@
       </div>`;
   }
 
+  function renderClosed() {
+    document.title = 'Survey · ReliCheck';
+    $('#content').innerHTML = `
+      <div class="card center">
+        <div class="glyph" style="font-size:38px">🕐</div>
+        <h1>Not open yet</h1>
+        <p class="muted">This survey is not currently accepting responses. Check back soon.</p>
+      </div>`;
+  }
+
   function renderThanks(title) {
     const custom = (survey && survey.settings && typeof survey.settings.thankYou === 'string')
       ? survey.settings.thankYou.trim()
@@ -347,12 +500,23 @@
     const slug = getSlug();
     if (!slug) { renderError('No survey link was provided.'); return; }
     try {
-      const res = await fetch('/api/public/survey.php?slug=' + encodeURIComponent(slug), {
+      let res = await fetch('/api/public/survey.php?slug=' + encodeURIComponent(slug), {
         credentials: 'omit',
       });
       let data = {};
       try { data = await res.json(); } catch (_) {}
-      if (!res.ok) { renderError(data.message || 'This survey could not be loaded.'); return; }
+      // Phase 3C: if slug not found in production table, try the dev survey endpoint.
+      if (res.status === 404) {
+        res = await fetch('/api/public/survey-dev.php?link_key=' + encodeURIComponent(slug), {
+          credentials: 'omit',
+        });
+        data = {};
+        try { data = await res.json(); } catch (_) {}
+      }
+      if (!res.ok) {
+        if (data.closed) { renderClosed(); return; }
+        renderError(data.message || 'This survey could not be loaded.'); return;
+      }
       survey = data.survey;
       assignedArm = (survey && survey.assigned_arm) ? survey.assigned_arm : null;
 
@@ -526,9 +690,27 @@
     if (!survey.questions.length) {
       parts.push('<p class="muted">This survey has no questions yet.</p>');
     } else {
-      survey.questions.forEach((q, i) => {
+      let qNum = 0;
+      survey.questions.forEach((q) => {
+        // Section Text: heading only, no number, no input.
+        if (q.type === 'section') {
+          parts.push('<div class="qsection" data-qid="' + escapeHtml(q.id) + '">');
+          if (q.prompt) parts.push('<div class="qsection-heading">' + escapeHtml(q.prompt) + '</div>');
+          parts.push('</div>');
+          return;
+        }
+        // Consent: required checkbox.
+        if (q.type === 'consent') {
+          qNum++;
+          parts.push('<div class="question" data-qid="' + escapeHtml(q.id) + '">');
+          parts.push('<div class="qprompt">' + qNum + '. ' + escapeHtml(q.prompt || '') + (q.required ? '<span class="req">*</span>' : '') + '</div>');
+          parts.push('<label class="consent-check"><input type="checkbox" data-type="consent" /><span>I agree to the above</span></label>');
+          parts.push('</div>');
+          return;
+        }
+        qNum++;
         parts.push('<div class="question" data-qid="' + escapeHtml(q.id) + '">');
-        parts.push('<div class="qprompt">' + (i+1) + '. ' + escapeHtml(q.prompt || '(question)') + (q.required ? '<span class="req">*</span>' : '') + '</div>');
+        parts.push('<div class="qprompt">' + qNum + '. ' + escapeHtml(q.prompt || '(question)') + (q.required ? '<span class="req">*</span>' : '') + '</div>');
         if (q.type === 'likert') {
           const k = qPts(q), low = qLo(q), high = qHi(q);
           let row = '<div class="likert-row" data-type="likert">';
@@ -552,8 +734,90 @@
           });
           row += '</div>';
           parts.push(row);
+        } else if (q.type === 'open' && q._builderType === 'rating') {
+          const stars = Math.max(3, Math.min(10, q.ratingStars || 5));
+          let row = '<div class="star-rating" data-type="rating" data-stars="' + stars + '">';
+          for (let v = 1; v <= stars; v++) {
+            row += '<label data-v="' + v + '"><input type="radio" name="star_' + escapeHtml(q.id) + '" value="' + v + '"/>★</label>';
+          }
+          row += '</div><div class="star-rating-hint">Click a star to select your rating</div>';
+          parts.push(row);
+
+        } else if (q.type === 'open' && q._builderType === 'slider') {
+          const min  = q.sliderMin  != null ? q.sliderMin  : 0;
+          const max  = q.sliderMax  != null ? q.sliderMax  : 100;
+          const step = q.sliderStep != null ? q.sliderStep : 1;
+          const mid  = Math.round((min + max) / 2);
+          const pct  = Math.round(((mid - min) / (max - min)) * 100);
+          const lo   = q.sliderLow  || '';
+          const hi   = q.sliderHigh || '';
+          parts.push(
+            '<div class="slider-wrap" data-type="slider">' +
+              '<div class="slider-track-row">' +
+                '<input type="range" min="' + min + '" max="' + max + '" step="' + step + '" value="' + mid + '" style="--pct:' + pct + '%">' +
+                '<span class="slider-val">' + mid + '</span>' +
+              '</div>' +
+              (lo || hi ? '<div class="slider-edge-labels"><span>' + escapeHtml(lo) + '</span><span>' + escapeHtml(hi) + '</span></div>' : '') +
+            '</div>'
+          );
+
+        } else if (q.type === 'open' && q._builderType === 'matrix') {
+          const rows = Array.isArray(q.matrixRows) ? q.matrixRows : [];
+          const cols = Array.isArray(q.matrixCols) ? q.matrixCols : ['1','2','3','4','5'];
+          let tbl = '<div class="matrix-scroll"><table class="matrix-table" data-type="matrix"><thead><tr><th></th>';
+          cols.forEach(c => { tbl += '<th>' + escapeHtml(c) + '</th>'; });
+          tbl += '</tr></thead><tbody>';
+          rows.forEach((r, ri) => {
+            tbl += '<tr data-row="' + ri + '"><td>' + escapeHtml(r) + '</td>';
+            cols.forEach((c, ci) => {
+              tbl += '<td><input class="matrix-radio" type="radio" name="mx_' + escapeHtml(q.id) + '_r' + ri + '" value="' + ci + '" data-row="' + ri + '" data-col="' + ci + '"></td>';
+            });
+            tbl += '</tr>';
+          });
+          tbl += '</tbody></table></div>';
+          parts.push(tbl);
+
+        } else if (q.type === 'open' && q._builderType === 'ranking') {
+          const items = Array.isArray(q.rankingItems) ? q.rankingItems : [];
+          let rl = '<div class="ranking-list" data-type="ranking" data-count="' + items.length + '">';
+          items.forEach((item, i) => {
+            rl += '<div class="rank-item" draggable="true" data-orig="' + i + '" data-pos="' + i + '">' +
+              '<span class="rank-num">' + (i + 1) + '</span>' +
+              '<span class="rank-label">' + escapeHtml(item) + '</span>' +
+              '<span class="rank-handle" title="Drag to reorder">⠿</span>' +
+              '<div class="rank-btns">' +
+                '<button class="rank-btn rank-up" title="Move up" ' + (i === 0 ? 'disabled' : '') + '>▲</button>' +
+                '<button class="rank-btn rank-dn" title="Move down" ' + (i === items.length - 1 ? 'disabled' : '') + '>▼</button>' +
+              '</div>' +
+            '</div>';
+          });
+          rl += '</div><div class="ranking-hint">Drag items or use ▲▼ to order from most to least preferred</div>';
+          parts.push(rl);
+
+        } else if (q.type === 'open' && q._builderType === 'priority') {
+          const items = Array.isArray(q.priorityItems) ? q.priorityItems : [];
+          const total = q.priorityTotal || 100;
+          let pl = '<div class="priority-wrap" data-type="priority" data-total="' + total + '">' +
+            '<div class="priority-header">' +
+              '<span class="priority-total-label">Allocate ' + total + ' points across all options</span>' +
+              '<span class="priority-remaining ok" data-rem>' + total + ' remaining</span>' +
+            '</div>' +
+            '<div class="priority-items">';
+          items.forEach((item, i) => {
+            pl += '<div class="priority-item" data-idx="' + i + '">' +
+              '<div class="priority-item-head">' +
+                '<span class="priority-item-label">' + escapeHtml(item) + '</span>' +
+                '<span class="priority-item-val" data-val>0</span>' +
+              '</div>' +
+              '<input type="range" min="0" max="' + total + '" step="1" value="0" style="--pct:0%">' +
+            '</div>';
+          });
+          pl += '</div></div>';
+          parts.push(pl);
+
         } else if (q.type === 'open') {
-          parts.push('<textarea data-type="open" placeholder="Your answer…"></textarea>');
+          const minH = (q._builderType === 'long') ? 'min-height:140px;' : '';
+          parts.push('<textarea data-type="open" placeholder="Your answer…" style="' + minH + '"></textarea>');
         }
         parts.push('</div>');
       });
@@ -612,10 +876,169 @@
       if (open) {
         open.addEventListener('input', e => { draft[qid] = e.target.value; scheduleAutosave(); });
       }
+
+      // ── Star rating ──
+      const stars = el.querySelector('.star-rating[data-type="rating"]');
+      if (stars) {
+        const labels = stars.querySelectorAll('label');
+        labels.forEach(lbl => {
+          // Hover highlight
+          lbl.addEventListener('mouseenter', () => {
+            const v = parseInt(lbl.dataset.v, 10);
+            labels.forEach(l => { l.classList.toggle('lit', parseInt(l.dataset.v, 10) <= v); });
+          });
+          lbl.addEventListener('mouseleave', () => {
+            const sel = draft[qid] != null ? parseInt(draft[qid], 10) : 0;
+            labels.forEach(l => { l.classList.toggle('lit', parseInt(l.dataset.v, 10) <= sel); });
+          });
+          lbl.querySelector('input').addEventListener('change', () => {
+            draft[qid] = String(parseInt(lbl.dataset.v, 10));
+            const sel = parseInt(draft[qid], 10);
+            labels.forEach(l => { l.classList.toggle('lit', parseInt(l.dataset.v, 10) <= sel); });
+            scheduleAutosave();
+          });
+        });
+      }
+
+      // ── Slider ──
+      const sliderWrap = el.querySelector('.slider-wrap[data-type="slider"]');
+      if (sliderWrap) {
+        const inp = sliderWrap.querySelector('input[type="range"]');
+        const valEl = sliderWrap.querySelector('.slider-val');
+        function updateSlider() {
+          const mn = parseFloat(inp.min), mx = parseFloat(inp.max), v = parseFloat(inp.value);
+          const pct = Math.round(((v - mn) / (mx - mn)) * 100);
+          inp.style.setProperty('--pct', pct + '%');
+          valEl.textContent = inp.value;
+          draft[qid] = String(v);
+          scheduleAutosave();
+        }
+        inp.addEventListener('input', updateSlider);
+        updateSlider(); // initialise with mid value
+      }
+
+      // ── Matrix ──
+      const matrix = el.querySelector('.matrix-table[data-type="matrix"]');
+      if (matrix) {
+        if (typeof draft[qid] !== 'object' || Array.isArray(draft[qid])) draft[qid] = {};
+        matrix.querySelectorAll('.matrix-radio').forEach(radio => {
+          radio.addEventListener('change', () => {
+            draft[qid][radio.dataset.row] = parseInt(radio.dataset.col, 10);
+            scheduleAutosave();
+          });
+        });
+      }
+
+      // ── Ranking ──
+      const rankList = el.querySelector('.ranking-list[data-type="ranking"]');
+      if (rankList) {
+        // Init draft as [0,1,2,...n-1]
+        const n = parseInt(rankList.dataset.count, 10);
+        if (!Array.isArray(draft[qid])) {
+          draft[qid] = Array.from({ length: n }, (_, i) => i);
+        }
+
+        function refreshRankUI() {
+          const items = rankList.querySelectorAll('.rank-item');
+          items.forEach((item, pos) => {
+            item.querySelector('.rank-num').textContent = pos + 1;
+            item.querySelector('.rank-btn.rank-up').disabled = (pos === 0);
+            item.querySelector('.rank-btn.rank-dn').disabled = (pos === items.length - 1);
+          });
+          // Update draft as ordered array of original indices
+          draft[qid] = Array.from(items).map(i => parseInt(i.dataset.orig, 10));
+          scheduleAutosave();
+        }
+
+        // Up/Down buttons
+        rankList.addEventListener('click', e => {
+          const btn = e.target.closest('.rank-btn');
+          if (!btn) return;
+          const item = btn.closest('.rank-item');
+          if (btn.classList.contains('rank-up')) {
+            const prev = item.previousElementSibling;
+            if (prev) rankList.insertBefore(item, prev);
+          } else {
+            const next = item.nextElementSibling;
+            if (next) rankList.insertBefore(next, item);
+          }
+          refreshRankUI();
+        });
+
+        // Drag-and-drop
+        let dragSrc = null;
+        rankList.querySelectorAll('.rank-item').forEach(item => {
+          item.addEventListener('dragstart', e => {
+            dragSrc = item; item.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+          });
+          item.addEventListener('dragend', () => {
+            item.classList.remove('dragging');
+            rankList.querySelectorAll('.rank-item').forEach(i => i.classList.remove('drag-over'));
+            dragSrc = null; refreshRankUI();
+          });
+          item.addEventListener('dragover', e => {
+            e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+            rankList.querySelectorAll('.rank-item').forEach(i => i.classList.remove('drag-over'));
+            if (item !== dragSrc) item.classList.add('drag-over');
+          });
+          item.addEventListener('drop', e => {
+            e.preventDefault();
+            if (dragSrc && dragSrc !== item) {
+              // Insert dragSrc before item
+              rankList.insertBefore(dragSrc, item);
+            }
+          });
+        });
+      }
+
+      // ── Priority allocation ──
+      const priorityWrap = el.querySelector('.priority-wrap[data-type="priority"]');
+      if (priorityWrap) {
+        const total = parseInt(priorityWrap.dataset.total, 10);
+        const remEl = priorityWrap.querySelector('[data-rem]');
+        const items = priorityWrap.querySelectorAll('.priority-item');
+        if (typeof draft[qid] !== 'object' || Array.isArray(draft[qid])) draft[qid] = {};
+
+        function updatePriority() {
+          let used = 0;
+          items.forEach(item => { used += parseInt(item.querySelector('input').value, 10); });
+          const rem = total - used;
+          remEl.textContent = Math.abs(rem) + (rem >= 0 ? ' remaining' : ' over');
+          remEl.className = 'priority-remaining ' + (rem < 0 ? 'over' : 'ok');
+          draft[qid] = {};
+          items.forEach((item, idx) => {
+            const v = parseInt(item.querySelector('input').value, 10);
+            item.querySelector('[data-val]').textContent = v;
+            const pct = Math.round((v / total) * 100);
+            item.querySelector('input').style.setProperty('--pct', pct + '%');
+            draft[qid][idx] = v;
+          });
+          scheduleAutosave();
+        }
+
+        items.forEach(item => {
+          item.querySelector('input').addEventListener('input', updatePriority);
+        });
+        updatePriority(); // initialise
+      }
+    });
+
+    // ── Consent checkbox (Phase 3C) ──
+    $$('.question').forEach(el => {
+      const qid = el.dataset.qid;
+      const consentChk = el.querySelector('input[data-type="consent"]');
+      if (consentChk) {
+        draft[qid] = false;
+        consentChk.addEventListener('change', e => {
+          draft[qid] = e.target.checked;
+          scheduleAutosave();
+        });
+      }
     });
 
     const btn = $('#btnSubmit');
-    if (btn) btn.addEventListener('click', submit);
+    if (btn) btn.addEventListener('click', (survey && survey._isDevSurvey) ? devSubmit : submit);
 
     applySkipLogic();
   }
@@ -649,7 +1072,8 @@
       const v = draft[q.id];
       const empty = v === undefined || v === null || v === ''
         || (Array.isArray(v) && v.length === 0)
-        || (typeof v === 'string' && v.trim() === '');
+        || (typeof v === 'string' && v.trim() === '')
+        || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0);
       if (empty) {
         banner.innerHTML = '<div class="err">Please answer all required questions before submitting.</div>';
         const target = document.querySelector('.question[data-qid="' + q.id + '"]');
@@ -659,6 +1083,18 @@
     }
     // Strip hidden answers before sending so we don't pollute the response.
     survey.questions.forEach(q => { if (!evalShowIf(q)) delete draft[q.id]; });
+
+    // Serialize complex answers (matrix/ranking/priority) to JSON strings so
+    // submit.php's open-type handler stores them correctly.
+    const serializedDraft = {};
+    Object.keys(draft).forEach(qid => {
+      const v = draft[qid];
+      if (typeof v === 'object' && v !== null) {
+        serializedDraft[qid] = JSON.stringify(v);
+      } else {
+        serializedDraft[qid] = v;
+      }
+    });
 
     const btn = $('#btnSubmit');
     btn.disabled = true;
@@ -670,7 +1106,7 @@
         method: 'POST',
         credentials: 'omit',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: survey.slug, answers: draft, arm_id: assignedArm ? assignedArm.id : null, inv: INV_TOKEN, ch: CHANNEL }),
+        body: JSON.stringify({ slug: survey.slug, answers: serializedDraft, arm_id: assignedArm ? assignedArm.id : null, inv: INV_TOKEN, ch: CHANNEL }),
       });
       let data = {};
       try { data = await res.json(); } catch (_) {}
@@ -863,6 +1299,67 @@
     } catch (err) {
       chatSetPending(false);
       chatPostAi('Network error while submitting. Refresh the page to try again.');
+    }
+  }
+
+  // Phase 3D: submit for dev (Survey Development System) surveys. Validates
+  // required fields on the client, then POSTs answers to the public storage
+  // endpoint. On success shows the thank-you screen; on failure shows a clear
+  // error and lets the respondent retry. No analysis happens here.
+  async function devSubmit() {
+    const banner = $('#banner');
+    if (banner) banner.innerHTML = '';
+    for (const q of survey.questions) {
+      if (!q.required || q.type === 'section') continue;
+      if (!evalShowIf(q)) continue;
+      const v = draft[q.id];
+      let empty;
+      if (q.type === 'consent') {
+        empty = !v;
+      } else {
+        empty = v === undefined || v === null || v === ''
+          || (Array.isArray(v) && v.length === 0)
+          || (typeof v === 'string' && v.trim() === '');
+      }
+      if (empty) {
+        if (banner) banner.innerHTML = '<div class="err">Please answer all required questions before submitting.</div>';
+        const target = document.querySelector('.question[data-qid="' + q.id + '"]');
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+    }
+
+    // Drop answers hidden by skip logic, then serialize complex values to JSON
+    // strings so the storage endpoint receives plain strings/arrays.
+    survey.questions.forEach(q => { if (!evalShowIf(q)) delete draft[q.id]; });
+    const out = {};
+    Object.keys(draft).forEach(qid => {
+      const v = draft[qid];
+      out[qid] = (typeof v === 'object' && v !== null && !Array.isArray(v)) ? JSON.stringify(v) : v;
+    });
+
+    const btn = $('#btnSubmit');
+    let orig = '';
+    if (btn) { btn.disabled = true; orig = btn.textContent; btn.textContent = 'Submitting…'; }
+    try {
+      const res = await fetch('/api/public/submit-dev.php', {
+        method: 'POST',
+        credentials: 'omit',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ link_key: getSlug(), answers: out }),
+      });
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) {
+        if (data.closed) { renderClosed(); return; }
+        if (banner) banner.innerHTML = '<div class="err">' + escapeHtml(data.message || 'Could not submit. Please try again.') + '</div>';
+        if (btn) { btn.disabled = false; btn.textContent = orig; }
+        return;
+      }
+      renderThanks(survey.title || '');
+    } catch (e) {
+      if (banner) banner.innerHTML = '<div class="err">Network error. Please try again.</div>';
+      if (btn) { btn.disabled = false; btn.textContent = orig; }
     }
   }
 

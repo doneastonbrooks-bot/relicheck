@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixed Methods Studio · design-led pipeline — ReliCheck</title>
+<style>
+/* ============================================================
+   ReliCheck — Mixed Methods Studio · DESIGN-LED PIPELINE MOCKUP
+   Visual language matched to develop.php (Survey Development System):
+   white panels on #f5f6f8, coral accent, green ticks, numbered rail.
+   ONE idea: the mixed-methods design type fills the numbered
+   pipeline. Click a step → the center swaps between a workstation
+   and an output view; the right palette is contextual.
+   No engine, no DB, no routing. Separate from studio-mm.php.
+   ============================================================ */
+:root{
+  --ink:#15171a; --ink-2:#5f6368; --ink-3:#8a8f98;
+  --bg:#f5f6f8; --panel:#ffffff; --line:#e6e8ec; --line-2:#eef0f3;
+  --accent:#6b7280; --accent-hover:#565b63; --accent-soft:#eef0f3; --accent-ink:#2a2f3a;
+  --btn:#6d4ad8; --btn-hover:#5a37c0;
+  --green:#1f9e44; --green-soft:#e9f7ee;
+  --blue:#0A6FE8; --blue-soft:#EEF3FA;
+  --quan:#0A6FE8; --quan-soft:#EEF3FA; --quan-ink:#085fcc;
+  --qual:#8A4FD0; --qual-soft:#F2EAFB; --qual-ink:#6d36b0;
+  --mm:#1f9e44;   --mm-soft:#e9f7ee;   --mm-ink:#157a33;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
+  --rail:248px; --palette:262px; --companion:336px;
+  --shadow:0 1px 2px rgba(20,28,45,.04),0 4px 16px rgba(20,28,45,.05);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
+button{font-family:inherit;cursor:pointer}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+.app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+.studio-dock{position:relative;padding:12px 22px;box-sizing:border-box;background:rgba(255,255,255,0.92);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-top:1px solid var(--line);box-shadow:0 -4px 22px rgba(15,23,42,0.07)}
+.studio-dock-logo{position:absolute;left:22px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;text-decoration:none}
+.studio-dock-logo img{height:24px;width:auto;display:block}
+.studio-dock-inner{display:flex;align-items:center;justify-content:center;gap:11px;flex-wrap:wrap;min-height:34px}
+.studio-dock .lbl{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-right:2px}
+.as-intake-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font-size:13px;font-weight:700;cursor:pointer;text-decoration:none;transition:.13s}
+.as-intake-btn:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+.as-intake-btn svg{color:var(--accent)}
+.dk-sep{width:1px;height:22px;background:var(--line);margin:0 3px}
+.dk-rssi{display:inline-flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:13px;font-weight:700;color:var(--ink-2);text-decoration:none;transition:.13s}
+.dk-rssi:hover{border-color:var(--quan)}
+.dk-rssi .dot{width:8px;height:8px;border-radius:50%;background:#cdd6e4}
+.dk-rssi.is-available .dot{background:var(--mm)}
+.dk-rssi small{font-weight:600;color:var(--ink-3)}
+@media(max-width:760px){.studio-dock-logo{display:none}}
+
+/* ---------- topbar ---------- */
+.topbar{display:flex;align-items:center;gap:14px;height:90px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;text-decoration:none}
+.brand img{height:70px;width:auto;display:block}
+/* design switcher — the control that fills the pipeline */
+.design-switch{margin:0 auto;display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:4px}
+.ds-btn{border:none;background:none;padding:8px 15px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--ink-2);transition:.13s;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ds-btn:hover{color:var(--ink)}
+.ds-btn .lead{font-size:9.5px;font-weight:800;letter-spacing:.03em;padding:2px 6px;border-radius:999px;text-transform:uppercase}
+.ds-btn .lead.quan{background:var(--quan-soft);color:var(--quan-ink)}
+.ds-btn .lead.qual{background:var(--qual-soft);color:var(--qual-ink)}
+.ds-btn .lead.both{background:var(--mm-soft);color:var(--mm-ink)}
+.ds-btn.active{background:var(--panel);color:var(--ink);box-shadow:var(--shadow)}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.ctx{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.ctx .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.help-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;border:1px dashed var(--accent);background:var(--accent-soft);color:var(--accent-ink);font-size:12.5px;font-weight:700}
+.help-btn:hover{border-style:solid}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+
+/* ---------- body: rail · center · palette ---------- */
+.body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--companion);min-height:0;overflow:hidden;transition:grid-template-columns .22s ease}
+body.companion-collapsed{--companion:46px}
+/* stage = workstation + tool palette as one cluster, shifted together from the rail */
+.stage{display:flex;gap:26px;min-width:0;overflow:hidden;padding:0 24px 0 120px}
+@media(max-width:1320px){.stage{padding:0 20px 0 clamp(20px,3vw,48px)}}
+
+/* numbered pipeline rail */
+.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;overflow-y:auto;--accent:#6d4ad8;--accent-soft:#efeafd;--accent-ink:#4a2aa0}
+.rail-h{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:4px 12px 8px}
+.design-pick{position:relative;padding:0 10px 4px}
+.design-pick-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:9px;padding:5px 8px;cursor:pointer;transition:.12s}
+.design-pick-btn:hover{background:var(--bg);border-color:var(--line)}
+.dp-name{flex:1;font-size:14.5px;font-weight:800;letter-spacing:-.01em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dp-caret{color:var(--ink-3);font-size:11px;flex:none}
+.design-pick.open .dp-caret{color:var(--accent)}
+.design-menu{display:none;position:absolute;left:8px;right:8px;top:100%;z-index:40;margin-top:4px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(20,28,45,.14);padding:6px;max-height:60vh;overflow-y:auto}
+.design-pick.open .design-menu{display:block}
+.dm-opt{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;cursor:pointer;transition:.1s}
+.dm-opt:hover{background:var(--bg)}
+.dm-opt.active{background:var(--accent-soft)}
+.dm-opt .lead{font-size:8.5px;font-weight:800;letter-spacing:.02em;padding:2px 6px;border-radius:999px;text-transform:uppercase;flex:none}
+.dm-opt .lead.quan{background:var(--quan-soft);color:var(--quan-ink)} .dm-opt .lead.qual{background:var(--qual-soft);color:var(--qual-ink)} .dm-opt .lead.both{background:var(--mm-soft);color:var(--mm-ink)}
+.dm-opt .dm-lbl{font-size:12.5px;font-weight:650;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dm-opt.active .dm-lbl{color:var(--accent-ink)}
+.dm-opt .dm-check{margin-left:auto;color:var(--accent);font-weight:800;font-size:12px;visibility:hidden}
+.dm-opt.active .dm-check{visibility:visible}
+.design-name{padding:0 12px 4px;font-size:14.5px;font-weight:800;letter-spacing:-.01em}
+.design-flow{display:flex;align-items:center;gap:5px;padding:6px 12px 14px;flex-wrap:wrap}
+.flow-pill{font-size:9.5px;font-weight:800;letter-spacing:.02em;padding:3px 8px;border-radius:999px}
+.flow-pill.quan{background:var(--quan-soft);color:var(--quan-ink)}
+.flow-pill.qual{background:var(--qual-soft);color:var(--qual-ink)}
+.flow-pill.both{background:var(--mm-soft);color:var(--mm-ink)}
+.flow-arrow{color:var(--ink-3);font-size:11px}
+.step{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;color:var(--ink-2);font-size:14px;font-weight:600;border:1px solid transparent;transition:.12s;margin-bottom:1px}
+.step:hover{background:var(--bg);color:var(--ink)}
+.step .num{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--bg);color:var(--ink-3);border:1px solid var(--line);flex:none}
+.step .lbl{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.step .sdot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--line)}
+.step.quan .sdot{background:var(--quan)} .step.qual .sdot{background:var(--qual)} .step.both .sdot{background:var(--mm)}
+.step .tick{display:none;color:var(--green);font-weight:800}
+.step[data-done="1"] .num{background:var(--green-soft);color:var(--green);border-color:transparent}
+.step[data-done="1"] .tick{display:block}
+.step[data-done="1"] .sdot{display:none}
+.step[data-active="1"]{background:var(--accent-soft);color:var(--accent-ink);border-color:rgba(232,93,58,.18)}
+.step[data-active="1"] .num{background:var(--accent);color:#fff;border-color:transparent}
+.step[data-active="1"] .sdot{display:none}
+.step.pivot{border:1px dashed var(--accent);background:linear-gradient(180deg,#fffdfb,var(--accent-soft))}
+.step.pivot .num{background:#fff;color:var(--accent);border-color:var(--accent)}
+.step.pivot[data-active="1"] .num{background:var(--accent);color:#fff}
+
+/* center workstation/output */
+.center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 4px 60px 0}
+.center-inner{max-width:none}
+.ws-header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 78%,rgba(245,246,248,0));padding-top:6px;margin-bottom:14px}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:8px}
+.eyebrow .mode-chip{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.04em;background:var(--ink);color:#fff}
+.eyebrow .mode-chip.output{background:var(--blue)} .eyebrow .mode-chip.work{background:var(--accent)} .eyebrow .mode-chip.setup{background:var(--ink-3)}
+.strand-chip{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.strand-chip.quan{background:var(--quan-soft);color:var(--quan-ink)}
+.strand-chip.qual{background:var(--qual-soft);color:var(--qual-ink)}
+.strand-chip.both{background:var(--mm-soft);color:var(--mm-ink)}
+.title{font-size:27px;font-weight:800;letter-spacing:-.025em;margin-bottom:5px}
+.lede{font-size:15px;color:var(--ink-2);max-width:640px;margin-bottom:0;line-height:1.5}
+.context-strip{display:flex;align-items:center;gap:10px;padding:9px 15px;background:var(--panel);border:1px solid var(--line);border-radius:999px;font-size:12.5px;color:var(--ink-2);margin-bottom:14px;width:fit-content}
+.context-strip .dot{width:8px;height:8px;border-radius:50%;background:var(--mm)}
+.context-strip b{color:var(--ink);font-weight:700}
+.answer{display:flex;gap:11px;align-items:flex-start;padding:12px 15px;border-radius:13px;background:var(--accent-soft);border:1px solid rgba(232,93,58,.2);margin-bottom:16px}
+.answer .a-ico{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px}
+.answer .a-text{font-size:14px;line-height:1.55;color:var(--accent-ink)}
+.answer .a-text b{color:var(--accent-ink)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.panel-h{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line-2)}
+.panel-h h3{font-size:15.5px}
+.panel-h .ph-sub{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.panel-b{padding:20px}
+/* output mode = result surface */
+.output-surface{border:1px solid var(--line);border-radius:13px;background:linear-gradient(180deg,#fbfcfe,#f7f9fc);padding:26px;text-align:center;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.output-surface .big{font-size:34px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:4px}
+/* workstation mode = doing surface */
+.work-surface{border:1.5px dashed var(--line);border-radius:13px;background:var(--bg);padding:26px;color:var(--ink-2);font-size:13.5px;line-height:1.6}
+.ws-tool-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ws-tool-head h4{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.ws-tool-head .ws-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.ws-tool-head .ws-dot.quan{background:var(--quan)} .ws-tool-head .ws-dot.qual{background:var(--qual)} .ws-tool-head .ws-dot.both{background:var(--mm)}
+.ws-tool-head .ws-tag{margin-left:auto;font-size:11px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.ws-config{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.ws-row{display:flex;gap:14px;padding:12px 16px;border-bottom:1px solid var(--line-2)}
+.ws-row:last-child{border-bottom:none}
+.ws-k{width:120px;font-size:11.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);flex:none}
+.ws-v{font-size:13.5px;color:var(--ink);font-weight:600}
+.btn{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);font-weight:700;font-size:13.5px;padding:10px 16px;border-radius:11px;transition:.12s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{background:var(--bg);color:var(--ink)}
+.btn.primary{background:var(--btn);border-color:var(--btn);color:#fff}
+.btn.primary:hover{background:var(--btn-hover);border-color:var(--btn-hover)}
+.run-actions{display:flex;gap:9px;margin-top:18px;flex-wrap:wrap}
+.footer-nav{display:flex;justify-content:space-between;align-items:center;margin-top:22px}
+
+/* contextual right palette */
+/* palette = a floating, separated card; not glued to the page edge, sticky so tool-switching needs no scrolling */
+.palette{flex:none;width:var(--palette);align-self:flex-start;margin:30px 0 18px;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;overflow-y:auto;max-height:calc(100vh - 58px - 60px);padding:16px 16px}
+.palette-h{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px}
+.palette-intro{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:16px}
+.pal-group{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin:14px 0 8px}
+.pal-item{display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid var(--line);border-radius:11px;font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:7px;transition:.12s;cursor:pointer}
+.pal-item:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.pal-item.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.pal-item .pdot{width:7px;height:7px;border-radius:50%;flex:none}
+.pal-item.quan .pdot{background:var(--quan)} .pal-item.qual .pdot{background:var(--qual)} .pal-item.both .pdot{background:var(--mm)}
+.pal-empty{font-size:12.5px;color:var(--ink-3);line-height:1.5;border:1.5px dashed var(--line);border-radius:11px;padding:16px;background:var(--bg)}
+
+/* ---------- companion: explain · notes · intelligence ---------- */
+.companion{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden;position:relative}
+.comp-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-2)}
+.comp-head .ch-ico{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-size:15px;flex:none}
+.comp-head h3{font-size:14px}.comp-head .ch-sub{font-size:11px;color:var(--ink-3)}
+.comp-toggle{margin-left:auto;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);display:grid;place-items:center;flex:none}
+.comp-toggle:hover{background:var(--accent-soft);color:var(--accent-ink)}
+.comp-tabs{display:flex;gap:4px;padding:10px 14px 0}
+.comp-tab{flex:1;text-align:center;padding:8px 6px;border-radius:9px;font-size:12px;font-weight:700;color:var(--ink-3)}
+.comp-tab.active{background:var(--accent-soft);color:var(--accent-ink)}
+.comp-body{padding:16px;overflow-y:auto;flex:1}
+.comp-block{margin-bottom:16px}.comp-block:last-child{margin-bottom:0}
+.cb-k{font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:7px;color:var(--ink-3)}
+.cb-k .i{width:16px;height:16px;border-radius:5px;display:grid;place-items:center;font-size:10px;color:#fff;background:var(--accent)}
+.cb-t{font-size:13px;line-height:1.55;color:var(--ink-2)}.cb-t b{color:var(--ink);font-weight:700}
+.comp-why{background:var(--accent-soft);border:1px solid rgba(232,93,58,.2);border-radius:12px;padding:13px 14px}
+.comp-why .cb-k{color:var(--accent-ink)}.comp-why .cb-t{color:var(--accent-ink)}
+.notes-area{width:100%;min-height:200px;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:inherit;font-size:13px;resize:vertical;color:var(--ink)}
+.notes-area:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.ai-prompt{border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--ink-3);background:var(--bg);margin-bottom:12px}
+.ai-suggest{display:flex;flex-direction:column;gap:8px}
+.ai-chip{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:600;color:var(--ink);transition:.12s}
+.ai-chip:hover{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
+.ai-answer{border:1px solid rgba(232,93,58,.22);background:var(--accent-soft);border-radius:12px;padding:13px 14px;font-size:13px;line-height:1.55;color:var(--accent-ink);margin-top:12px}
+.comp-collapsed-tab{display:none}
+.ctab-vert{writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-ink)}
+body.companion-collapsed .comp-body,body.companion-collapsed .comp-tabs,body.companion-collapsed .comp-head h3,body.companion-collapsed .comp-head .ch-meta{display:none}
+body.companion-collapsed .comp-head{justify-content:center;padding:14px 6px}
+body.companion-collapsed .comp-toggle{margin-left:0}
+body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:18px;cursor:pointer}
+
+/* modal */
+.modal-scrim{display:none;position:fixed;inset:0;background:rgba(20,28,45,.34);z-index:80;align-items:center;justify-content:center;padding:20px}
+.modal-scrim.open{display:flex}
+.modal{background:var(--panel);border-radius:18px;box-shadow:0 14px 40px rgba(20,28,45,.18);width:540px;max-width:100%;max-height:88vh;overflow-y:auto}
+.modal-h{padding:18px 22px;border-bottom:1px solid var(--line-2);display:flex;align-items:center}
+.modal-h h3{font-size:16px}
+.modal-h .mx{margin-left:auto;background:none;border:none;color:var(--ink-3);font-size:18px}
+.modal-b{padding:20px 22px}
+.q-card{border:1px solid var(--line);border-radius:13px;padding:16px;margin-bottom:12px;transition:.12s}
+.q-card:hover{border-color:var(--accent);background:var(--accent-soft)}
+.q-card h4{font-size:14px;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+.q-card p{font-size:12.5px;color:var(--ink-2);margin:0;line-height:1.5}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:90;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:1280px){.body{grid-template-columns:var(--rail) minmax(0,1fr)} .companion{display:none}}
+@media(max-width:1040px){.palette{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Mixed Methods Studio">
+      <img src="/MM-Studio-long.png" alt="Mixed Methods Studio">
+    </a>
+    <div class="design-switch" id="designSwitch"></div>
+    <div class="topbar-right">
+      <button class="help-btn" onclick="openHelp()">✦ Help me choose</button>
+      <div class="ctx"><span class="dot"></span>Belonging Study</div>
+      <div class="avatar">DO</div>
+    </div>
+  </header>
+
+  <div class="body">
+    <nav class="rail">
+      <div class="rail-h">Analysis Pipeline</div>
+      <div class="design-pick" id="designPick">
+        <button class="design-pick-btn" onclick="toggleDesignMenu(event)"><span class="dp-name" id="designName"></span><span class="dp-caret">▾</span></button>
+        <div class="design-menu" id="designMenu"></div>
+      </div>
+      <div class="design-flow" id="designFlow"></div>
+      <div id="railSteps"></div>
+    </nav>
+
+    <div class="stage">
+      <main class="center"><div class="center-inner" id="centerInner"></div></main>
+      <aside class="palette" id="palette"></aside>
+    </div>
+
+    <aside class="companion" id="companion">
+      <div class="comp-collapsed-tab" onclick="toggleCompanion()"><span style="font-size:16px">✦</span><span class="ctab-vert">Coach</span></div>
+      <div class="comp-head">
+        <div class="ch-ico">✦</div>
+        <div class="ch-meta"><h3>ReliCheck Coach</h3><div class="ch-sub">Explain · Notes · Intelligence</div></div>
+        <button class="comp-toggle" onclick="toggleCompanion()" title="Collapse">⟩</button>
+      </div>
+      <div class="comp-tabs" id="compTabs"></div>
+      <div class="comp-body" id="compBody"></div>
+    </aside>
+  </div>
+
+  <footer class="studio-dock" role="contentinfo">
+    <a class="studio-dock-logo" href="#" aria-label="ReliCheck home"><img src="/logo-brand.svg" alt="ReliCheck"></a>
+    <div class="studio-dock-inner">
+      <span class="lbl">Data</span>
+      <button class="as-intake-btn" type="button" onclick="dockIntake('siri')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>Open from SIRI responses</button>
+      <button class="as-intake-btn" type="button" onclick="dockIntake('upload')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload data</button>
+      <button class="as-intake-btn" type="button" onclick="dockIntake('saved')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Open saved project</button>
+      <span class="dk-sep"></span>
+      <a class="dk-rssi" href="#" title="Reliability is referenced read-only from a saved RSSI run"><span class="dot"></span>Reliability · RSSI <small>reference</small></a>
+    </div>
+  </footer>
+</div>
+
+<div class="modal-scrim" id="modalScrim"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   Each design = an ORDERED, NUMBERED pipeline. A step carries:
+   - strand: quan | qual | both | neutral  (colors + balance)
+   - mode:   setup | work | output         (what the center shows)
+   - pivot:  true for the integration handoff step
+   - palette: the contextual right-panel for that step
+   Same steps reused across designs; only order + leading
+   strand change. The methodology decides which strand leads.
+   ========================================================= */
+const SETUP = [
+  {id:"start",   n:1, label:"Start",            strand:"neutral", mode:"setup",
+    title:"Start", lede:"Name the project and confirm both kinds of evidence are in play.", done:true,
+    palette:{intro:"Nothing to pick yet. Confirm your project below.", groups:[]}},
+  {id:"setup",   label:"Study Setup",           strand:"neutral", mode:"setup",
+    title:"Study Setup", lede:"State the purpose and the research question both strands will answer.", done:true,
+    palette:{intro:"Fields for this step appear in the center panel.", groups:[]}},
+  {id:"datamap", label:"Data Map",              strand:"neutral", mode:"setup",
+    title:"Data Map", lede:"Inventory every source and confirm the strands sample the same people.", done:true,
+    palette:{intro:"Linked sources:", groups:[{name:"Sources",items:[
+      {name:"Belonging survey",strand:"quan"},{name:"Student interviews",strand:"qual"}]}]}}
+];
+const CONCLUDE = [
+  {id:"interp",  label:"Interpretation",        strand:"neutral", mode:"output",
+    title:"Interpretation", lede:"Interpret what the integrated evidence means for the original decision.",
+    palette:{intro:"Interpretation views:", groups:[{name:"Lenses",items:[
+      {name:"For the decision",strand:"both"},{name:"For the field",strand:"both"}]}]}},
+  {id:"report",  label:"Report",                strand:"neutral", mode:"work",
+    title:"Report Builder", lede:"Assemble findings, limitations, and quotes into the mixed methods report.",
+    palette:{intro:"Report sections:", groups:[{name:"Sections",items:[
+      {name:"Findings",strand:"both"},{name:"Limitations",strand:"neutral"},{name:"Quotes",strand:"qual"}]}]}}
+];
+/* step library (the middle, design-specific part) */
+const L = {
+  quan_desc:{label:"Quantitative · Describe", strand:"quan", mode:"output",
+    title:"Quantitative Analysis", lede:"Describe what the numbers show before testing anything.",
+    answer:"First-gen students score <b>11.6 points lower</b> on belonging than continuing students.",
+    output:{big:"61.2 vs 72.8", cap:"Mean belonging · first-gen vs continuing students (0–100 scale)"},
+    palette:{intro:"Pick a descriptive view:", groups:[{name:"Descriptives",items:[
+      {name:"Frequencies",strand:"quan"},{name:"Means & Distributions",strand:"quan"},
+      {name:"Cross-Tabs",strand:"quan"},{name:"Group Summaries",strand:"quan"}]}]}},
+  quan_inf:{label:"Quantitative · Test", strand:"quan", mode:"output",
+    title:"Inferential Tests", lede:"Test the patterns your other strand will need to interpret.",
+    answer:"The first-gen gap is statistically reliable, <b>d = 0.62, p &lt; .01</b>.",
+    output:{big:"d = 0.62", cap:"Effect size · first-gen belonging gap · p < .01"},
+    palette:{intro:"Choose a test (ReliCheck suggests one):", groups:[{name:"Recommended",items:[
+      {name:"Independent T-Test ✦",strand:"quan"}]},{name:"All tests",items:[
+      {name:"ANOVA",strand:"quan"},{name:"Correlation",strand:"quan"},
+      {name:"Regression",strand:"quan"},{name:"Effect Sizes",strand:"quan"}]}]}},
+  quan_instr:{label:"Instrument Quality", strand:"quan", mode:"output",
+    title:"Instrument Quality", lede:"Confirm the measure is trustworthy. Reliability is referenced read-only from a saved RSSI run.",
+    answer:"Scale reliability is referenced from RSSI; no reliability is recomputed here.",
+    output:{big:"α = .88", cap:"Belonging scale · referenced from saved RSSI run"},
+    palette:{intro:"Instrument references:", groups:[{name:"From RSSI",items:[
+      {name:"Reliability (read-only)",strand:"quan"},{name:"Scale composition",strand:"quan"}]}]}},
+  quan_build:{label:"Build & Test Measures", strand:"quan", mode:"work",
+    title:"Build & Test Measures", lede:"Run the measures you derived from the themes and test them on the sample.",
+    answer:"The theme-derived belonging items hold together, <b>α = .84</b>, and replicate the gap.",
+    palette:{intro:"Test the new measures:", groups:[{name:"Build",items:[
+      {name:"Item performance",strand:"quan"},{name:"Scale reliability",strand:"quan"}]},{name:"Confirm",items:[
+      {name:"T-Test",strand:"quan"},{name:"Effect Sizes",strand:"quan"}]}]}},
+  qual_themes:{label:"Qualitative · Themes", strand:"qual", mode:"work",
+    title:"Themes & Codes", lede:"Build and review the themes that carry the meaning behind the responses.",
+    answer:"Three themes recur; <b>Invisible rules</b> is the strongest, with even coverage across groups.",
+    palette:{intro:"Open a theme to code it:", groups:[{name:"Themes",items:[
+      {name:"Invisible rules",strand:"qual"},{name:"One trusted adult",strand:"qual"},
+      {name:"Nowhere to land",strand:"qual"}]},{name:"Build",items:[
+      {name:"+ New theme",strand:"qual"},{name:"Codebook",strand:"qual"}]}]}},
+  qual_trust:{label:"Trustworthiness", strand:"qual", mode:"work",
+    title:"Trustworthiness", lede:"Document the credibility of the qualitative work, the qualitative parallel to instrument quality.",
+    answer:"Trustworthiness is the qualitative credibility check, set <b>equal</b> to the quantitative one.",
+    palette:{intro:"Credibility checks:", groups:[{name:"Rigor",items:[
+      {name:"Audit trail",strand:"qual"},{name:"Member checking",strand:"qual"},
+      {name:"Coding agreement (κ)",strand:"qual"}]}]}},
+  qual_followup:{label:"Qualitative Follow-up", strand:"qual", mode:"work",
+    title:"Qualitative Follow-up", lede:"Interview to explain the results you selected at the pivot.",
+    answer:"Interviews explain the gap: first-gen students describe not knowing unwritten norms.",
+    palette:{intro:"Explain the selected results:", groups:[{name:"Follow-up",items:[
+      {name:"Themes from interviews",strand:"qual"},{name:"Theme by group",strand:"qual"},
+      {name:"Exemplar quotes",strand:"qual"}]}]}},
+  qual_book:{label:"Codebook & Co-occurrence", strand:"qual", mode:"work",
+    title:"Codebook & Co-occurrence", lede:"Define the codes, then see which themes appear together, the signal for later structure.",
+    palette:{intro:"Structure the codes:", groups:[{name:"Codebook",items:[
+      {name:"Code list",strand:"qual"},{name:"Coding rules",strand:"qual"},
+      {name:"Co-occurrence matrix",strand:"qual"}]}]}},
+  joint:{label:"Joint Displays", strand:"both", mode:"work",
+    title:"Joint Displays", lede:"Lay each research question's two strands side by side in one display.",
+    answer:"This is where the study becomes genuinely mixed: each row pairs a result with a theme.",
+    palette:{intro:"Arrange the display:", groups:[{name:"Layout",items:[
+      {name:"By research question",strand:"both"},{name:"By participant group",strand:"both"}]}]}},
+  converge:{label:"Convergence & Divergence", strand:"both", mode:"output",
+    title:"Convergence & Divergence", lede:"Name where the strands agree, expand on each other, or contradict.",
+    answer:"The strands <b>agree</b> on advising support and <b>diverge</b> on commuter belonging.",
+    output:{big:"2 agree · 1 diverges", cap:"Across three research questions"},
+    palette:{intro:"Inspect the alignment:", groups:[{name:"Patterns",items:[
+      {name:"Points of agreement",strand:"both"},{name:"Points of divergence",strand:"both"},
+      {name:"Overclaim flags",strand:"both"}]}]}}
+};
+/* pivots (a numbered step, dashed) */
+const P = {
+  merge:{id:"merge", label:"Merge & Compare", strand:"both", mode:"work", pivot:true,
+    title:"Merge & Compare", lede:"In a convergent design the two strands meet here as equals. Build both fully, then bring them together to compare.",
+    answer:"Both strands are complete and weighted equally; map what each one says about the same question.",
+    palette:{intro:"Carry across from both strands:", groups:[{name:"Quantitative",items:[
+      {name:"Group differences",strand:"quan"}]},{name:"Qualitative",items:[
+      {name:"Themes & coverage",strand:"qual"}]}]}},
+  explain:{id:"explain", label:"Select Results to Explain", strand:"both", mode:"work", pivot:true,
+    title:"Which results need explaining?", lede:"Pick the quantitative findings that most need a human explanation. Those choices shape who you interview and what you ask.",
+    answer:"Select the findings to carry into the qualitative phase; they become your interview focus.",
+    palette:{intro:"Carry into the qual phase:", groups:[{name:"Findings to explain",items:[
+      {name:"First-gen gap (d = .62)",strand:"quan"},{name:"Advising link (r = .34)",strand:"quan"}]}]}},
+  q2q:{id:"q2q", label:"Qual → Quant", strand:"both", mode:"work", pivot:true,
+    title:"Qual → Quant", lede:"Turn the themes you built into measurable variables or an instrument, so the quantitative phase can test them.",
+    answer:"Convert themes into draft items; the quantitative phase then tests whether they hold.",
+    palette:{intro:"Build measures from themes:", groups:[{name:"From themes",items:[
+      {name:"Invisible rules → items",strand:"qual"},{name:"Trusted adult → items",strand:"qual"}]},{name:"Into measures",items:[
+      {name:"Draft scale",strand:"quan"}]}]}}
+};
+
+const DESIGNS = {
+  convergent:{
+    short:"Convergent Parallel", lead:"both", leadLabel:"Equal",
+    blurb:"Quantitative and qualitative evidence are gathered and analyzed at the same time, then merged to compare. Neither strand leads.",
+    flow:[["quan","QUAN"],["qual","QUAL"],["both","Merge"]],
+    why:"You chose <b>Convergent Parallel</b>: both strands carry equal weight and run side by side. Build each one fully, then merge them to see where they agree.",
+    mid:[ "quan_instr","quan_desc","quan_inf", "qual_trust","qual_themes", P.merge, "joint","converge" ]
+  },
+  explanatory:{
+    short:"Explanatory Sequential", lead:"quan", leadLabel:"QUAN first",
+    blurb:"Quantitative results come first, then qualitative work explains those numbers. Quantitative leads by design, not by default.",
+    flow:[["quan","QUAN"],["both","explain"],["qual","QUAL"]],
+    why:"You chose <b>Explanatory Sequential</b>: the numbers come first, then interviews explain them. Use the pivot to mark which results you most need to understand.",
+    mid:[ "quan_instr","quan_desc","quan_inf", P.explain, "qual_followup", "joint" ]
+  },
+  exploratory:{
+    short:"Exploratory Sequential", lead:"qual", leadLabel:"QUAL first",
+    blurb:"Qualitative work comes first to surface what matters, then a quantitative phase tests it. Qualitative leads — the case today's build cannot express.",
+    flow:[["qual","QUAL"],["both","build"],["quan","QUAN"]],
+    why:"You chose <b>Exploratory Sequential</b>: themes come first and shape what you later measure. Use the <b>Qual → Quant</b> pivot to turn themes into measures.",
+    mid:[ "qual_trust","qual_themes","qual_book", P.q2q, "quan_build","quan_desc", "joint","converge" ]
+  }
+};
+
+/* build the numbered, ordered step list for the active design */
+function buildSteps(){
+  const d=DESIGNS[state.design];
+  const mid=d.mid.map(x=>typeof x==="string"?{...L[x],id:x}:x);
+  const all=[...SETUP, ...mid, ...CONCLUDE];
+  return all.map((s,i)=>({...s, n:i+1, done: i<state.completedThrough}));
+}
+
+/* tool-specific workstations: selecting a palette item loads one of these
+   into the center. config = what you set up; result = what running produces. */
+const TOOLS = {
+  "ANOVA":{kind:"test", config:[["Outcome","Belonging score (0–100)"],["Factor","Student group · 4 levels"]],
+    result:{stat:"F(3, 408) = 7.41", p:"p < .001", note:"Groups differ on belonging; η² = .052 (medium)."}},
+  "Independent T-Test ✦":{kind:"test", config:[["Outcome","Belonging score (0–100)"],["Groups","First-gen vs continuing"]],
+    result:{stat:"t(410) = 3.18", p:"p = .002", note:"First-gen mean 61.2 vs 72.8; d = 0.62."}},
+  "T-Test":{kind:"test", config:[["Outcome","Belonging score (0–100)"],["Groups","Commuter vs residential"]],
+    result:{stat:"t(410) = 0.71", p:"p = .48 (n.s.)", note:"No measured difference; do not over-interpret."}},
+  "Correlation":{kind:"test", config:[["Variable A","Advising contact (hrs/term)"],["Variable B","Belonging score"]],
+    result:{stat:"r = .34", p:"p < .05", note:"More advising contact relates to higher belonging."}},
+  "Regression":{kind:"test", config:[["Outcome","Belonging score"],["Predictors","First-gen, advising, commuter"]],
+    result:{stat:"R² = .21", p:"F(3,408) = 12.0, p < .001", note:"First-gen status is the strongest predictor."}},
+  "Effect Sizes":{kind:"test", config:[["Comparison","First-gen vs continuing"]],
+    result:{stat:"d = 0.62", p:"95% CI [0.24, 1.00]", note:"Medium effect; the gap is practically meaningful."}},
+  "Frequencies":{kind:"table", config:[["Variable","Year in school"]],
+    result:{stat:"4 categories", p:"n = 412", note:"Year 1 = 38% · Year 2 = 29% · Year 3 = 19% · Year 4 = 14%."}},
+  "Means & Distributions":{kind:"table", config:[["Variable","Belonging score (0–100)"]],
+    result:{stat:"M = 67.4", p:"SD = 14.2", note:"Roughly normal; slight left skew at the low end."}},
+  "Cross-Tabs":{kind:"table", config:[["Rows","First-gen status"],["Columns","Retention (Y/N)"]],
+    result:{stat:"χ²(1) = 6.9", p:"p = .009", note:"First-gen students leave at a higher rate."}},
+  "Group Summaries":{kind:"table", config:[["Group by","Student group"],["Summarize","Belonging score"]],
+    result:{stat:"4 groups", p:"means 61–73", note:"First-gen lowest; continuing residential highest."}},
+  "Item performance":{kind:"table", config:[["Scale","Belonging (theme-derived)"]],
+    result:{stat:"6 items", p:"all loadings > .45", note:"No weak items; the draft scale holds together."}},
+  "Scale reliability":{kind:"test", config:[["Scale","Belonging (theme-derived)"]],
+    result:{stat:"α = .84", p:"6 items", note:"Internally consistent; ready to use as a measure."}},
+  /* qualitative coding stations */
+  "Invisible rules":{kind:"code", config:[["Theme","Invisible rules"],["Sources","18 quotes · even coverage"]],
+    result:{stat:"18 coded", p:"even across groups", note:'"Everyone else seemed to already know the rules I was never told." — First-gen, Y1'}},
+  "One trusted adult":{kind:"code", config:[["Theme","One trusted adult"],["Sources","14 quotes · even coverage"]],
+    result:{stat:"14 coded", p:"even across groups", note:'"My advisor knew my name. That is the only reason I did not leave." — Transfer, Y2'}},
+  "Nowhere to land":{kind:"code", config:[["Theme","Nowhere to land"],["Sources","9 quotes · commuter only"]],
+    result:{stat:"9 coded", p:"single-group coverage", note:'Concentrated in commuter students — flagged, do not generalize.'}}
+};
+function toolsOf(step){ return (step.palette&&step.palette.groups||[]).flatMap(g=>g.items); }
+function currentTool(step){ const t=toolsOf(step); return t.find(x=>x.name===state.toolSel) || t[0] || null; }
+function toolStation(tool){
+  const def=TOOLS[tool.name];
+  const cfg = def&&def.config ? `<div class="ws-config">${def.config.map(c=>`<div class="ws-row"><span class="ws-k">${c[0]}</span><span class="ws-v">${c[1]}</span></div>`).join("")}</div>` :
+    `<div class="ws-config"><div class="ws-row"><span class="ws-k">Configure</span><span class="ws-v">Set the inputs for ${tool.name}</span></div></div>`;
+  const runLabel = def&&def.kind==="code" ? "▷ Code" : "▷ Run";
+  const res = def&&def.result ? `<div class="output-surface" style="margin-top:16px"><div class="big">${def.result.stat}</div><div style="font-weight:700;color:var(--ink-2);margin-bottom:6px">${def.result.p}</div><div>${def.result.note}</div></div>` : "";
+  return `<div class="ws-tool-head"><span class="ws-dot ${tool.strand}"></span><h4>${tool.name}</h4><span class="ws-tag">selected from palette →</span></div>
+    ${cfg}
+    <div class="run-actions"><button class="btn primary" onclick="toast('Ran ${tool.name.replace(/'/g,'')}')">${runLabel}</button><button class="btn">Configure</button><button class="btn">Save to report</button></div>
+    ${res}`;
+}
+
+/* ---------------- state ---------------- */
+const state={ design:"exploratory", stepId:null, completedThrough:3, toolSel:null, compTab:"explain", notes:{} };
+const $=s=>document.querySelector(s);
+function steps(){ return buildSteps(); }
+function activeStep(){ return steps().find(s=>s.id===state.stepId) || steps()[3] || steps()[0]; }
+function firstLeadStep(){ const s=steps(); return (s.find(x=>x.strand!=="neutral")||s[0]).id; }
+
+/* ---------------- render ---------------- */
+function renderSwitch(){
+  $("#designSwitch").innerHTML=Object.entries(DESIGNS).map(([k,d])=>
+    `<button class="ds-btn ${k===state.design?'active':''}" onclick="setDesign('${k}')">
+      <span class="lead ${d.lead}">${d.leadLabel}</span>${d.short}</button>`).join("");
+}
+function renderRail(){
+  const d=DESIGNS[state.design];
+  $("#designName").textContent=d.short;
+  $("#designMenu").innerHTML=Object.entries(DESIGNS).map(([k,o])=>
+    `<div class="dm-opt ${k===state.design?'active':''}" onclick="pickDesign('${k}')"><span class="lead ${o.lead}">${o.leadLabel}</span><span class="dm-lbl">${o.short}</span><span class="dm-check">✓</span></div>`).join("");
+  $("#designFlow").innerHTML=d.flow.map((f,i)=>
+    `${i?'<span class="flow-arrow">→</span>':''}<span class="flow-pill ${f[0]}">${f[1]}</span>`).join("");
+  const act=activeStep();
+  $("#railSteps").innerHTML=steps().map(s=>
+    `<div class="step ${s.strand} ${s.pivot?'pivot':''}" data-active="${s.id===act.id?1:0}" data-done="${s.done?1:0}" onclick="goStep('${s.id}')">
+      <span class="num">${s.done?'✓':s.n}</span>
+      <span class="lbl">${s.label}</span>
+      <span class="sdot"></span>
+    </div>`).join("");
+}
+function renderCenter(){
+  const s=activeStep();
+  const modeLabel={setup:"Setup",work:"Workstation",output:"Output"}[s.mode];
+  const chip = s.strand==='both'?'<span class="strand-chip both">MIXED</span>'
+    : s.strand==='quan'?'<span class="strand-chip quan">QUAN</span>'
+    : s.strand==='qual'?'<span class="strand-chip qual">QUAL</span>':'';
+  let surface; const tool=currentTool(s);
+  if((s.mode==="work"||s.mode==="output") && tool){
+    surface=toolStation(tool);
+  } else if(s.mode==="output" && s.output){
+    surface=`<div class="output-surface"><div class="big">${s.output.big}</div><div>${s.output.cap}</div>
+      <div class="run-actions" style="justify-content:center"><button class="btn">Configure</button><button class="btn primary">Save to report</button></div></div>`;
+  } else {
+    surface=`<div class="work-surface">The setup fields for ${s.title} render here (project name, purpose, sources). Completed steps show a green check in the pipeline.</div>`;
+  }
+  const subDetail = tool ? `${modeLabel} · ${tool.name}` : `${modeLabel} · ${s.strand==='neutral'?'shared':s.strand.toUpperCase()+' strand'}`;
+  $("#centerInner").innerHTML=`
+    <div class="ws-header">
+      <div class="eyebrow">Step ${s.n} · ${s.title} <span class="mode-chip ${s.mode}">${modeLabel}</span> ${chip}</div>
+      <h1 class="title">${s.title}</h1>
+      <p class="lede">${s.lede}</p>
+    </div>
+    <div class="context-strip"><span class="dot"></span>First-Year Belonging Study &nbsp;·&nbsp; <b>412 survey responses</b> &nbsp;·&nbsp; <b>24 interviews</b></div>
+    ${s.answer?`<div class="answer"><div class="a-ico">✦</div><div class="a-text">${s.answer}</div></div>`:''}
+    <div class="panel">
+      <div class="panel-h"><div><h3>${s.title}</h3><div class="ph-sub">${subDetail}</div></div></div>
+      <div class="panel-b">${surface}</div>
+    </div>
+    <div class="footer-nav">
+      <button class="btn" onclick="stepBy(-1)">← Back</button>
+      <button class="btn primary" onclick="stepBy(1)">Continue →</button>
+    </div>`;
+}
+function renderPalette(){
+  const s=activeStep(); const p=s.palette||{intro:"",groups:[]};
+  const headName = s.mode==="output"?"This output" : s.mode==="work"?"Tools" : "This step";
+  let html=`<div class="palette-h">${headName}</div><div class="palette-intro">${p.intro||""}</div>`;
+  if(!p.groups||!p.groups.length){ html+=`<div class="pal-empty">Nothing to select on this step. Work in the center panel.</div>`; }
+  else { const cur=currentTool(s); p.groups.forEach(g=>{
+    html+=`<div class="pal-group">${g.name}</div>`;
+    html+=g.items.map(it=>`<div class="pal-item ${it.strand} ${cur&&it.name===cur.name?'active':''}" onclick="selPal('${it.name.replace(/'/g,"\\'")}')"><span class="pdot"></span>${it.name}</div>`).join("");
+  }); }
+  $("#palette").innerHTML=html;
+}
+function renderCompanion(){
+  const d=DESIGNS[state.design]; const s=activeStep(); const tool=currentTool(s);
+  $("#compTabs").innerHTML=["explain","notes","intelligence"].map(t=>
+    `<div class="comp-tab ${state.compTab===t?'active':''}" onclick="setCompTab('${t}')">${t==="intelligence"?"Intelligence":t[0].toUpperCase()+t.slice(1)}</div>`).join("");
+  const b=$("#compBody");
+  if(state.compTab==="notes"){
+    b.innerHTML=`<div class="comp-block"><div class="cb-k"><span class="i">✎</span> Notes for this step</div>
+      <textarea class="notes-area" placeholder="Jot decisions, hunches, things to revisit on ${s.title}…" oninput="state.notes[state.stepId]=this.value">${state.notes[state.stepId]||""}</textarea></div>`;
+    return;
+  }
+  if(state.compTab==="intelligence"){
+    const here = tool?tool.name:s.title;
+    b.innerHTML=`<div class="comp-block"><div class="cb-k" style="color:var(--accent-ink)"><span class="i">✦</span> ReliCheck Intelligence</div>
+      <div class="ai-prompt">Ask about <b>${here}</b>, or pick a suggestion.</div>
+      <div class="ai-suggest">
+        <button class="ai-chip" onclick="aiAnswer(this,'plain')">Explain this result in plain language</button>
+        <button class="ai-chip" onclick="aiAnswer(this,'write')">Write an APA sentence I can paste</button>
+        <button class="ai-chip" onclick="aiAnswer(this,'next')">What should I do next?</button>
+      </div><div id="aiOut"></div></div>`;
+    return;
+  }
+  // explain (default)
+  let context;
+  if(s.pivot){ context=`<b>${s.title}.</b> ${s.lede}`; }
+  else if(s.answer){ context=s.answer; }
+  else { context=`You are on <b>${s.title}</b>, ${s.strand==='neutral'?'a shared step':'the '+s.strand.toUpperCase()+' strand'}.`; }
+  const toolLine = tool?`<div class="comp-block"><div class="cb-k"><span class="i">›</span> ${tool.name}</div><div class="cb-t">${TOOLS[tool.name]&&TOOLS[tool.name].result?TOOLS[tool.name].result.note:'Configure and run this from the workstation.'}</div></div>`:"";
+  b.innerHTML=`
+    <div class="comp-block comp-why"><div class="cb-k">✦ Why this order</div><div class="cb-t">${d.why}</div></div>
+    <div class="comp-block"><div class="cb-k"><span class="i">i</span> On this screen</div><div class="cb-t">${context}</div></div>
+    ${toolLine}
+    <div class="comp-block"><div class="cb-k"><span class="i">⚖</span> Both strands, fairly</div>
+      <div class="cb-t">Quantitative gets <b>Instrument Quality</b>; qualitative gets <b>Trustworthiness</b>. Each strand carries its own credibility check, so neither is treated as the rigorous one.</div></div>`;
+}
+function aiAnswer(el,kind){
+  const s=activeStep(); const tool=currentTool(s); const name=tool?tool.name:s.title;
+  const def=tool&&TOOLS[tool.name]; const r=def&&def.result;
+  let txt;
+  if(kind==="plain") txt = r?`${name}: ${r.note} In plain terms, the pattern is reliable enough to report.`:`${name} has not been run yet. Run it in the workstation and I will explain the result.`;
+  else if(kind==="write") txt = r?`A one-way analysis showed a significant difference, ${r.stat}, ${r.p}.`:`Run ${name} first, then I will draft a paste-ready sentence.`;
+  else txt = s.pivot?`Carry the selected items into the next phase, then build the joint display.`:`Save this to your report, then continue to the next step in the pipeline.`;
+  document.querySelector('#aiOut').innerHTML=`<div class="ai-answer">${txt}</div>`;
+}
+function setCompTab(t){ state.compTab=t; renderCompanion(); }
+function toggleCompanion(){ document.body.classList.toggle('companion-collapsed'); }
+/* align the floating tool palette with the top of the white workstation card,
+   which shifts depending on whether the answer banner is present */
+function alignPalette(){
+  const panel=document.querySelector('.center .panel'); const pal=document.querySelector('.palette'); const body=document.querySelector('.body');
+  if(!panel||!pal||!body) return;
+  pal.style.marginTop='0px';
+  const offset = panel.getBoundingClientRect().top - body.getBoundingClientRect().top;
+  pal.style.marginTop=Math.max(0,Math.round(offset))+'px';
+}
+function render(){ renderSwitch(); renderRail(); renderCenter(); renderPalette(); renderCompanion(); alignPalette(); }
+
+/* ---------------- actions ---------------- */
+function setDesign(k){ state.design=k; state.stepId=firstLeadStep(); state.toolSel=null; render(); $(".center").scrollTop=0; toast("Design → "+DESIGNS[k].short+". Pipeline rebuilt."); }
+function dockIntake(kind){const m={siri:'Open from SIRI responses',upload:'Upload data',saved:'Open saved project'};toast(m[kind]+' — opens the shared data intake.');}
+function toggleDesignMenu(e){if(e)e.stopPropagation();$("#designPick").classList.toggle('open');}
+function pickDesign(k){$("#designPick").classList.remove('open');if(k!==state.design)setDesign(k);}
+document.addEventListener('click',e=>{const p=$("#designPick");if(p&&!p.contains(e.target))p.classList.remove('open');});
+function goStep(id){ state.stepId=id; state.toolSel=null; render(); $(".center").scrollTop=0; }
+function stepBy(dir){ const s=steps(); const i=s.findIndex(x=>x.id===activeStep().id); const ni=Math.max(0,Math.min(s.length-1,i+dir)); state.stepId=s[ni].id; state.toolSel=null; if(dir>0&&ni+1>state.completedThrough) state.completedThrough=ni; render(); $(".center").scrollTop=0; }
+function selPal(name){ state.toolSel=name; renderCenter(); renderPalette(); renderCompanion(); $(".center").scrollTop=0; alignPalette(); toast("Loaded: "+name); }
+window.addEventListener('resize',()=>{ $(".center").scrollTop=0; alignPalette(); });
+
+function openHelp(){
+  $("#modal").innerHTML=`
+    <div class="modal-h"><h3>Help me choose a design</h3><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="modal-b">
+      <p class="lede" style="font-size:14px;margin-bottom:16px">Pick the statement that best fits your study. You can change it any time from the buttons up top.</p>
+      <div class="q-card" onclick="chooseHelp('convergent')"><h4><span class="strand-chip both">EQUAL</span> Compare numbers and stories side by side</h4>
+        <p>I have both kinds of data and want to gather them at once, then see where they agree.</p></div>
+      <div class="q-card" onclick="chooseHelp('explanatory')"><h4><span class="strand-chip quan">QUAN FIRST</span> Explain my survey results with interviews</h4>
+        <p>I have numbers already and want qualitative work to explain why they came out that way.</p></div>
+      <div class="q-card" onclick="chooseHelp('exploratory')"><h4><span class="strand-chip qual">QUAL FIRST</span> Let interviews shape what I measure</h4>
+        <p>I want to explore first with interviews, then build a measure and test it.</p></div>
+    </div>`;
+  $("#modalScrim").classList.add('open');
+}
+function chooseHelp(k){ closeModal(); setDesign(k); }
+function closeModal(){ $("#modalScrim").classList.remove('open'); }
+$("#modalScrim").addEventListener('click',e=>{ if(e.target.id==='modalScrim') closeModal(); });
+
+let tT; function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>t.classList.remove('show'),1800); }
+
+/* boot */
+state.stepId=firstLeadStep();
+render();
+</script>
+</body>
+</html>

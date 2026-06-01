@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReliCheck — Marketing Direction (not live)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,500;1,9..144,600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:       #0b1733;
+  --navy-mid:   #1c2745;
+  --navy-soft:  #2d3a5c;
+  --ink-6:      #4a5578;
+  --ink-5:      #6b7691;
+  --ink-4:      #8d97b1;
+  --line:       #e6eaf2;
+
+  --brand:      #e85d3a;
+  --brand-deep: #c2451f;
+
+  --gold:       #d4a04a;
+
+  --teal:       #0f9e7b;
+  --teal-bright:#1cb89a;
+
+  --bg:         #ffffff;
+  --bg-soft:    #f7f5f1;   /* barely-there warm white */
+
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+  --ease:  cubic-bezier(.22,.61,.36,1);
+  --r-pill: 999px;
+  --r-xl:   20px;
+  --r-lg:   14px;
+}
+
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--navy);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── banner ── */
+.mockup-banner {
+  background: var(--navy);
+  color: rgba(255,255,255,.4);
+  font-size: 11.5px; letter-spacing:.04em;
+  text-align:center; padding:8px 20px;
+}
+.mockup-banner b { color: var(--brand); }
+
+/* ════════════════════════════════
+   NAV
+════════════════════════════════ */
+nav {
+  position: sticky; top:0; z-index:50;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid rgba(230,234,242,.7);
+}
+.nav-inner {
+  max-width: 1320px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 clamp(20px,4vw,48px);
+  height: 58px;
+}
+
+/* Wordmark — tighter, more confident */
+.wordmark {
+  display: flex; align-items: center; gap: 9px;
+  text-decoration: none;
+}
+.wm-icon {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+}
+.wm-name {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 19px;
+  color: var(--navy); letter-spacing: -.01em;
+}
+
+/* Nav links */
+.nav-links {
+  display: flex; align-items: center;
+  gap: 2px; list-style: none;
+}
+.nav-links a {
+  display: flex; align-items: center; gap: 3px;
+  padding: 7px 13px; border-radius: 8px;
+  font-size: 13.5px; font-weight: 500;
+  color: var(--ink-6); text-decoration: none;
+  transition: color .15s, background .15s;
+}
+.nav-links a:hover { color: var(--navy); background: var(--bg-soft); }
+.caret {
+  width: 10px; height: 10px; opacity: .45;
+  transition: transform .2s;
+}
+
+.nav-actions {
+  display: flex; align-items: center; gap: 10px;
+}
+.btn {
+  font-family: var(--sans); cursor: pointer; border: none;
+  font-size: 14px; font-weight: 600; border-radius: var(--r-pill);
+  padding: 10px 22px; transition: all .22s var(--ease);
+  text-decoration: none; display: inline-flex; align-items: center;
+}
+.btn-ghost {
+  background: transparent; color: var(--navy);
+  border: 1px solid transparent;
+}
+.btn-ghost:hover { background: var(--bg-soft); }
+.btn-brand {
+  background: var(--brand); color: #fff;
+  box-shadow: 0 2px 10px rgba(232,93,58,.3);
+}
+.btn-brand:hover {
+  background: var(--brand-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px -6px rgba(232,93,58,.55);
+}
+
+/* ════════════════════════════════
+   HERO
+════════════════════════════════ */
+.hero {
+  max-width: 1320px; margin: 0 auto;
+  padding: clamp(56px,8vw,112px) clamp(20px,4vw,48px) clamp(48px,6vw,80px);
+  display: grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap: clamp(40px,5vw,80px);
+  align-items: center;
+}
+@media(max-width:960px){ .hero{ grid-template-columns:1fr; } }
+
+/* Left: copy */
+.hero-copy {}
+
+.eyebrow {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--brand);
+  margin-bottom: 24px;
+}
+.eyebrow-pip {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brand);
+  animation: pip 2.4s ease-in-out infinite;
+}
+@keyframes pip {
+  0%,100%{ box-shadow: 0 0 0 0 rgba(232,93,58,.5) }
+  50%    { box-shadow: 0 0 0 6px rgba(232,93,58,0) }
+}
+
+/* Headline — Fraunces 600 not 700-black.
+   "Reli" stays terracotta italic for the wordplay. */
+h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(2.6rem, 1.5rem + 4.2vw, 4.5rem);
+  line-height: 1.0;
+  letter-spacing: -.025em;
+  color: var(--navy);
+  margin-bottom: 26px;
+}
+h1 .reli {
+  color: var(--brand);
+  font-style: italic;
+  font-weight: 500;
+}
+/* Subtle gold underline on "Answers" — editorial emphasis */
+h1 .underline {
+  position: relative; white-space: nowrap;
+}
+h1 .underline::after {
+  content: "";
+  position: absolute; left: 0; right: 0;
+  bottom: .07em; height: .42em;
+  background: linear-gradient(transparent 55%, rgba(212,160,74,.38) 55%);
+  z-index: -1;
+}
+
+.hero-lede {
+  font-size: clamp(1rem,.94rem+.3vw,1.2rem);
+  color: var(--ink-6);
+  line-height: 1.65;
+  max-width: 42ch;
+  margin-bottom: 36px;
+}
+
+.cta-row {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  align-items: center; margin-bottom: 44px;
+}
+.btn-lg { padding: 15px 30px; font-size: 15px; }
+
+.trust-row {
+  display: flex; gap: 22px; flex-wrap: wrap;
+}
+.trust-item {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 13px; color: var(--ink-5);
+}
+.trust-item svg { flex-shrink: 0; }
+
+/* ════════════════════════════════
+   PRODUCT VISUAL — right side
+   The REAL product, not a stock photo.
+   Dark navy card mirrors the app.
+════════════════════════════════ */
+.hero-visual {
+  position: relative;
+}
+
+/* Warm glow behind the card */
+.hero-visual::before {
+  content: "";
+  position: absolute;
+  inset: -40px -40px -40px -40px;
+  background: radial-gradient(ellipse 70% 60% at 60% 50%,
+    rgba(232,93,58,.1) 0%,
+    rgba(212,160,74,.06) 40%,
+    transparent 70%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.product-card {
+  position: relative; z-index: 1;
+  background: var(--navy);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.08),
+    0 4px 6px rgba(11,23,51,.08),
+    0 40px 80px -20px rgba(11,23,51,.5);
+  /* subtle tilt for dimension */
+  transform: perspective(1200px) rotateY(-3deg) rotateX(1.5deg);
+  transition: transform .6s var(--ease);
+}
+.product-card:hover {
+  transform: perspective(1200px) rotateY(-1deg) rotateX(.5deg);
+}
+
+/* Chrome bar */
+.pc-chrome {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(255,255,255,.05);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.pc-dots { display: flex; gap: 6px; }
+.pc-dots span {
+  width: 10px; height: 10px; border-radius: 50%;
+}
+.pc-title {
+  font-size: 11.5px; font-weight: 500; color: rgba(255,255,255,.35);
+  font-family: var(--sans);
+}
+.pc-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em;
+  padding: 3px 9px; border-radius: var(--r-pill);
+  background: rgba(15,158,123,.2); color: #1cb89a;
+  text-transform: uppercase;
+}
+
+/* Score section */
+.pc-score {
+  display: grid; grid-template-columns: auto 1fr;
+  gap: 0; align-items: stretch;
+}
+
+/* Gauge column */
+.pc-gauge-col {
+  padding: 28px 24px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  border-right: 1px solid rgba(255,255,255,.08);
+}
+.gauge-wrap { position: relative; width: 120px; height: 120px; margin-bottom: 10px; }
+.gauge-wrap svg { transform: rotate(-90deg); display: block; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.g-num {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 2.7rem;
+  color: #fff; letter-spacing: -.04em; line-height: 1;
+}
+.g-sub { font-size: 11px; color: rgba(255,255,255,.3); margin-top: 2px; }
+.g-verdict {
+  font-family: var(--serif);
+  font-style: italic; font-size: 14px;
+  color: rgba(255,255,255,.6); margin-bottom: 10px;
+}
+.g-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600;
+  color: var(--teal-bright);
+  background: rgba(28,184,154,.15);
+  padding: 5px 12px; border-radius: var(--r-pill);
+}
+.g-pip { width: 5px; height: 5px; border-radius: 50%; background: var(--teal-bright); }
+
+/* Bars column */
+.pc-bars-col {
+  padding: 24px 22px;
+}
+.pc-bars-title {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  color: rgba(255,255,255,.3); margin-bottom: 18px;
+}
+.pc-bar-list { display: flex; flex-direction: column; gap: 14px; }
+.pc-bar { display: grid; grid-template-columns: 1fr 32px; gap: 10px; align-items: center; }
+.pc-bar-name { font-size: 12px; color: rgba(255,255,255,.55); margin-bottom: 5px; }
+.pc-track {
+  height: 6px; background: rgba(255,255,255,.08);
+  border-radius: var(--r-pill); overflow: hidden;
+}
+.pc-fill {
+  height: 100%; border-radius: var(--r-pill);
+  width: 0; animation: barGrow 1.4s var(--ease) forwards;
+}
+.pc-fill.s { background: linear-gradient(90deg, var(--teal), var(--teal-bright)); }
+.pc-fill.w { background: linear-gradient(90deg, #c8902a, #e6b550); }
+@keyframes barGrow { to { width: var(--w); } }
+.pc-pct { font-family: var(--serif); font-size: 13px; font-weight: 600; color: rgba(255,255,255,.55); text-align:right; }
+.pc-pct.s { color: var(--teal-bright); }
+.pc-pct.w { color: #e6b550; }
+
+/* Flag strip */
+.pc-flag {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 18px;
+  background: rgba(255,255,255,.04);
+  border-top: 1px solid rgba(255,255,255,.07);
+  font-size: 12px;
+}
+.pc-flag-warn { color: #f0876a; display: flex; align-items: center; gap: 7px; font-weight: 500; }
+.pc-flag-link { color: rgba(255,255,255,.45); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.pc-flag-link:hover { color: rgba(255,255,255,.8); }
+
+/* Floating badge — social proof anchored to card */
+.float-badge {
+  position: absolute;
+  bottom: -18px; left: -20px; z-index: 2;
+  background: #fff;
+  border-radius: 14px;
+  padding: 13px 18px;
+  box-shadow: 0 8px 30px -8px rgba(11,23,51,.22), 0 0 0 1px var(--line);
+  display: flex; align-items: center; gap: 12px;
+  animation: floatUp 1s var(--ease) .8s both;
+}
+@keyframes floatUp { from{ opacity:0; transform:translateY(16px) } to{ opacity:1; transform:none } }
+.fb-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(15,158,123,.12);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.fb-text .fb-val {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 18px;
+  color: var(--navy); letter-spacing: -.02em; line-height: 1;
+}
+.fb-text .fb-label { font-size: 11px; color: var(--ink-5); margin-top: 2px; }
+
+/* ── entrances ── */
+[data-rise] { opacity:0; transform:translateY(20px); animation:rise .8s var(--ease) forwards; }
+@keyframes rise { to{ opacity:1; transform:none } }
+</style>
+</head>
+<body>
+
+<div class="mockup-banner">
+  <b>Marketing direction mockup</b> — not live · stock photo replaced with real product · headline refined from black → semibold
+</div>
+
+<!-- ══ NAV ══ -->
+<nav>
+  <div class="nav-inner">
+    <a class="wordmark" href="#">
+      <div class="wm-icon">
+        <svg width="30" height="22" viewBox="0 0 30 22" fill="none">
+          <path d="M2 11l4.5 9L11 7l4 8.5L19.5 4 24 15l4-6" stroke="var(--brand)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="wm-name">ReliCheck</span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#">Product <svg class="caret" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
+      <li><a href="#">Solutions <svg class="caret" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
+      <li><a href="#">Analysis <svg class="caret" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
+      <li><a href="#">ReliCheck Intelligence <svg class="caret" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
+      <li><a href="#">Resources <svg class="caret" viewBox="0 0 10 10" fill="none"><path d="M2 3.5l3 3 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></a></li>
+      <li><a href="#">Pricing</a></li>
+    </ul>
+
+    <div class="nav-actions">
+      <a class="btn btn-ghost" href="#">Sign in</a>
+      <a class="btn btn-brand" href="#">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<section class="hero">
+
+  <!-- Copy -->
+  <div class="hero-copy">
+    <div class="eyebrow" data-rise style="animation-delay:.05s">
+      <span class="eyebrow-pip"></span>
+      Survey Credibility Platform
+    </div>
+
+    <h1 data-rise style="animation-delay:.12s">
+      Can You <span class="reli">Reli</span><br>
+      on the <span class="underline">Answers</span><br>
+      to the Questions<br>
+      You Are Asking?
+    </h1>
+
+    <p class="hero-lede" data-rise style="animation-delay:.22s">
+      ReliCheck helps researchers, HR staff, leaders, educators, marketers, and business owners build stronger surveys, design defensible assessments, and turn responses into decisions they can explain, stand behind, and act on.
+    </p>
+
+    <div class="cta-row" data-rise style="animation-delay:.3s">
+      <a class="btn btn-brand btn-lg" href="#">Check my survey</a>
+      <a class="btn btn-lg" style="background:transparent;color:var(--navy);border:1.5px solid var(--line);font-weight:600;border-radius:var(--r-pill)" href="#">Build a survey</a>
+    </div>
+
+    <div class="trust-row" data-rise style="animation-delay:.38s">
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+        Auditable methodology
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+        No data required to start
+      </div>
+      <div class="trust-item">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.4"><path d="M5 13l4 4L19 7"/></svg>
+        Built by measurement specialists
+      </div>
+    </div>
+  </div>
+
+  <!-- Product visual — the REAL product, not a stock photo -->
+  <div class="hero-visual" data-rise style="animation-delay:.2s">
+    <div class="product-card">
+
+      <!-- Browser chrome -->
+      <div class="pc-chrome">
+        <div class="pc-dots">
+          <span style="background:#ff5f57"></span>
+          <span style="background:#febc2e"></span>
+          <span style="background:#28c840"></span>
+        </div>
+        <span class="pc-title">ReliCheck Strength Index · MM Studio</span>
+        <span class="pc-badge">85 / 100 · Strong</span>
+      </div>
+
+      <div class="pc-score">
+
+        <!-- Gauge -->
+        <div class="pc-gauge-col">
+          <div class="gauge-wrap">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="11"/>
+              <circle cx="60" cy="60" r="50" fill="none"
+                stroke="var(--teal)" stroke-width="11"
+                stroke-linecap="round"
+                stroke-dasharray="314.16"
+                stroke-dashoffset="314.16"
+                style="transition:stroke-dashoffset 1.5s var(--ease) .4s"
+                id="gRing"/>
+            </svg>
+            <div class="gauge-center">
+              <span class="g-num">85</span>
+              <span class="g-sub">/100</span>
+            </div>
+          </div>
+          <div class="g-verdict">Strong</div>
+          <div class="g-pill"><span class="g-pip"></span>Launch ready</div>
+        </div>
+
+        <!-- Bars -->
+        <div class="pc-bars-col">
+          <div class="pc-bars-title">Score by domain</div>
+          <div class="pc-bar-list">
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span class="pc-bar-name">Reliability</span>
+                <span class="pc-pct w">68</span>
+              </div>
+              <div class="pc-track"><div class="pc-fill w" style="--w:68%;animation-delay:.6s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span class="pc-bar-name">Validity</span>
+                <span class="pc-pct s">80</span>
+              </div>
+              <div class="pc-track"><div class="pc-fill s" style="--w:80%;animation-delay:.75s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span class="pc-bar-name">Trustworthiness</span>
+                <span class="pc-pct s">100</span>
+              </div>
+              <div class="pc-track"><div class="pc-fill s" style="--w:100%;animation-delay:.9s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span class="pc-bar-name">Construct Alignment</span>
+                <span class="pc-pct s">88</span>
+              </div>
+              <div class="pc-track"><div class="pc-fill s" style="--w:88%;animation-delay:1.05s"></div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+                <span class="pc-bar-name">Item Quality</span>
+                <span class="pc-pct w">64</span>
+              </div>
+              <div class="pc-track"><div class="pc-fill w" style="--w:64%;animation-delay:1.18s"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flag strip -->
+      <div class="pc-flag">
+        <div class="pc-flag-warn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+          2 leading questions flagged
+        </div>
+        <div class="pc-flag-link">
+          Open full report
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating trust badge — anchors the product to a real outcome -->
+    <div class="float-badge">
+      <div class="fb-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="fb-text">
+        <div class="fb-val">85/100</div>
+        <div class="fb-label">Survey strength confirmed</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+  window.addEventListener('load', () => {
+    // 85% → offset = 314.16 * (1-0.85) = 47.12
+    setTimeout(() => {
+      document.getElementById('gRing').style.strokeDashoffset = '47.12';
+    }, 100);
+  });
+</script>
+</body>
+</html>

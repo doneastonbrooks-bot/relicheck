@@ -1,0 +1,74 @@
+/* =============================================================================
+   inferential-preview.css — "Variables & Fit" panel for Inferential Studio.
+
+   A lightweight, read-only pre-analysis diagnostic layer. NOT a second
+   Descriptive Studio: it shows just enough variable context to decide which
+   test/model fits. Computes NO reliability (no alpha, item-total r, item
+   diagnostics) — that lives in RSSI.
+
+   Inherits --as-accent / --as-accent-soft from the studio shell (gold).
+   ============================================================================= */
+
+.ivf-panel { border:1px solid var(--line,#e6e9f0); border-radius:14px; background:#fff; margin:18px 0 0; overflow:hidden; }
+.ivf-head { display:flex; align-items:center; gap:12px; padding:13px 16px; background:var(--as-accent-soft,#fbf2dc); border-bottom:1px solid var(--line,#e6e9f0); cursor:pointer; }
+.ivf-head h2 { font-family:'Fraunces','Georgia',serif; font-size:16.5px; font-weight:600; margin:0; color:var(--ink-1,#1c2238); }
+.ivf-head .ivf-sub { font-size:12.5px; color:var(--ink-4,#5a657a); }
+.ivf-head .ivf-toggle { margin-left:auto; font-size:12.5px; font-weight:700; color:var(--as-accent,#c79114); background:none; border:none; cursor:pointer; }
+.ivf-body { padding:16px; }
+.ivf-panel.is-collapsed .ivf-body { display:none; }
+
+/* Fit banner */
+.ivf-fit { display:flex; align-items:flex-start; gap:10px; padding:11px 14px; border-radius:10px; font-size:13.5px; line-height:1.45; margin-bottom:16px; }
+.ivf-fit .fi { flex-shrink:0; margin-top:1px; }
+.ivf-fit.ok    { background:#e8f6ee; color:#0b5e3a; border:1px solid #bfe6cf; }
+.ivf-fit.warn  { background:#fdf3e3; color:#8a5a08; border:1px solid #f3dcb0; }
+.ivf-fit.bad   { background:#fbecea; color:#9a271b; border:1px solid #f3c8c1; }
+.ivf-fit.info  { background:#eef2f9; color:#3a4a66; border:1px solid #d6deec; }
+.ivf-fit strong { font-weight:700; }
+.ivf-fit code { background:rgba(0,0,0,0.05); padding:1px 5px; border-radius:4px; font-size:12.5px; }
+
+/* Inventory summary chips */
+.ivf-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
+.ivf-chip { font-size:12.5px; color:var(--ink-3,#424a5e); background:var(--bg-tint,#f5f7fb); border:1px solid var(--line,#e6e9f0); border-radius:999px; padding:5px 11px; }
+.ivf-chip strong { color:var(--ink-1,#1c2238); }
+
+/* Variable table */
+.ivf-table { width:100%; border-collapse:collapse; font-size:13px; }
+.ivf-table th { text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-5,#7a8499); padding:6px 10px; border-bottom:1px solid var(--line,#e6e9f0); }
+.ivf-table td { padding:8px 10px; border-bottom:1px solid #f0f2f7; vertical-align:top; }
+.ivf-table tr:last-child td { border-bottom:none; }
+.ivf-vname { font-weight:600; color:var(--ink-1,#1c2238); }
+.ivf-type { display:inline-block; font-size:11px; font-weight:700; padding:2px 7px; border-radius:6px; }
+.ivf-type.numeric { background:#e6efff; color:#1d4ed8; }
+.ivf-type.likert  { background:#ede9fe; color:#6d28d9; }
+.ivf-type.categorical { background:#e3f5ee; color:#0b6e58; }
+.ivf-type.open    { background:#f3f0e8; color:#7a6a3a; }
+.ivf-type.other   { background:#eef0f4; color:#5a657a; }
+.ivf-role { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 7px; border-radius:6px; background:var(--as-accent-soft,#fbf2dc); color:var(--as-accent,#c79114); margin-left:6px; }
+.ivf-miss-ok { color:var(--ink-4,#5a657a); }
+.ivf-miss-warn { color:#9a271b; font-weight:600; }
+.ivf-summary { color:var(--ink-4,#5a657a); font-size:12.5px; }
+.ivf-flag { display:inline-block; font-size:11px; color:#8a5a08; background:#fdf3e3; border-radius:5px; padding:1px 6px; margin-left:6px; }
+
+/* mini bars */
+.ivf-mini { display:flex; align-items:flex-end; gap:2px; height:26px; margin-top:4px; }
+.ivf-mini i { flex:1; background:var(--as-accent,#c79114); opacity:0.55; border-radius:2px 2px 0 0; min-height:2px; }
+.ivf-lvls { margin-top:4px; }
+.ivf-lvls .lv { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-4,#5a657a); margin-bottom:2px; }
+.ivf-lvls .lv b { flex-shrink:0; min-width:0; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--ink-2,#1c2238); font-weight:600; }
+.ivf-lvls .lv span { flex:1; height:7px; background:#eef0f4; border-radius:4px; overflow:hidden; }
+.ivf-lvls .lv span i { display:block; height:100%; background:var(--as-accent,#c79114); opacity:0.55; }
+.ivf-lvls .lv em { font-style:normal; color:var(--ink-5,#7a8499); }
+
+/* cross-tab preview */
+.ivf-xtab { margin-top:16px; }
+.ivf-xtab h3 { font-size:13px; font-weight:700; color:var(--ink-2,#1c2238); margin:0 0 6px; }
+.ivf-xtab table { border-collapse:collapse; font-size:12.5px; }
+.ivf-xtab th, .ivf-xtab td { border:1px solid var(--line,#e6e9f0); padding:5px 9px; text-align:center; }
+.ivf-xtab th { background:var(--bg-tint,#f5f7fb); font-weight:700; }
+
+.ivf-foot { margin-top:14px; padding-top:12px; border-top:1px solid #f0f2f7; font-size:12.5px; color:var(--ink-5,#7a8499); display:flex; gap:14px; flex-wrap:wrap; }
+.ivf-foot a { color:var(--as-accent,#c79114); font-weight:600; text-decoration:none; }
+.ivf-foot a:hover { text-decoration:underline; }
+
+.ivf-empty { padding:24px; text-align:center; color:var(--ink-4,#5a657a); font-size:14px; }

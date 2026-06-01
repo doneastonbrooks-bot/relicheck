@@ -29,6 +29,33 @@ $teaching_cards = $teaching_cards ?? [];
 </div>
 <!-- /app -->
 
+<!-- Universal sticky studio dock: ReliCheck logo bottom-left, centered content
+     (per-studio). Shared template; the analysis studios render their own dock
+     with data controls via _analysis_studio_shell.php. -->
+<style>
+  .studio-dock { position:fixed; left:0; right:0; bottom:0; z-index:60; padding:12px 22px; box-sizing:border-box;
+    background:rgba(255,255,255,0.92); -webkit-backdrop-filter:saturate(1.4) blur(12px); backdrop-filter:saturate(1.4) blur(12px);
+    border-top:1px solid var(--line,#e6e9f0); box-shadow:0 -4px 22px rgba(15,23,42,0.07); }
+  .studio-dock-logo { position:absolute; left:22px; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; }
+  .studio-dock-logo img { height:36px; width:auto; display:block; }
+  .studio-dock-inner { display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; min-height:42px;
+    font-size:13px; font-weight:600; color:var(--ink-4,#5a657a); }
+  /* The studio template is a fixed-height app shell (.app is 100vh; .main is the
+     scroller, content in .page). Clear the scroll content so nothing hides behind
+     the fixed dock. */
+  .app .main .page { padding-bottom:120px; }
+  @media (max-width:760px) { .studio-dock-logo { display:none; } }
+</style>
+<div class="studio-dock" id="studioDock" role="contentinfo">
+  <a class="studio-dock-logo" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/logo-brand.svg" alt="ReliCheck"></a>
+  <div class="studio-dock-inner"><?= htmlspecialchars($_studio['name'] ?? 'ReliCheck') ?></div>
+</div>
+<script>
+  // The dock must anchor to the viewport, but the studio template nests it inside
+  // a 100vh app-shell. Re-parent it to <body> so position:fixed is reliable.
+  (function () { var d = document.getElementById('studioDock'); if (d && d.parentNode !== document.body) document.body.appendChild(d); })();
+</script>
+
 <!-- Slide-over: triggered by [data-toggle-assist] in the topbar.
      Contains "What This Means" cards (if the page set $teaching_cards)
      plus the Ask ReliCheck input. -->

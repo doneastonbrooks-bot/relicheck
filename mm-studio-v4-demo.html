@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mixed Methods Studio · working sample — ReliCheck</title>
+<style>
+/* ============================================================
+   ReliCheck — Mixed Methods Studio v4 (WORKING SAMPLE)
+   Self-contained, interactive. Sample data drives every step.
+   No shared CSS, no engine, no DB, no routing. Separate from
+   the live MM Studio (studio-mm.php).
+   Direction: slate / indigo, research-grade, calm.
+   ============================================================ */
+:root{
+  --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#FAFBFC; --line:#E5E8EC; --line-soft:#EEF0F3;
+  --ink:#1A2230; --ink-2:#5A6473; --ink-3:#8A93A1;
+  --accent:#4458C9; --accent-deep:#33429C; --accent-soft:#EEF0FB; --accent-ring:#C9D0F2;
+  --quan:#2E6FE0; --quan-soft:#E9F0FD; --qual:#8A4FD0; --qual-soft:#F2EAFB;
+  --band-strong:#2F9E6E; --band-strong-soft:#E5F4EE;
+  --band-mod:#C98A22;    --band-mod-soft:#FBF1DF;
+  --band-dev:#6B7686;    --band-dev-soft:#EEF0F3;
+  --band-review:#C0524A; --band-review-soft:#FBEAE8;
+  --r-card:16px; --r-pill:999px; --r-sm:10px;
+  --shadow:0 1px 2px rgba(20,28,45,.04),0 6px 20px rgba(20,28,45,.05);
+  --shadow-lift:0 2px 4px rgba(20,28,45,.06),0 14px 40px rgba(20,28,45,.10);
+  --rail:222px; --coach:330px;
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Inter,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:var(--font);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
+h1,h2,h3,h4{margin:0;font-weight:600;letter-spacing:-.01em}
+button{font-family:inherit}
+.muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
+
+.app{display:grid;grid-template-rows:auto auto 1fr;height:100vh;width:100%}
+
+/* header */
+.studio-header{display:flex;align-items:center;gap:18px;padding:0 22px;height:60px;background:var(--surface);border-bottom:1px solid var(--line);z-index:30}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand-mark{width:30px;height:30px;border-radius:9px;flex:none;background:linear-gradient(140deg,var(--accent),var(--accent-deep));display:grid;place-items:center;color:#fff;font-weight:700;font-size:13px;box-shadow:0 2px 6px rgba(68,88,201,.35)}
+.brand-name{font-size:15px;font-weight:650;white-space:nowrap}
+.brand-sub{font-size:11px;color:var(--ink-3);margin-top:1px;white-space:nowrap}
+.header-divider{width:1px;height:30px;background:var(--line)}
+.hmeta{display:flex;align-items:center;gap:22px;min-width:0;overflow:hidden}
+.hmeta-item{display:flex;flex-direction:column;min-width:0}
+.hmeta-k{font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+.hmeta-v{font-size:13px;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.save-state{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-2)}
+.save-dot{width:7px;height:7px;border-radius:50%;background:var(--band-strong)}
+.evi-chip{display:inline-flex;align-items:center;gap:8px;padding:5px 11px 5px 9px;border-radius:var(--r-pill);border:1px solid transparent}
+.evi-chip .dot{width:8px;height:8px;border-radius:50%}
+.evi-chip b{font-size:12px;font-weight:650} .evi-chip span{font-size:11px}
+.evi-chip.strong{background:var(--band-strong-soft);border-color:#BFE3D2}.evi-chip.strong .dot{background:var(--band-strong)}.evi-chip.strong b{color:#1f7a53}.evi-chip.strong span{color:#3a8f6b}
+.evi-chip.moderate{background:var(--band-mod-soft);border-color:#F0DDB0}.evi-chip.moderate .dot{background:var(--band-mod)}.evi-chip.moderate b{color:#8a6418}.evi-chip.moderate span{color:#a07c33}
+.evi-chip.developing{background:var(--band-dev-soft);border-color:#Dcdfe4}.evi-chip.developing .dot{background:var(--band-dev)}.evi-chip.developing b{color:#56607a}.evi-chip.developing span{color:#6b7686}
+.evi-chip.review{background:var(--band-review-soft);border-color:#F0CFCB}.evi-chip.review .dot{background:var(--band-review)}.evi-chip.review b{color:#a83c34}.evi-chip.review span{color:#b9554c}
+
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:8px 14px;border-radius:var(--r-pill);font-size:13px;font-weight:550;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--accent-ring);background:var(--accent-soft)}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-primary:hover{background:var(--accent-deep);border-color:var(--accent-deep)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{color:#a83c34}.btn-danger:hover{background:var(--band-review-soft);border-color:#F0CFCB}
+.icon-btn{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;color:var(--ink-2)}
+.icon-btn:hover{background:var(--accent-soft);border-color:var(--accent-ring);color:var(--accent)}
+
+/* purpose banner */
+.purpose-banner{display:flex;align-items:stretch;background:linear-gradient(180deg,#FBFBFE,#F7F8FC);border-bottom:1px solid var(--line);padding:0 22px}
+.pb-tag{display:flex;align-items:center;gap:8px;padding:13px 22px 13px 0;margin-right:22px;border-right:1px solid var(--line);color:var(--accent-deep);font-weight:650;font-size:12px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.pb-cols{display:flex;gap:34px;flex-wrap:wrap;align-items:center;padding:11px 0}
+.pb-item{display:flex;flex-direction:column;min-width:0}
+.pb-k{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:1px}
+.pb-v{font-size:13px;font-weight:500;max-width:48ch;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pb-v.rq{color:var(--accent-deep);font-weight:550}
+
+.body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--coach);min-height:0;overflow:hidden;transition:grid-template-columns .22s ease}
+body.rail-collapsed{--rail:72px}
+body.coach-collapsed{--coach:48px}
+
+/* rail */
+.rail{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.rail-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+.rail-title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:650}
+body.rail-collapsed .rail-title{display:none}
+.rail-toggle{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink-2);display:grid;place-items:center;flex:none}
+.rail-toggle:hover{background:var(--accent-soft);color:var(--accent)}
+.rail-steps{list-style:none;margin:0;padding:6px 10px;overflow-y:auto;flex:1}
+.step{display:flex;align-items:center;gap:11px;padding:9px 11px;border-radius:11px;cursor:pointer;position:relative;color:var(--ink-2);transition:.13s;margin-bottom:2px}
+.step:hover{background:var(--line-soft);color:var(--ink)}
+.step.active{background:var(--accent-soft);color:var(--accent-deep)}
+.step.active::before{content:"";position:absolute;left:-10px;top:8px;bottom:8px;width:3px;border-radius:3px;background:var(--accent)}
+.step-ico{width:30px;height:30px;border-radius:9px;flex:none;display:grid;place-items:center;background:var(--surface-2);border:1px solid var(--line);font-size:14px;position:relative}
+.step.active .step-ico{background:var(--surface);border-color:var(--accent-ring)}
+.step-body{display:flex;flex-direction:column;min-width:0}
+body.rail-collapsed .step-body{display:none}
+.step-name{font-size:13px;font-weight:550;white-space:nowrap}
+.step-meta{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.state-badge{position:absolute;right:-4px;bottom:-4px;width:15px;height:15px;border-radius:50%;border:2px solid var(--surface);display:none;place-items:center;font-size:9px;color:#fff;font-weight:700}
+.step.done .state-badge{display:grid;background:var(--band-strong)}
+.step.warning .state-badge{display:grid;background:var(--band-mod)}
+.step.done .step-ico{border-color:#BFE3D2}
+.step.warning .step-ico{border-color:#F0DDB0;background:var(--band-mod-soft)}
+.rail-foot{padding:12px 14px;border-top:1px solid var(--line-soft)}
+.strength-mini-label{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:7px}
+body.rail-collapsed .strength-mini-label,body.rail-collapsed .mini-meter,body.rail-collapsed .mini-row span:last-child{display:none}
+.mini-meter{height:7px;border-radius:5px;background:var(--line-soft);overflow:hidden;margin-bottom:6px}
+.mini-meter i{display:block;height:100%;border-radius:5px}
+.mini-row{display:flex;align-items:center;gap:7px;font-size:12px}
+.mini-row .dot{width:8px;height:8px;border-radius:50%}
+
+/* canvas */
+.canvas{overflow-y:auto;min-width:0;min-height:0;padding:26px clamp(20px,3vw,40px) 60px}
+.canvas-inner{max-width:1180px;margin:0 auto}
+.module-head{margin-bottom:22px;display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap}
+.module-head .mh-text{min-width:0;flex:1}
+.module-eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:8px}
+.module-eyebrow .step-of{color:var(--ink-3);font-weight:550}
+.module-title{font-size:25px;font-weight:650;letter-spacing:-.02em;margin-bottom:7px}
+.module-sub{font-size:14.5px;color:var(--ink-2);max-width:74ch;line-height:1.55}
+.module-actions{display:flex;gap:9px;flex-wrap:wrap}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-card);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}
+.card-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line-soft)}
+.card-head h3{font-size:15.5px}
+.card-head .ch-sub{font-size:12.5px;color:var(--ink-3);margin-top:2px}
+.card-head .ch-right{margin-left:auto;display:flex;gap:8px;align-items:center}
+.card-tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-deep)}
+.card-body{padding:20px} .card-body.tight{padding:14px 20px}
+.section-label{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin:0 0 12px}
+.canvas-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:1100px){.canvas-grid{grid-template-columns:1fr}}
+
+/* joint display table */
+.table-scroll{overflow-x:auto;margin:0 -20px;padding:0 20px}
+.jd-table{width:100%;border-collapse:separate;border-spacing:0;min-width:920px;font-size:13px}
+.jd-table th{text-align:left;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:650;padding:0 14px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.jd-table td{padding:15px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+.jd-table tr:last-child td{border-bottom:none}
+.jd-table tr.row:hover td{background:var(--surface-2)}
+.jd-rq{font-weight:600;max-width:20ch}
+.jd-cell{max-width:24ch;color:var(--ink-2);line-height:1.45}
+.jd-finding{max-width:28ch;font-weight:500;outline:none;border-radius:6px;padding:3px 5px;margin:-3px -5px}
+.jd-finding:focus{background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent-ring)}
+.strand-pat{display:flex;gap:7px;align-items:baseline}
+.strand-stat{font-weight:650;font-variant-numeric:tabular-nums}
+.strand-q.quan{color:var(--quan)} .strand-q.qual{color:var(--qual)}
+.row-actions{display:flex;gap:4px;opacity:0;transition:.12s}
+.jd-table tr.row:hover .row-actions{opacity:1}
+.mini-x{width:24px;height:24px;border-radius:7px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink-3);display:grid;place-items:center;font-size:12px}
+.mini-x:hover{background:var(--band-review-soft);color:#a83c34;border-color:#F0CFCB}
+
+.itype{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:var(--r-pill);white-space:nowrap;cursor:pointer;border:1px solid transparent}
+.itype::before{content:"";width:7px;height:7px;border-radius:50%}
+.itype.convergence{background:var(--band-strong-soft);color:#1f7a53}.itype.convergence::before{background:var(--band-strong)}
+.itype.expansion{background:var(--quan-soft);color:#1d5bbf}.itype.expansion::before{background:var(--quan)}
+.itype.explanation{background:var(--qual-soft);color:#6d36b0}.itype.explanation::before{background:var(--qual)}
+.itype.contradiction{background:var(--band-review-soft);color:#a83c34}.itype.contradiction::before{background:var(--band-review)}
+.itype.silence{background:var(--band-dev-soft);color:#5a6473}.itype.silence::before{background:var(--band-dev)}
+.itype.overclaim{background:var(--band-mod-soft);color:#8a6418}.itype.overclaim::before{background:var(--band-mod)}
+.itype.selectable:hover{border-color:currentColor}
+.itype-legend{display:flex;gap:8px;flex-wrap:wrap}
+
+.spill{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600}
+.spill .bar{width:46px;height:6px;border-radius:4px;background:var(--line);overflow:hidden}
+.spill .bar i{display:block;height:100%;border-radius:4px}
+.spill.strong{color:#1f7a53}.spill.strong .bar i{background:var(--band-strong);width:88%}
+.spill.moderate{color:#8a6418}.spill.moderate .bar i{background:var(--band-mod);width:58%}
+.spill.developing{color:#5a6473}.spill.developing .bar i{background:var(--band-dev);width:32%}
+.spill.review{color:#a83c34}.spill.review .bar i{background:var(--band-review);width:24%}
+
+.align-row{display:flex;gap:12px;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.align-row:last-child{border-bottom:none}
+.align-ico{width:28px;height:28px;border-radius:8px;flex:none;display:grid;place-items:center;font-size:13px}
+.align-ico.ok{background:var(--band-strong-soft);color:var(--band-strong)}
+.align-ico.warn{background:var(--band-mod-soft);color:var(--band-mod)}
+.align-ico.info{background:var(--accent-soft);color:var(--accent)}
+.align-t{font-size:13px;font-weight:550;margin-bottom:2px}
+.align-d{font-size:12.5px;color:var(--ink-2);line-height:1.45}
+
+.finding-card{border:1px solid var(--accent-ring);background:linear-gradient(180deg,#FBFCFF,#F6F8FE);border-radius:var(--r-card);padding:20px}
+.finding-card .fc-label{color:var(--accent);font-weight:650;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.finding-card .fc-text{font-size:14.5px;line-height:1.6}
+.finding-card .fc-foot{display:flex;gap:10px;align-items:center;margin-top:15px;flex-wrap:wrap}
+
+.theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px}
+.theme-card{border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--surface);transition:.15s}
+.theme-card:hover{box-shadow:var(--shadow);border-color:var(--accent-ring)}
+.theme-card .tc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px}
+.theme-card h4{font-size:14.5px}
+.tc-count{font-size:11px;font-weight:600;color:var(--qual);background:var(--qual-soft);padding:3px 9px;border-radius:var(--r-pill);white-space:nowrap}
+.theme-card p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0 0 12px}
+.quote{border-left:3px solid var(--qual);background:var(--qual-soft);padding:9px 12px;border-radius:0 8px 8px 0;font-size:12.5px;color:#4a3a63;font-style:italic;line-height:1.45}
+.quote .src{display:block;font-style:normal;color:var(--ink-3);font-size:11px;margin-top:5px}
+.cov-tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);margin-top:10px;display:inline-block}
+.cov-tag.even{background:var(--band-strong-soft);color:#1f7a53}
+.cov-tag.uneven{background:var(--band-mod-soft);color:#8a6418}
+
+.q-table{width:100%;border-collapse:collapse;font-size:13px}
+.q-table th{text-align:left;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:650;padding:0 12px 10px;border-bottom:1px solid var(--line)}
+.q-table td{padding:12px;border-bottom:1px solid var(--line-soft);font-variant-numeric:tabular-nums}
+.q-table tr:last-child td{border-bottom:none}
+.q-table .grp{font-weight:550;font-variant-numeric:normal}
+.sig{font-size:11px;font-weight:650;padding:2px 8px;border-radius:var(--r-pill);background:var(--quan-soft);color:#1d5bbf}
+.sig.ns{background:var(--band-dev-soft);color:#5a6473}
+
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+.inv-card{border:1px solid var(--line);border-radius:13px;padding:15px;display:flex;gap:12px;align-items:flex-start}
+.inv-ico{width:38px;height:38px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:17px}
+.inv-ico.quan{background:var(--quan-soft);color:var(--quan)} .inv-ico.qual{background:var(--qual-soft);color:var(--qual)}
+.inv-card h4{font-size:14px;margin-bottom:3px}
+.inv-card .inv-meta{font-size:12px;color:var(--ink-2)}
+.inv-tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:var(--r-pill);margin-top:8px;display:inline-block}
+.inv-tag.quan{background:var(--quan-soft);color:#1d5bbf} .inv-tag.qual{background:var(--qual-soft);color:#6d36b0}
+
+.bands{display:flex;flex-direction:column;gap:10px}
+.band-row{display:flex;align-items:center;gap:12px}
+.band-name{width:118px;font-size:13px;font-weight:550;display:flex;align-items:center;gap:8px}
+.band-name .sw{width:10px;height:10px;border-radius:3px}
+.band-track{flex:1;height:9px;border-radius:5px;background:var(--line-soft);overflow:hidden}
+.band-track i{display:block;height:100%;border-radius:5px;transition:width .35s ease}
+.band-val{width:42px;text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+
+.placeholder{border:1.5px dashed var(--line);border-radius:var(--r-card);padding:36px 30px;background:var(--surface-2)}
+.placeholder h3{font-size:16px;margin-bottom:6px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);font-weight:650;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:var(--r-sm);font-family:inherit;font-size:13.5px;color:var(--ink);background:var(--surface)}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent-ring);box-shadow:0 0 0 3px var(--accent-soft)}
+
+.report-finding{border:1px solid var(--line);border-radius:13px;padding:16px 18px;margin-bottom:12px}
+.report-finding .rf-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.report-finding .rf-rq{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;font-weight:650;margin-bottom:6px}
+.report-finding p{margin:0;font-size:13.5px;line-height:1.55}
+.limit-row{display:flex;gap:9px;align-items:flex-start;font-size:13px;color:var(--ink-2);padding:7px 0}
+.limit-row::before{content:"▹";color:var(--band-mod);font-weight:700}
+
+/* coach */
+.coach{background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden;position:relative}
+.coach-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-soft)}
+.coach-head .ch-ico{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:15px;flex:none}
+.coach-head h3{font-size:14px}.coach-head .ch-sub{font-size:11px;color:var(--ink-3)}
+.coach-toggle{margin-left:auto;width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--ink-2);display:grid;place-items:center;flex:none}
+.coach-toggle:hover{background:var(--accent-soft);color:var(--accent)}
+.coach-body{padding:16px;overflow-y:auto;flex:1}
+.coach-block{margin-bottom:18px}.coach-block:last-child{margin-bottom:0}
+.cb-label{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-weight:650;margin-bottom:6px;display:flex;align-items:center;gap:7px;color:var(--ink-3)}
+.cb-label .i{width:16px;height:16px;border-radius:5px;display:grid;place-items:center;font-size:10px;color:#fff;background:var(--accent)}
+.cb-text{font-size:13px;line-height:1.55;color:var(--ink-2)}.cb-text b{color:var(--ink);font-weight:600}
+.coach-warn{background:var(--band-mod-soft);border:1px solid #F0DDB0;border-radius:12px;padding:13px 14px}
+.coach-warn .cb-label{color:#8a6418}.coach-warn .cb-label .i{background:var(--band-mod)}.coach-warn .cb-text{color:#7a5e1c}
+.coach-caution{background:var(--band-review-soft);border:1px solid #F0CFCB;border-radius:12px;padding:13px 14px}
+.coach-caution .cb-label{color:#a83c34}.coach-caution .cb-label .i{background:var(--band-review)}.coach-caution .cb-text{color:#8f3a33}
+.coach-next{background:var(--accent-soft);border:1px solid var(--accent-ring);border-radius:12px;padding:13px 14px}
+.coach-next .cb-label{color:var(--accent-deep)}.coach-next .cb-text{color:#39438a}
+.lang-quote{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--surface-2);font-size:12.5px;line-height:1.55;font-style:italic}
+.lang-quote .ql-foot{display:flex;gap:8px;margin-top:10px;font-style:normal}
+.copy-btn{font-size:11.5px;padding:5px 10px;border-radius:var(--r-pill);border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--accent-deep);font-weight:550}
+.copy-btn:hover{background:var(--accent-soft);border-color:var(--accent-ring)}
+.coach-collapsed-tab{display:none}
+body.coach-collapsed .coach-body,body.coach-collapsed .coach-head h3,body.coach-collapsed .coach-head .ch-meta{display:none}
+body.coach-collapsed .coach-head{justify-content:center;padding:14px 6px}
+body.coach-collapsed .coach-toggle{margin-left:0}
+body.coach-collapsed .coach-collapsed-tab{display:flex;flex-direction:column;align-items:center;gap:14px;padding-top:18px}
+.ctab-vert{writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--accent-deep);cursor:pointer}
+
+/* modal */
+.modal-scrim{display:none;position:fixed;inset:0;background:rgba(20,28,45,.34);z-index:80;align-items:center;justify-content:center;padding:20px}
+.modal-scrim.open{display:flex}
+.modal{background:var(--surface);border-radius:18px;box-shadow:var(--shadow-lift);width:480px;max-width:100%;max-height:88vh;overflow-y:auto}
+.modal-head{padding:18px 22px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center}
+.modal-head h3{font-size:16px}
+.modal-head .mx{margin-left:auto;cursor:pointer;color:var(--ink-3);font-size:18px;background:none;border:none}
+.modal-body{padding:20px 22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--line-soft);display:flex;gap:10px;justify-content:flex-end}
+
+/* toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:var(--r-pill);font-size:13px;font-weight:500;z-index:90;opacity:0;transition:.25s;pointer-events:none;box-shadow:var(--shadow-lift)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.scrim{display:none}
+.coach-mobile-btn{display:none}
+@media(max-width:1180px){.hmeta-item.opt{display:none}}
+@media(max-width:1100px){
+  .body{grid-template-columns:var(--rail) minmax(0,1fr)}
+  .coach{position:fixed;top:0;right:0;height:100vh;width:340px;max-width:88vw;z-index:60;transform:translateX(100%);transition:transform .25s ease;box-shadow:var(--shadow-lift);--coach:340px}
+  body.coach-open .coach{transform:translateX(0)}
+  body.coach-collapsed .coach{transform:translateX(100%)}
+  body.coach-open .scrim{display:block;position:fixed;inset:0;background:rgba(20,28,45,.28);z-index:55}
+  .coach-toggle{display:none}.coach-mobile-btn{display:inline-flex}
+}
+@media(max-width:760px){
+  .studio-header{flex-wrap:wrap;height:auto;padding:10px 14px;gap:10px}
+  .hmeta{order:3;width:100%;gap:16px;overflow-x:auto}.header-divider{display:none}
+  .purpose-banner{flex-direction:column;padding:12px 14px}
+  .pb-tag{border-right:none;margin:0;padding:0 0 8px}.pb-cols{gap:14px 24px;padding:0}
+  .rail{position:fixed;left:0;top:0;height:100vh;z-index:60;transform:translateX(-100%);transition:transform .25s}
+  body.rail-mobile-open .rail{transform:translateX(0);box-shadow:var(--shadow-lift)}
+  .body{grid-template-columns:minmax(0,1fr)}.canvas{padding:18px 14px 50px}
+}
+</style>
+</head>
+<body class="coach-collapsed">
+<div class="app">
+  <header class="studio-header">
+    <div class="brand">
+      <div class="brand-mark">MM</div>
+      <div><div class="brand-name">Mixed Methods Studio</div><div class="brand-sub">ReliCheck · working sample</div></div>
+    </div>
+    <div class="header-divider"></div>
+    <div class="hmeta">
+      <div class="hmeta-item"><span class="hmeta-k">Project</span><span class="hmeta-v" id="hProject"></span></div>
+      <div class="hmeta-item opt"><span class="hmeta-k">Design</span><span class="hmeta-v" id="hDesign"></span></div>
+      <div class="hmeta-item opt"><span class="hmeta-k">Evidence status</span><span class="hmeta-v" id="hStatus"></span></div>
+    </div>
+    <div class="header-right">
+      <div id="hChip"></div>
+      <div class="save-state"><span class="save-dot"></span><span id="hSave">Saved</span></div>
+      <button class="icon-btn coach-mobile-btn" onclick="openCoachDrawer()" title="Evidence Coach">💬</button>
+      <button class="btn" onclick="exportJSON()">Export</button>
+      <button class="btn btn-primary" onclick="goStepKey('report')">Generate report</button>
+    </div>
+  </header>
+
+  <section class="purpose-banner">
+    <div class="pb-tag">◆ Purpose</div>
+    <div class="pb-cols">
+      <div class="pb-item"><span class="pb-k">Study purpose</span><span class="pb-v" id="pbPurpose"></span></div>
+      <div class="pb-item"><span class="pb-k">Decision / problem</span><span class="pb-v" id="pbDecision"></span></div>
+      <div class="pb-item"><span class="pb-k">Active research question</span><span class="pb-v rq" id="pbRQ"></span></div>
+    </div>
+  </section>
+
+  <div class="body">
+    <nav class="rail">
+      <div class="rail-head"><span class="rail-title">Workflow</span><button class="rail-toggle" onclick="toggleRail()" title="Collapse">⟨</button></div>
+      <ul class="rail-steps" id="railSteps"></ul>
+      <div class="rail-foot">
+        <div class="strength-mini-label">Evidence strength</div>
+        <div class="mini-meter"><i id="miniMeter"></i></div>
+        <div class="mini-row"><span class="dot" id="miniDot"></span> <span id="miniLabel"></span></div>
+      </div>
+    </nav>
+
+    <main class="canvas"><div class="canvas-inner" id="canvasInner"></div></main>
+
+    <aside class="coach">
+      <div class="coach-collapsed-tab" onclick="toggleCoach()"><span style="font-size:16px">💬</span><span class="ctab-vert">Coach</span></div>
+      <div class="coach-head">
+        <div class="ch-ico">💬</div>
+        <div class="ch-meta"><h3>Evidence Coach</h3><div class="ch-sub">ReliCheck Reader</div></div>
+        <button class="coach-toggle" onclick="toggleCoach()" title="Collapse">⟩</button>
+      </div>
+      <div class="coach-body" id="coachBody"></div>
+    </aside>
+  </div>
+</div>
+<div class="scrim" onclick="closeCoachDrawer()"></div>
+
+<div class="modal-scrim" id="modalScrim"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   SAMPLE DATASET — drives every step. Edit it in the app and
+   everything (themes, results, integration, strength, report)
+   recomputes live.
+   ========================================================= */
+const state = {
+  project:{name:"First-Year Belonging Study"},
+  design:"Explanatory Sequential",
+  purpose:{
+    purpose:"Understand why student belonging scores are declining.",
+    decision:"Redesign first-year advising and classroom support.",
+    rq:"What explains differences in belonging across student groups?"
+  },
+  sources:[
+    {id:"s1",kind:"quan",name:"Belonging survey",meta:"412 responses · 18 items"},
+    {id:"s2",kind:"qual",name:"Student interviews",meta:"24 transcripts"}
+  ],
+  // qualitative themes
+  themes:[
+    {id:"t1",name:"Invisible rules",quotes:18,even:true,desc:"First-gen students describe not knowing unwritten norms — when to email faculty, how office hours work.",quote:"Everyone else seemed to already know the rules I'd never been told.",src:"First-gen, Y1"},
+    {id:"t2",name:"One trusted adult",quotes:14,even:true,desc:"A single consistent staff relationship is credited as the anchor for staying.",quote:"My advisor knew my name. That's the only reason I didn't leave.",src:"Transfer, Y2"},
+    {id:"t3",name:"Nowhere to land",quotes:9,even:false,desc:"Commuter students describe having no physical \"home base\" between classes.",quote:"I sit in my car between classes. There's no place that's mine.",src:"Commuter, Y1"}
+  ],
+  // quantitative results
+  quant:[
+    {id:"q1",label:"First-gen vs continuing",a:61.2,b:72.8,effect:"d = 0.62",sig:true,sigText:"p < .01",pattern:"lower belonging for first-gen students"},
+    {id:"q2",label:"Advising contact (high vs low)",a:70.1,b:62.4,effect:"r = .34",sig:true,sigText:"p < .05",pattern:"more advising, higher belonging"},
+    {id:"q3",label:"Commuter vs residential",a:66.9,b:68.1,effect:"d = 0.07",sig:false,sigText:"n.s.",pattern:"no measured difference"}
+  ],
+  // integrated findings (joint display rows) — link a quant row + a theme
+  findings:[
+    {id:"f1",rq:"What explains belonging differences across groups?",quantId:"q1",themeId:"t1",type:"explanation",text:"Belonging gaps are partly explained by unfamiliarity with unwritten norms, not ability or effort."},
+    {id:"f2",rq:"Does advising contact relate to belonging?",quantId:"q2",themeId:"t2",type:"convergence",text:"Both strands agree a consistent advising relationship supports belonging."},
+    {id:"f3",rq:"Do commuter students differ?",quantId:"q3",themeId:"t3",type:"overclaim",text:"Qualitative signal is real but quotes come from one group — do not generalize yet."}
+  ],
+  limitations:[
+    "Commuter evidence draws on a single focus group; treat as emerging.",
+    "Survey and interviews are cross-sectional, so causal claims stay tentative."
+  ],
+  activeStep:"integration"
+};
+
+const ITYPES=["convergence","expansion","explanation","contradiction","silence","overclaim"];
+const ITYPE_LABEL={convergence:"Convergence",expansion:"Expansion",explanation:"Explanation",contradiction:"Contradiction",silence:"Silence",overclaim:"Overclaim Risk"};
+
+/* ---- derived logic: strength of a single finding ---- */
+function findingStrength(f){
+  const q=state.quant.find(x=>x.id===f.quantId);
+  const t=state.themes.find(x=>x.id===f.themeId);
+  if(f.type==="overclaim"||f.type==="contradiction") return "review";
+  let s=0;
+  if(q&&q.sig) s+=2;
+  if(t){ s += t.quotes>=12?2 : t.quotes>=8?1 : 0; if(t.even) s+=1; }
+  if(f.type==="convergence"&&q&&q.sig) s+=1;
+  return s>=4?"strong" : s>=2?"moderate" : "developing";
+}
+const BAND_ORDER={review:0,developing:1,moderate:2,strong:3};
+const BAND_LABEL={strong:"Strong",moderate:"Moderate",developing:"Developing",review:"Needs review"};
+function overallBand(){
+  const fs=state.findings.map(findingStrength);
+  if(!fs.length) return {band:"developing",note:"no findings yet"};
+  if(fs.includes("review")) return {band:"review",note:fs.filter(b=>b==="review").length+" finding(s) need review"};
+  const min=fs.reduce((m,b)=>Math.min(m,BAND_ORDER[b]),3);
+  const band=Object.keys(BAND_ORDER).find(k=>BAND_ORDER[k]===min);
+  return {band, note: band==="strong"?"decision-ready":"building"};
+}
+function bandCounts(){
+  const c={strong:0,moderate:0,developing:0,review:0};
+  state.findings.forEach(f=>c[findingStrength(f)]++);
+  return c;
+}
+
+/* ---- workflow step definitions + dynamic states ---- */
+const STEP_DEFS=[
+  {key:"purpose",  name:"Purpose",              icon:"◆"},
+  {key:"design",   name:"Design",               icon:"⚄"},
+  {key:"datamap",  name:"Data Map",             icon:"⊞"},
+  {key:"qual",     name:"Qualitative Analysis", icon:"❝"},
+  {key:"quan",     name:"Quantitative Analysis",icon:"▥"},
+  {key:"integration",name:"Integration",        icon:"⤬"},
+  {key:"strength", name:"Evidence Strength",    icon:"◴"},
+  {key:"report",   name:"Report Builder",       icon:"▤"}
+];
+function stepState(key){
+  switch(key){
+    case"purpose": return {st:"done",meta:"Defined"};
+    case"design":  return {st:"done",meta:state.design};
+    case"datamap": return {st:"done",meta:state.sources.length+" sources linked"};
+    case"qual":    return {st:state.themes.some(t=>!t.even)?"warning":"done",meta:state.themes.length+" themes"};
+    case"quan":    return {st:"done",meta:(state.quant.filter(q=>q.sig).length)+" significant"};
+    case"integration":{
+      const hasIssue=state.findings.some(f=>["overclaim","contradiction"].includes(f.type));
+      return {st:hasIssue?"warning":(state.findings.length?"done":""),meta:state.findings.length+" findings"};
+    }
+    case"strength":{const b=overallBand();return {st:b.band==="review"?"warning":(b.band==="strong"?"done":""),meta:BAND_LABEL[b.band]};}
+    case"report":  return {st:"",meta:state.findings.length?"Ready to assemble":"Not started"};
+  }
+}
+
+/* =========================================================
+   RENDER
+   ========================================================= */
+const $=s=>document.querySelector(s);
+function renderChrome(){
+  $("#hProject").textContent=state.project.name;
+  $("#hDesign").textContent=state.design;
+  $("#pbPurpose").textContent=state.purpose.purpose;
+  $("#pbDecision").textContent=state.purpose.decision;
+  $("#pbRQ").textContent=state.purpose.rq;
+  const ob=overallBand();
+  $("#hStatus").textContent = state.activeStep==="report"?"Assembling report":(STEP_DEFS.find(s=>s.key===state.activeStep)||{}).name+" in progress";
+  $("#hChip").innerHTML=`<div class="evi-chip ${ob.band}" title="Overall evidence strength"><span class="dot"></span><b>${BAND_LABEL[ob.band]}</b><span>· ${ob.note}</span></div>`;
+  // mini meter
+  const pct={strong:90,moderate:60,developing:32,review:24}[ob.band];
+  const col={strong:"var(--band-strong)",moderate:"var(--band-mod)",developing:"var(--band-dev)",review:"var(--band-review)"}[ob.band];
+  $("#miniMeter").style.width=pct+"%";$("#miniMeter").style.background=col;
+  $("#miniDot").style.background=col;$("#miniLabel").textContent=BAND_LABEL[ob.band]+" · "+ob.note;
+  renderRail();
+}
+function renderRail(){
+  $("#railSteps").innerHTML=STEP_DEFS.map(d=>{
+    const s=stepState(d.key);
+    const cls=["step",d.key===state.activeStep?"active":"",s.st].filter(Boolean).join(" ");
+    const badge=s.st==="done"?"✓":s.st==="warning"?"!":"";
+    return `<li class="${cls}" onclick="goStepKey('${d.key}')">
+      <span class="step-ico">${d.icon}<span class="state-badge">${badge}</span></span>
+      <span class="step-body"><span class="step-name">${d.name}</span><span class="step-meta">${s.meta}</span></span>
+    </li>`;
+  }).join("");
+}
+
+function goStepKey(key){ state.activeStep=key; renderChrome(); renderStep(); if(innerWidth<=760)document.body.classList.remove('rail-mobile-open'); $(".canvas").scrollTop=0; }
+
+function moduleHead(eyebrow,n,title,sub,actions){
+  return `<div class="module-head"><div class="mh-text">
+    <div class="module-eyebrow">${eyebrow}<span class="step-of">· Step ${n} of 8</span></div>
+    <h1 class="module-title">${title}</h1><p class="module-sub">${sub}</p>
+  </div><div class="module-actions">${actions||""}</div></div>`;
+}
+function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+function renderStep(){
+  const c=$("#canvasInner"); const k=state.activeStep;
+  if(k==="integration")  c.innerHTML=viewIntegration();
+  else if(k==="qual")    c.innerHTML=viewQual();
+  else if(k==="quan")    c.innerHTML=viewQuan();
+  else if(k==="datamap") c.innerHTML=viewDataMap();
+  else if(k==="strength")c.innerHTML=viewStrength();
+  else if(k==="report")  c.innerHTML=viewReport();
+  else if(k==="purpose") c.innerHTML=viewPurpose();
+  else if(k==="design")  c.innerHTML=viewDesign();
+  renderCoach();
+}
+
+/* ---------- INTEGRATION (centerpiece) ---------- */
+function viewIntegration(){
+  const rows=state.findings.map(f=>{
+    const q=state.quant.find(x=>x.id===f.quantId)||{};
+    const t=state.themes.find(x=>x.id===f.themeId)||{};
+    const str=findingStrength(f);
+    return `<tr class="row">
+      <td class="jd-rq">${esc(f.rq)}</td>
+      <td class="jd-cell"><span class="strand-pat"><span class="strand-stat strand-q quan">${esc(q.effect||"")}</span> ${esc(q.pattern||"")}</span></td>
+      <td class="jd-cell"><span class="strand-q qual">${esc(t.name||"")}</span> — ${esc((t.desc||"").split("—").pop().trim())}</td>
+      <td><span class="itype ${f.type} selectable" onclick="cycleType('${f.id}')" title="Click to change integration type">${ITYPE_LABEL[f.type]}</span></td>
+      <td><div class="jd-finding" contenteditable="true" onblur="editFinding('${f.id}',this.textContent)">${esc(f.text)}</div></td>
+      <td><span class="spill ${str}"><span class="bar"><i></i></span>${BAND_LABEL[str]}</span></td>
+      <td><div class="row-actions"><button class="mini-x" onclick="deleteFinding('${f.id}')" title="Delete">✕</button></div></td>
+    </tr>`;
+  }).join("");
+  // alignment check derived from data
+  const uneven=state.themes.filter(t=>!t.even).map(t=>t.name);
+  const issues=state.findings.filter(f=>["overclaim","contradiction"].includes(f.type));
+  const agree=state.findings.filter(f=>["convergence","explanation","expansion"].includes(f.type)).length;
+  const ob=overallBand();
+  // top defensible finding = strongest
+  const ranked=[...state.findings].sort((a,b)=>BAND_ORDER[findingStrength(b)]-BAND_ORDER[findingStrength(a)]);
+  const top=ranked[0];
+  return moduleHead("Integration · the heart of mixed methods",6,"Integration Canvas",
+    "Connect qualitative findings and quantitative results into defensible mixed methods claims. Click an integration type to change it, edit a finding inline, or add a row — evidence strength recomputes live.",
+    `<button class="btn" onclick="openLimitModal()">+ Add limitation</button>
+     <button class="btn" onclick="openFindingModal()">Add row</button>
+     <button class="btn btn-primary" onclick="genLanguage()">Generate report language</button>`)
+  +`<div class="card">
+     <div class="card-head"><div><h3>Joint Display Builder</h3><div class="ch-sub">Where each research question's two evidence strands line up</div></div>
+       <div class="ch-right"><span class="card-tag">${state.findings.length} findings</span></div></div>
+     <div class="card-body">
+       <div class="itype-legend" style="margin-bottom:16px">${ITYPES.map(t=>`<span class="itype ${t}">${ITYPE_LABEL[t]}</span>`).join("")}</div>
+       <div class="table-scroll"><table class="jd-table">
+         <thead><tr><th>Research question</th><th>Quantitative pattern</th><th>Qualitative theme</th><th>Integration type</th><th>Defensible finding</th><th>Strength</th><th></th></tr></thead>
+         <tbody>${rows||`<tr><td colspan="7" style="color:var(--ink-3);padding:24px 14px">No findings yet — click <b>Add row</b> to connect a result to a theme.</td></tr>`}</tbody>
+       </table></div>
+     </div></div>
+   <div class="canvas-grid">
+     <div class="finding-card">
+       <div class="fc-label">◆ Strongest defensible finding</div>
+       <div class="fc-text">${top?esc(top.text):"Add a finding to see your strongest defensible claim here."}</div>
+       <div class="fc-foot">${top?`<span class="itype ${top.type}">${ITYPE_LABEL[top.type]}</span><span class="spill ${findingStrength(top)}"><span class="bar"><i></i></span>${BAND_LABEL[findingStrength(top)]}</span>`:""}
+         <button class="btn btn-primary" style="margin-left:auto" onclick="goStepKey('report')">Send to report</button></div>
+     </div>
+     <div class="card" style="margin:0">
+       <div class="card-head"><div><h3>Evidence Alignment Check</h3></div></div>
+       <div class="card-body tight">
+         <div class="align-row"><div class="align-ico ${agree?'ok':'info'}">${agree?'✓':'i'}</div><div><div class="align-t">${agree} finding(s) where strands agree</div><div class="align-d">Convergence, explanation, and expansion reinforce each other.</div></div></div>
+         <div class="align-row"><div class="align-ico ${uneven.length?'warn':'ok'}">${uneven.length?'!':'✓'}</div><div><div class="align-t">${uneven.length?'Uneven quote coverage':'Quote coverage looks even'}</div><div class="align-d">${uneven.length?'Concentrated in one group: '+uneven.join(", ")+'.':'No theme flagged for single-group coverage.'}</div></div></div>
+         <div class="align-row"><div class="align-ico ${issues.length?'info':'ok'}">${issues.length?'i':'✓'}</div><div><div class="align-t">${issues.length?issues.length+' finding(s) flagged':'No overclaim or contradiction flags'}</div><div class="align-d">${issues.length?'Overclaim/contradiction rows should be documented as limitations.':'Overall readiness: '+BAND_LABEL[ob.band]+'.'}</div></div></div>
+       </div>
+     </div>
+   </div>`;
+}
+function cycleType(id){
+  const f=state.findings.find(x=>x.id===id);
+  f.type=ITYPES[(ITYPES.indexOf(f.type)+1)%ITYPES.length];
+  touch(); renderChrome(); renderStep(); toast("Integration type → "+ITYPE_LABEL[f.type]);
+}
+function editFinding(id,txt){const f=state.findings.find(x=>x.id===id);if(f&&txt.trim()){f.text=txt.trim();touch();}}
+function deleteFinding(id){state.findings=state.findings.filter(x=>x.id!==id);touch();renderChrome();renderStep();toast("Finding removed");}
+
+/* ---------- QUALITATIVE ---------- */
+function viewQual(){
+  const cards=state.themes.map(t=>`<div class="theme-card">
+    <div class="tc-top"><h4>${esc(t.name)}</h4><span class="tc-count">${t.quotes} quotes</span></div>
+    <p>${esc(t.desc)}</p>
+    <div class="quote">"${esc(t.quote)}"<span class="src">— ${esc(t.src)}</span></div>
+    <span class="cov-tag ${t.even?'even':'uneven'}">${t.even?'Even coverage':'Single-group coverage'}</span>
+  </div>`).join("");
+  return moduleHead("Qualitative analysis",4,"Qualitative Analysis",
+    "Build and review the themes that carry the human meaning behind the numbers. Coverage flags below feed the Integration strength scoring.",
+    `<button class="btn btn-primary" onclick="openThemeModal()">+ New theme</button>`)
+  +`<div class="card"><div class="card-head"><div><h3>Themes</h3><div class="ch-sub">${state.themes.length} themes from 24 interviews</div></div><div class="ch-right"><span class="card-tag">${state.themes.reduce((s,t)=>s+t.quotes,0)} coded quotes</span></div></div>
+    <div class="card-body"><div class="theme-grid">${cards}</div></div></div>`;
+}
+
+/* ---------- QUANTITATIVE ---------- */
+function viewQuan(){
+  const rows=state.quant.map(q=>`<tr>
+    <td class="grp">${esc(q.label)}</td><td>${q.a}</td><td>${q.b}</td><td>${esc(q.effect)}</td>
+    <td><span class="sig ${q.sig?'':'ns'}">${esc(q.sigText)}</span></td></tr>`).join("");
+  return moduleHead("Quantitative analysis",5,"Quantitative Analysis",
+    "Review the measured patterns your qualitative themes need to explain. Significance flags here drive whether a linked finding can be rated Strong.",
+    `<button class="btn btn-primary" onclick="goStepKey('integration')">Send to Integration</button>`)
+  +`<div class="card"><div class="card-head"><div><h3>Group differences in belonging</h3><div class="ch-sub">Belonging scale 0–100 · n = 412</div></div></div>
+    <div class="card-body"><div class="table-scroll"><table class="q-table">
+      <thead><tr><th>Comparison</th><th>Group A mean</th><th>Group B mean</th><th>Effect size</th><th>Significance</th></tr></thead>
+      <tbody>${rows}</tbody></table></div></div></div>`;
+}
+
+/* ---------- DATA MAP ---------- */
+function viewDataMap(){
+  const cards=state.sources.map(s=>`<div class="inv-card"><div class="inv-ico ${s.kind}">${s.kind==='quan'?'▥':'❝'}</div>
+    <div><h4>${esc(s.name)}</h4><div class="inv-meta">${esc(s.meta)}</div><span class="inv-tag ${s.kind}">${s.kind==='quan'?'Quantitative':'Qualitative'}</span></div></div>`).join("");
+  return moduleHead("Data map",3,"Data Map","Inventory every source and confirm the two strands sample the same people.","")
+  +`<div class="card"><div class="card-head"><div><h3>Data inventory</h3><div class="ch-sub">${state.sources.length} linked sources</div></div></div>
+    <div class="card-body"><div class="inv-grid">${cards}</div></div></div>`;
+}
+
+/* ---------- EVIDENCE STRENGTH ---------- */
+function viewStrength(){
+  const c=bandCounts(), total=state.findings.length||1, ob=overallBand();
+  const row=(name,key,col)=>`<div class="band-row"><div class="band-name"><span class="sw" style="background:${col}"></span>${name}</div>
+    <div class="band-track"><i style="width:${Math.round(c[key]/total*100)}%;background:${col}"></i></div><div class="band-val">${c[key]}</div></div>`;
+  const holdbacks=[];
+  state.themes.filter(t=>!t.even).forEach(t=>holdbacks.push(["warn","Uneven quote coverage","Theme \""+t.name+"\" leans on a single group."]));
+  state.findings.filter(f=>f.type==="contradiction").forEach(()=>holdbacks.push(["info","Unresolved contradiction","Strands disagree — document as a limitation."]));
+  state.findings.filter(f=>f.type==="overclaim").forEach(()=>holdbacks.push(["info","Overclaim risk","A vivid theme is paired with a non-significant statistic."]));
+  return moduleHead("Evidence strength",7,"Evidence Strength",
+    "A professional readiness signal, not a score. It shows whether the evidence is strong enough to support the decision in your purpose banner.",
+    `<button class="btn btn-primary" onclick="goStepKey('report')">Mark ready for report</button>`)
+  +`<div class="card"><div class="card-head"><div><h3>Overall evidence readiness</h3><div class="ch-sub">Across all ${state.findings.length} integrated findings</div></div>
+      <div class="ch-right"><div class="evi-chip ${ob.band}"><span class="dot"></span><b>${BAND_LABEL[ob.band]}</b><span>· ${ob.note}</span></div></div></div>
+     <div class="card-body"><div class="bands">
+       ${row("Strong","strong","var(--band-strong)")}${row("Moderate","moderate","var(--band-mod)")}
+       ${row("Developing","developing","var(--band-dev)")}${row("Needs review","review","var(--band-review)")}
+     </div></div></div>
+   <div class="card"><div class="card-head"><div><h3>What is holding strength back</h3></div></div><div class="card-body tight">
+     ${holdbacks.length?holdbacks.map(h=>`<div class="align-row"><div class="align-ico ${h[0]}">${h[0]==='warn'?'!':'i'}</div><div><div class="align-t">${h[1]}</div><div class="align-d">${h[2]}</div></div></div>`).join(""):`<div class="align-row"><div class="align-ico ok">✓</div><div><div class="align-t">Nothing flagged</div><div class="align-d">All findings are decision-ready.</div></div></div>`}
+   </div></div>`;
+}
+
+/* ---------- REPORT BUILDER ---------- */
+function viewReport(){
+  const items=state.findings.map(f=>{
+    const str=findingStrength(f);
+    return `<div class="report-finding"><div class="rf-rq">${esc(f.rq)}</div>
+      <div class="rf-top"><span class="itype ${f.type}">${ITYPE_LABEL[f.type]}</span><span class="spill ${str}"><span class="bar"><i></i></span>${BAND_LABEL[str]}</span></div>
+      <p>${esc(f.text)}</p></div>`;
+  }).join("");
+  const limits=state.limitations.map(l=>`<div class="limit-row">${esc(l)}</div>`).join("");
+  const ob=overallBand();
+  return moduleHead("Report builder",8,"Report Builder",
+    "Assemble the integrated findings and limitations into a defensible mixed methods narrative. This pulls live from everything above.",
+    `<button class="btn" onclick="exportJSON()">Export data</button><button class="btn btn-primary" onclick="printReport()">Print / Save PDF</button>`)
+  +`<div class="card"><div class="card-head"><div><h3>Integrated findings</h3><div class="ch-sub">Overall readiness: ${BAND_LABEL[ob.band]} · ${ob.note}</div></div><div class="ch-right"><span class="card-tag">${state.findings.length} findings</span></div></div>
+     <div class="card-body">${items||'<p class="faint">No findings yet.</p>'}</div></div>
+   <div class="card"><div class="card-head"><div><h3>Limitations</h3></div><div class="ch-right"><button class="btn btn-sm" onclick="openLimitModal()">+ Add</button></div></div>
+     <div class="card-body tight">${limits||'<p class="faint">No limitations recorded.</p>'}</div></div>`;
+}
+
+/* ---------- PURPOSE / DESIGN (editable) ---------- */
+function viewPurpose(){
+  return moduleHead("Purpose",1,"Purpose","Define why this study matters and the decision it informs. This drives the banner shown across the studio.","")
+  +`<div class="card"><div class="card-body">
+    <div class="field"><label>Study purpose</label><input id="ipPurpose" value="${esc(state.purpose.purpose)}"></div>
+    <div class="field"><label>Decision / problem</label><input id="ipDecision" value="${esc(state.purpose.decision)}"></div>
+    <div class="field"><label>Active research question</label><input id="ipRQ" value="${esc(state.purpose.rq)}"></div>
+    <button class="btn btn-primary" onclick="savePurpose()">Save purpose</button>
+  </div></div>`;
+}
+function savePurpose(){
+  state.purpose.purpose=$("#ipPurpose").value;state.purpose.decision=$("#ipDecision").value;state.purpose.rq=$("#ipRQ").value;
+  touch();renderChrome();toast("Purpose updated");
+}
+function viewDesign(){
+  const opts=["Explanatory Sequential","Exploratory Sequential","Convergent Parallel","Embedded"].map(d=>`<option ${d===state.design?'selected':''}>${d}</option>`).join("");
+  return moduleHead("Design",2,"Design","Choose the mixed methods design. In an explanatory sequential design, qualitative data explains the quantitative results — which is why Integration leans on 'explanation' types.","")
+  +`<div class="card"><div class="card-body">
+    <div class="field"><label>Mixed methods design</label><select id="ipDesign" onchange="saveDesign()">${opts}</select></div>
+    <p class="muted" style="font-size:13px">Sample data is configured as an explanatory sequential study: a belonging survey followed by interviews that explain the gaps.</p>
+  </div></div>`;
+}
+function saveDesign(){state.design=$("#ipDesign").value;touch();renderChrome();toast("Design set to "+state.design);}
+
+/* =========================================================
+   COACH — contextual, derived from live data
+   ========================================================= */
+function renderCoach(){
+  const k=state.activeStep, body=$("#coachBody"); let h="";
+  const block=(label,txt,icon)=>`<div class="coach-block"><div class="cb-label"><span class="i">${icon||'i'}</span>${label}</div><div class="cb-text">${txt}</div></div>`;
+  if(k==="integration"){
+    const sig=state.quant.filter(q=>q.sig).length;
+    const issues=state.findings.filter(f=>["overclaim","contradiction"].includes(f.type));
+    const uneven=state.themes.filter(t=>!t.even).map(t=>t.name);
+    h=block("What this means",`Your quantitative results show <b>${sig} significant pattern(s)</b> that the interview themes can help explain.`,"i")
+     +block("Why it matters","The qualitative data turns a number into a reason — and a reason is what supports a decision.","★");
+    if(uneven.length) h+=`<div class="coach-block coach-warn"><div class="cb-label"><span class="i">!</span>Evidence warning</div><div class="cb-text">Quotes for <b>${uneven.join(", ")}</b> come from one subgroup. Be careful generalizing.</div></div>`;
+    if(issues.length) h+=`<div class="coach-block coach-caution"><div class="cb-label"><span class="i">⚠</span>Methodological caution</div><div class="cb-text">${issues.length} finding(s) are marked <b>overclaim/contradiction</b>. These are flags, not conclusions.</div></div>`;
+    h+=`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">${issues.length?"Resolve or down-rank the flagged finding before writing it up.":"Send your strongest finding to the Report Builder."}</div></div>`;
+    const top=[...state.findings].sort((a,b)=>BAND_ORDER[findingStrength(b)]-BAND_ORDER[findingStrength(a)])[0];
+    if(top){const q=state.quant.find(x=>x.id===top.quantId)||{};
+      h+=`<div class="coach-block"><div class="cb-label"><span class="i" style="background:var(--band-dev)">"</span>Suggested reporting language</div><div class="lang-quote">"${esc(top.text)} ${q.effect?'('+esc(q.effect)+')':''}"<div class="ql-foot"><button class="copy-btn" onclick="copyText(this,'${esc(top.text).replace(/'/g,"\\'")}')">Copy</button></div></div></div>`;}
+  } else if(k==="qual"){
+    const uneven=state.themes.filter(t=>!t.even);
+    h=block("What this means",`You have <b>${state.themes.length} themes</b> carrying ${state.themes.reduce((s,t)=>s+t.quotes,0)} coded quotes.`,"i");
+    if(uneven.length)h+=`<div class="coach-block coach-warn"><div class="cb-label"><span class="i">!</span>Evidence warning</div><div class="cb-text"><b>${uneven.map(t=>t.name).join(", ")}</b> has uneven coverage — treat as emerging.</div></div>`;
+    h+=`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">Match each theme to a quantitative pattern in the Integration Canvas.</div></div>`;
+  } else if(k==="quan"){
+    h=block("What this means",`<b>${state.quant.filter(q=>q.sig).length} of ${state.quant.length}</b> comparisons are statistically significant.`,"i")
+     +`<div class="coach-block coach-caution"><div class="cb-label"><span class="i">⚠</span>Methodological caution</div><div class="cb-text">Non-significant comparisons must be framed as <b>qualitative-only</b> if used at all.</div></div>`
+     +`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">Take significant patterns into Integration and pair them with a theme.</div></div>`;
+  } else if(k==="strength"){
+    const ob=overallBand(),c=bandCounts();
+    h=block("What this means",`Overall readiness is <b>${BAND_LABEL[ob.band]}</b>. ${c.strong} strong, ${c.moderate} moderate, ${c.review} needs review.`,"i");
+    if(c.review)h+=`<div class="coach-block coach-warn"><div class="cb-label"><span class="i">!</span>Evidence warning</div><div class="cb-text">Reporting all findings as equal would <b>overstate</b> the weakest ones.</div></div>`;
+    h+=`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">${c.review?"Resolve the flagged finding, then mark the set ready.":"Move to the Report Builder."}</div></div>`;
+  } else if(k==="report"){
+    h=block("What this means","This report pulls live from your findings and limitations — changes anywhere above update it instantly.","i")
+     +`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">Use Print / Save PDF to produce a shareable copy.</div></div>`;
+  } else if(k==="datamap"){
+    h=block("What this means","Both strands sample the <b>same population</b>, which makes explanatory integration valid.","i")
+     +`<div class="coach-block coach-next"><div class="cb-label"><span class="i">→</span>Suggested next step</div><div class="cb-text">Confirm participant IDs overlap so themes link to survey subgroups.</div></div>`;
+  } else {
+    h=block("What this means","Edits here flow through the whole studio — the purpose banner and design feed every downstream step.","i");
+  }
+  body.innerHTML=h;
+}
+
+/* =========================================================
+   MODALS / actions
+   ========================================================= */
+let nextId=100;
+function openModal(html){$("#modal").innerHTML=html;$("#modalScrim").classList.add("open");}
+function closeModal(){$("#modalScrim").classList.remove("open");}
+$("#modalScrim").addEventListener("click",e=>{if(e.target.id==="modalScrim")closeModal();});
+
+function openFindingModal(){
+  const qOpts=state.quant.map(q=>`<option value="${q.id}">${esc(q.label)} (${esc(q.effect)}, ${esc(q.sigText)})</option>`).join("");
+  const tOpts=state.themes.map(t=>`<option value="${t.id}">${esc(t.name)} (${t.quotes} quotes)</option>`).join("");
+  const iOpts=ITYPES.map(t=>`<option value="${t}">${ITYPE_LABEL[t]}</option>`).join("");
+  openModal(`<div class="modal-head"><h3>Add integrated finding</h3><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Research question</label><input id="nfRQ" placeholder="What question does this row answer?"></div>
+      <div class="field"><label>Quantitative pattern</label><select id="nfQ">${qOpts}</select></div>
+      <div class="field"><label>Qualitative theme</label><select id="nfT">${tOpts}</select></div>
+      <div class="field"><label>Integration type</label><select id="nfType">${iOpts}</select></div>
+      <div class="field"><label>Defensible finding</label><textarea id="nfText" rows="3" placeholder="State the claim both strands support."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="addFinding()">Add finding</button></div>`);
+}
+function addFinding(){
+  const rq=$("#nfRQ").value.trim()||state.purpose.rq;
+  state.findings.push({id:"f"+(nextId++),rq,quantId:$("#nfQ").value,themeId:$("#nfT").value,type:$("#nfType").value,text:$("#nfText").value.trim()||"(finding to be written)"});
+  closeModal();touch();renderChrome();renderStep();toast("Finding added");
+}
+function openThemeModal(){
+  openModal(`<div class="modal-head"><h3>New theme</h3><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="field"><label>Theme name</label><input id="ntName" placeholder="e.g. Feeling rushed"></div>
+      <div class="field"><label>Short description</label><textarea id="ntDesc" rows="2"></textarea></div>
+      <div class="field"><label>Representative quote</label><input id="ntQuote"></div>
+      <div class="field"><label>Source label</label><input id="ntSrc" placeholder="e.g. Commuter, Y2"></div>
+      <div class="field"><label>Quote count</label><input id="ntCount" type="number" value="6" min="1"></div>
+      <div class="field"><label>Coverage</label><select id="ntEven"><option value="true">Even across groups</option><option value="false">Concentrated in one group</option></select></div>
+    </div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="addTheme()">Add theme</button></div>`);
+}
+function addTheme(){
+  const name=$("#ntName").value.trim();if(!name){toast("Name required");return;}
+  state.themes.push({id:"t"+(nextId++),name,quotes:+$("#ntCount").value||1,even:$("#ntEven").value==="true",desc:$("#ntDesc").value.trim()||"—",quote:$("#ntQuote").value.trim()||"…",src:$("#ntSrc").value.trim()||"Participant"});
+  closeModal();touch();renderChrome();renderStep();toast("Theme added");
+}
+function openLimitModal(){
+  openModal(`<div class="modal-head"><h3>Add limitation</h3><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="modal-body"><div class="field"><label>Limitation</label><textarea id="nlText" rows="3" placeholder="State a constraint on how far this evidence generalizes."></textarea></div></div>
+    <div class="modal-foot"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn btn-primary" onclick="addLimit()">Add</button></div>`);
+}
+function addLimit(){const t=$("#nlText").value.trim();if(t){state.limitations.push(t);touch();if(state.activeStep==="report")renderStep();toast("Limitation added");}closeModal();}
+
+function genLanguage(){goStepKey('integration');document.body.classList.remove('coach-collapsed');toast("Suggested language is in the Evidence Coach →");}
+function copyText(btn,t){navigator.clipboard&&navigator.clipboard.writeText(t);btn.textContent="Copied";setTimeout(()=>btn.textContent="Copy",1200);}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+  a.download=(state.project.name.replace(/\s+/g,"-").toLowerCase())+"-mm-export.json";a.click();
+  toast("Exported JSON");
+}
+function printReport(){
+  const ob=overallBand();
+  const findings=state.findings.map(f=>{const q=state.quant.find(x=>x.id===f.quantId)||{},t=state.themes.find(x=>x.id===f.themeId)||{};
+    return `<div style="margin:0 0 16px;padding:14px 16px;border:1px solid #ddd;border-radius:10px">
+      <div style="font-size:11px;text-transform:uppercase;color:#888;letter-spacing:.04em">${esc(f.rq)}</div>
+      <div style="margin:6px 0;font-weight:600">${ITYPE_LABEL[f.type]} · ${BAND_LABEL[findingStrength(f)]}</div>
+      <div>${esc(f.text)}</div>
+      <div style="font-size:12px;color:#666;margin-top:6px">Quant: ${esc(q.effect||"")} ${esc(q.sigText||"")} · Qual theme: ${esc(t.name||"")}</div></div>`;}).join("");
+  const limits=state.limitations.map(l=>`<li>${esc(l)}</li>`).join("");
+  const w=window.open("","_blank");
+  w.document.write(`<html><head><title>${esc(state.project.name)} — Mixed Methods Report</title>
+    <style>body{font-family:-apple-system,system-ui,sans-serif;color:#1A2230;max-width:760px;margin:40px auto;padding:0 20px;line-height:1.55}
+    h1{font-size:24px}h2{font-size:16px;margin-top:28px;border-bottom:1px solid #eee;padding-bottom:6px}
+    .meta{color:#666;font-size:13px}</style></head><body>
+    <h1>${esc(state.project.name)}</h1>
+    <div class="meta">${esc(state.design)} · Mixed Methods Studio (sample)</div>
+    <h2>Purpose</h2><p><b>Purpose:</b> ${esc(state.purpose.purpose)}<br><b>Decision:</b> ${esc(state.purpose.decision)}<br><b>Research question:</b> ${esc(state.purpose.rq)}</p>
+    <h2>Overall evidence readiness</h2><p>${BAND_LABEL[ob.band]} — ${ob.note}.</p>
+    <h2>Integrated findings</h2>${findings}
+    <h2>Limitations</h2><ul>${limits}</ul></body></html>`);
+  w.document.close();w.focus();setTimeout(()=>w.print(),300);
+}
+
+/* save indicator + toast */
+let saveT;
+function touch(){const s=$("#hSave");s.textContent="Saving…";clearTimeout(saveT);saveT=setTimeout(()=>{const d=new Date();s.textContent="Saved";},600);}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),1900);}
+
+/* panel toggles */
+function toggleRail(){document.body.classList.toggle('rail-collapsed');}
+function toggleCoach(){if(innerWidth<=1100){document.body.classList.toggle('coach-open');return;}document.body.classList.toggle('coach-collapsed');}
+function openCoachDrawer(){document.body.classList.add('coach-open');}
+function closeCoachDrawer(){document.body.classList.remove('coach-open');}
+
+/* init */
+renderChrome();renderStep();
+</script>
+</body>
+</html>

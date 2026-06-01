@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ReliCheck — Mixed Methods Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1b2426; --ink-soft:#566065; --ink-faint:#8a9499;
+    --paper:#ffffff; --app-bg:#eef0ef; --panel:#f7f8f8;
+    --line:#e2e6e5; --line-soft:#edf0ef;
+    --accent:#7c3aed; --accent-deep:#6d28d9; --accent-wash:#efe9fb; --accent-tint:#f6f3fd;
+    --orange:#e2542c; --orange-deep:#c4441f; --orange-wash:#fbe9e2;
+    --quan:#0d9488; --quan-w:#e3f3f0;
+    --qual:#db2777; --qual-w:#fbe3ef;
+    --rssi:#64748b; --rssi-w:#eef1f4;
+    --sans:'Hanken Grotesk',sans-serif; --serif:'Newsreader',Georgia,serif;
+    --shadow:0 1px 2px rgba(27,36,38,.05),0 8px 24px rgba(27,36,38,.08);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--app-bg);color:var(--ink);height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+
+  .toolbar{height:52px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 18px;gap:14px;z-index:30}
+  .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px;letter-spacing:-.02em;color:var(--ink)}
+  .logo svg{width:22px;height:18px;color:var(--orange)}
+  .logo .div{width:1px;height:20px;background:var(--line);margin:0 4px}
+  .logo .studio{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-soft)}
+  .logo .studio .sq{width:20px;height:20px;border-radius:6px;background:linear-gradient(135deg,var(--accent),var(--accent-deep));color:#fff;font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .tb-spacer{flex:1}
+  .tb-btn{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);padding:7px 12px;border-radius:8px;cursor:pointer}
+  .tb-btn:hover{border-color:var(--ink-faint)}
+  .tb-btn.ask{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .tb-btn.ask:hover{background:var(--accent-deep)}
+
+  .stagebar{height:58px;background:var(--paper);border-bottom:1px solid var(--line);display:flex;align-items:stretch;padding:0 14px;gap:2px;z-index:20;overflow-x:auto}
+  .stage-tab{display:flex;flex-direction:column;justify-content:center;padding:0 16px;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:.12s}
+  .stage-tab:hover{background:var(--panel)}
+  .stage-tab .nm{font-size:13px;font-weight:700;color:var(--ink-soft);letter-spacing:-.01em}
+  .stage-tab .q{font-size:10.5px;font-style:italic;color:var(--ink-faint);margin-top:1px}
+  .stage-tab.on{border-bottom-color:var(--accent)}
+  .stage-tab.on .nm{color:var(--accent-deep)}
+  .stage-tab.on .q{color:var(--accent)}
+
+  .stage{display:flex;height:calc(100vh - 110px)}
+
+  .rail{width:262px;background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:14px 0 30px}
+  .rail-cap{padding:4px 18px 12px;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint)}
+  .nav-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 18px;cursor:pointer;border-left:3px solid transparent;transition:.1s}
+  .nav-item:hover{background:#eef0ef}
+  .nav-item .lbl{font-size:13px;font-weight:500;color:var(--ink-soft)}
+  .nav-item.on{background:var(--accent-tint);border-left-color:var(--accent)}
+  .nav-item.on .lbl{color:var(--accent-deep);font-weight:600}
+  .tag{font-size:9px;font-weight:700;letter-spacing:.04em;padding:2px 6px;border-radius:5px;white-space:nowrap}
+  .tag.QUAN{color:var(--quan);background:var(--quan-w)}
+  .tag.QUAL{color:var(--qual);background:var(--qual-w)}
+  .tag.RSSI{color:var(--rssi);background:var(--rssi-w)}
+  .tag.MM{color:#fff;background:linear-gradient(90deg,var(--quan),var(--qual))}
+
+  .doc-area{flex:1;overflow-y:auto;background:var(--app-bg)}
+  .crumb{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-faint);padding:16px 40px 0}
+  .crumb b{color:var(--ink-soft);font-weight:600}
+  .crumb .sep{opacity:.5}
+  .doc-wrap{padding:14px 40px 70px;max-width:1000px}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:10px}
+  .doc-title{font-family:var(--serif);font-size:34px;font-weight:600;line-height:1.12;letter-spacing:-.015em;margin-bottom:12px}
+  .doc-desc{font-size:16px;line-height:1.55;color:var(--ink-soft);max-width:640px;margin-bottom:24px}
+
+  .data-strip{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin-bottom:22px}
+  .data-strip .live{width:8px;height:8px;border-radius:50%;background:#22a87a}
+  .data-strip .nm{font-size:13px;font-weight:600}
+  .data-strip .meta{font-size:12.5px;color:var(--ink-faint)}
+  .data-strip .sep{color:var(--line);font-weight:300}
+  .data-strip .replace{margin-left:auto;font-size:12.5px;font-weight:600;color:var(--accent-deep);cursor:pointer}
+
+  .run-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:24px 26px;margin-bottom:18px}
+  .run-card.dashed{border-style:dashed}
+  .run-h{font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:8px}
+  .run-d{font-size:14px;line-height:1.55;color:var(--ink-soft);max-width:620px;margin-bottom:20px}
+  .run-btns{display:flex;gap:10px}
+  .btn{font-family:var(--sans);font-size:13.5px;font-weight:600;padding:10px 18px;border-radius:9px;cursor:pointer;border:1px solid var(--line);background:var(--paper);color:var(--ink-soft);transition:.13s}
+  .btn:hover{border-color:var(--ink-faint)}
+  .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .btn.primary:hover{background:var(--accent-deep)}
+
+  .save-bar{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px}
+  .save-bar .txt{font-size:13.5px;color:var(--ink-soft);font-weight:500}
+  .save-bar .right{margin-left:auto;display:flex;align-items:center;gap:14px}
+  .save-bar .open-rb{font-size:13px;font-weight:600;color:var(--accent-deep);cursor:pointer}
+  .save-btn{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#fff;background:var(--orange);border:none;padding:10px 16px;border-radius:9px;cursor:pointer;transition:.13s}
+  .save-btn:hover{background:var(--orange-deep)}
+  .save-btn.done{background:var(--orange-wash);color:var(--orange-deep);border:1px solid var(--orange);cursor:default}
+
+  .result{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:18px}
+  .res-sent{font-family:var(--serif);font-size:15px;line-height:1.55;margin-bottom:16px}
+  .res-sent .num{color:var(--accent-deep);font-weight:600}
+  .strip{display:flex;border:1px solid var(--line-soft);border-radius:9px;overflow:hidden;margin-bottom:16px}
+  .scell{flex:1;padding:11px;text-align:center;border-right:1px solid var(--line-soft)}
+  .scell:last-child{border-right:none}
+  .sk{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:4px}
+  .sv{font-family:var(--serif);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+  .bars{display:flex;align-items:flex-end;gap:5px;height:90px}
+  .bar{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent-deep));border-radius:3px 3px 0 0;min-height:2px}
+  .bax{display:flex;justify-content:space-between;font-size:9px;color:var(--ink-faint);margin-top:5px}
+
+  .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+  .pcard{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .pcard h4{font-size:15px;font-weight:600;margin-bottom:2px}
+  .pcard .sub{font-size:11px;color:var(--ink-faint);margin-bottom:12px}
+  .prow{display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12.5px}
+  .prow .pl{width:110px;color:var(--ink-soft);flex-shrink:0}
+  .pbar{flex:1;height:9px;background:var(--accent-tint);border-radius:5px;overflow:hidden}
+  .pfill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-deep));border-radius:5px}
+  .pn{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:600;width:58px;text-align:right;flex-shrink:0}
+
+  .rssi-banner{display:flex;align-items:center;gap:10px;background:var(--rssi-w);border:1px solid #dfe4e9;border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:#475569;font-weight:500}
+  .rssi-banner .ck{width:18px;height:18px;border-radius:50%;background:var(--rssi);color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .lens-row{display:flex;gap:12px;margin-bottom:18px}
+  .lens{flex:1;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:15px}
+  .lens .ll{font-size:11px;font-weight:600;color:var(--ink-soft);margin-bottom:6px}
+  .lens .ln{font-family:var(--serif);font-size:30px;font-weight:600;color:var(--accent-deep);font-variant-numeric:tabular-nums}
+  .lens .lw{font-size:10.5px;color:var(--ink-faint);margin-top:4px}
+
+  .xref{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:#fff;background:var(--accent);border:none;padding:11px 18px;border-radius:9px;cursor:pointer}
+  .xref:hover{background:var(--accent-deep)}
+
+  /* report builder */
+  .rb-sec{background:var(--paper);border:1px solid var(--line);border-radius:13px;padding:18px 20px;margin-bottom:14px}
+  .rb-sec-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+  .rb-sec-t{font-family:var(--serif);font-size:19px;font-weight:600}
+  .rb-sec-mark{font-size:10px;font-weight:600;color:var(--accent-deep);background:var(--accent-wash);padding:2px 8px;border-radius:5px}
+  .rb-sec-n{font-size:13px;color:var(--ink-soft);line-height:1.5}
+  .rb-fg{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-deep);margin:15px 0 8px}
+  .rb-card{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:7px;background:var(--paper)}
+  .rb-grip{color:var(--ink-faint);font-size:13px;cursor:grab;letter-spacing:-2px}
+  .rb-card-t{flex:1;font-size:13px;font-weight:500}
+  .rb-rm{font-size:11px;color:var(--ink-faint);background:none;border:none;cursor:pointer}
+  .rb-rm:hover{color:var(--orange-deep)}
+  .rb-empty2{font-size:13px;color:var(--ink-faint);line-height:1.5;background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:16px;margin-top:10px}
+  .rb-export{display:flex;align-items:center;gap:14px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:4px}
+  .rb-export-t{font-size:13.5px;font-weight:500;color:var(--ink-soft)}
+  .rb-export-btns{margin-left:auto;display:flex;gap:9px}
+
+  .inspector{width:300px;background:var(--paper);border-left:1px solid var(--line);overflow-y:auto;flex-shrink:0;padding:20px 18px}
+  .insp-title{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+  .insp-sub{font-size:11.5px;color:var(--ink-faint);line-height:1.5;margin-bottom:16px}
+  .rb-empty{font-size:12px;color:var(--ink-faint);line-height:1.55;background:var(--panel);border:1px dashed var(--line);border-radius:11px;padding:16px}
+  .rb-group{margin-bottom:14px}
+  .rb-gh{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-deep);margin-bottom:7px}
+  .rb-item{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-soft);padding:6px 0;border-bottom:1px solid var(--line-soft)}
+  .rb-item:last-child{border-bottom:none}
+  .rb-item .dot{width:6px;height:6px;border-radius:50%;background:var(--orange);flex-shrink:0}
+  .rb-open{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:700;color:#fff;background:var(--orange);border:none;padding:11px;border-radius:9px;cursor:pointer;margin-top:8px}
+  .rb-open:hover{background:var(--orange-deep)}
+  .rb-count{font-size:10px;font-weight:600;color:var(--ink-faint);background:#e8ecf1;padding:2px 7px;border-radius:5px}
+
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#d2d8d6;border-radius:5px;border:2px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:#bcc4c1;background-clip:padding-box}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="logo">
+    <svg viewBox="0 0 40 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14h6l4-10 6 22 5-16 3 8h6"/></svg>
+    ReliCheck
+    <span class="div"></span>
+    <span class="studio"><span class="sq">MM</span>Mixed Methods Studio</span>
+  </div>
+  <div class="tb-spacer"></div>
+  <button class="tb-btn">Save</button>
+  <button class="tb-btn">Print</button>
+  <button class="tb-btn">Export</button>
+  <button class="tb-btn ask">✦ Ask ReliCheck</button>
+</div>
+
+<div class="stagebar" id="stagebar"></div>
+
+<div class="stage">
+  <aside class="rail">
+    <div class="rail-cap" id="railCap"></div>
+    <div id="navList"></div>
+  </aside>
+  <main class="doc-area">
+    <div class="crumb" id="crumb"></div>
+    <div class="doc-wrap" id="docWrap"></div>
+  </main>
+  <aside class="inspector">
+    <div class="insp-title"><span>Report Draft</span><span class="rb-count" id="rbCount">0 items</span></div>
+    <div class="insp-sub">Every analysis you save lands here, grouped by stage, ready to assemble in the Report Builder.</div>
+    <div id="rbBody"></div>
+  </aside>
+</div>
+
+<script>
+const STAGES=[
+  {id:'overview',name:'Overview',q:'what do we have?',pages:[
+    {id:'snapshot',name:'Project Snapshot',desc:'A one-page overview of the project: sample size, variable counts by type, completion rate, response dates, and the full variable list with missingness per column.'},
+    {id:'purpose',name:'Purpose & Research Question',desc:'The research questions and the mixed methods design that frame every analysis that follows.'},
+    {id:'sample',name:'Sample & Data Sources',desc:'Who responded, how many, and where the data came from, broken out by source, group, and completion.'},
+    {id:'quality',name:'Data Quality',desc:'Missingness, duplicates, straight-lining, and other checks that establish whether the data are ready for analysis.'},
+  ]},
+  {id:'instrument',name:'Instrument Quality',q:'can we trust it?',pages:[
+    {id:'cred',name:'Credibility Summary',tag:'RSSI',desc:'The credibility verdict for this instrument, read from RSSI. Reliability and validity are established there before any analysis begins here.'},
+    {id:'dims',name:'Eight Dimensions',tag:'RSSI',desc:'The eight diagnostic dimensions RSSI scores, from reliability through response scale review.'},
+    {id:'lenses',name:'Three Lenses',tag:'RSSI',desc:'The three weighted lenses RSSI reports: Psychometric Core, Respondent-Centered, and Validity-Forward.'},
+  ]},
+  {id:'descriptive',name:'Descriptive Analysis',q:'what does it show?',pages:[
+    {id:'freq',name:'Frequencies',tag:'QUAN',desc:'Counts and percentages for every categorical variable.'},
+    {id:'means',name:'Means & Distributions',tag:'QUAN',desc:'Means, standard deviations, and the full distribution for each scale and item.'},
+    {id:'cross',name:'Cross-Tabs',tag:'QUAN',desc:'Two-way tables that cross one categorical variable with another.'},
+    {id:'groups',name:'Group Summaries',tag:'QUAN',desc:'Summary statistics broken out by a grouping variable such as tenure or role.'},
+    {id:'itemtheme',name:'Item / Theme Summaries',tag:'MM',desc:'Per-item summaries on the quantitative side and per-theme summaries on the qualitative side, shown together.'},
+    {id:'topbot',name:'Top & Bottom Items',tag:'QUAN',desc:'The highest and lowest scoring items across the instrument.'},
+    {id:'scales',name:'Scale Scores',tag:'QUAN',desc:'Computed scale scores with the items that compose each scale.'},
+    {id:'missing',name:'Missing Data',tag:'QUAN',desc:'Missingness per variable and the pattern of what is missing.'},
+    {id:'themes',name:'Themes & Codes',tag:'QUAL',desc:'The coded segments and the codebook that organizes them.'},
+    {id:'codebook',name:'Codebook Builder',tag:'QUAL',desc:'Build and refine the codebook used to tag open-ended responses.'},
+    {id:'themegrp',name:'Theme by Group',tag:'QUAL',desc:'How themes distribute across groups such as tenure or role.'},
+    {id:'qq',name:'Qual → Quant',tag:'MM',desc:'Convert coded themes into counts that can join the quantitative analysis.'},
+    {id:'quotes',name:'Exemplar Quotes',tag:'QUAL',desc:'Representative quotes that illustrate each theme.'},
+    {id:'cooccur',name:'Theme Co-occurrence',tag:'QUAL',desc:'Which codes and themes appear together in the same responses.'},
+  ]},
+  {id:'inferential',name:'Inferential Analysis',q:'what can we test?',pages:[
+    {id:'recommended',name:'Recommended Analyses',desc:'Suggested tests based on the variables you have and the questions you asked.'},
+    {id:'ttest',name:'T-Test',tag:'QUAN',desc:'Compare two group means.'},
+    {id:'anova',name:'ANOVA',tag:'QUAN',desc:'Compare means across three or more groups.'},
+    {id:'chi',name:'Chi-Square',tag:'QUAN',desc:'Test association between two categorical variables.'},
+    {id:'corr',name:'Correlation',tag:'QUAN',desc:'Measure how two scales move together.'},
+    {id:'effect',name:'Effect Sizes',tag:'QUAN',desc:'Effect sizes and their confidence intervals for each comparison.'},
+    {id:'paired',name:'Paired T-Test',tag:'QUAN',desc:'Compare two related measurements from the same respondents.'},
+    {id:'welch',name:'Welch ANOVA',tag:'QUAN',desc:'Compare group means without assuming equal variances.'},
+    {id:'posthoc',name:'Post-Hoc Comparison',tag:'QUAN',desc:'Pairwise comparisons that follow a significant omnibus test.'},
+    {id:'reg',name:'Regression',tag:'QUAN',desc:'Model an outcome from one or more predictors.'},
+    {id:'ci',name:'Confidence Intervals',tag:'QUAN',desc:'Confidence intervals for means, differences, and coefficients.'},
+    {id:'assume',name:'Assumption Checks',tag:'QUAN',desc:'Normality, variance, and independence checks for each test.'},
+    {id:'joint',name:'Joint Displays',tag:'MM',desc:'Pair quantitative findings with qualitative themes in a joint display. This opens the Integration canvas.'},
+    {id:'convdiv',name:'Convergence & Divergence',tag:'MM',desc:'Where the two strands agree and where they diverge.'},
+    {id:'kappa',name:'Coding Agreement (κ)',tag:'QUAL',desc:'Inter-rater reliability for the coding, reported as Cohen\u2019s kappa.'},
+    {id:'pattern',name:'Pattern Matching',tag:'QUAL',desc:'Match observed patterns against the patterns the design predicted.'},
+    {id:'meta',name:'Meta-inferences',tag:'MM',desc:'The conclusions that rest on both strands together. This opens the Integration canvas.'},
+  ]},
+  {id:'interpretation',name:'Interpretation',q:'what does it mean?',pages:[
+    {id:'key',name:'Key Findings',desc:'The findings that matter most, stated plainly and tied to their evidence.'},
+    {id:'evidence',name:'Evidence Notes',desc:'The quantitative and qualitative evidence behind each finding.'},
+    {id:'practical',name:'Practical Meaning',desc:'What each finding means for practice and for the people in the data.'},
+    {id:'limits',name:'Limitations',desc:'What the design and the data cannot support, stated openly.'},
+    {id:'actions',name:'Recommended Actions',desc:'Recommended actions that follow from the findings.'},
+    {id:'teaching',name:'Teaching Moments',desc:'Moments in the analysis worth teaching, for students learning the method.'},
+    {id:'ai',name:'AI Interpretation',desc:'An AI-drafted reading of the results for you to review and revise.'},
+    {id:'decision',name:'Decision Readiness',desc:'Whether the evidence is strong enough to support a decision, and where it is not.'},
+  ]},
+  {id:'reporting',name:'Reporting',q:'how do we report it?',pages:[
+    {id:'builder',name:'Report Builder',desc:'Assemble your saved analyses into a structured report. Sections draft themselves from the work, and your saved findings drop into place ready to order and edit.'},
+    {id:'exec',name:'Executive Summary',desc:'A short summary of purpose, findings, and recommendations.'},
+    {id:'method',name:'Methodology',desc:'The design, sample, instrument, and analysis methods written up.'},
+    {id:'findings',name:'Findings',desc:'The full findings section, drawn from saved analyses.'},
+    {id:'tables',name:'Tables & Figures',desc:'Formatted tables and figures ready for the report.'},
+    {id:'recs',name:'Recommendations',desc:'The recommendations section.'},
+    {id:'appendix',name:'Appendix',desc:'Supporting material, including the codebook and full output.'},
+    {id:'exports',name:'Exports',desc:'Export the report to Word, PDF, or slides.'},
+  ]},
+];
+
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(178);
+function gauss(m,s){let u=0,v=0;while(u===0)u=rng();while(v===0)v=rng();return m+s*Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const clamp=x=>Math.max(1,Math.min(5,x));
+const belonging=[];for(let i=0;i<250;i++)belonging.push(clamp(gauss(3.18,0.9)));
+const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1));};
+
+let stageId='overview', pageId='snapshot';
+let report=[];
+const $=s=>document.querySelector(s);
+const stageById=id=>STAGES.find(s=>s.id===id);
+const pageById=(s,pid)=>stageById(s).pages.find(p=>p.id===pid);
+
+function renderStages(){
+  $('#stagebar').innerHTML=STAGES.map(s=>`
+    <div class="stage-tab ${s.id===stageId?'on':''}" data-stage="${s.id}">
+      <span class="nm">${s.name}</span><span class="q">${s.q}</span>
+    </div>`).join('');
+  document.querySelectorAll('[data-stage]').forEach(el=>el.onclick=()=>{
+    stageId=el.dataset.stage; pageId=stageById(stageId).pages[0].id; renderAll();
+  });
+}
+function renderRail(){
+  const st=stageById(stageId);
+  $('#railCap').textContent=st.name;
+  $('#navList').innerHTML=st.pages.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(p=>`
+    <div class="nav-item ${p.id===pageId?'on':''}" data-page="${p.id}">
+      <span class="lbl">${p.name}</span>
+      ${p.tag?`<span class="tag ${p.tag}">${p.tag}</span>`:''}
+    </div>`).join('');
+  document.querySelectorAll('[data-page]').forEach(el=>el.onclick=()=>{pageId=el.dataset.page;renderAll();});
+}
+
+function dataStrip(){
+  return `<div class="data-strip"><span class="live"></span><span class="nm">MM Sample Project — Belonging &amp; Retention</span>
+    <span class="sep">|</span><span class="meta">250 rows · 32 variables</span>
+    <span class="replace">Replace data →</span></div>`;
+}
+function saveBar(){
+  const saved=report.some(r=>r.stageId===stageId&&r.pageId===pageId);
+  return `<div class="save-bar"><span class="txt">Add this analysis to your report.</span>
+    <div class="right"><span class="open-rb" data-openrb>Open Report Builder →</span>
+    <button class="save-btn ${saved?'done':''}" data-save>${saved?'✓ Saved to Report':'⤓ Save to Report'}</button></div></div>`;
+}
+function head(st,p){
+  return `<div class="eyebrow">${st.name} · ${st.q}</div>
+    <h1 class="doc-title">${p.name}</h1>
+    <p class="doc-desc">${p.desc}</p>${dataStrip()}`;
+}
+function renderMeans(){
+  const m=mean(belonging),s=sd(belonging),mn=Math.min(...belonging),mx=Math.max(...belonging);
+  const bins=[0,0,0,0,0,0,0,0];belonging.forEach(x=>{bins[Math.min(7,Math.floor((x-1)/0.5))]++;});
+  const peak=Math.max(...bins);
+  return `<div class="result">
+    <p class="res-sent">Across all 250 respondents, belonging averages <span class="num">${m.toFixed(2)}</span> on the five-point scale, with a standard deviation of <span class="num">${s.toFixed(2)}</span>.</p>
+    <div class="strip">
+      <div class="scell"><div class="sk">Mean</div><div class="sv">${m.toFixed(2)}</div></div>
+      <div class="scell"><div class="sk">SD</div><div class="sv">${s.toFixed(2)}</div></div>
+      <div class="scell"><div class="sk">n</div><div class="sv">250</div></div>
+      <div class="scell"><div class="sk">Range</div><div class="sv">${mn.toFixed(1)}–${mx.toFixed(1)}</div></div>
+    </div>
+    <div class="bars">${bins.map(b=>`<div class="bar" style="height:${peak?b/peak*100:0}%"></div>`).join('')}</div>
+    <div class="bax"><span>1.0</span><span>3.0</span><span>5.0</span></div>
+  </div>`;
+}
+function renderSample(){
+  const G=[['Female',139,56],['Male',101,40],['Non-binary',8,3],['Prefer not to say',2,1]];
+  const T=[['4-7 years',70,28],['1-3 years',64,26],['8-15 years',55,22],['<1 year',36,14],['16+ years',25,10]];
+  const card=(t,sub,rows)=>`<div class="pcard"><h4>${t}</h4><div class="sub">${sub}</div>${rows.map(r=>`
+    <div class="prow"><span class="pl">${r[0]}</span><span class="pbar"><span class="pfill" style="width:${r[2]*1.6}%"></span></span><span class="pn">${r[1]} · ${r[2]}%</span></div>`).join('')}</div>`;
+  return `<div class="profile-grid">${card('Gender','4 levels · 250 non-missing',G)}${card('Tenure','5 levels · 250 non-missing',T)}</div>`;
+}
+function renderCred(){
+  return `<div class="rssi-banner"><span class="ck">✓</span>This instrument was validated in RSSI. Reliability and validity live there. The studio reads the verdict and analyzes the data.</div>
+    <div class="lens-row">
+      <div class="lens"><div class="ll">Psychometric Core</div><div class="ln">81</div><div class="lw">Measurement Integrity Index</div></div>
+      <div class="lens"><div class="ll">Respondent-Centered</div><div class="ln">85</div><div class="lw">Response Quality Index</div></div>
+      <div class="lens"><div class="ll">Validity-Forward</div><div class="ln">84</div><div class="lw">Construct Validity Index</div></div>
+    </div>
+    <div class="run-card"><div class="run-h">Open the full credibility report</div><div class="run-d">The eight diagnostic dimensions and per-item detail live in RSSI. This summary is read-only here.</div><button class="xref">Open in RSSI →</button></div>`;
+}
+function renderXref(label){
+  return `<div class="run-card"><div class="run-h">This opens the Integration canvas</div>
+    <div class="run-d">${label} is built on the canvas, where a quantitative finding pairs with a qualitative theme and you write the meta-inference that rests on both.</div>
+    <button class="xref">Open Integration canvas →</button></div>`;
+}
+function renderRunCard(p){
+  return `<div class="run-card dashed"><div class="run-h">${p.name}</div><div class="run-d">${p.desc}</div>
+    <div class="run-btns"><button class="btn primary" data-run>▷ Run</button><button class="btn">Configure</button><button class="btn">Learn</button></div></div>`;
+}
+function renderBuilder(){
+  const sec=(t,n,inner='')=>`<div class="rb-sec"><div class="rb-sec-h"><span class="rb-sec-t">${t}</span><span class="rb-sec-mark">Auto-drafted</span></div><div class="rb-sec-n">${n}</div>${inner}</div>`;
+  let findingsInner;
+  if(!report.length){
+    findingsInner=`<div class="rb-empty2">No analyses saved yet. As you run analyses across the stages and click Save to Report, they drop in here as findings.</div>`;
+  }else{
+    const byStage={};report.forEach((r,i)=>{(byStage[r.stageId]=byStage[r.stageId]||[]).push({...r,idx:i});});
+    findingsInner='';
+    STAGES.forEach(s=>{if(byStage[s.id]){findingsInner+=`<div class="rb-fg">${s.name}</div>`+byStage[s.id].map(r=>`<div class="rb-card"><span class="rb-grip">⠿</span><span class="rb-card-t">${r.pageName}</span><button class="rb-rm" data-rm="${r.idx}">remove</button></div>`).join('');}});
+  }
+  const body=
+    sec('Executive Summary','A short summary of purpose, findings, and recommendations, drafted from the saved analyses.')+
+    sec('Methodology','The convergent design, the sample of 250 respondents, the instrument validated in RSSI, and the analysis methods.')+
+    sec('Findings','Your saved analyses, ordered by stage. Drag to reorder in the full build.',findingsInner)+
+    sec('Tables & Figures','Formatted tables and figures pulled from the saved analyses.')+
+    sec('Recommendations','The recommendations that follow from the findings.')+
+    sec('Appendix','The codebook, full output, and supporting material.');
+  const exportBar=`<div class="rb-export"><span class="rb-export-t">Export the assembled report.</span><div class="rb-export-btns"><button class="btn">Word</button><button class="btn">PDF</button><button class="btn">Slides</button><button class="btn primary" style="background:var(--orange);border-color:var(--orange)">Generate report</button></div></div>`;
+  return body+exportBar;
+}
+
+function renderDoc(){
+  const st=stageById(stageId), p=pageById(stageId,pageId);
+  $('#crumb').innerHTML=`<span>MM Sample Project — Belonging &amp; Retention</span><span class="sep">›</span><b>${st.name}</b><span class="sep">›</span><b>${p.name}</b>`;
+  if(pageId==='builder'){
+    $('#docWrap').innerHTML=head(st,p)+renderBuilder();
+    $('#docWrap').querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{report.splice(+b.dataset.rm,1);renderDoc();renderReport();});
+    return;
+  }
+  let body;
+  if(pageId==='means') body=renderMeans();
+  else if(pageId==='sample') body=renderSample();
+  else if(pageId==='cred') body=renderCred();
+  else if(pageId==='joint') body=renderXref('The joint display');
+  else if(pageId==='meta') body=renderXref('The meta-inference');
+  else body=renderRunCard(p);
+  const showSave=!['cred','joint','meta'].includes(p.id);
+  $('#docWrap').innerHTML=head(st,p)+body+(showSave?saveBar():'');
+  const sb=$('#docWrap').querySelector('[data-save]'); if(sb) sb.onclick=()=>saveToReport(st,p);
+  const orb=$('#docWrap').querySelector('[data-openrb]'); if(orb) orb.onclick=openReportBuilder;
+  const run=$('#docWrap').querySelector('[data-run]'); if(run) run.onclick=()=>{run.textContent='✓ Ran';run.classList.remove('primary');};
+}
+function saveToReport(st,p){
+  if(report.some(r=>r.stageId===st.id&&r.pageId===p.id)) return;
+  report.push({stageId:st.id,stageName:st.name,pageId:p.id,pageName:p.name});
+  renderDoc();renderReport();
+}
+function openReportBuilder(){stageId='reporting';pageId='builder';renderAll();}
+function renderReport(){
+  $('#rbCount').textContent=`${report.length} item${report.length===1?'':'s'}`;
+  if(!report.length){$('#rbBody').innerHTML=`<div class="rb-empty">Run an analysis and save it here. Items group by stage as you go, so the report writes itself while you work.</div>`;return;}
+  const byStage={};report.forEach(r=>{(byStage[r.stageId]=byStage[r.stageId]||[]).push(r);});
+  let html='';
+  STAGES.forEach(s=>{if(byStage[s.id]){html+=`<div class="rb-group"><div class="rb-gh">${s.name}</div>${byStage[s.id].map(r=>`<div class="rb-item"><span class="dot"></span>${r.pageName}</div>`).join('')}</div>`;}});
+  html+=`<button class="rb-open" data-rbopen>Open Report Builder →</button>`;
+  $('#rbBody').innerHTML=html;
+  $('#rbBody').querySelector('[data-rbopen]').onclick=openReportBuilder;
+}
+function renderAll(){renderStages();renderRail();renderDoc();renderReport();}
+renderAll();
+</script>
+</body>
+</html>

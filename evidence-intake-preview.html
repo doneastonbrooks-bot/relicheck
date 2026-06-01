@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>ReliCheck app previews</title>
+  <style>
+    /* Lightweight preview chrome. The real wizard renders inside the iframe
+       below, served from the live host so what you see is what shipped. */
+    *{ box-sizing: border-box; }
+    html, body{ margin: 0; height: 100%; overflow: hidden; }
+    body{
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f1322;
+      color: #f6f7fa;
+    }
+
+    .switcher{
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 18px;
+      background: #0f1322;
+      border-bottom: 1px solid #1a2238;
+    }
+    .switcher .label{
+      font-size: 13px; font-weight: 500;
+      color: #aab2c3;
+      letter-spacing: .01em;
+    }
+    .switcher .label strong{ color: #fff; font-weight: 600; margin-right: 2px; }
+    .switcher .seg{
+      display: inline-flex; align-items: center;
+      background: rgba(255,255,255,.06);
+      border-radius: 999px;
+      padding: 2px;
+      gap: 1px;
+      margin-left: 6px;
+    }
+    .switcher .seg button{
+      border: 0;
+      background: transparent;
+      font: inherit;
+      font-size: 12.5px; font-weight: 600;
+      color: #aab2c3;
+      padding: 5px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .switcher .seg button:hover{ color: #fff; }
+    .switcher .seg button.is-on{
+      background: #fff;
+      color: #0f1322;
+    }
+    .switcher .seg-sep{
+      width: 1px; height: 16px;
+      background: rgba(255,255,255,.12);
+      margin: 0 12px;
+    }
+    .switcher .seg-label{
+      font-size: 11px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      color: #7a8499;
+      margin: 0 8px 0 4px;
+    }
+    .switcher .open-direct{
+      margin-left: auto;
+      color: #aab2c3;
+      font-size: 12px;
+      text-decoration: none;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      transition: background .15s, color .15s;
+    }
+    .switcher .open-direct:hover{
+      background: rgba(255,255,255,.08);
+      color: #fff;
+    }
+    .switcher .live-dot{
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 999px;
+      background: #15a06b;
+      box-shadow: 0 0 0 4px rgba(21,160,107,.18);
+      margin-right: 4px;
+    }
+
+    .frame-wrap{
+      height: calc(100vh - 51px);
+      background: #f7f8fb;
+      position: relative;
+    }
+    .frame-wrap iframe{
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+    }
+    .frame-loader{
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity .15s;
+      color: #7a8499;
+      font-size: 13px;
+    }
+    .frame-wrap.is-loading .frame-loader{ opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="switcher">
+  <span class="live-dot" aria-hidden="true"></span>
+  <span class="label"><strong>ReliCheck app previews</strong> live from relichecksurvey.com</span>
+  <span class="seg-label">Evidence Intake</span>
+  <div class="seg" role="group" aria-label="Pick an Evidence Intake studio">
+    <button type="button" data-target="evidence-intake" data-studio="survey" class="is-on">Survey</button>
+    <button type="button" data-target="evidence-intake" data-studio="mm">MM</button>
+    <button type="button" data-target="evidence-intake" data-studio="tia">TIA</button>
+    <button type="button" data-target="evidence-intake" data-studio="360">360</button>
+  </div>
+  <span class="seg-sep" aria-hidden="true"></span>
+  <span class="seg-label">Analysis</span>
+  <div class="seg" role="group" aria-label="Pick an analysis app">
+    <button type="button" data-target="strength-index">Strength Index</button>
+  </div>
+  <a class="open-direct" id="openDirect" href="https://relichecksurvey.com/evidence-intake.php?studio=survey" target="_blank" rel="noopener">Open in new tab ↗</a>
+</div>
+
+<div class="frame-wrap is-loading" id="frameWrap">
+  <div class="frame-loader">Loading…</div>
+  <iframe
+    id="wizardFrame"
+    src="https://relichecksurvey.com/evidence-intake.php?studio=survey"
+    title="Evidence Intake Wizard">
+  </iframe>
+</div>
+
+<script>
+  (function () {
+    const URLS = {
+      'evidence-intake': (studio) => 'https://relichecksurvey.com/evidence-intake.php?studio=' + studio,
+      'strength-index': () => 'https://relichecksurvey.com/studio-survey.php',
+    };
+    const switcher = document.querySelector('.switcher');
+    const frame    = document.getElementById('wizardFrame');
+    const wrap     = document.getElementById('frameWrap');
+    const openLnk  = document.getElementById('openDirect');
+
+    function loadButton(btn) {
+      switcher.querySelectorAll('button').forEach(b => b.classList.remove('is-on'));
+      btn.classList.add('is-on');
+      const target = btn.dataset.target;
+      const studio = btn.dataset.studio;
+      const url = URLS[target](studio);
+      wrap.classList.add('is-loading');
+      frame.src = url;
+      openLnk.href = url;
+    }
+
+    switcher.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-target]');
+      if (btn) loadButton(btn);
+    });
+
+    frame.addEventListener('load', () => wrap.classList.remove('is-loading'));
+
+    // Respect ?app= and ?studio= on this preview's own URL.
+    const params = new URLSearchParams(location.search);
+    const app = params.get('app');
+    const studio = params.get('studio');
+    if (app === 'strength-index') {
+      loadButton(document.querySelector('button[data-target="strength-index"]'));
+    } else if (studio && ['survey', 'mm', 'tia', '360'].includes(studio)) {
+      loadButton(document.querySelector('button[data-target="evidence-intake"][data-studio="' + studio + '"]'));
+    }
+  })();
+</script>
+
+</body>
+</html>

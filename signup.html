@@ -349,11 +349,11 @@
           stashPendingUpgrade();
           const _qp = new URLSearchParams(location.search);
           const ret = _qp.get('next') || _qp.get('return');
-          // Phase 171: if the promo was a closed-beta cohort code, land the
-          // user inside MM Studio (App 2.0 draft preview) instead of the legacy app.html.
+          // Phase 171 + v4: if the promo was a closed-beta cohort code, land
+          // the user inside MM Studio. Otherwise the welcome picker.
           const defaultDest = window.__betaCohortRedeemed
-            ? 'app-2026.html?draft=1#/mm'
-            : 'app.html';
+            ? '/studio-mm.php'
+            : '/app-2026v4.php';
           const dest = (ret && /^\/[A-Za-z0-9_\-./?=&%]*$/.test(ret)) ? ret : defaultDest;
           setTimeout(function () { window.location.href = dest; }, (pendingPromo || pendingPlan) ? 1800 : 600);
         } catch (err) {
@@ -421,10 +421,10 @@
           stashPendingUpgrade();
           const _qp = new URLSearchParams(location.search);
           const ret = _qp.get('next') || _qp.get('return');
-          // Phase 171: beta cohort users land in MM Studio (App 2.0 draft preview).
+          // Phase 171 + v4: beta cohort users land in MM Studio; everyone else welcome.
           const defaultDest = window.__betaCohortRedeemed
-            ? 'app-2026.html?draft=1#/mm'
-            : 'app.html';
+            ? '/studio-mm.php'
+            : '/app-2026v4.php';
           const dest = (ret && /^\/[A-Za-z0-9_\-./?=&%]*$/.test(ret)) ? ret : defaultDest;
           setTimeout(() => { window.location.href = dest; }, (pendingPromo || pendingPlan) ? 1800 : 400);
         } catch (e) {

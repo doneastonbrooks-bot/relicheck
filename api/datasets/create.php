@@ -85,6 +85,11 @@ $cleanSettings = [
 if (array_key_exists('reverse_coded_confirmed', $settings)) {
     $cleanSettings['reverse_coded_confirmed'] = !empty($settings['reverse_coded_confirmed']);
 }
+// Optional free-text description (e.g. saved with a reliability-trimmed dataset).
+// Stored in settings JSON since the datasets table has no dedicated column.
+if (isset($settings['description']) && $settings['description'] !== '') {
+    $cleanSettings['description'] = clean_string((string)$settings['description'], 1000);
+}
 
 // Encode the data array. We trust the front-end to have already coerced cells
 // into appropriate types (numbers stay numbers, strings stay strings).

@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ReliCheck App — Direction Mockup (not live)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
+<style>
+/* ─────────────────────────────────────────────
+   TOKENS  (pulled from your real styles-2026.css
+   + proposed reconciliation changes)
+───────────────────────────────────────────── */
+:root {
+  /* your colour ramp — unchanged */
+  --ink-9: #0b1733;
+  --ink-8: #1c2745;
+  --ink-7: #2d3a5c;
+  --ink-6: #4a5578;
+  --ink-5: #6b7691;
+  --ink-4: #8d97b1;
+  --ink-3: #b3bbcc;
+  --line:  #e6eaf2;
+  --bg:    #ffffff;
+  --bg-soft: #f5f7fb;
+  --bg-muted: #eef1f7;
+
+  /* PROPOSED: one brand primary — terracotta replaces indigo/purple */
+  --brand:        #e85d3a;
+  --brand-deep:   #c2451f;
+  --brand-tint:   rgba(232,93,58,.08);
+  --brand-ring:   rgba(232,93,58,.22);
+
+  /* data-viz — semantic scale, same meaning every time */
+  --viz-strong:   #0f9e7b;   /* ≥ 70  — teal   */
+  --viz-watch:    #c8902a;   /* 50–69 — amber  */
+  --viz-concern:  #d04030;   /* < 50  — red    */
+  --viz-strong-bg: rgba(15,158,123,.10);
+  --viz-watch-bg:  rgba(200,144,42,.10);
+
+  /* type */
+  --serif: 'Fraunces', Georgia, serif;
+  --sans:  'Inter', system-ui, sans-serif;
+
+  /* radii */
+  --r-sm:  8px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-pill: 999px;
+
+  /* shadows */
+  --shadow-xs: 0 1px 2px rgba(11,23,51,.06);
+  --shadow-sm: 0 1px 4px rgba(11,23,51,.08), 0 4px 12px -4px rgba(11,23,51,.08);
+  --shadow-md: 0 2px 8px rgba(11,23,51,.08), 0 12px 28px -10px rgba(11,23,51,.14);
+
+  --ease: cubic-bezier(.22,.61,.36,1);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink-8);
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ─── COMPARISON BANNER ─── */
+.compare-banner {
+  background: var(--ink-9);
+  color: #8d97b1;
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 9px 20px;
+  flex-shrink: 0;
+}
+.compare-banner b { color: #fff; }
+.compare-banner .sep { color: #2d3a5c; }
+.compare-banner .tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+}
+.tag-old { color: #8d97b1; }
+.tag-new { color: #e85d3a; }
+.arrow { color: #4a5578; font-size: 13px; }
+
+/* ─── SHELL ─── */
+.shell {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ─── SIDEBAR ─── */
+.sidebar {
+  width: 200px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.sidebar-head {
+  padding: 16px 14px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.wordmark {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--sans); font-weight: 700; font-size: 15px;
+  color: var(--ink-9); letter-spacing: -.01em;
+}
+/* PROPOSED: brand-coloured logo mark instead of purple */
+.wordmark-icon {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+}
+.wordmark-icon svg { display: block; }
+
+.studio-pill {
+  margin-top: 10px;
+  display: flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600; color: var(--ink-7);
+}
+.studio-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--viz-strong); }
+
+.project-box {
+  margin: 10px 10px 0;
+  padding: 10px 12px;
+  background: var(--brand-tint);
+  border: 1px solid var(--brand-ring);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.project-box .pname {
+  font-size: 12.5px; font-weight: 600; color: var(--ink-9);
+  line-height: 1.3;
+}
+.project-box .pid { font-size: 11px; color: var(--brand); margin-top: 3px; }
+
+/* Nav sections */
+.nav-section { padding: 14px 0 6px; }
+.nav-group-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-4);
+  padding: 0 16px; margin-bottom: 4px;
+}
+.nav-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 16px;
+  font-size: 13px; color: var(--ink-6); cursor: pointer;
+  transition: background .15s, color .15s;
+  border-radius: 0;
+  text-decoration: none;
+}
+.nav-item:hover { background: var(--bg-soft); color: var(--ink-9); }
+.nav-item.active {
+  /* PROPOSED: terracotta active state, not purple */
+  background: var(--brand-tint);
+  color: var(--brand-deep);
+  font-weight: 600;
+}
+.nav-item .nav-sub {
+  font-size: 11px; color: var(--ink-4); font-weight: 400;
+  display: block; margin-top: 1px;
+}
+.nav-parent {
+  font-size: 13px; font-weight: 600; color: var(--ink-8);
+  padding: 9px 16px 4px;
+}
+.nav-parent .nav-sub { font-weight: 400; }
+.nav-badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  padding: 2px 7px; border-radius: var(--r-pill);
+  text-transform: uppercase;
+}
+.nb-qual { background: rgba(79,70,229,.1); color: #4f46e5; } /* left as-is on badges for now */
+
+/* ─── MAIN ─── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--bg);
+}
+
+/* Top bar */
+.topbar {
+  height: 48px;
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 28px;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+.breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; color: var(--ink-5);
+}
+.breadcrumb a { color: inherit; text-decoration: none; }
+.breadcrumb a:hover { color: var(--ink-8); }
+.breadcrumb .sep { color: var(--ink-3); }
+.breadcrumb .current { color: var(--ink-8); font-weight: 500; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; }
+.tb-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--sans); font-size: 13px; font-weight: 500;
+  color: var(--ink-7); background: var(--bg);
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  padding: 6px 12px; cursor: pointer;
+  transition: border-color .15s, color .15s;
+}
+.tb-btn:hover { border-color: var(--ink-4); color: var(--ink-9); }
+/* PROPOSED: brand terracotta for primary action, not purple */
+.tb-btn-primary {
+  background: var(--brand); color: #fff; border-color: transparent;
+  font-weight: 600;
+}
+.tb-btn-primary:hover {
+  background: var(--brand-deep); color: #fff; border-color: transparent;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px -6px rgba(232,93,58,.5);
+}
+
+/* Page content */
+.page {
+  flex: 1;
+  padding: 36px 40px 60px;
+  overflow-y: auto;
+  max-width: 1200px;
+}
+.page-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-4);
+  margin-bottom: 10px;
+}
+/* PROPOSED: Fraunces for page H1, semibold (600) not 800-black Inter */
+.page-h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 1.5rem + 1.5vw, 2.55rem);
+  color: var(--ink-9);
+  letter-spacing: -.02em;
+  line-height: 1.08;
+  margin-bottom: 12px;
+}
+.page-lede {
+  font-size: 14.5px; color: var(--ink-5); line-height: 1.55;
+  max-width: 66ch; margin-bottom: 22px;
+}
+
+/* Data source bar */
+.source-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-soft);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  margin-bottom: 28px;
+  font-size: 13px;
+}
+.source-left { display: flex; align-items: center; gap: 10px; color: var(--ink-6); }
+.source-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--viz-strong); }
+.source-name { font-weight: 600; color: var(--ink-8); }
+.source-meta { color: var(--ink-4); }
+.source-link {
+  font-size: 13px; font-weight: 500; color: var(--brand);
+  text-decoration: none; display: flex; align-items: center; gap: 5px;
+}
+
+/* Score layout */
+.score-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  align-items: start;
+}
+@media(max-width:900px){ .score-layout{ grid-template-columns:1fr; } }
+
+/* Main score card */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.card-inner {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 0;
+}
+@media(max-width:700px){ .card-inner{ grid-template-columns:1fr; } }
+
+/* Gauge pane */
+.gauge-pane {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 36px 24px;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+}
+.gauge-wrap { position: relative; width: 144px; height: 144px; margin-bottom: 16px; }
+.gauge-wrap svg { transform: rotate(-90deg); display: block; }
+.gauge-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.gauge-num {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 3rem;
+  color: var(--ink-9);
+  line-height: 1;
+  letter-spacing: -.03em;
+}
+.gauge-denom {
+  font-size: 13px; color: var(--ink-4); margin-top: 2px; letter-spacing: .04em;
+}
+.gauge-verdict {
+  font-size: 13px; font-weight: 600; color: var(--ink-6);
+  letter-spacing: .02em;
+}
+.verdict-badge {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 600;
+  color: var(--viz-strong);
+  background: var(--viz-strong-bg);
+  padding: 6px 14px; border-radius: var(--r-pill);
+  margin-top: 12px;
+}
+.verdict-badge .tick { width: 6px; height: 6px; border-radius: 50%; background: var(--viz-strong); }
+.status-tags { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.stag {
+  font-size: 11px; font-weight: 500;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  border: 1px solid var(--line); color: var(--ink-5);
+  background: var(--bg-soft);
+}
+
+/* Bars pane */
+.bars-pane {
+  padding: 30px 28px;
+}
+.bars-title {
+  font-size: 13px; font-weight: 600; color: var(--ink-7);
+  margin-bottom: 22px; letter-spacing: .01em;
+}
+.bar-list { display: flex; flex-direction: column; gap: 18px; }
+.bar-row { display: grid; grid-template-columns: 130px 1fr 40px; align-items: center; gap: 14px; }
+.bar-name { font-size: 13px; font-weight: 500; color: var(--ink-7); }
+.bar-track {
+  height: 8px; background: var(--bg-muted); border-radius: var(--r-pill); overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: var(--r-pill);
+  width: 0; animation: barGrow 1.2s var(--ease) forwards;
+}
+.bar-fill.strong { background: linear-gradient(90deg, var(--viz-strong), #1cb89a); }
+.bar-fill.watch  { background: linear-gradient(90deg, var(--viz-watch),  #e6b550); }
+.bar-fill.concern{ background: linear-gradient(90deg, var(--viz-concern), #e05540); }
+@keyframes barGrow { to { width: var(--w); } }
+.bar-pct {
+  font-size: 12px; font-weight: 700;
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+.bar-pct.strong { color: var(--viz-strong); }
+.bar-pct.watch  { color: var(--viz-watch); }
+.bar-pct.concern{ color: var(--viz-concern); }
+
+/* PROPOSED: semantic legend — small, placed right after bars */
+.legend {
+  display: flex; gap: 18px; margin-top: 22px;
+  padding-top: 16px; border-top: 1px solid var(--line);
+}
+.legend-item { display: flex; align-items: center; gap: 7px; font-size: 11.5px; color: var(--ink-5); }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Flag bar */
+.flag-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 20px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-soft);
+  font-size: 13px;
+}
+.flag-item { display: flex; align-items: center; gap: 8px; }
+.flag-item.warn { color: var(--brand-deep); font-weight: 500; }
+.flag-link {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 13px; font-weight: 600; color: var(--ink-9);
+  text-decoration: none;
+}
+.flag-link:hover { color: var(--brand); }
+
+/* At a glance card */
+.glance-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+.glance-title {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 18px; color: var(--ink-9);
+  margin-bottom: 4px;
+}
+.glance-sub { font-size: 12.5px; color: var(--ink-4); margin-bottom: 22px; }
+.glance-stat { margin-bottom: 18px; }
+.glance-stat:last-child { margin-bottom: 0; }
+.glance-label { font-size: 12px; color: var(--ink-4); margin-bottom: 2px; }
+.glance-val {
+  font-family: var(--serif);
+  font-weight: 600; font-size: 1.9rem; color: var(--ink-9);
+  letter-spacing: -.02em; line-height: 1;
+}
+.glance-val-sm { font-size: 1.35rem; }
+.glance-divider { height: 1px; background: var(--line); margin: 20px 0; }
+.type-tags { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 14px; }
+.ttag {
+  font-size: 11px; font-weight: 600; letter-spacing: .05em;
+  padding: 4px 10px; border-radius: var(--r-pill);
+  text-transform: uppercase;
+}
+/* PROPOSED: keep these as neutral info tags, not purple */
+.ttag-quant { background: rgba(15,107,90,.1);   color: var(--teal, #0f6b5a); }
+.ttag-qual  { background: rgba(200,144,42,.12);  color: var(--viz-watch); }
+.ttag-mm    { background: var(--brand-tint);     color: var(--brand-deep); }
+
+/* annotation callouts */
+.callout {
+  display: flex; gap: 10px; align-items: flex-start;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(232,93,58,.06);
+  border-left: 3px solid var(--brand);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 12px; color: var(--ink-6); line-height: 1.5;
+}
+.callout b { color: var(--brand-deep); font-weight: 600; }
+
+/* entrance animation */
+[data-rise]{
+  opacity:0; transform:translateY(16px);
+  animation: rise .7s var(--ease) forwards;
+}
+@keyframes rise { to { opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+<!-- Banner: comparison context -->
+<div class="compare-banner">
+  <span><b>Direction mockup</b> — not live, nothing changed on your site</span>
+  <span class="sep">|</span>
+  <span class="tag tag-old">▸ Before: Inter 800 black + indigo + arbitrary bar colors</span>
+  <span class="arrow">→</span>
+  <span class="tag tag-new">▸ After: Fraunces H1 + terracotta primary + semantic bars</span>
+</div>
+
+<div class="shell">
+
+  <!-- ─── SIDEBAR ─── -->
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="wordmark">
+        <div class="wordmark-icon">
+          <!-- same W shape, brand terracotta instead of purple -->
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M2 3l2.5 8 2.5-5 2.5 5L12 3" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        ReliCheck
+      </div>
+      <div class="studio-pill" style="margin-top:12px">
+        <span class="dot"></span>
+        <span style="font-size:13px;font-weight:600;color:var(--ink-7)">MM Studio</span>
+      </div>
+    </div>
+
+    <div style="padding:10px 10px 0">
+      <div class="project-box">
+        <div class="pname">MM Sample Project — Belonging &amp; Ret...</div>
+        <div class="pid">● Project ID 176</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-parent">
+        Overview
+        <span class="nav-sub">what do we have?</span>
+      </div>
+      <a class="nav-item" href="#">Project Snapshot</a>
+      <a class="nav-item" href="#">Purpose &amp; Research Question</a>
+      <a class="nav-item" href="#">Sample &amp; Data Sources</a>
+      <a class="nav-item" href="#">Data Quality</a>
+    </div>
+
+    <div class="nav-section" style="border-top:1px solid var(--line);padding-top:14px">
+      <div class="nav-parent" style="color:var(--ink-8)">
+        Instrument Quality
+        <span class="nav-sub">can we trust it?</span>
+      </div>
+      <!-- PROPOSED: active item uses terracotta, not indigo/purple -->
+      <a class="nav-item active" href="#">ReliCheck Strength Index</a>
+      <a class="nav-item" href="#">Reliability</a>
+      <a class="nav-item" href="#">Validity</a>
+      <a class="nav-item" href="#">Construct Alignment</a>
+      <a class="nav-item" href="#">Item / Prompt Quality</a>
+      <a class="nav-item" href="#">Bias &amp; Clarity Review</a>
+      <a class="nav-item" href="#">Scale Structure</a>
+      <a class="nav-item" href="#">Factor Readiness</a>
+      <a class="nav-item" href="#">Response Scale Review</a>
+      <a class="nav-item" href="#">Trustworthiness <span class="nav-badge nb-qual" style="margin-left:auto">QUAL</span></a>
+      <a class="nav-item" href="#">Inter-rater Agreement</a>
+    </div>
+
+    <div class="nav-section" style="border-top:1px solid var(--line);padding-top:14px">
+      <div class="nav-parent">
+        Descriptive Analysis
+        <span class="nav-sub">what does it show?</span>
+      </div>
+    </div>
+    <div class="nav-section" style="border-top:1px solid var(--line);padding-top:14px">
+      <div class="nav-parent">
+        Inferential Analysis
+        <span class="nav-sub">what can we test?</span>
+      </div>
+    </div>
+    <div class="nav-section" style="border-top:1px solid var(--line);padding-top:14px">
+      <div class="nav-parent">
+        Interpretation
+        <span class="nav-sub">what does it mean?</span>
+      </div>
+    </div>
+    <div class="nav-section" style="border-top:1px solid var(--line);padding-top:14px">
+      <div class="nav-parent">
+        Reporting
+        <span class="nav-sub">how do we report it?</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── MAIN ─── -->
+  <div class="main">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="#">MM Sample Project — Belonging &amp; Retention</a>
+        <span class="sep">›</span>
+        <a href="#">Instrument Quality</a>
+        <span class="sep">›</span>
+        <span class="current">ReliCheck Strength Index</span>
+      </div>
+      <div class="topbar-actions">
+        <button class="tb-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v14a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+          Save
+        </button>
+        <button class="tb-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/></svg>
+          Print
+        </button>
+        <button class="tb-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          Export
+        </button>
+        <!-- PROPOSED: terracotta CTA, not purple -->
+        <button class="tb-btn tb-btn-primary">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/></svg>
+          Ask ReliCheck
+        </button>
+      </div>
+    </div>
+
+    <!-- Page content -->
+    <div class="page">
+
+      <div data-rise style="animation-delay:.05s">
+        <div class="page-eyebrow">Instrument Quality · Can we trust it?</div>
+        <!-- PROPOSED: Fraunces H1 at semibold, not heavy-black Inter -->
+        <h1 class="page-h1">ReliCheck Strength Index</h1>
+        <p class="page-lede">One headline number, six domains, every check you need to publish, share, or act on this instrument. Lower components point to exactly what to fix.</p>
+      </div>
+
+      <div class="source-bar" data-rise style="animation-delay:.12s">
+        <div class="source-left">
+          <span class="source-dot"></span>
+          <span class="source-name">MM Sample Project — Belonging &amp; Retention</span>
+          <span class="source-meta">· 250 rows · 32 variables</span>
+        </div>
+        <a class="source-link" href="#">
+          Replace data
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+      </div>
+
+      <div class="score-layout" data-rise style="animation-delay:.2s">
+
+        <!-- Main score card -->
+        <div class="card">
+          <div class="card-inner">
+
+            <!-- Gauge -->
+            <div class="gauge-pane">
+              <div class="gauge-wrap">
+                <svg width="144" height="144" viewBox="0 0 144 144">
+                  <!-- track -->
+                  <circle cx="72" cy="72" r="60" fill="none" stroke="#eef1f7" stroke-width="13"/>
+                  <!-- animated fill — 85/100 → offset = 376.99*(1-0.85)=56.5 -->
+                  <circle cx="72" cy="72" r="60" fill="none"
+                    stroke="var(--viz-strong)" stroke-width="13"
+                    stroke-linecap="round"
+                    stroke-dasharray="376.99"
+                    stroke-dashoffset="376.99"
+                    style="transition: stroke-dashoffset 1.5s var(--ease) .3s"
+                    id="gauge-ring"/>
+                </svg>
+                <div class="gauge-center">
+                  <span class="gauge-num">85</span>
+                  <span class="gauge-denom">/100</span>
+                </div>
+              </div>
+              <div class="gauge-verdict">Strong</div>
+              <div class="verdict-badge"><span class="tick"></span>Ready for inferential testing</div>
+              <div class="status-tags">
+                <span class="stag">v2.1 · May 29</span>
+              </div>
+            </div>
+
+            <!-- Bars -->
+            <div class="bars-pane">
+              <div class="bars-title">Score by domain</div>
+              <div class="bar-list">
+
+                <div class="bar-row">
+                  <span class="bar-name">Reliability</span>
+                  <div class="bar-track">
+                    <!-- 68 → watch (50-69) -->
+                    <div class="bar-fill watch" style="--w:68%; animation-delay:.5s"></div>
+                  </div>
+                  <span class="bar-pct watch">68</span>
+                </div>
+
+                <div class="bar-row">
+                  <span class="bar-name">Validity</span>
+                  <div class="bar-track">
+                    <!-- 80 → strong -->
+                    <div class="bar-fill strong" style="--w:80%; animation-delay:.65s"></div>
+                  </div>
+                  <span class="bar-pct strong">80</span>
+                </div>
+
+                <div class="bar-row">
+                  <span class="bar-name">Trustworthiness</span>
+                  <div class="bar-track">
+                    <!-- 100 → strong, now reads "perfect" not "warning orange" -->
+                    <div class="bar-fill strong" style="--w:100%; animation-delay:.8s"></div>
+                  </div>
+                  <span class="bar-pct strong">100</span>
+                </div>
+
+                <div class="bar-row">
+                  <span class="bar-name">Construct Align.</span>
+                  <div class="bar-track">
+                    <div class="bar-fill strong" style="--w:88%; animation-delay:.92s"></div>
+                  </div>
+                  <span class="bar-pct strong">88</span>
+                </div>
+
+                <div class="bar-row">
+                  <span class="bar-name">Item Quality</span>
+                  <div class="bar-track">
+                    <div class="bar-fill watch" style="--w:64%; animation-delay:1.05s"></div>
+                  </div>
+                  <span class="bar-pct watch">64</span>
+                </div>
+
+                <div class="bar-row">
+                  <span class="bar-name">Administration</span>
+                  <div class="bar-track">
+                    <div class="bar-fill strong" style="--w:76%; animation-delay:1.18s"></div>
+                  </div>
+                  <span class="bar-pct strong">76</span>
+                </div>
+
+              </div>
+
+              <!-- PROPOSED: semantic legend — readers always know what colors mean -->
+              <div class="legend">
+                <div class="legend-item"><span class="legend-dot" style="background:var(--viz-strong)"></span>Strong (70–100)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--viz-watch)"></span>Watch (50–69)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:var(--viz-concern)"></span>Concern (&lt;50)</div>
+              </div>
+
+              <div class="callout">
+                <b>↑ Key change:</b> bar colors are now <b>semantic</b> — same hue means same thing on every screen. Trustworthiness 100/100 now reads "perfect green," not warning orange.
+              </div>
+            </div>
+          </div>
+
+          <!-- Flag bar -->
+          <div class="flag-bar">
+            <div class="flag-item warn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+              2 leading questions flagged in Item Quality
+            </div>
+            <a class="flag-link" href="#">
+              Open full report
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- At a glance card -->
+        <div class="glance-card" data-rise style="animation-delay:.28s">
+          <!-- PROPOSED: Fraunces on card titles too for sub-section headings -->
+          <div class="glance-title">At a glance</div>
+          <div class="glance-sub">Composite of 6 signals</div>
+
+          <div class="glance-stat">
+            <div class="glance-label">Sample</div>
+            <div class="glance-val">250</div>
+          </div>
+
+          <div class="glance-stat">
+            <div class="glance-label">Response rate</div>
+            <div class="glance-val">100%</div>
+          </div>
+
+          <div class="glance-stat">
+            <div class="glance-label">Items reviewed</div>
+            <div class="glance-val">32</div>
+            <div class="glance-label" style="margin-top:3px">24 Likert</div>
+          </div>
+
+          <div class="glance-stat">
+            <div class="glance-label">Domains scored</div>
+            <div class="glance-val glance-val-sm">6 / 6</div>
+          </div>
+
+          <div class="glance-divider"></div>
+
+          <div class="glance-label" style="margin-bottom:6px">Analytic types</div>
+          <div class="type-tags">
+            <!-- PROPOSED: terracotta for MM tag instead of arbitrary purple -->
+            <span class="ttag ttag-quant">QUANT</span>
+            <span class="ttag ttag-qual">QUAL</span>
+            <span class="ttag ttag-mm">MM</span>
+          </div>
+
+          <div class="callout" style="margin-top:16px">
+            <b>↑ Key changes:</b> logo icon and "Ask ReliCheck" button are <b>terracotta</b> — one brand primary end to end. Serif <b>Fraunces</b> carries the marketing voice into the product.
+          </div>
+        </div>
+
+      </div><!-- /score-layout -->
+    </div><!-- /page -->
+  </div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+  window.addEventListener('load', () => {
+    // animate gauge fill: 85% → offset = 376.99 * (1-0.85) = 56.55
+    setTimeout(() => {
+      document.getElementById('gauge-ring').style.strokeDashoffset = '56.55';
+    }, 100);
+  });
+</script>
+</body>
+</html>

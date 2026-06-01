@@ -1,0 +1,1772 @@
+/* ReliCheck Studio Template — iPadOS / iWork inspired
+   Faithful translation of /Relicheck Studio Web-App/styles.css.
+   Pixel-for-pixel match on sidebar, topbar, page, card, ring, pill.
+   ------------------------------------------------------------------
+   Compatibility contract — classes other code reads STAY THE SAME:
+     .btn, .btn-ghost, .btn-primary
+     .studio-work
+     .work-breadcrumb, .work-head
+     .teach-card, .teach-cards, .teach-tag, .teach-title, .teach-sub
+     .studio-toast, .is-on, .is-warn
+     [data-studio-action], [data-toggle-assist], [data-assist-close]
+     body[data-current-studio]
+   ------------------------------------------------------------------ */
+
+/* =====================================================================
+   ReliCheck Global Typography System
+   Applies to all studio apps: MM, Test, 360, Survey, Reports.
+   ===================================================================== */
+:root {
+  /* Brand surfaces — consume the site's shared tokens from platform-shell.css.
+     --accent, --accent-soft and --bg share their names with the platform
+     tokens, so they are intentionally NOT redeclared here: the platform values
+     (--accent: #e85d3a coral, --accent-soft, --bg) cascade straight through.
+     (Re-declaring them as var(--accent, ...) would be a self-reference cycle
+     and void the token.) Per-studio accents are still applied below via the
+     body[data-current-studio="..."] rules, e.g. --mm: #6d4ad8. The
+     studio-specific surface/text names below map onto the platform ink/surface
+     ramp by reference. No new colors are introduced. */
+  --surface:     #FFFFFF;
+  --surface-2:   var(--bg-soft, #f7f8fb);
+  --sidebar-bg:  var(--bg-soft, #f7f8fb);
+
+  /* Legacy text aliases (kept so per-engine CSS keeps resolving) — mapped
+     onto the site's ink ramp from platform-shell.css. */
+  --text:        var(--ink-1, #0f1322);
+  --text-2:      var(--ink-4, #5b6378);
+  --text-3:      var(--ink-5, #7a8499);
+
+  /* Canonical rc-* text tokens — same ink ramp. */
+  --rc-text-primary:   var(--ink-1, #0f1322);
+  --rc-text-secondary: var(--ink-4, #5b6378);
+  --rc-text-muted:     var(--ink-5, #7a8499);
+  --rc-text-soft:      var(--ink-6, #aab2c3);
+
+  --hairline:        var(--line, rgba(60, 60, 67, 0.10));
+  --hairline-strong: var(--line-soft, rgba(60, 60, 67, 0.18));
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04), 0 0 0 0.5px rgba(0,0,0,0.04);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.04), 0 6px 24px rgba(0,0,0,0.06);
+  --shadow-lg: 0 2px 8px rgba(0,0,0,0.04), 0 24px 60px rgba(0,0,0,0.08);
+
+  --green:  #34C759;
+  --orange: #FF9500;
+  --red:    #FF3B30;
+  --purple: #AF52DE;
+  --teal:   #30B0C7;
+  --indigo: #5856D6;
+  --pink:   #FF2D55;
+
+  --qual-color:  #AF52DE;
+  --mm-color:    #FF9500;
+  --quant-color: #007AFF;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 18px;
+  --r-xl: 24px;
+
+  --pad: 32px;
+
+  /* Canonical font stack — Inter first, system fallback */
+  --rc-font-sans: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --rc-font-mono: "SF Mono", ui-monospace, "Menlo", Consolas, monospace;
+
+  /* Legacy aliases so existing rules using --font-display etc. resolve to the same stack */
+  --font-display: var(--rc-font-sans);
+  --font-text:    var(--rc-font-sans);
+  --font-sans:    var(--rc-font-sans);
+  --font-mono:    var(--rc-font-mono);
+
+  /* Type scale */
+  --rc-font-page-title:    56px;
+  --rc-font-section-title: 30px;
+  --rc-font-card-title:    22px;
+  --rc-font-body-lg:       20px;
+  --rc-font-body:          16px;
+  --rc-font-small:         14px;
+  --rc-font-eyebrow:       13px;
+
+  --rc-line-tight:   1.05;
+  --rc-line-heading: 1.15;
+  --rc-line-body:    1.45;
+}
+
+/* platform-shell.css sets --font-display to Fraunces (serif) at :root.
+   Inside a studio every typography variable resolves to the same Inter-
+   first stack so headings, body, buttons, inputs, sidebar items all
+   share one face. */
+body[data-current-studio]{
+  --font-display: var(--rc-font-sans) !important;
+  --font-text:    var(--rc-font-sans) !important;
+  --font-sans:    var(--rc-font-sans) !important;
+}
+
+/* Universal selector — pin every element inside a studio to the Inter
+   stack regardless of what platform-shell.css or engine CSS tries to set.
+   Monospace blocks keep their monospace font. */
+body[data-current-studio],
+body[data-current-studio] *,
+body[data-current-studio] html,
+body[data-current-studio] button,
+body[data-current-studio] input,
+body[data-current-studio] textarea,
+body[data-current-studio] select,
+body[data-current-studio] table,
+body[data-current-studio] th,
+body[data-current-studio] td {
+  font-family: var(--rc-font-sans) !important;
+}
+body[data-current-studio] code,
+body[data-current-studio] pre,
+body[data-current-studio] kbd,
+body[data-current-studio] samp,
+body[data-current-studio] tt,
+body[data-current-studio] .mono,
+body[data-current-studio] [class*="-mono"],
+body[data-current-studio] [class*="num"] {
+  font-family: var(--rc-font-mono) !important;
+}
+
+/* =====================================================================
+   Borders, radii, shadows — neutral system, identical across studios
+   ===================================================================== */
+:root {
+  --rc-border-soft:   rgba(15, 23, 42, 0.08);
+  --rc-border-medium: rgba(15, 23, 42, 0.12);
+  --rc-border-strong: rgba(15, 23, 42, 0.18);
+
+  --rc-card-bg: #ffffff;
+  --rc-page-bg: #f7f7f8;
+
+  --rc-radius-sm: 10px;
+  --rc-radius-md: 14px;
+  --rc-radius-lg: 20px;
+  --rc-radius-xl: 26px;
+
+  --rc-shadow-soft:  0 4px 12px rgba(15, 23, 42, 0.10);
+  --rc-shadow-hover: 0 8px 24px rgba(15, 23, 42, 0.16);
+
+  /* Default studio accent — gets overridden per studio below. */
+  --studio-accent:               #6f4de2;
+  --studio-accent-rgb:           111, 77, 226;
+  --studio-accent-soft:          rgba(var(--studio-accent-rgb), 0.08);
+  --studio-accent-border:        rgba(var(--studio-accent-rgb), 0.22);
+  --studio-accent-strong-border: rgba(var(--studio-accent-rgb), 0.38);
+}
+
+/* Per-studio accent overrides — colors match the studio mark PNGs.
+   Both --accent (legacy) and --studio-accent + --studio-accent-rgb (new)
+   are set so every rule resolves to the same color regardless of token. */
+body[data-current-studio="survey"] {
+  --studio-accent:     #e85d3a;
+  --studio-accent-rgb: 232, 93, 58;
+  --accent:            #e85d3a;
+  --accent-soft:       rgba(232, 93, 58, 0.10);
+}
+body[data-current-studio="mm"] {
+  --studio-accent:     #6d4ad8;
+  --studio-accent-rgb: 109, 74, 216;
+  --accent:            #6d4ad8;
+  --accent-soft:       rgba(109, 74, 216, 0.10);
+}
+body[data-current-studio="tia"] {
+  --studio-accent:     #0e8a6f;
+  --studio-accent-rgb: 14, 138, 111;
+  --accent:            #0e8a6f;
+  --accent-soft:       rgba(14, 138, 111, 0.10);
+}
+body[data-current-studio="360"] {
+  --studio-accent:     #2563eb;
+  --studio-accent-rgb: 37, 99, 235;
+  --accent:            #2563eb;
+  --accent-soft:       rgba(37, 99, 235, 0.10);
+}
+body[data-current-studio="evaluation"] {
+  --studio-accent:     #2563eb;
+  --studio-accent-rgb: 37, 99, 235;
+  --accent:            #2563eb;
+  --accent-soft:       rgba(37, 99, 235, 0.10);
+}
+/* strength-survey is the parallel-Survey-Studio variant — shares coral accent. */
+body[data-current-studio="strength-survey"] {
+  --studio-accent:     #e85d3a;
+  --studio-accent-rgb: 232, 93, 58;
+  --accent:            #e85d3a;
+  --accent-soft:       rgba(232, 93, 58, 0.10);
+}
+
+/* Mirror under [data-studio="..."] for any new markup using long slugs. */
+[data-studio="survey"]             { --studio-accent: #e85d3a; --studio-accent-rgb: 232, 93, 58; }
+[data-studio="mixed-methods"]      { --studio-accent: #6d4ad8; --studio-accent-rgb: 109, 74, 216; }
+[data-studio="test-item-analysis"] { --studio-accent: #0e8a6f; --studio-accent-rgb: 14, 138, 111; }
+[data-studio="three-sixty"]        { --studio-accent: #2563eb; --studio-accent-rgb: 37, 99, 235; }
+[data-studio="evaluation"]         { --studio-accent: #2563eb; --studio-accent-rgb: 37, 99, 235; }
+
+/* =====================================================================
+   Hide platform-shell chrome inside a studio.
+   ===================================================================== */
+/* Belt-and-suspenders hide. The platform shell renders its own top nav
+   (with a 52px /logo-brand.svg) and a bottom footer (also with /logo-brand.svg).
+   Inside a studio, the sidebar IS the nav — neither of those should be
+   visible. We hide them five different ways so no cascade quirk lets
+   one slip through. */
+body[data-current-studio] .shell-nav,
+body[data-current-studio] .shell-footer,
+body[data-current-studio] .preview-strip,
+body[data-current-studio] .shell-nav-inner,
+body[data-current-studio] .shell-footer-inner,
+body[data-current-studio] header.shell-nav,
+body[data-current-studio] footer.shell-footer,
+body[data-current-studio] .shell-nav .brand,
+body[data-current-studio] .shell-nav .brand-logo,
+body[data-current-studio] .shell-footer .brand,
+body[data-current-studio] .shell-footer .brand-logo {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  width: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+}
+body[data-current-studio] .relicheck-app-shell {
+  padding: 0 !important; margin: 0 !important; min-height: 0 !important;
+}
+body[data-current-studio] .relicheck-page-frame {
+  padding: 0 !important; margin: 0 !important; max-width: none !important; width: 100%;
+}
+body[data-current-studio] .hero-blob { display: none !important; }
+
+body[data-current-studio] {
+  background: var(--bg);
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.005em;
+}
+
+* { box-sizing: border-box; }
+button { font-family: inherit; cursor: pointer; }
+a { color: var(--accent); text-decoration: none; }
+
+/* =====================================================================
+   App shell — sidebar + main
+   ===================================================================== */
+.app {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  height: 100vh;
+  overflow: hidden;
+}
+@media (max-width: 900px){
+  .app {
+    grid-template-columns: 1fr;
+    height: auto;
+    overflow: visible;
+  }
+  .sidebar { display: none; }
+}
+/* NOTE: .relicheck-app-shell is reserved by _platform_shell_header.php
+   for the outer page wrapper (which contains the hero-blob + page-frame).
+   Do NOT add it as an alias for .app — that breaks the platform-shell
+   layout. The same caution applies to .relicheck-page-frame. */
+
+/* =====================================================================
+   Sidebar
+   ===================================================================== */
+.sidebar {
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--hairline);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Brand strip — real ReliCheck logo image. */
+.sb-header {
+  padding: 20px 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sb-header-link {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+}
+.sb-logo-img {
+  height: 28px;
+  width: auto;
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Studio strip — studio mark icon + studio name (now the top of the sidebar). */
+.sb-studio {
+  margin: 20px 12px 6px;
+  padding: 4px 12px;
+}
+.sb-studio-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.sb-studio-mark {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  display: block;
+  flex-shrink: 0;
+}
+.sb-studio-name {
+  font-family: var(--rc-font-sans);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* Project strip — verbatim from the prototype. */
+.sb-project {
+  margin: 6px 12px 14px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.7);
+  border-radius: var(--r-md);
+  border: 1px solid var(--hairline);
+  cursor: pointer;
+  transition: background 0.15s;
+  box-shadow: var(--rc-shadow-soft);
+}
+.sb-project:hover { background: rgba(255,255,255,0.95); }
+.sb-project-name {
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-project-meta {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.sb-project-meta::before {
+  content: "";
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Methodology arc */
+.sb-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 16px;
+}
+.sb-nav::-webkit-scrollbar { width: 6px; }
+.sb-nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 3px; }
+
+/* Sidebar typography target (per the brief):
+     .sb-section          margin-bottom 26px
+     .sb-section-title    16 / 650 / -0.01em / #1f2328
+     .sb-section-question 13 / italic / 400 / #8a8f98
+     .sb-item             16 / 450 / #555b64 / 7×14 padding / radius 10
+     .sb-item.active      var(--accent) bg / 650 / 10×16 padding / radius 12
+     .sb-items            gap 10px / margin-top 12px */
+.sb-section { margin-bottom: 26px; }
+
+.sb-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.12s;
+}
+.sb-section-header:hover { background: rgba(0,0,0,0.04); }
+.sb-section-header.active { background: rgba(0,0,0,0.05); }
+.sb-section-icon {
+  width: 20px; height: 20px;
+  color: var(--text-2);
+  flex-shrink: 0;
+}
+.sb-section-title {
+  font-weight: 650;
+  font-size: 16px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  flex: 1;
+  color: #1f2328;
+}
+.sb-section-question {
+  font-size: 13px;
+  line-height: 1.25;
+  font-style: italic;
+  font-weight: 400;
+  color: #8a8f98;
+  margin-top: 2px;
+}
+.sb-chevron {
+  width: 14px; height: 14px;
+  color: var(--text-3);
+  transition: transform 0.18s;
+  flex-shrink: 0;
+}
+.sb-section.open .sb-chevron { transform: rotate(90deg); }
+
+.sb-items {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0;
+}
+.sb-section.open .sb-items { display: flex; }
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  color: #555b64;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 450;
+  letter-spacing: -0.005em;
+  position: relative;
+  text-decoration: none;
+}
+.sb-item:hover { background: rgba(0,0,0,0.04); color: var(--text); }
+.sb-item.active {
+  background: var(--studio-accent);
+  color: #fff;
+  font-weight: 650;
+  padding: 10px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--studio-accent);
+  box-shadow: 0 4px 14px rgba(var(--studio-accent-rgb), 0.22);
+}
+.sb-item.active .sb-item-tag { color: #fff; background: rgba(255,255,255,0.22); }
+.sb-item-title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-item-tag {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.06);
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.sb-item-tag.qual, .sb-item-tag.QUAL { background: rgba(175, 82, 222, 0.14); color: var(--qual-color); }
+.sb-item-tag.mm,   .sb-item-tag.MM   { background: rgba(255, 149, 0,  0.16); color: var(--mm-color); }
+.sb-item-tag.quant,.sb-item-tag.QUANT{ background: rgba(0, 122, 255, 0.12); color: var(--quant-color); }
+
+.sb-item.hero::before {
+  content: "";
+  position: absolute;
+  left: -10px; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.sb-footer {
+  border-top: 1px solid var(--hairline);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-3);
+}
+.sb-footer .avatar {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FF9500, #FF2D55);
+  color: white;
+  display: grid; place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sb-footer-name {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb-footer-role { font-size: 11px; color: var(--text-3); }
+
+/* =====================================================================
+   Main + topbar
+   ===================================================================== */
+.main {
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--bg);
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(251, 251, 253, 0.85);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid var(--hairline);
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.crumbs .now { color: var(--text); font-weight: 500; }
+.crumbs .sep { opacity: 0.5; }
+.topbar-spacer { flex: 1; }
+.topbar-btn {
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--hairline-strong);
+  background: white;
+  font-size: 12.5px;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.topbar-btn:hover { background: var(--surface-2); }
+.topbar-btn.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.topbar-btn.primary:hover { filter: brightness(0.95); }
+
+/* Page — left-aligned studio canvas, wide workspace.
+   Sidebar (300) → 40px gutter → content up to 1600px. Pinned LEFT.
+   NOTE: do NOT alias .relicheck-page / .relicheck-page-frame etc. here —
+   those names collide with platform-shell wrappers and break the layout. */
+.page {
+  padding: 32px 40px 64px 40px;
+  max-width: 1600px;
+  margin: 0;
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .page {
+    padding: 24px 20px 48px 20px;
+    max-width: none;
+  }
+}
+
+/* Topbar padding-left matches page padding-left so crumbs sit directly
+   above the page title at the same x-axis. */
+.topbar { padding-left: 40px; }
+@media (max-width: 900px) { .topbar { padding-left: 20px; } }
+
+/* Main area */
+.main { min-width: 0; padding-left: 160px; }
+
+.page-eyebrow {
+  font-size: var(--rc-font-eyebrow);
+  font-weight: 750;
+  color: var(--rc-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.page-title {
+  font-family: var(--rc-font-sans);
+  font-weight: 800;
+  font-size: var(--rc-font-page-title);
+  letter-spacing: -0.045em;
+  margin: 0 0 16px;
+  line-height: var(--rc-line-tight);
+  color: var(--rc-text-primary);
+}
+.page-subtitle {
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--rc-text-secondary);
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin: 0 0 48px;
+  max-width: 900px;
+}
+
+/* The mount partial emits .work-breadcrumb above .work-head — but the
+   topbar crumbs already show the same path. Hide the duplicate. */
+body[data-current-studio] .work-breadcrumb { display: none; }
+
+/* The mount partial also emits .mount-context, a thin pill showing
+   "Project · N rows · M variables · Replace data →". The topbar already
+   carries project context, and each engine emits its own dataset ribbon
+   inside the work area, so hide this strip to remove a thin row above
+   the headline. */
+body[data-current-studio] .mount-context { display: none; }
+
+/* Per-engine source ribbons (.ov-source, .dx-source, .iq-source,
+   .mm-source, .strength-source, etc.) — calm them down so they don't
+   compete with the bold page title above. Same target, less weight. */
+body[data-current-studio] .ov-source,
+body[data-current-studio] .dx-source,
+body[data-current-studio] .iq-source,
+body[data-current-studio] .mm-source,
+body[data-current-studio] .strength-source {
+  font-size: 13px;
+  color: #8a8f98;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 999px;
+  margin-bottom: 24px;
+}
+
+/* Mirror .work-head h2/p onto the page-title scale (engines render here) */
+.work-head { margin: 0 0 48px; max-width: 900px; }
+.work-head h2 {
+  font-family: var(--rc-font-sans);
+  font-weight: 800;
+  font-size: var(--rc-font-page-title);
+  letter-spacing: -0.045em;
+  margin: 0 0 16px;
+  line-height: var(--rc-line-tight);
+  color: var(--rc-text-primary);
+}
+.work-head p {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 400;
+  color: var(--rc-text-secondary);
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  max-width: 900px;
+}
+@media (max-width: 1100px) {
+  .page-title, .work-head h2 { font-size: 44px; }
+  .page-subtitle, .work-head p { font-size: 20px; }
+}
+
+.studio-work { display: block; }
+
+/* =====================================================================
+   Cards
+   ===================================================================== */
+/* Cards — premium workspace scale, neutral border + soft shadow.
+   Default .card is a section card. Add .card-stat for stat tiles. */
+.card {
+  background: var(--rc-card-bg);
+  border: 1px solid var(--rc-border-soft);
+  border-radius: var(--rc-radius-xl);
+  padding: 36px 40px;
+  box-shadow: var(--rc-shadow-soft);
+  transition: border-color .15s, box-shadow .15s;
+}
+.card:hover {
+  border-color: var(--rc-border-medium);
+  box-shadow: var(--rc-shadow-hover);
+}
+.card.active {
+  border-color: var(--studio-accent-border);
+  box-shadow: 0 0 0 3px var(--studio-accent-soft), var(--rc-shadow-soft);
+}
+.card + .card { margin-top: 24px; }
+.card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+.card-title {
+  font-family: var(--rc-font-sans);
+  font-weight: 700;
+  font-size: var(--rc-font-card-title);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0;
+  color: var(--rc-text-primary);
+}
+.card-sub {
+  font-size: var(--rc-font-small);
+  color: var(--rc-text-muted);
+  margin-top: 4px;
+}
+
+/* Stat-card variant — taller surface, label small + value huge */
+.card-stat {
+  min-height: 150px;
+  border-radius: 24px;
+  padding: 32px 36px;
+  display: flex; flex-direction: column; justify-content: center;
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+  margin-top: 16px;
+}
+.grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+/* Summary / hero grid — wide left card, narrower right at-a-glance */
+.grid.hero {
+  display: grid;
+  grid-template-columns: minmax(720px, 1.5fr) minmax(320px, 0.9fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-top: 16px;
+}
+@media (max-width: 1180px) {
+  .grid.hero { grid-template-columns: 1fr; }
+  .grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .grid.cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .grid.cols-2, .grid.cols-3, .grid.cols-4 { grid-template-columns: 1fr; }
+}
+
+/* =====================================================================
+   Stat tile — for .card-stat or standalone .stat blocks
+   ===================================================================== */
+.stat { display: flex; flex-direction: column; gap: 12px; }
+.stat-label {
+  font-size: 17px;
+  color: var(--rc-text-muted);
+  line-height: 1.25;
+  letter-spacing: -0.005em;
+  font-weight: 450;
+}
+.stat-value {
+  font-family: var(--rc-font-sans);
+  font-weight: 750;
+  font-size: 52px;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  color: var(--rc-text-primary);
+}
+.stat-delta {
+  font-size: 14px;
+  color: var(--green);
+  font-weight: 600;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+
+/* =====================================================================
+   Pills
+   ===================================================================== */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  letter-spacing: 0.01em;
+}
+.pill.good  { background: rgba(52,199,89,0.14);  color: #1F7A3F; }
+.pill.watch { background: rgba(255,149,0,0.16);  color: #A35F00; }
+.pill.warn  { background: rgba(255,149,0,0.16);  color: #A35F00; }
+.pill.bad   { background: rgba(255,59,48,0.14);  color: #B0271E; }
+.pill.alert { background: rgba(255,59,48,0.14);  color: #B0271E; }
+.pill.info  { background: rgba(0,122,255,0.12);  color: #0356C9; }
+.pill.qual  { background: rgba(175,82,222,0.14); color: var(--qual-color); }
+.pill.mm    { background: rgba(255,149,0,0.16);  color: var(--mm-color); }
+.pill.quant { background: rgba(0,122,255,0.12);  color: var(--quant-color); }
+body.tags-subtle .pill.qual,
+body.tags-subtle .pill.mm,
+body.tags-subtle .pill.quant,
+body.tags-subtle .sb-item-tag.QUAL,
+body.tags-subtle .sb-item-tag.MM {
+  background: transparent;
+  border: 1px solid currentColor;
+  opacity: 0.7;
+}
+
+/* =====================================================================
+   Ring — Apple Fitness style
+   ===================================================================== */
+.ring-wrap { display: flex; align-items: center; justify-content: center; position: relative; }
+.ring-center { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+.ring-score {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 72px;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+}
+.ring-score sup {
+  font-size: 24px;
+  font-weight: 500;
+  color: var(--text-3);
+  vertical-align: 22px;
+  margin-left: 2px;
+}
+.ring-label {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-top: 8px;
+}
+
+/* =====================================================================
+   Bars
+   ===================================================================== */
+.bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bar > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.6s cubic-bezier(.2,.7,.2,1);
+}
+
+/* =====================================================================
+   Tables
+   ===================================================================== */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; box-shadow: var(--rc-shadow-soft); border-radius: var(--rc-radius-md); overflow: hidden; }
+.tbl th, .tbl td { text-align: left; padding: 12px 8px; border-bottom: 1px solid var(--hairline); }
+.tbl th {
+  font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-3);
+}
+.tbl tr:last-child td { border-bottom: none; }
+.tbl td.num {
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+/* =====================================================================
+   Subtabs
+   ===================================================================== */
+.subtabs {
+  display: inline-flex;
+  background: var(--surface-2);
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+  margin-bottom: 24px;
+}
+.subtabs button {
+  appearance: none; border: 0; background: transparent;
+  font-size: 13px; font-weight: 500;
+  color: var(--text-2);
+  padding: 6px 14px; border-radius: 7px;
+}
+.subtabs button.active {
+  background: white; color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+
+/* =====================================================================
+   Flag / callout
+   ===================================================================== */
+.flag {
+  display: flex; gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  align-items: flex-start;
+}
+.flag.watch { background: rgba(255,149,0,0.10); }
+.flag.info  { background: rgba(0,122,255,0.08); }
+.flag-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+.flag.watch .flag-dot { background: var(--orange); }
+.flag.info  .flag-dot { background: var(--accent); }
+.flag-title { font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; color: var(--text); }
+.flag-body  { font-size: 12.5px; color: var(--text-2); margin-top: 2px; line-height: 1.45; }
+
+/* =====================================================================
+   Legacy buttons (wizards depend on these)
+   ===================================================================== */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 14px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 13.5px; font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn-ghost {
+  background: var(--surface); color: var(--text-2);
+  border-color: var(--hairline-strong);
+}
+.btn-ghost:hover { background: var(--surface-2); border-color: var(--hairline-strong); color: var(--text); }
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--accent) 30%, transparent),
+    0 6px 18px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.btn-primary:hover { filter: brightness(0.95); }
+
+/* =====================================================================
+   Slide-over: Ask ReliCheck + What This Means
+   ===================================================================== */
+.assist-overlay {
+  position: fixed; inset: 0;
+  background: rgba(20, 24, 38, 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s;
+  z-index: 40;
+}
+.assist-overlay.is-open { opacity: 1; pointer-events: auto; }
+.assist-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: 380px; max-width: 92vw;
+  background: var(--surface);
+  border-left: 1px solid var(--hairline);
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform .25s cubic-bezier(.2,.7,.2,1);
+  z-index: 50;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.assist-panel.is-open { transform: translateX(0); }
+
+.assist-panel-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--hairline);
+}
+.assist-panel-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.assist-panel-close {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-3);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.assist-panel-close:hover { background: var(--surface-2); border-color: var(--hairline-strong); }
+.assist-panel-body { flex: 1; overflow-y: auto; }
+
+.assist-section-h {
+  padding: 18px 22px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* "What This Means" cards (legacy class names preserved) */
+.teach-cards { display: block; }
+.teach-card {
+  display: block;
+  padding: 14px 22px;
+  border-top: 1px solid var(--hairline);
+  text-decoration: none;
+  transition: background .15s;
+  color: inherit;
+}
+.teach-card:first-child { border-top: 0; }
+.teach-card:hover { background: var(--surface-2); }
+.teach-tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 11px; font-weight: 600;
+  letter-spacing: .02em;
+  margin-bottom: 6px;
+}
+.teach-card[data-fam="validity"]  .teach-tag { background: rgba(255, 149, 0, 0.18); color: #c66400; }
+.teach-card[data-fam="reporting"] .teach-tag { background: rgba(175, 82, 222, 0.16); color: var(--qual-color); }
+.teach-title {
+  font-size: 14px; font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 4px;
+}
+.teach-sub { font-size: 12px; color: var(--text-3); }
+
+.assist-chat {
+  padding: 14px 22px;
+  display: flex; flex-direction: column; gap: 10px;
+  border-top: 1px solid var(--hairline);
+}
+.assist-chat-bubble {
+  max-width: 92%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px; line-height: 1.5;
+  background: var(--surface-2);
+  color: var(--text);
+  align-self: flex-start;
+  border-bottom-left-radius: 6px;
+}
+.assist-chat-input {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 22px 18px;
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.assist-chat-input input {
+  flex: 1;
+  height: 36px;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid transparent;
+  border-radius: 999px;
+  outline: none;
+}
+.assist-chat-input input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--surface);
+}
+.assist-chat-input button {
+  width: 36px; height: 36px;
+  border: 0; border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+
+/* =====================================================================
+   Toast (legacy)
+   ===================================================================== */
+.studio-toast {
+  position: fixed;
+  bottom: 28px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--text);
+  color: #fff;
+  padding: 11px 20px;
+  border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+  letter-spacing: .01em;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transition: opacity .2s, transform .2s;
+  z-index: 1000;
+  pointer-events: none;
+}
+.studio-toast.is-on {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.studio-toast.is-warn { background: #A35F00; }
+
+/* =====================================================================
+   ReliCheck rc-* utility classes — drop-in typography helpers
+   Use these on any element to opt into the canonical type scale without
+   relying on tag selectors. They mirror the existing class scales above
+   so e.g. .page-title and .rc-page-title render identically.
+   ===================================================================== */
+.rc-page-eyebrow {
+  font-size: var(--rc-font-eyebrow);
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 750;
+  color: var(--rc-text-muted);
+}
+.rc-page-title {
+  font-size: var(--rc-font-page-title);
+  line-height: var(--rc-line-tight);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--rc-text-primary);
+  margin: 0;
+}
+.rc-page-subtitle {
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--rc-text-secondary);
+  max-width: 900px;
+  margin: 0;
+}
+.rc-section-title {
+  font-size: var(--rc-font-section-title);
+  line-height: var(--rc-line-heading);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  color: var(--rc-text-primary);
+  margin: 0;
+}
+.rc-card-title {
+  font-size: var(--rc-font-card-title);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--rc-text-primary);
+  margin: 0;
+}
+.rc-body {
+  font-size: var(--rc-font-body);
+  line-height: var(--rc-line-body);
+  font-weight: 400;
+  color: var(--rc-text-secondary);
+}
+.rc-body-large {
+  font-size: var(--rc-font-body-lg);
+  line-height: 1.4;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+  color: var(--rc-text-secondary);
+}
+.rc-small {
+  font-size: var(--rc-font-small);
+  line-height: 1.35;
+  font-weight: 400;
+  color: var(--rc-text-muted);
+}
+.rc-sidebar { font-family: var(--rc-font-sans); }
+.rc-sidebar-section-title {
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: #1f2328;
+}
+.rc-sidebar-section-helper {
+  font-size: 13px;
+  line-height: 1.25;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--rc-text-muted);
+  margin-top: 2px;
+}
+.rc-sidebar-subitem {
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 450;
+  color: #555b64;
+  padding: 7px 14px;
+  border-radius: 10px;
+}
+.rc-sidebar-subitem.active {
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 650;
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+.rc-table {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--rc-text-primary);
+}
+.rc-table th {
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rc-text-muted);
+}
+.rc-table td {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 400;
+}
+.rc-button {
+  font-family: var(--rc-font-sans);
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.rc-stat-label {
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 450;
+  color: var(--rc-text-muted);
+}
+.rc-stat-value {
+  font-size: 52px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.045em;
+  color: var(--rc-text-primary);
+}
+
+/* =====================================================================
+   ReliCheck rc-* surface system — cards, buttons, inputs, tables, etc.
+   Neutral borders shared across studios; accent comes from --studio-accent.
+   ===================================================================== */
+
+/* Cards (utility variants that mirror the .card chrome) */
+.rc-card,
+.rc-section-card,
+.rc-analysis-card,
+.rc-report-block {
+  background: var(--rc-card-bg);
+  border: 1px solid var(--rc-border-soft);
+  border-radius: var(--rc-radius-xl);
+  box-shadow: var(--rc-shadow-soft);
+  transition: border-color .15s, box-shadow .15s;
+}
+.rc-card:hover,
+.rc-analysis-card:hover,
+.rc-report-block:hover {
+  border-color: var(--rc-border-medium);
+  box-shadow: var(--rc-shadow-hover);
+}
+.rc-card.active,
+.rc-analysis-card.active,
+.rc-report-block.active {
+  border-color: var(--studio-accent-border);
+  box-shadow: 0 0 0 3px var(--studio-accent-soft), var(--rc-shadow-soft);
+}
+
+/* Studio-colored left-edge accent for callout blocks */
+.rc-accent-border {
+  border-left: 4px solid var(--studio-accent);
+}
+
+/* Soft studio-tinted card, used sparingly */
+.rc-card-tinted {
+  background: linear-gradient(180deg,
+    rgba(var(--studio-accent-rgb), 0.055),
+    rgba(var(--studio-accent-rgb), 0.025));
+  border: 1px solid var(--studio-accent-border);
+  border-radius: var(--rc-radius-xl);
+}
+
+/* Sidebar utility variants (matching the .sb-* chrome) */
+.rc-sidebar-subitem.active,
+.rc-sidebar-item.active {
+  background: var(--studio-accent);
+  color: #ffffff;
+  border: 1px solid var(--studio-accent);
+  box-shadow: 0 4px 14px rgba(var(--studio-accent-rgb), 0.22);
+}
+.rc-sidebar-section,
+.rc-sidebar-group { border-radius: var(--rc-radius-md); }
+.rc-sidebar-section.active {
+  background: rgba(var(--studio-accent-rgb), 0.08);
+  border: 1px solid rgba(var(--studio-accent-rgb), 0.12);
+}
+
+/* Buttons */
+.rc-button-primary {
+  background: var(--studio-accent);
+  color: #ffffff;
+  border: 1px solid var(--studio-accent);
+  border-radius: var(--rc-radius-md);
+  padding: 10px 18px;
+  font-family: var(--rc-font-sans);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(var(--studio-accent-rgb), 0.20);
+  transition: filter .15s, box-shadow .15s;
+}
+.rc-button-primary:hover {
+  filter: brightness(0.95);
+  box-shadow: 0 6px 18px rgba(var(--studio-accent-rgb), 0.28);
+}
+.rc-button-secondary {
+  background: #ffffff;
+  color: #1f2328;
+  border: 1px solid var(--rc-border-medium);
+  border-radius: var(--rc-radius-md);
+  padding: 10px 18px;
+  font-family: var(--rc-font-sans);
+  font-size: 15px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.rc-button-secondary:hover {
+  border-color: var(--studio-accent-border);
+  background: var(--studio-accent-soft);
+}
+
+/* Inputs — scoped to studio body so we don't override marketing-site forms */
+body[data-current-studio] input,
+body[data-current-studio] textarea,
+body[data-current-studio] select,
+body[data-current-studio] .rc-input {
+  border: 1px solid var(--rc-border-medium);
+  border-radius: var(--rc-radius-md);
+  background: #ffffff;
+}
+body[data-current-studio] input:focus,
+body[data-current-studio] textarea:focus,
+body[data-current-studio] select:focus,
+body[data-current-studio] .rc-input:focus {
+  outline: none;
+  border-color: var(--studio-accent-strong-border);
+  box-shadow: 0 0 0 4px var(--studio-accent-soft);
+}
+
+/* Tabs */
+.rc-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 4px;
+  margin-right: 18px;
+  color: var(--rc-text-secondary);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.rc-tab:hover { color: var(--rc-text-primary); }
+.rc-tab.active {
+  color: var(--studio-accent);
+  border-bottom: 2px solid var(--studio-accent);
+  font-weight: 600;
+}
+
+/* Badges */
+.rc-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  border: 1px solid var(--rc-border-soft);
+  background: #ffffff;
+  color: #5f6368;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.rc-badge-accent {
+  border: 1px solid var(--studio-accent-border);
+  background: var(--studio-accent-soft);
+  color: var(--studio-accent);
+}
+
+/* Status dot */
+.rc-status-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--studio-accent);
+}
+
+/* Divider */
+.rc-divider { border-top: 1px solid var(--rc-border-soft); }
+
+/* Table variant (overrides the typography-only .rc-table earlier) */
+.rc-table {
+  border: 1px solid var(--rc-border-soft);
+  border-radius: var(--rc-radius-lg);
+  overflow: hidden;
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  box-shadow: var(--rc-shadow-soft);
+}
+.rc-table th,
+.rc-table td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--rc-border-soft);
+}
+.rc-table tr:last-child td { border-bottom: none; }
+
+/* =====================================================================
+   Engine summary-surface override
+   ---------------------------------------------------------------------
+   The unified analysis template across engines emits one of:
+     .iq-rel-summary  (Instrument Quality engine)
+     .dx-rel-summary  (Descriptive engine)
+     .mm-rel-summary  (MM Analysis engine)
+   Their per-engine CSS sets a gray-tinted background with small radius
+   and tight padding — reads as "washed out" next to the new chrome.
+   Here we lift them to match the .card surface so the analysis pages
+   visually mirror image 2's clean card rhythm. The accent-soft closing
+   blocks (.iq-rel-closing, .dx-rel-closing, .mm-rel-closing) become a
+   subtle tinted accent strip at the end of each card. */
+body[data-current-studio] .iq-rel-summary,
+body[data-current-studio] .dx-rel-summary,
+body[data-current-studio] .mm-rel-summary {
+  background: var(--rc-card-bg) !important;
+  border: 1px solid var(--rc-border-soft) !important;
+  border-radius: var(--rc-radius-xl) !important;
+  padding: 32px 36px !important;
+  margin-bottom: 24px !important;
+  box-shadow: var(--rc-shadow-soft) !important;
+}
+body[data-current-studio] .iq-rel-summary-line,
+body[data-current-studio] .dx-rel-summary-line,
+body[data-current-studio] .mm-rel-summary-line {
+  color: var(--rc-text-primary) !important;
+  font-size: 17px !important;
+  line-height: 1.5 !important;
+  margin: 8px 0 16px !important;
+}
+body[data-current-studio] .iq-rel-paragraphs,
+body[data-current-studio] .dx-rel-paragraphs,
+body[data-current-studio] .mm-rel-paragraphs {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  color: var(--rc-text-secondary) !important;
+  gap: 10px !important;
+}
+body[data-current-studio] .iq-rel-closing,
+body[data-current-studio] .dx-rel-closing,
+body[data-current-studio] .mm-rel-closing {
+  background: rgba(var(--studio-accent-rgb), 0.06) !important;
+  border: 1px solid rgba(var(--studio-accent-rgb), 0.18) !important;
+  border-radius: var(--rc-radius-lg) !important;
+  padding: 24px 28px !important;
+  margin-top: 16px !important;
+}
+body[data-current-studio] .iq-rel-table-wrap,
+body[data-current-studio] .dx-rel-table-wrap,
+body[data-current-studio] .mm-rel-table-wrap {
+  background: var(--rc-card-bg) !important;
+  border: 1px solid var(--rc-border-soft) !important;
+  border-radius: var(--rc-radius-lg) !important;
+  padding: 4px 0 !important;
+  margin-bottom: 24px !important;
+  overflow: hidden !important;
+  box-shadow: var(--rc-shadow-soft) !important;
+}
+body[data-current-studio] .iq-table-rel,
+body[data-current-studio] .dx-table-rel,
+body[data-current-studio] .mm-table-rel {
+  font-size: 14px !important;
+}
+body[data-current-studio] .iq-table-rel th,
+body[data-current-studio] .dx-table-rel th,
+body[data-current-studio] .mm-table-rel th {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--rc-text-muted) !important;
+  padding: 14px 18px !important;
+  background: var(--surface-2) !important;
+}
+body[data-current-studio] .iq-table-rel td,
+body[data-current-studio] .dx-table-rel td,
+body[data-current-studio] .mm-table-rel td {
+  padding: 14px 18px !important;
+  border-bottom: 1px solid var(--rc-border-soft) !important;
+}
+
+/* J/E/M/A footer (the "What this shows / What stands out / What to check"
+   row each engine emits inside .work-area footer or interpretation slot) */
+body[data-current-studio] .iq-jema,
+body[data-current-studio] .dx-jema,
+body[data-current-studio] .mm-jema {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+  color: var(--rc-text-secondary) !important;
+  gap: 10px !important;
+}
+
+/* =====================================================================
+   .rc-stub — preview state for analyses that haven't run yet.
+   Friendly "here's what this view will show" card with three actions:
+   Run (primary), Configure (secondary), Learn (secondary).
+   Helps novice users orient before being shown numbers.
+
+   Usage (in any mount page, before the engine output):
+
+     <div class="rc-stub" data-rc-stub>
+       <h3 class="rc-stub-title">Purpose & Research Question</h3>
+       <p class="rc-stub-body">
+         This view will surface ... <strong>your project's purpose</strong>.
+       </p>
+       <div class="rc-stub-actions">
+         <button class="rc-button-primary"   data-rc-action="run">▷ Run</button>
+         <button class="rc-button-secondary" data-rc-action="configure">Configure</button>
+         <button class="rc-button-secondary" data-rc-action="learn">Learn</button>
+       </div>
+     </div>
+
+   The global click handler in _studio_template_footer.php fires a
+   `rc:stub-action` event so engines can listen for Run / Configure /
+   Learn and react however they want.
+   ===================================================================== */
+.rc-stub {
+  border: 1.5px dashed var(--rc-border-medium);
+  border-radius: var(--rc-radius-xl);
+  background: var(--rc-card-bg);
+  padding: 36px 40px;
+  margin-bottom: 24px;
+  transition: border-color .15s;
+}
+.rc-stub:hover { border-color: var(--rc-border-strong); }
+.rc-stub-title {
+  font-family: var(--rc-font-sans);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--rc-text-primary);
+  line-height: 1.25;
+  margin: 0 0 12px;
+}
+.rc-stub-body {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--rc-text-secondary);
+  margin: 0 0 24px;
+  max-width: 720px;
+}
+.rc-stub-body strong { color: var(--rc-text-primary); font-weight: 650; }
+.rc-stub-body a {
+  color: var(--studio-accent);
+  font-weight: 500;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--studio-accent) 40%, transparent);
+}
+.rc-stub-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rc-stub-actions .rc-button-primary,
+.rc-stub-actions .rc-button-secondary {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+/* =====================================================================
+   Two-card workspace (rc-workspace-2col)
+   Generic layout: editable main card + side guidance card.
+   Used wherever a page wants a main + side card pair. Mount partial
+   renders this when $mount_workspace is set on the calling page.
+   Falls back to single column under 1080px.
+   ===================================================================== */
+.rc-workspace-2col {
+  display: grid;
+  grid-template-columns: minmax(640px, 0.68fr) minmax(320px, 0.32fr);
+  gap: 28px;
+  max-width: 1280px;
+  margin-top: 32px;
+}
+@media (max-width: 1080px) {
+  .rc-workspace-2col { grid-template-columns: 1fr; max-width: none; }
+}
+.rc-workspace-main,
+.rc-workspace-side {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+.rc-workspace-main { padding: 32px 36px; }
+.rc-workspace-side { padding: 28px 30px; }
+.rc-workspace-empty {
+  max-width: 760px;
+  min-height: 220px;
+  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border-radius: 24px;
+  padding: 36px 40px;
+  background: #ffffff;
+}
+/* Internal typography for the workspace cards */
+.rc-workspace-main h3,
+.rc-workspace-side h3,
+.rc-workspace-empty h3 {
+  margin: 0 0 6px;
+  font-family: var(--rc-font-sans);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--rc-text-primary);
+}
+.rc-workspace-main .lbl,
+.rc-workspace-side .lbl {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rc-text-muted);
+  margin: 18px 0 6px;
+}
+.rc-workspace-main .val { font-size: 16px; color: var(--rc-text-primary); line-height: 1.55; white-space: pre-line; }
+.rc-workspace-main .val.is-empty { color: var(--rc-text-muted); font-style: italic; }
+.rc-workspace-side ul { margin: 8px 0 0; padding-left: 20px; }
+.rc-workspace-side li { color: var(--rc-text-secondary); font-size: 14.5px; line-height: 1.6; margin-bottom: 8px; }
+.rc-workspace-side li em { font-style: normal; font-weight: 650; color: var(--rc-text-primary); }
+.rc-workspace-empty p { margin: 0 0 18px; font-size: 16px; line-height: 1.5; color: var(--rc-text-secondary); max-width: 560px; }
+.rc-workspace-edit-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 24px;
+  padding: 8px 14px;
+  border: 1px solid var(--rc-border-medium);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rc-text-primary);
+  text-decoration: none;
+  transition: border-color .15s, background .15s;
+}
+.rc-workspace-edit-link:hover {
+  border-color: var(--studio-accent-border);
+  background: var(--studio-accent-soft);
+}
+
+/* =====================================================================
+   Wizard modal — canonical chrome for /survey-wizard.php, /mm-wizard.php,
+   /tia-wizard.php, /360-wizard.php. Each wizard file should use these
+   classes; the per-studio prefixed versions (.mm-modal, .tia-modal,
+   .t6-modal, .wiz-shell) are scheduled for migration to this set.
+   ===================================================================== */
+.rc-wizard-backdrop {
+  position: fixed; inset: 64px 0 0 0;
+  background: rgba(20, 24, 38, 0.42);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 50;
+  overflow-y: auto;
+  padding: 32px 24px 60px;
+  box-sizing: border-box;
+}
+.rc-wizard-modal {
+  max-width: 980px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(8, 12, 24, 0.28), 0 2px 6px rgba(8, 12, 24, 0.12);
+  overflow: hidden;
+}
+.rc-wizard-head {
+  position: sticky; top: 0; z-index: 2;
+  background: #fff;
+  border-bottom: 1px solid var(--hairline);
+  padding: 16px 22px 14px;
+}
+.rc-wizard-titlebar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.rc-wizard-titlebar .title-side {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--rc-font-sans);
+  font-size: 16px; font-weight: 600;
+  color: var(--text);
+}
+.rc-wizard-titlebar .title-side img { width: 22px; height: 22px; border-radius: 5px; }
+.rc-wizard-close {
+  background: transparent; border: none; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--text-3);
+}
+.rc-wizard-close:hover { background: var(--surface-2); color: var(--text); }
+.rc-wizard-steps {
+  display: grid;
+  gap: 6px;
+}
+.rc-wizard-steps.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rc-wizard-steps.cols-5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.rc-wizard-step {
+  padding: 9px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color 0.18s, padding 0.18s;
+}
+.rc-wizard-step.is-done   { border-color: #d2e9d8; background: #f2faf4; }
+.rc-wizard-step.is-active { border: 2px solid var(--studio-accent, var(--accent)); padding: 8px 10px; }
+.rc-wizard-step .pip {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: #cfd6df; color: #fff;
+  font-size: 10.5px; font-weight: 700;
+}
+.rc-wizard-step.is-done .pip   { background: #1f7a3a; }
+.rc-wizard-step.is-active .pip { background: var(--studio-accent, var(--accent)); }
+.rc-wizard-step .label { display: inline-block; margin-left: 6px; font-weight: 600; font-size: 12.5px; color: var(--text); }
+.rc-wizard-step .sub   { color: var(--text-3); font-size: 11.5px; line-height: 1.3; margin: 3px 0 0 26px; }
+
+.rc-wizard-body { padding: 26px 30px; }
+.rc-wizard-panel { display: none; }
+.rc-wizard-panel.is-active,
+.rc-wizard-panel[data-active="1"] { display: block; }
+.rc-wizard-panel h2 {
+  font-family: var(--rc-font-sans);
+  font-size: 22px; font-weight: 700; margin: 0 0 6px;
+  color: var(--text);
+}
+.rc-wizard-panel .wiz-sub { color: var(--text-2); font-size: 14px; margin: 0 0 18px; line-height: 1.5; }
+
+.rc-wizard-foot {
+  position: sticky; bottom: 0; z-index: 2;
+  background: #fff; border-top: 1px solid var(--hairline);
+  padding: 14px 22px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+
+/* =====================================================================
+   Print
+   ===================================================================== */
+@media print {
+  html, body { background: #fff !important; color: #000 !important; }
+  body { font-size: 11pt; }
+  .sidebar, .topbar, .assist-overlay, .assist-panel,
+  .preview-strip, .shell-nav, .shell-footer,
+  .studio-toast { display: none !important; }
+  .app { display: block !important; height: auto !important; overflow: visible !important; }
+  .main { height: auto !important; overflow: visible !important; }
+  .page { padding: 0 !important; max-width: none !important; }
+  .card { box-shadow: none !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
+  .work-head h2, .page-title { color: #000 !important; }
+  @page { size: letter; margin: 0.6in; }
+}

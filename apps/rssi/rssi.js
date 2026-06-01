@@ -448,6 +448,12 @@
 
     /* ─── Live "What Do These Numbers Mean?" explanations ─── */
     updateExplanations(d);
+
+    /* ─── Simplified standalone report (UX/IA simplification) ───
+       Builds the SDSI-style Score → Meaning → Evidence → Caution →
+       Next summary and folds the dense legacy chrome behind the
+       Technical diagnostics accordion. Display-only; no recompute. */
+    buildSimplifiedReport(d);
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -789,6 +795,301 @@
     }
   }
 
+  /* ════════════════════════════════════════════════════════════════
+   * SIMPLIFIED STANDALONE REPORT (UX/IA simplification).
+   *
+   * Reorganises the dense analyst dashboard into the SDSI-style flow:
+   *   Score → Meaning → Evidence → Caution → Next action,
+   * with all the legacy detail (eight domain cards, three lenses, item
+   * analysis, methods, full recommendations) moved behind a single
+   * "Technical diagnostics" accordion.
+   *
+   * This is a DISPLAY-LAYER change only. The scoring engine is untouched:
+   * the four simplified cards each surface a REAL engine domain score
+   * (no re-weighting, no new composite), and every relocated section is
+   * the same node rssi.js already hydrates — just moved, never recomputed.
+   *
+   * Runs at the end of render(d), so it stays in sync on every repaint
+   * (the interactive Cronbach analyzer re-renders through here too). The
+   * summary is rebuilt each call; the accordion is built/relocated once.
+   * ════════════════════════════════════════════════════════════════ */
+
+  /* The four user-facing domains, each mapped to ONE canonical engine
+     domain so the displayed number is an actual engine output (Spec §2
+     keys). The remaining four engine domains (construct alignment, bias
+     & clarity, scale structure, factor readiness) stay visible inside
+     the Technical diagnostics accordion — nothing is dropped. */
+  const SIMPLE_DOMAINS = [
+    { key: 'reliability',           label: 'Internal Consistency / Reliability' },
+    { key: 'item_prompt_quality',   label: 'Item Performance' },
+    { key: 'response_scale_review', label: 'Response Quality' },
+    { key: 'validity',              label: 'Score Interpretability' },
+  ];
+
+  function simpleMeaning(s) {
+    if (s >= 85) return 'This survey is in excellent shape. The data is reliable enough to publish, share with stakeholders, or use as the basis for confident decisions.';
+    if (s >= 70) return 'Your survey is in good shape. It is ready to field or share, and a few targeted fixes would push it higher.';
+    if (s >= 55) return 'Your survey is functional but has notable weak spots. Focused revisions to the lowest-scoring areas below would meaningfully lift its credibility.';
+    if (s >= 40) return 'Your survey needs work before its results can be relied on. Several areas are below acceptable thresholds for publication or decision-making.';
+    return 'Significant revision is needed before this survey produces trustworthy data.';
+  }
+
+  /* Sample-adequacy / confidence note. Reads the engine-provided
+     confidence + response count; does not recompute anything. */
+  function simpleAdequacy(d) {
+    const n = d.response_count || 0;
+    const conf = d.confidence || confidenceFor({ dataset: { rowCount: n } });
+    const warn = (conf === 'Low' || conf === 'Pilot');
+    let txt;
+    if (conf === 'High')          txt = 'Based on ' + n + ' responses · Confidence: High — a healthy sample for the statistics in this report.';
+    else if (conf === 'Moderate') txt = 'Based on ' + n + ' responses · Confidence: Moderate — enough data to interpret, though a larger sample would firm up the estimates.';
+    else if (conf === 'Low')      txt = 'Based on ' + n + ' responses · Confidence: Low — interpret these scores cautiously; the sample is small for some of the statistics.';
+    else                          txt = 'Based on ' + n + ' response' + (n === 1 ? '' : 's') + ' · Confidence: Pilot — too few responses to rely on these scores; treat the results as a preview.';
+    return { warn: warn, txt: txt };
+  }
+
+  /* Interpretation guidance: what you can say / what not to overclaim /
+     what to do next. READS ONLY the already-computed result (band,
+     domain scores, issues, validity cap) — mirrors the develop.php RSSI
+     guidance pattern without any recompute. */
+  function simpleGuidance(d) {
+    const s = d.strength;
+    const byKey = {};
+    (d.components || []).forEach(function (c) { byKey[c.key] = c; });
+    const rel = byKey.reliability;
+    const n = d.response_count || 0;
+
+    const canSay = [];
+    canSay.push('You can report the overall Strength Survey Index score of <b>' + s + ' / 100</b> ("' + esc(d.verdict || '') + '") as a summary of how this survey performed.');
+    if (rel && !rel.skipped && rel.score >= 70) {
+      canSay.push('Internal consistency is acceptable or better, so items within a scale hang together and scale scores can be summed or averaged with reasonable confidence.');
+    } else {
+      canSay.push('Report simple descriptive results (counts, percentages, averages) for the responses you have, clearly tied to this sample.');
+    }
+
+    const dont = [];
+    dont.push('Reliability is not validity: a consistent score is not proof the survey measures the intended idea correctly.');
+    if (d.rssi && d.rssi.validity_forward_capped) {
+      dont.push('Do not claim criterion validity — no criterion/outcome column was tagged, so that evidence is missing from this analysis.');
+    }
+    dont.push('These results describe this sample of ' + n + ' response' + (n === 1 ? '' : 's') + '; they do not guarantee the same performance in a different group.');
+
+    const next = [];
+    const topScopes = (d.issues || []).slice(0, 3).map(function (i) { return i.scope; })
+      .filter(function (v, idx, arr) { return v && arr.indexOf(v) === idx; });
+    if (topScopes.length) {
+      next.push('Address the flagged items under Top issues' + (topScopes.length ? ' (' + topScopes.map(esc).join(', ') + ')' : '') + '.');
+    } else {
+      next.push('Your survey is in good shape — no changes are needed before relying on these results in this sample.');
+    }
+    next.push('Open <b>Technical diagnostics</b> below for the full per-domain breakdown, the three lenses, item analysis, and the methods appendix.');
+
+    return { canSay: canSay, dont: dont, next: next };
+  }
+
+  function buildSimpleSummaryHTML(d) {
+    const byKey = {};
+    (d.components || []).forEach(function (c) { byKey[c.key] = c; });
+
+    // ── Plain-language meaning + adequacy note ──
+    const adeq = simpleAdequacy(d);
+    const infoSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><circle cx="12" cy="16" r="0.6" fill="currentColor" stroke="none"/></svg>';
+    let html = '';
+    html += '<p class="rssi-simple-meaning">' + esc(simpleMeaning(d.strength)) + '</p>';
+    html += '<div class="rssi-simple-note' + (adeq.warn ? ' warn' : '') + '">' + infoSvg + '<span>' + esc(adeq.txt) + '</span></div>';
+
+    // ── Four simplified domain cards (real engine scores) ──
+    html += '<div class="rssi-simple-h">Evidence at a glance</div>';
+    html += '<div class="rssi-simple-cards">';
+    SIMPLE_DOMAINS.forEach(function (m) {
+      const c = byKey[m.key] || { skipped: true };
+      const skipped = c.skipped || c.score == null;
+      const score = skipped ? 0 : (Number(c.score) || 0);
+      const status = skipped ? 'skipped' : statusFor(score);
+      const bandLbl = skipped ? 'N/A' : bandFor(score).label;
+      html += '<div class="rssi-simple-card">' +
+          '<div class="rssi-simple-card-head">' +
+            '<span class="rssi-simple-card-title">' + esc(m.label) + '</span>' +
+            (skipped
+              ? '<span class="rssi-simple-card-band status-skipped">' + bandLbl + '</span>'
+              : '<span class="rssi-simple-card-score">' + score + '<span class="out"> / 100</span></span>') +
+          '</div>' +
+          '<div class="rssi-meter status-' + status + '"><span style="width:' + (skipped ? 0 : score) + '%"></span></div>' +
+          (skipped
+            ? '<span class="pill">Not enough data to score</span>'
+            : '<span class="rssi-simple-card-band status-' + status + '" style="display:inline-block;margin-top:10px">' + esc(bandLbl) + '</span>') +
+        '</div>';
+    });
+    html += '</div>';
+
+    // ── Top issues only (full list lives in Technical diagnostics) ──
+    html += '<div class="rssi-simple-h">Top issues</div>';
+    const issues = d.issues || [];
+    if (!issues.length) {
+      html += '<div class="rssi-simple-issue ok"><div><div class="rssi-simple-issue-title">No critical issues detected</div>' +
+        '<p class="rssi-simple-issue-sub">Every diagnostic area scored at an acceptable level or better.</p></div></div>';
+    } else {
+      const shown = issues.slice(0, 3);
+      shown.forEach(function (i) {
+        html += '<div class="rssi-simple-issue sev-' + esc(i.sev) + '">' +
+            '<div><div class="rssi-simple-issue-title">' + esc(i.title) + '</div>' +
+            '<p class="rssi-simple-issue-sub">' + esc(i.sub) + '</p></div></div>';
+      });
+      const more = issues.length - shown.length;
+      if (more > 0) html += '<p class="rssi-simple-more">' + more + ' more recommendation' + (more === 1 ? '' : 's') + ' in Technical diagnostics below.</p>';
+    }
+
+    // ── Interpretation guidance ──
+    const g = simpleGuidance(d);
+    const li = function (arr) { return '<ul>' + arr.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>'; };
+    html += '<div class="rssi-simple-h">Interpreting this result</div>';
+    html += '<div class="rssi-guide-card"><h4>What you can say</h4>' + li(g.canSay) + '</div>';
+    html += '<div class="rssi-guide-card"><h4>What not to overclaim</h4>' + li(g.dont) + '</div>';
+    html += '<div class="rssi-guide-card"><h4>What to do next</h4>' + li(g.next) + '</div>';
+
+    // ── Next action: Print / Save PDF (primary), Open Survey Studio (secondary) ──
+    html += '<div class="rssi-simple-actions">' +
+        '<button class="btn btn-primary" type="button" onclick="window.print()">Print / Save as PDF</button>' +
+        '<a class="btn" href="/app-2026v4.php">Open Survey Studio</a>' +
+      '</div>';
+
+    return html;
+  }
+
+  /* Build the "Technical diagnostics" accordion once and relocate the
+     heavy legacy sections into it. Moving the existing nodes (rather
+     than re-rendering) preserves their live hydration: render() keeps
+     painting #rssiDimGrid / #rssiIssues / explain_* in place wherever
+     they now live, and the Cronbach analyzer keeps its mount + state. */
+  function buildTechAccordion(root, main) {
+    const acc = document.createElement('details');
+    acc.id = 'rssiTechAcc';
+    acc.className = 'rssi-tech-acc';
+    acc.innerHTML =
+      '<summary><span>Technical diagnostics</span>' +
+      '<span class="rssi-tech-sub">Eight-domain detail, three lenses, item analysis &amp; methods <span class="rssi-tech-caret">▾</span></span></summary>' +
+      '<div class="rssi-tech-body" id="rssiTechBody"></div>';
+    main.appendChild(acc);
+    const body = acc.querySelector('#rssiTechBody');
+
+    function section(label) {
+      const h = document.createElement('div');
+      h.className = 'rssi-tech-h';
+      h.textContent = label;
+      body.appendChild(h);
+    }
+    function move(sel, label) {
+      const el = root.querySelector(sel);
+      if (!el) return;
+      if (label) section(label);
+      body.appendChild(el); // relocates the live node (listeners/state intact)
+    }
+
+    // NOTE: the interactive item analysis (.rssi-overview-analyzer) is
+    // deliberately NOT moved here. It is the Reliability Lab — a primary
+    // learning workspace surfaced above this accordion by
+    // buildReliabilityLab(). Only genuinely deep, static diagnostics live
+    // in here.
+    move('.rssi-hero-side', 'What each number means — eight domains & three lenses');
+    move('#rssiDimGrid', 'Eight diagnostic domains');
+    move('#rssiIssues', 'All recommendations');
+    move('#rssiMethodsParagraph', 'Methods appendix');
+
+    // Hide the now-redundant overview section headings (the accordion
+    // supplies its own). Scoped by text so the per-dimension detail
+    // views ("What we found", etc.) keep their headings.
+    root.querySelectorAll('.section-head').forEach(function (sh) {
+      const t = (sh.textContent || '').trim();
+      if (/^Diagnostic dimensions/i.test(t) || /Top issues to fix|Recommended actions/i.test(t)) {
+        sh.style.display = 'none';
+      }
+    });
+
+    // Force the accordion open for print so the exported PDF still
+    // contains every technical detail.
+    window.addEventListener('beforeprint', function () {
+      document.querySelectorAll('.rssi-tech-acc').forEach(function (a) { a.setAttribute('open', ''); });
+    });
+  }
+
+  function buildSimplifiedReport(d) {
+    const scoreEl = document.getElementById('rssiScore');
+    const root = scoreEl ? scoreEl.closest('.rssi-app') : document.querySelector('.rssi-app');
+    if (!root) return;
+    const main = root.querySelector('.main');
+    if (!main) return;
+    root.setAttribute('data-simplified', '');
+
+    // (1) Build / refresh the simplified summary, inserted right after
+    //     the hero score card so it reads: score → meaning → evidence.
+    let summary = document.getElementById('rssiSimpleSummary');
+    if (!summary) {
+      summary = document.createElement('div');
+      summary.id = 'rssiSimpleSummary';
+      summary.className = 'rssi-simple';
+      const heroRow = root.querySelector('.rssi-hero-row');
+      const heroCard = root.querySelector('.hero');
+      const anchor = heroRow || (heroCard ? (heroCard.closest('section') || heroCard) : null);
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(summary, anchor.nextSibling);
+      else main.insertBefore(summary, main.firstChild);
+    }
+    summary.innerHTML = buildSimpleSummaryHTML(d);
+
+    // (2) Surface the interactive Reliability Lab as a primary section
+    //     (upload surface only — it needs the raw dataset).
+    buildReliabilityLab(root, summary);
+
+    // (3) Build the Technical diagnostics accordion once (relocates the
+    //     dense legacy sections into it).
+    if (!document.getElementById('rssiTechAcc')) buildTechAccordion(root, main);
+  }
+
+  /* The interactive item analysis (rssi-reliability.js, mounted into
+     .rssi-overview-analyzer) is one of ReliCheck's key learning features:
+     toggle items, watch Cronbach's alpha + the Strength Index move, learn
+     which items strengthen or weaken the scale. The simplification must
+     NOT bury it. This lifts the analyzer node into a prominent
+     "Reliability Lab" section placed right below the summary, above the
+     Technical diagnostics accordion. Built once; the analyzer keeps its
+     mount + live-recompute wiring (the node is relocated, not rebuilt).
+     No-op on the saved-report viewer, which has no analyzer node. */
+  function buildReliabilityLab(root, summary) {
+    if (document.getElementById('rssiReliabilityLab')) return; // already built
+    const analyzer = root.querySelector('.rssi-overview-analyzer');
+    const lab = document.createElement('section');
+    lab.id = 'rssiReliabilityLab';
+    lab.className = 'rssi-lab';
+    lab.innerHTML =
+      '<div class="rssi-lab-head">' +
+        '<h2 class="rssi-lab-title">Reliability Lab</h2>' +
+        '<p class="rssi-lab-sub">Test how each item affects the strength of your survey evidence.</p>' +
+      '</div>' +
+      '<div class="rssi-lab-note">' +
+        '<strong>Reading the lab:</strong> reliability is not validity — a tighter scale is not proof it measures the right idea. ' +
+        'A higher Cronbach’s α is not always better: dropping items can lift α while narrowing the construct you set out to measure. ' +
+        'Strong evidence needs both statistical performance and an interpretable construct, so weigh what an item <em>means</em> before removing it.' +
+      '</div>';
+    // Place the lab immediately after the simplified summary.
+    if (summary && summary.parentNode) summary.parentNode.insertBefore(lab, summary.nextSibling);
+    else root.appendChild(lab);
+    if (analyzer) {
+      lab.appendChild(analyzer); // upload/scoring page: relocate the live analyzer (mount + state intact)
+    } else {
+      // Saved-report viewer (rssi-report.php) has no interactive analyzer on the
+      // page. Offer a clear route into the interactive scoring view instead of
+      // leaving the feature hidden or dead.
+      const sid  = window.RELICHECK_PROJECT_ID;
+      const href = (window.RELICHECK_STUDIO === 'rssi' && sid)
+        ? '/rssi-upload.php?survey_id=' + encodeURIComponent(sid)
+        : '/rssi.php';
+      const link = document.createElement('div');
+      link.className = 'rssi-lab-note';
+      link.innerHTML = 'The interactive item analysis runs on the scoring view. ' +
+        '<a href="' + href + '" style="font-weight:600;color:#2D8DFF;text-decoration:none;">Open interactive analysis &rarr;</a>';
+      lab.appendChild(link);
+    }
+  }
+
   /* ──────────────────────────────────────────────────────────────
    * PUBLIC: render from a pre-computed result (used by the upload
    * page after parse). Passing null falls back to sample data.
@@ -931,7 +1232,10 @@
   function setupDetailHeader(title, badge, finding) {
     document.getElementById('rssiDetailTitle').textContent = title;
     const bandEl = document.getElementById('rssiDetailBand');
-    bandEl.textContent = badge;
+    // badge / finding are optional. When blank, the pill and the finding line
+    // are hidden rather than showing placeholder text to the user.
+    bandEl.textContent = badge || '';
+    bandEl.style.display = badge ? '' : 'none';
     bandEl.style.background = '#EEF3FA';
     bandEl.style.color = '#1A6FD9';
     document.getElementById('rssiDetailWeight').textContent = 'Live';
@@ -943,7 +1247,9 @@
     fg.setAttribute('stroke-dashoffset', C.toFixed(2));
     fg.style.stroke = '#D8DDE3';
     document.getElementById('rssiDetailDesc').textContent = title + ' analysis on your current dataset.';
-    document.getElementById('rssiDetailFinding').textContent = finding;
+    const findingEl = document.getElementById('rssiDetailFinding');
+    findingEl.textContent = finding || '';
+    findingEl.style.display = finding ? '' : 'none';
   }
 
   /* Public: let any renderer update the big score circle and badge.
@@ -1005,8 +1311,7 @@
 
     // ─── Validity — Option 1 (iframe scrape) ───
     if (key === 'validity' && window.RSSI_ANALYSES) {
-      setupDetailHeader('Validity', 'Option 1 · iframe scrape',
-        'Pulls the narrative live from /validity.php?embed=1 via a hidden iframe.');
+      setupDetailHeader('Validity', '', '');
       window.RSSI_ANALYSES.renderValidityViaIframeScrape(document.getElementById('rssiDetailStats'));
       document.getElementById('rssiDetailRecs').innerHTML = '';
       return;
@@ -1014,8 +1319,7 @@
 
     // ─── Item / Prompt Quality — Option 2 (ported narrative) ───
     if (key === 'item_prompt_quality' && window.RSSI_ANALYSES) {
-      setupDetailHeader('Item / Prompt Quality', 'Option 2 · ported narrative',
-        'The narrative-generating code from renderItemQuality() is ported into RSSI and runs natively.');
+      setupDetailHeader('Item / Prompt Quality', '', '');
       window.RSSI_ANALYSES.renderItemQualityPorted(document.getElementById('rssiDetailStats'));
       document.getElementById('rssiDetailRecs').innerHTML = '';
       return;
@@ -1023,8 +1327,7 @@
 
     // ─── Construct Alignment — Option 3 (engine API) ───
     if (key === 'construct_alignment' && window.RSSI_ANALYSES) {
-      setupDetailHeader('Construct Alignment', 'Option 3 · engine API',
-        'Calls window.IQ_ENGINE.constructAlignmentNarrative() — the engine returns a plain narrative object, RSSI renders it.');
+      setupDetailHeader('Construct Alignment', '', '');
       window.RSSI_ANALYSES.renderConstructAlignmentViaEngineAPI(document.getElementById('rssiDetailStats'));
       document.getElementById('rssiDetailRecs').innerHTML = '';
       return;
@@ -1039,8 +1342,7 @@
     };
     if (IFRAME_DISPATCH[key] && window.RSSI_ANALYSES && window.RSSI_ANALYSES[IFRAME_DISPATCH[key].fn]) {
       const c = IFRAME_DISPATCH[key];
-      setupDetailHeader(c.label, 'Option 1 · iframe scrape',
-        'Pulls narrative live from the corresponding studio analysis page via a hidden iframe in embed mode.');
+      setupDetailHeader(c.label, '', '');
       window.RSSI_ANALYSES[c.fn](document.getElementById('rssiDetailStats'));
       document.getElementById('rssiDetailRecs').innerHTML = '';
       return;

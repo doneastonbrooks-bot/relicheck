@@ -1,0 +1,468 @@
+/* ReliCheck Platform Shell
+   ------------------------------------------------------------------
+   Shared chrome for every authenticated app page: top nav, app-shell
+   wrapper, page-frame, hero, studio picker, recent projects, footer.
+   Loaded by _platform_shell_header.php. The canonical design source
+   is platform-shell-preview.html at the repo root. Updates here flow
+   to every page that uses the partials.
+   ------------------------------------------------------------------ */
+
+:root{
+  /* Brand tokens, drawn from styles-2026.css so the shell stays on-brand */
+  --bg:           #ffffff;
+  --bg-soft:      #f7f8fb;
+  --bg-tint:      #fbfcfe;
+  --ink-1:        #0f1322;
+  --ink-2:        #1a2238;
+  --ink-3:        #3b4259;
+  --ink-4:        #5b6378;
+  --ink-5:        #7a8499;
+  --ink-6:        #aab2c3;
+  --line:         #ebeef3;
+  --line-soft:    #f1f3f7;
+  --accent:       #e85d3a;
+  --accent-hover: #cc4a2a;
+  --accent-soft:  #fdeee9;
+  --accent-tint:  #fff7f3;
+
+  /* Studio accents. Used only on small details (recent-card stripe,
+     occasional dot). Chrome stays neutral; icons carry the color. */
+  --survey:       #e85d3a;
+  --survey-soft:  #fdeee9;
+  --mm:           #6d4ad8;
+  --mm-soft:      #efeafd;
+  --tia:          #0e8a6f;
+  --tia-soft:     #e3f5ee;
+  --three60:      #2563eb;
+  --three60-soft: #e6efff;
+
+  /* App-wide font stack — Inter first, system fallback.
+     --font-display previously resolved to Fraunces (serif); now points at
+     the same Inter stack so headings, body, buttons, sidebar, marketing
+     surfaces, wizards, and welcome all share one face. */
+  --font-display: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-sans:    Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+  --r-sm: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --shadow-1: 0 1px 2px rgba(15,19,34,.04), 0 1px 1px rgba(15,19,34,.03);
+  --shadow-2: 0 1px 2px rgba(15,19,34,.05), 0 12px 32px rgba(15,19,34,.06);
+  --shadow-3: 0 2px 4px rgba(15,19,34,.06), 0 24px 56px rgba(15,19,34,.08);
+
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+
+*{ box-sizing: border-box; }
+html, body{ margin: 0; padding: 0; }
+html{ background: var(--bg-soft); }
+body{
+  font-family: var(--font-sans);
+  color: var(--ink-2);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(232,93,58,.06), transparent 60%),
+    radial-gradient(1000px 500px at 5% 8%, rgba(109,74,216,.05), transparent 60%),
+    var(--bg);
+  min-height: 100vh;
+}
+a{ color: inherit; text-decoration: none; }
+button{ font: inherit; cursor: pointer; }
+
+/* ====== PREVIEW STRIP (optional, opt-in via $shell_show_preview_strip) ====== */
+.preview-strip{
+  background: var(--ink-1);
+  color: #f6f7fa;
+  font-size: 13px;
+  letter-spacing: .01em;
+  padding: 8px 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  font-weight: 500;
+}
+.preview-strip .dot{
+  width: 7px; height: 7px; border-radius: 999px;
+  background: #f5b955; box-shadow: 0 0 0 4px rgba(245,185,85,.18);
+}
+.preview-strip strong{ font-weight: 600; color: #fff; }
+.preview-strip span.dim{ color: #aab2c3; }
+
+/* ====== TOP NAV ====== */
+.shell-nav{
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: saturate(1.6) blur(18px);
+  -webkit-backdrop-filter: saturate(1.6) blur(18px);
+  background: rgba(255,255,255,.72);
+  border-bottom: 1px solid var(--line-soft);
+}
+.shell-nav-inner{
+  display: flex; align-items: center; gap: 14px;
+  /* Same gutter as .relicheck-page-frame so brand lines up with content */
+  padding: 14px clamp(32px, 4vw, 72px);
+}
+.brand{
+  display: inline-flex; align-items: center;
+  color: var(--ink-1);
+}
+.brand-logo{
+  height: 52px; width: auto; display: block;
+}
+.shell-footer .brand-logo{ height: 40px; }
+
+.project-switcher{
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px; padding: 0 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 999px;
+  font-size: 14px; font-weight: 500;
+  color: var(--ink-2);
+  transition: border-color .2s var(--ease), background .2s var(--ease);
+  margin-left: 6px;
+}
+.project-switcher:hover{ border-color: #d8dde7; background: #fff; }
+.project-switcher .ico{ color: var(--ink-5); }
+.project-switcher .caret{ color: var(--ink-5); margin-left: 2px; }
+
+.nav-spacer{ flex: 1; }
+
+.nav-search{
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 36px; padding: 0 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-tint);
+  border-radius: 999px;
+  color: var(--ink-5);
+  font-size: 14px; font-weight: 500;
+  width: 280px;
+  transition: border-color .2s var(--ease), background .2s var(--ease);
+}
+.nav-search:hover{ border-color: #d8dde7; background: #fff; }
+.nav-search .kbd{
+  margin-left: auto;
+  font-family: var(--font-sans);
+  font-size: 11px; font-weight: 600;
+  color: var(--ink-5);
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.icon-btn{
+  width: 36px; height: 36px; border-radius: 999px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-3);
+  transition: background .2s var(--ease), border-color .2s var(--ease);
+}
+.icon-btn:hover{ background: #fff; border-color: var(--line); }
+.icon-btn .badge-dot{
+  position: absolute; transform: translate(8px,-8px);
+  width: 8px; height: 8px; border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.avatar{
+  width: 36px; height: 36px; border-radius: 999px;
+  background: linear-gradient(135deg, #1a2238, #3b4259);
+  color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: .02em;
+  border: 1px solid rgba(15,19,34,.08);
+  box-shadow: var(--shadow-1);
+}
+
+/* ====== APP SHELL + PAGE FRAME ======
+   Full viewport width with controlled gutters. No fixed max-width cap.
+   app-shell is the outermost wrapper. page-frame holds every section
+   on the page and owns the single shared left/right gutter that all
+   headings, hero copy, grids, and cards align to. Do not add extra
+   horizontal padding on sections inside the frame. */
+.relicheck-app-shell{
+  position: relative;
+  width: 100%; max-width: none;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.relicheck-page-frame{
+  position: relative; z-index: 1;
+  width: 100%; max-width: none;
+  padding-left: clamp(32px, 4vw, 72px);
+  padding-right: clamp(32px, 4vw, 72px);
+  box-sizing: border-box;
+}
+
+/* ====== HERO ====== */
+.hero{
+  position: relative;
+  padding: 84px 0 56px;
+}
+.hero-eyebrow{
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-5);
+  margin-bottom: 18px;
+}
+.hero-eyebrow .pip{
+  width: 6px; height: 6px; border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+.hero h1{
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(40px, 4.6vw, 64px);
+  letter-spacing: -.028em;
+  line-height: 1.04;
+  color: var(--ink-1);
+}
+.hero h1 em{
+  font-style: italic;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+.hero p.lede{
+  margin: 0;
+  max-width: 640px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-4);
+}
+/* Decorative wash. Positioned relative to .relicheck-app-shell so it can
+   bleed past the page-frame gutter all the way to the viewport's right
+   edge. App-shell's overflow-x: hidden clips the overflow cleanly. */
+.hero-blob{
+  position: absolute;
+  top: -120px;
+  right: -260px;
+  width: 760px; height: 760px;
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgba(232,93,58,.18), rgba(232,93,58,0) 70%),
+    radial-gradient(closest-side, rgba(109,74,216,.12), rgba(109,74,216,0) 75%);
+  filter: blur(6px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ====== SECTION HEADS ====== */
+.section-head{
+  display: flex; align-items: end; justify-content: space-between; gap: 24px;
+  margin: 22px 0 18px;
+}
+.section-head h2{
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(22px, 2vw, 28px);
+  letter-spacing: -.02em;
+  color: var(--ink-1);
+}
+.section-head .head-meta{
+  font-size: 14px;
+  color: var(--ink-5);
+}
+
+/* ====== STUDIO PICKER ====== */
+.studio-grid{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(260px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  width: 100%;
+}
+@media (max-width: 1300px){
+  .studio-grid{ grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+}
+@media (max-width: 760px){
+  .studio-grid{ grid-template-columns: 1fr; }
+}
+
+.studio-tile{
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: 26px 24px 22px;
+  box-shadow: var(--shadow-1);
+  transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+  display: flex; flex-direction: column; gap: 14px;
+  min-height: 248px;
+}
+.studio-tile:hover{
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-3);
+  border-color: #dde2eb;
+}
+.studio-tile .glyph{
+  width: 64px; height: 64px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+}
+.studio-tile .glyph img{
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 6px 14px rgba(15,19,34,.10));
+}
+.studio-tile .name{
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -.018em;
+  color: var(--ink-1);
+  line-height: 1.15;
+}
+.studio-tile .desc{
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-4);
+  line-height: 1.5;
+}
+.studio-tile .footer{
+  margin-top: auto;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px;
+  padding-top: 6px;
+}
+.studio-tile .open-link{
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 14px; font-weight: 600;
+  color: var(--ink-2);
+  transition: color .2s var(--ease), gap .2s var(--ease);
+}
+.studio-tile:hover .open-link{ color: var(--accent); gap: 9px; }
+
+/* Status pill */
+.pill{
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: .01em;
+  border: 1px solid var(--line);
+  background: var(--bg-tint);
+  color: var(--ink-4);
+}
+.pill .pip{ width: 6px; height: 6px; border-radius: 999px; background: var(--ink-5); }
+.pill[data-status="live"]    { color:#0a6b4a; background:#e6f6ef; border-color:#cbecdc; }
+.pill[data-status="live"]    .pip{ background:#15a06b; box-shadow: 0 0 0 3px rgba(21,160,107,.16); }
+.pill[data-status="beta"]    { color:#7a4b06; background:#fff4dc; border-color:#fae3b1; }
+.pill[data-status="beta"]    .pip{ background:#e09b18; box-shadow: 0 0 0 3px rgba(224,155,24,.18); }
+.pill[data-status="demo"]    { color:#3b4259; background:#eef1f7; border-color:#dde2eb; }
+.pill[data-status="demo"]    .pip{ background:#7a8499; }
+.pill[data-status="dev"]     { color:#3a3a3a; background:#f5f5f5; border-color:#e6e6e6; }
+.pill[data-status="dev"]     .pip{ background:#aab2c3; border: 1px dashed #7a8499; box-shadow: none; }
+
+/* ====== RECENT PROJECTS ====== */
+.recent-grid{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(280px, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  width: 100%;
+}
+@media (max-width: 1100px){
+  .recent-grid{ grid-template-columns: 1fr; }
+}
+
+/* Small-screen fallback: tighter gutters everywhere so nothing kisses
+   the viewport edge on phones. Keeps the same alignment rule. */
+@media (max-width: 760px){
+  .relicheck-page-frame,
+  .shell-nav-inner,
+  .shell-footer-inner{
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.recent-card{
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 18px 18px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+  box-shadow: var(--shadow-1);
+  transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+}
+.recent-card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-2); }
+.recent-card .stripe{
+  width: 36px; height: 4px; border-radius: 999px; background: var(--accent);
+  opacity: .85;
+}
+.recent-card[data-studio="mm"]   .stripe{ background: var(--mm); }
+.recent-card[data-studio="tia"]  .stripe{ background: var(--tia); }
+.recent-card[data-studio="360"]  .stripe{ background: var(--three60); }
+.recent-card .title{
+  font-size: 15.5px; font-weight: 600; color: var(--ink-1);
+  letter-spacing: -.005em;
+  line-height: 1.3;
+}
+.recent-card .meta{
+  font-size: 13px; color: var(--ink-5);
+  display: flex; align-items: center; gap: 8px;
+}
+.recent-card .meta .sep{ width: 3px; height: 3px; border-radius: 999px; background: var(--ink-6); }
+
+/* ====== SECTIONS SPACING ====== */
+.section{ padding: 14px 0 28px; }
+.section + .section{ padding-top: 6px; }
+.section.tight{ padding-top: 0; }
+
+/* ====== FOOTER ====== */
+.shell-footer{
+  margin-top: 56px;
+  border-top: 1px solid var(--line-soft);
+  background: transparent;
+}
+.shell-footer-inner{
+  /* Same gutter as .relicheck-page-frame */
+  padding: 22px clamp(32px, 4vw, 72px) 40px;
+  display: flex; align-items: center; gap: 18px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: var(--ink-5);
+}
+.shell-footer-inner .brand{ font-size: 14px; color: var(--ink-3); }
+.shell-footer-inner .links{ display: flex; gap: 18px; margin-left: auto; }
+.shell-footer-inner .links a{ color: var(--ink-4); }
+.shell-footer-inner .links a:hover{ color: var(--ink-1); }
+
+/* ====== SR-only ====== */
+.sr-only{
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ====== Small touches ====== */
+.with-arrow svg{ transition: transform .2s var(--ease); }
+.open-link:hover .with-arrow svg{ transform: translateX(2px); }
+
+/* ====== Font unification ======
+   Override every inline Fraunces declaration across the four studio
+   landings (studio-mm.php / studio-survey.php / studio-tia.php /
+   studio-360.php) and the welcome hero. They each carry an inline
+   `font-family: 'Fraunces', 'Georgia', serif` on their headlines and
+   tile titles. Force them to the canonical Inter stack. */
+.studio-hero h1,
+.studio-tile-card .tile-title,
+.studio-section-head h2,
+.recent-card .title,
+.hero h1,
+.hero h1 em {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif !important;
+}

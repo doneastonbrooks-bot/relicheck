@@ -98,19 +98,14 @@ $_section_icons = [
 
   <aside class="sidebar" aria-label="Studio navigation">
 
-    <!-- Brand strip — real ReliCheck logo. -->
-    <div class="sb-header">
-      <a class="sb-header-link" href="/app-2026v4.php" title="All studios" aria-label="ReliCheck home">
-        <img src="/logo-brand.svg" alt="ReliCheck" class="sb-logo-img">
-      </a>
-    </div>
-
-    <!-- Studio strip — studio mark icon + studio name. -->
+    <!-- Studio strip — studio mark icon + studio name (top of the sidebar). -->
     <div class="sb-studio">
-      <?php if (!empty($_studio['mark'])): ?>
-        <img src="<?= htmlspecialchars($_studio['mark']) ?>" alt="" class="sb-studio-mark">
-      <?php endif; ?>
-      <div class="sb-studio-name"><?= htmlspecialchars($_studio['name']) ?></div>
+      <a class="sb-studio-link" href="/app-2026v4.php" title="All studios" aria-label="All studios">
+        <?php if (!empty($_studio['mark'])): ?>
+          <img src="<?= htmlspecialchars($_studio['mark']) ?>" alt="" class="sb-studio-mark">
+        <?php endif; ?>
+        <div class="sb-studio-name"><?= htmlspecialchars($_studio['name']) ?></div>
+      </a>
     </div>
 
     <!-- Project strip — project name + meta. -->
