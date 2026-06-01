@@ -850,6 +850,12 @@ const AHELP={
     use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
     steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
     example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
+  'evidence_strength':{title:`Evidence Strength`,
+    what:`This step gauges how strong your integrated mixed methods evidence is before you report it — a set of checks across the quantitative, qualitative, and integration work.`,
+    measures:`It runs checks on things like sample size, coding coverage, quote quality, and whether the strands were integrated, and flags each as pass, needs a fix, or not yet run.`,
+    use:`Run it near the end: address the high-severity fixes before you write the report, so your claims are well supported.`,
+    steps:[`<b>Run the strength checks.</b>`,`<b>Read each result</b> — pass, review, or fix.`,`<b>Fix the high-severity items</b> first.`,`<b>Re-run</b> to confirm, then report.`],
+    example:`<p><b>Reading it:</b> a "Fix" on coding coverage tells you several themes have too few tagged responses to support strong claims — worth addressing before the report.</p>`},
   'interp':{title:`Integrated Interpretation`,
     what:`Integrated interpretation is where you say, theme by theme, what the combined quantitative and qualitative evidence means — weaving the numbers and the narratives into one reading.`,
     measures:`For each theme it gathers the evidence (how often it appears, its sentiment, any statistical result, and a quote) and gives you a paragraph to interpret what it all means for your decision.`,
@@ -1947,6 +1953,37 @@ function renderInterp(s){
     </div></div>`;}).join('');
   $("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+cards+ipNav();
 }
+/* ============ Evidence Strength (evidence_strength) — strength checks ============
+   strength-check.php runs checks across the quant/qual/integration work (pass |
+   fix | skip + severity). Manual run; "Include ReliCheck Intelligence checks" is
+   an opt-in. Needs the Phase 161 table; degrades to a clear note if absent. */
+const sg={base:null,busy:false,err:'',running:false,includeAi:false};
+function sgFetch(){return fetch('/api/mm/strength-check.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function sgToggleAi(){sg.includeAi=!sg.includeAi;renderStrength(activeStep());}
+function sgRun(){if(sg.running)return;sg.running=true;if(sg.includeAi)toast('Working with ReliCheck Intelligence…');renderStrength(activeStep());fetch('/api/mm/strength-check.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,include_ai:sg.includeAi})}).then(r=>r.json()).then(j=>{sg.running=false;if(j&&j.ok){sg.base=j;toast('Strength checks complete');}else{toast((j&&(j.message||j.error))||'Could not run checks.');}renderStrength(activeStep());}).catch(()=>{sg.running=false;toast('Run failed.');renderStrength(activeStep());});}
+function sgDedupe(rows){const seen={};const out=[];(rows||[]).forEach(r=>{if(seen[r.check_key])return;seen[r.check_key]=1;out.push(r);});return out;}
+function sgBadge(r){if(r.status==='pass')return '<span class="tt-status ok">Pass</span>';if(r.status==='skip')return '<span style="color:var(--ink-3)">— not yet —</span>';return `<span class="tt-status rev">${r.severity==='high'?'Fix':'Review'}</span>`;}
+function sgHead(s){return `<div class="ws-header"><div class="eyebrow">Evidence strength · how strong is the integrated evidence <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function sgNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function sgMsg(s,msg){$("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+sgNav();}
+function renderStrength(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+`<p class="lede">Connect a project to gauge the strength of its integrated evidence.</p>`+sgNav();return;}
+  if(sg.err){sgMsg(s,sg.err);return;}
+  if(!sg.base){
+    if(!sg.busy){sg.busy=true;sgFetch().then(j=>{sg.busy=false;if(j&&j.ok){sg.base=j;}else{sg.err=(j&&(j.message||j.error))||'Could not load the checks.';}renderStrength(activeStep());}).catch(()=>{sg.busy=false;sg.err='Could not load your data.';renderStrength(activeStep());});}
+    sgMsg(s,'Loading the strength checks…');return;
+  }
+  const d=sg.base,noTable=(d.has_table===false),rows=sgDedupe(d.rows);
+  const pass=rows.filter(r=>r.status==='pass').length,fix=rows.filter(r=>r.status==='fix').length;
+  const note=noTable?`<div class="dm-note" style="margin-bottom:12px">Evidence-strength checks need a one-time database migration (schema_phase161.sql) before they can run.</div>`:'';
+  const runBar=`<div class="dm-save"><button class="btn primary" ${sg.running||noTable?'disabled':''} onclick="sgRun()">${sg.running?'Running checks…':(rows.length?'Re-run strength checks':'Run strength checks')}</button><label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)"><input type="checkbox" ${sg.includeAi?'checked':''} onchange="sgToggleAi()"> Include ReliCheck Intelligence checks</label><span class="dm-note">${rows.length?(pass+' pass · '+fix+' to fix'):'Deterministic checks; the optional ones use ReliCheck Intelligence.'}</span></div>`;
+  let table='';
+  if(rows.length){const body=rows.map(r=>`<tr><td class="dx-name">${esc(r.title||r.check_key||'')}</td><td>${sgBadge(r)}</td><td class="dx-interp">${esc(r.message||'')}</td><td class="dx-interp">${(r.status!=='pass'&&r.status!=='skip'&&r.fix_hint)?esc(r.fix_hint):'—'}</td></tr>`).join('');
+    table=`<div class="panel"><div class="panel-h"><div><h3>Strength checks</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Check</th><th class="l">Status</th><th class="l">What it means</th><th class="l">How to fix</th></tr></thead><tbody>${body}</tbody></table></div></div></div>`;}
+  else if(!noTable)table=`<div class="th-empty"><h3>Not run yet</h3><p>Run the strength checks to gauge how well your integrated evidence supports the claims you're about to report.</p></div>`;
+  const layers=rows.length?`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each check looks at one way your evidence could be weak — too small a sample, thin coding, unintegrated strands. Clear the high-severity fixes before you write the report.</div></div></div>`:'';
+  $("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+note+runBar+table+layers+sgNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1962,6 +1999,7 @@ function renderCenter(){
   if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='meta'){ return renderMeta(s); }
   if(s.id==='interp'){ return renderInterp(s); }
+  if(s.id==='evidence_strength'){ return renderStrength(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
