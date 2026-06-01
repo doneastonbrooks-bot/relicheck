@@ -324,6 +324,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       return '<tr><td class="dx-name">'+esc(v.name)+'</td><td class="l">'+esc((v.types||['—'])[0])+'</td><td>'+n+'</td><td>'+(total-n)+'</td></tr>'; }).join('');
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Overview</h1>'
       + '<p class="lede">What is in this dataset, before you analyze it.</p></div>'
+      + (window.AnalysisStudio && window.AnalysisStudio.helpButton ? window.AnalysisStudio.helpButton('overview') : '')
       + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
       + '<div style="display:flex;gap:34px;flex-wrap:wrap">' + stat(ds.rowCount||0,'Rows') + stat(vars.length,'Variables') + stat(vars.filter(isNum).length,'Numeric') + '</div>'
       + '<p style="margin:14px 0 0;color:var(--ink-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'

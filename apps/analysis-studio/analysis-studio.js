@@ -28,10 +28,56 @@
   function catVars(ds){ return ds.variables.filter(isCategoricalVar); }
   function varByName(ds,name){ return ds.variables.find(function(v){return v.name===name;}); }
 
-  function header(eyebrow, title, lede){
+  // ---- "How to use this" help (mirrors MM's per-step guidance) ----
+  const HELP = {
+    overview: { title:'the Overview', what:'The Overview reads your dataset before any analysis runs: how many rows and variables you have, each variable’s role, and where values are missing.',
+      steps:['Check the Rows / Variables / Numeric summary cards.','Scan the Variables table for each variable’s type.','Watch the Missing column — high missingness weakens later results.','When it looks right, Continue to analysis.'],
+      example:'<strong>Reading it:</strong> 250 rows, 12 variables, 8 numeric, with 0 missing on the key items means you can analyze every case with confidence.' },
+    frequencies: { title:'Frequencies', what:'Frequencies count how often each value of a categorical or Likert variable appears, with percentages and a running cumulative total.',
+      steps:['Pick a categorical or Likert variable.','Read the count and Valid % for each level (sorted most→least common).','Use the Cumulative % to see where most responses fall.'],
+      example:'<strong>Reading it:</strong> if "Agree" + "Strongly agree" together are 70% of valid responses, most respondents lean positive on that item.' },
+    distributions: { title:'Means & Distributions', what:'Summary statistics for every numeric variable: center (mean, median), spread (SD), and range (min–max), plus missing counts.',
+      steps:['Compare each variable’s mean and median — a gap signals skew.','Read the SD for spread (small = clustered, large = spread out).','Note missing counts before using a variable downstream.'],
+      example:'<strong>Reading it:</strong> a mean of 3.9 with a median of 4.0 and SD of 0.9 (1–5 scale) is a mild left-leaning, fairly tight distribution.' },
+    cross_tabs: { title:'Cross-Tabs', what:'A two-variable contingency table: counts and row percentages for how one categorical variable breaks down across another.',
+      steps:['Choose a row variable and a column variable.','Read each cell’s count and row % (each row sums to 100%).','Compare rows to spot patterns between the two variables.'],
+      example:'<strong>Reading it:</strong> if 80% of one group picks option A but only 40% of another does, that gap is worth testing in the Inferential Studio.' },
+    group_summaries: { title:'Group Summaries', what:'Per-group means for a numeric outcome, with each group’s gap (Δ) from the overall mean.',
+      steps:['Pick a numeric outcome and a grouping variable.','Read each group’s mean and its Δ from overall.','Larger Δs flag groups that stand out (descriptively).'],
+      example:'<strong>Reading it:</strong> a group sitting +0.6 above the overall mean scores noticeably higher — confirm with a t-test / ANOVA.' },
+    top_bottom_items: { title:'Top & Bottom Items', what:'Every numeric item ranked by mean, with flags for low-variance, ceiling, and floor effects.',
+      steps:['Scan the highest- and lowest-scoring items.','Check the Flags column for items that may not discriminate.','Use this to spot strong and weak items at a glance.'],
+      example:'<strong>Reading it:</strong> an item flagged "ceiling" (almost everyone picks the top option) tells you little about differences between respondents.' },
+    scale_scores: { title:'Scale Scores', what:'Combine several numeric items into one composite (the average of the chosen items per respondent). Descriptive only — no reliability.',
+      steps:['Tick the items that belong to the scale (at least two).','Read the composite’s N, mean, and SD.','For reliability (Cronbach’s α), use RSSI — not here.'],
+      example:'<strong>Reading it:</strong> a 4-item composite with mean 3.8 / SD 0.7 summarizes the scale; whether the items hang together is an RSSI question.' },
+  };
+  function helpButton(key){ return HELP[key] ? '<div class="as-help-bar"><button class="btn-help" data-as-help="'+esc(key)+'">📘 How to use this</button></div>' : ''; }
+  AS.help = function(key){
+    const h = HELP[key]; if (!h) return;
+    const steps = (h.steps||[]).map(function(s){ return '<li>'+s+'</li>'; }).join('');
+    const ex = h.example ? '<div class="au-example"><div class="dx-l-k">Worked example</div>'+h.example+'</div>' : '';
+    const overlay = document.createElement('div');
+    overlay.className = 'au-overlay';
+    overlay.innerHTML = '<div class="au-panel" role="dialog" aria-label="How to use">'
+      + '<button class="au-close" aria-label="Close">&times;</button>'
+      + '<h2 class="au-title">How to use '+esc(h.title)+'</h2>'
+      + '<p class="au-sub">'+esc(h.what)+'</p>'
+      + (steps?'<ol class="as-help-steps">'+steps+'</ol>':'')
+      + ex
+      + '<div class="au-confirm-actions" style="justify-content:flex-end"><button class="au-btn primary" data-au-close="1">Got it</button></div></div>';
+    document.body.appendChild(overlay);
+    const close=function(){ overlay.remove(); };
+    overlay.addEventListener('click', function(e){ if(e.target===overlay || e.target.getAttribute('data-au-close')) close(); });
+    overlay.querySelector('.au-close').addEventListener('click', close);
+  };
+  AS.helpButton = helpButton;
+
+  function header(eyebrow, title, lede, helpKey){
     return '<div class="ws-header"><div class="eyebrow">'+esc(eyebrow)+' <span class="strand-chip">QUAN</span></div>'
       + '<h1 class="title">'+esc(title)+'</h1>'
-      + (lede?'<p class="lede">'+esc(lede)+'</p>':'') + '</div>';
+      + (lede?'<p class="lede">'+esc(lede)+'</p>':'')
+      + (helpKey?helpButton(helpKey):'') + '</div>';
   }
   function selectField(id, label, hint, vars, selectedName){
     const opts = vars.map(function(v){ return '<option value="'+esc(v.name)+'"'+(v.name===selectedName?' selected':'')+'>'+esc(v.name)+'</option>'; }).join('');
@@ -63,7 +109,7 @@
     const cands = catVars(ds).length ? catVars(ds) : ds.variables;
     const chosen = (sel.frequencies && varByName(ds, sel.frequencies)) ? sel.frequencies : cands[0].name;
     sel.frequencies = chosen;
-    host.innerHTML = header('Descriptive Analysis', 'Frequencies', 'Counts and percentages for a categorical or Likert variable.')
+    host.innerHTML = header('Descriptive Analysis', 'Frequencies', 'Counts and percentages for a categorical or Likert variable.', 'frequencies')
       + '<div class="panel"><div class="panel-b">'
       + selectField('frqVar','Variable','Categorical or Likert', cands, chosen)
       + '<div id="frqOut"></div></div></div>';
@@ -100,7 +146,7 @@
     const rows = nv.map(function(v){ const a=nums(v.values); const total=v.values.length; return {name:v.name,n:a.length,mean:mean(a),sd:sd(a),min:a.length?Math.min.apply(null,a):null,max:a.length?Math.max.apply(null,a):null,median:median(a),missing:total-nonMissing(v.values).length}; });
     const body = rows.length? rows.map(function(r){ return '<tr><td class="dx-name">'+esc(r.name)+'</td><td>'+r.n+'</td><td>'+n2(r.mean)+'</td><td>'+n2(r.sd)+'</td><td>'+n2(r.median)+'</td><td>'+n2(r.min)+'</td><td>'+n2(r.max)+'</td><td>'+r.missing+'</td></tr>'; }).join('')
       : '<tr><td colspan="8" class="l">No numeric variables were found.</td></tr>';
-    host.innerHTML = header('Descriptive Analysis','Means & Distributions','Center, spread, and range for every numeric variable.')
+    host.innerHTML = header('Descriptive Analysis','Means & Distributions','Center, spread, and range for every numeric variable.','distributions')
       + '<div class="panel"><div class="panel-h"><h3>Table 1 · Summary statistics</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
       + '<thead><tr><th class="l">Variable</th><th>N</th><th>Mean</th><th>SD</th><th>Median</th><th>Min</th><th>Max</th><th>Missing</th></tr></thead><tbody>'+body+'</tbody></table></div>'
       + layers([
@@ -116,7 +162,7 @@
     const rowName = (sel.cross_row && varByName(ds,sel.cross_row)) ? sel.cross_row : cv[0].name;
     let colName = (sel.cross_col && varByName(ds,sel.cross_col)) ? sel.cross_col : (cv[1]?cv[1].name:cv[0].name);
     sel.cross_row=rowName; sel.cross_col=colName;
-    host.innerHTML = header('Descriptive Analysis','Cross-Tabs','A two-variable contingency table with row percentages.')
+    host.innerHTML = header('Descriptive Analysis','Cross-Tabs','A two-variable contingency table with row percentages.','cross_tabs')
       + '<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
       + selectField('ctRow','Row variable','', cv, rowName)
       + selectField('ctCol','Column variable','', cv, colName)
@@ -152,7 +198,7 @@
     const outName=(sel.gs_out&&varByName(ds,sel.gs_out))?sel.gs_out:nv[0].name;
     const grpName=(sel.gs_grp&&varByName(ds,sel.gs_grp))?sel.gs_grp:cv[0].name;
     sel.gs_out=outName; sel.gs_grp=grpName;
-    host.innerHTML=header('Descriptive Analysis','Group Summaries','Per-group means, with each group’s gap from the overall mean.')
+    host.innerHTML=header('Descriptive Analysis','Group Summaries','Per-group means, with each group’s gap from the overall mean.','group_summaries')
       + '<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
       + selectField('gsOut','Outcome (numeric)','', nv, outName)
       + selectField('gsGrp','Group by','', cv, grpName)
@@ -185,7 +231,7 @@
     if(!items.length){ host.innerHTML=header('Descriptive Analysis','Top & Bottom Items','')+'<div class="as-empty-tool">No numeric/Likert items found to rank.</div>'; return; }
     const row=function(r,rank){ return '<tr><td class="dx-name">'+rank+'. '+esc(r.name)+'</td><td>'+r.n+'</td><td>'+n2(r.mean)+'</td><td>'+n2(r.sd)+'</td><td class="dx-interp">'+(r.flags.length?esc(r.flags.join(', ')):'—')+'</td></tr>'; };
     const body=items.map(function(r,i){return row(r,i+1);}).join('');
-    host.innerHTML=header('Descriptive Analysis','Top & Bottom Items','Every numeric item ranked by mean, with low-variance / ceiling / floor flags.')
+    host.innerHTML=header('Descriptive Analysis','Top & Bottom Items','Every numeric item ranked by mean, with low-variance / ceiling / floor flags.','top_bottom_items')
       + '<div class="panel"><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Item (ranked)</th><th>N</th><th>Mean</th><th>SD</th><th class="l">Flags</th></tr></thead><tbody>'+body+'</tbody></table></div>'
       + layers([
           {k:'What this shows', t:'Highest-scoring item: <strong>'+esc(items[0].name)+'</strong> (mean '+n2(items[0].mean)+'). Lowest: <strong>'+esc(items[items.length-1].name)+'</strong> (mean '+n2(items[items.length-1].mean)+').'},
@@ -199,7 +245,7 @@
     if(!nv.length){ host.innerHTML=header('Descriptive Analysis','Scale Scores','')+'<div class="as-empty-tool">No numeric items to combine.</div>'; return; }
     sel.scale = sel.scale || nv.slice(0,Math.min(3,nv.length)).map(function(v){return v.name;});
     const checks=nv.map(function(v){ const on=sel.scale.indexOf(v.name)>=0; return '<label style="display:flex;gap:8px;align-items:center;font-size:13.5px;font-weight:500;padding:5px 0"><input type="checkbox" class="scItem" value="'+esc(v.name)+'"'+(on?' checked':'')+'> '+esc(v.name)+'</label>'; }).join('');
-    host.innerHTML=header('Descriptive Analysis','Scale Scores','Combine items into a composite (sum of item means per respondent). No reliability — that lives in RSSI.')
+    host.innerHTML=header('Descriptive Analysis','Scale Scores','Combine items into a composite (sum of item means per respondent). No reliability — that lives in RSSI.','scale_scores')
       + '<div class="panel"><div class="panel-b"><div class="as-field"><label>Items in this scale</label>'+checks+'</div><div id="scOut"></div></div></div>';
     const drawOut=function(){
       const out=host.querySelector('#scOut'); if(!out) return;
@@ -217,6 +263,13 @@
     host.querySelectorAll('.scItem').forEach(function(cb){ cb.addEventListener('change',function(){ const v=cb.value; const i=sel.scale.indexOf(v); if(cb.checked&&i<0) sel.scale.push(v); else if(!cb.checked&&i>=0) sel.scale.splice(i,1); drawOut(); }); });
     drawOut();
   }
+
+  // Delegated: any "How to use this" button (in a work step or the Overview)
+  // opens its help modal.
+  document.addEventListener('click', function(e){
+    const b = e.target.closest ? e.target.closest('[data-as-help]') : null;
+    if (b) AS.help(b.getAttribute('data-as-help'));
+  });
 
   window.AnalysisStudio = AS;
 })();
