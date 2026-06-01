@@ -204,7 +204,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 /* Save to report + Report step */
 .save-bar{display:flex;align-items:center;gap:14px;margin-top:18px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)}
 .save-note{flex:1;font-size:13.5px;color:var(--ink-2)}
-.rep-actions{margin-bottom:16px}
+.rep-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
 .rep-block{border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
 .rep-block-h{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
 .rep-del{border:none;background:none;color:#c2492f;font-weight:600;font-size:12.5px;cursor:pointer;font-family:inherit}
@@ -406,6 +406,42 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     });
   }
 
+  function stripTags(h){ const d=document.createElement('div'); d.innerHTML=h; return d.textContent||d.innerText||''; }
+  function buildReportHtml(items){
+    const style = '<style>body{font-family:Calibri,Arial,sans-serif;color:#15171a;font-size:11pt}'
+      + 'h1{font-size:20pt;margin:0 0 4pt}h2{font-size:13pt;margin:18pt 0 6pt}'
+      + 'table{border-collapse:collapse;width:100%;font-size:10pt;margin:6pt 0}'
+      + 'th,td{border:1px solid #cccccc;padding:5px 8px;text-align:left}'
+      + '.dx-l-k{font-weight:bold;text-transform:uppercase;font-size:8pt;color:#666}'
+      + '.dx-l-t{margin-bottom:8pt}.dx-layers{border:1px solid #e0e0e0;padding:8pt 10pt;margin-top:6pt}</style>';
+    let body = '<h1>'+esc(BOOT.projectLabel)+' — Report</h1>';
+    items.forEach(function(it){ body += '<h2>'+esc(toolLabel(it.tool_key))+'</h2>' + ((it.result && it.result.html) || ('<p>'+esc(it.summary||'')+'</p>')); });
+    return { style: style, body: body };
+  }
+  function downloadWord(items){
+    const r = buildReportHtml(items);
+    const doc = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">'
+      + '<head><meta charset="utf-8">'+r.style+'</head><body>'+r.body+'</body></html>';
+    const blob = new Blob(['﻿'+doc], { type:'application/msword' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = (BOOT.projectLabel||'report').replace(/[^\w]+/g,'_') + '_report.doc';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1500);
+  }
+  function openGoogleDocs(items){
+    const r = buildReportHtml(items);
+    const html = '<meta charset="utf-8">'+r.body, plain = stripTags(r.body);
+    function go(){ window.open('https://docs.google.com/document/create','_blank'); }
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html],{type:'text/html'}), 'text/plain': new Blob([plain],{type:'text/plain'}) })])
+          .then(function(){ go(); alert('Report copied. In the new Google Doc, paste with Cmd/Ctrl + V.'); })
+          .catch(function(){ go(); alert('Open the Google Doc, then paste your report (the Word download also imports via File ▸ Open).'); });
+        return;
+      }
+    } catch(e){}
+    go(); alert('Tip: use Download Word, then in Google Docs choose File ▸ Open to import it.');
+  }
   function renderReport(host){
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Report</h1>'
       + '<p class="lede">Your saved analyses, assembled. Print or save as PDF.</p></div><div id="repBody"><div class="placeholder">Loading…</div></div>';
@@ -416,13 +452,18 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       .then(function(d){
         const items = (d && Array.isArray(d.results)) ? d.results : [];
         if (!items.length) { body.innerHTML = '<div class="placeholder">No saved analyses yet. Run a step and click <strong>Save to report</strong>.</div>'; return; }
-        body.innerHTML = '<div class="rep-actions"><button class="btn primary" id="repPrint">Print / Save as PDF</button></div>'
+        body.innerHTML = '<div class="rep-actions">'
+            + '<button class="btn primary" id="repPrint">Print / Save as PDF</button>'
+            + '<button class="btn" id="repWord">Download Word</button>'
+            + '<button class="btn" id="repGdoc">Open in Google Docs</button></div>'
           + items.map(function(it){
               return '<div class="rep-block"><div class="rep-block-h"><strong>'+esc(toolLabel(it.tool_key))+'</strong>'
                 + '<button class="rep-del" data-id="'+it.id+'">Remove</button></div>'
                 + '<div class="rep-snap">'+((it.result && it.result.html) || '<p class="save-note">'+esc(it.summary||'')+'</p>')+'</div></div>';
             }).join('');
         const pr = document.getElementById('repPrint'); if (pr) pr.addEventListener('click', function(){ window.print(); });
+        const wd = document.getElementById('repWord'); if (wd) wd.addEventListener('click', function(){ downloadWord(items); });
+        const gd = document.getElementById('repGdoc'); if (gd) gd.addEventListener('click', function(){ openGoogleDocs(items); });
         body.querySelectorAll('.rep-del').forEach(function(b){
           b.addEventListener('click', function(){
             fetch('/api/analysis/results.php', { method:'DELETE', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: +b.getAttribute('data-id') }) })
