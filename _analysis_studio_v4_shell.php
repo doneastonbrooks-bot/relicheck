@@ -133,15 +133,13 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .stage{display:flex;min-width:0;overflow:hidden}
 .center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 36px 80px}
 .center-inner{max-width:860px;margin:0 auto}
-/* Toolbox / tool-palette card (MM's 4th panel) — holds the View toggle. */
-.palette{flex:none;width:216px;align-self:flex-start;margin:30px 20px 18px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
-.palette h4{margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
-.pal-empty{font-size:12.5px;color:var(--ink-3);line-height:1.5}
-.pal-note{font-size:11.5px;color:var(--ink-3);margin-top:10px;line-height:1.45}
-.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;width:100%;box-sizing:border-box}
-.seg button{flex:1;border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-2);padding:7px 10px;border-radius:8px;cursor:pointer}
+/* View toggle ABOVE the center panel (Table / Graph) — no side palette. */
+.view-bar{max-width:860px;margin:0 auto 14px;display:flex;align-items:center;justify-content:flex-end;gap:10px}
+.view-bar:empty{display:none}
+.vb-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
+.seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;box-sizing:border-box}
+.seg button{border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-2);padding:7px 16px;border-radius:8px;cursor:pointer}
 .seg button.on{background:#fff;color:var(--acc-deep);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-@media(max-width:900px){.palette{display:none}}
 .ws-header{margin-bottom:20px}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:10px}
 .strand-chip{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.02em;background:var(--quan-soft);color:var(--quan-ink)}
@@ -225,7 +223,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 
   <div class="body">
     <nav class="rail" id="rail"><div class="rail-h"><?= htmlspecialchars($sd_name) ?></div></nav>
-    <div class="stage"><main class="center"><div class="center-inner" id="centerInner"></div></main><aside class="palette" id="palette"></aside></div>
+    <div class="stage"><main class="center"><div class="view-bar" id="viewBar"></div><div class="center-inner" id="centerInner"></div></main></div>
     <aside class="companion">
       <div class="comp-head"><h3>&#9678; ReliCheck Coach</h3></div>
       <div class="comp-tabs">
@@ -479,20 +477,18 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     b.addEventListener('click', function(){ state.compTab=b.getAttribute('data-tab'); document.querySelectorAll('.comp-tab').forEach(function(x){x.classList.toggle('on', x===b);}); renderCompanion(); });
   });
 
-  function renderPalette(){
-    const pal = document.getElementById('palette'); if (!pal) return;
+  // View toggle (Table / Graph) sits ABOVE the center panel — only on a work
+  // step with data. No side palette.
+  function renderViewBar(){
+    const bar = document.getElementById('viewBar'); if (!bar) return;
     const s = activeStep();
-    if (s.mode !== 'work' || !state.dataset) {
-      pal.innerHTML = '<h4>View</h4><div class="pal-empty">Open an analysis step (with data loaded) to switch between table and graph.</div>';
-      return;
-    }
-    pal.innerHTML = '<h4>View</h4><div class="seg" id="viewSeg">'
+    if (s.mode !== 'work' || !state.dataset) { bar.innerHTML = ''; return; }
+    bar.innerHTML = '<span class="vb-lbl">View</span><div class="seg" id="viewSeg">'
       + '<button data-view="table" class="'+(state.view==='table'?'on':'')+'">Table</button>'
-      + '<button data-view="graph" class="'+(state.view==='graph'?'on':'')+'">Graph</button></div>'
-      + '<div class="pal-note">Tables for detail; graphs for presentations. Chart type adapts to the data.</div>';
-    pal.querySelectorAll('#viewSeg button').forEach(function(b){ b.addEventListener('click', function(){ state.view=b.getAttribute('data-view'); render(); }); });
+      + '<button data-view="graph" class="'+(state.view==='graph'?'on':'')+'">Graph</button></div>';
+    bar.querySelectorAll('#viewSeg button').forEach(function(b){ b.addEventListener('click', function(){ state.view=b.getAttribute('data-view'); render(); }); });
   }
-  function render(){ renderRail(); renderCenter(); renderPalette(); renderCompanion(); }
+  function render(){ renderRail(); renderViewBar(); renderCenter(); renderCompanion(); }
   render();
   loadDataset();
 })();
