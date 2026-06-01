@@ -850,6 +850,12 @@ const AHELP={
     use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
     steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
     example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
+  'converge':{title:`Convergence & Divergence`,
+    what:`This step puts each theme's quantitative and qualitative evidence side by side so you can name where the two strands agree (converge), add to each other (nuanced), or contradict (diverge).`,
+    measures:`For each theme it shows the quantitative picture (how often it appears and any statistical result) next to the qualitative picture (sentiment and a quote), and lets you record your reading of how they align.`,
+    use:`Use it after the Joint Display: read each theme across both strands and write where they converge or diverge. Convergence strengthens a finding; divergence is often the most interesting result to explain.`,
+    steps:[`<b>Read each theme</b> across its quantitative and qualitative evidence.`,`<b>Name the relationship</b> — converge, nuanced, or diverge.`,`<b>Write why</b> in your own words.`,`<b>Save</b> each reading; it carries into the report.`],
+    example:`<p><b>Reading it:</b> if a theme is frequent, negative in tone, and a test shows lower scores for one group, the strands converge; if the numbers are flat but the theme is strongly negative, they diverge — worth explaining.</p>`},
   'joint':{title:`Joint Displays`,
     what:`A joint display lays your quantitative and qualitative evidence side by side, one row per theme, so you can see how the numbers and the narratives line up.`,
     measures:`For each theme it shows the quantitative picture (how often it appears, its intensity, and the strongest statistical result tied to it) next to the qualitative picture (the sentiment balance and a representative participant quote).`,
@@ -1838,6 +1844,41 @@ function renderMeasureTest(s){
   if(mt.result){const r=mt.result;resultCard=`<div class="panel"><div class="panel-h"><div><h3>Result</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Test</th><th>Statistic</th><th>p</th><th class="l">Effect</th><th>N</th></tr></thead><tbody><tr><td class="dx-name">${esc(r.predictor_name)} × ${esc(r.outcome_name)} (${esc(r.test)})</td><td>${r.statistic!=null?Number(r.statistic).toFixed(3):'—'}</td><td>${r.p_value!=null?Number(r.p_value).toFixed(4):'—'}</td><td class="dx-interp">${r.effect_size!=null?Number(r.effect_size).toFixed(3)+(r.effect_label?' ('+esc(r.effect_label)+')':''):'—'}</td><td>${r.n_total||'—'}</td></tr></tbody></table></div>${r.summary?`<div class="dx-layers" style="margin-top:14px"><div class="dx-l"><div class="dx-l-k">Reading it</div><div class="dx-l-t">${esc(r.summary)} This result is now linked to its theme in the Joint Display.</div></div></div>`:''}</div></div>`;}
   $("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+picker+resultCard+mtNav();
 }
+/* ============ Convergence & Divergence (converge) — name where the strands meet ============
+   Reuses joint-display.php data (per-theme quant + qual) so you classify each
+   theme's alignment and write your reading (saved via save_notes). Manual-first;
+   ReliCheck Intelligence "suggest alignment" (alignment.php) is the secondary assist. */
+const cv={base:null,busy:false,err:'',edits:{},saving:0,ai:null,aibusy:false};
+function cvFetch(){return fetch('/api/mm/joint-display.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function cvCapture(){((cv.base&&cv.base.rows)||[]).forEach(r=>{const el=document.getElementById('cv_note_'+r.theme_id);if(el)cv.edits[r.theme_id]=el.value;});}
+function cvClassify(themeId,label){const el=document.getElementById('cv_note_'+themeId);if(!el)return;let body=el.value.trim();['Converge','Diverge','Nuanced','Insufficient'].forEach(l=>{if(body.indexOf(l+':')===0)body=body.slice(l.length+1).trim();});el.value=label+': '+body;cv.edits[themeId]=el.value;el.focus();}
+function cvSave(themeId){cvCapture();const note=cv.edits[themeId]||'';cv.saving=themeId;renderConverge(activeStep());fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_notes',theme_id:themeId,notes:note})}).then(r=>r.json()).then(j=>{cv.saving=0;if(j&&j.ok){toast('Reading saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderConverge(activeStep());}).catch(()=>{cv.saving=0;toast('Save failed.');renderConverge(activeStep());});}
+function cvSuggest(){if(cv.aibusy)return;cvCapture();cv.aibusy=true;renderConverge(activeStep());fetch('/api/mm/alignment.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json()).then(j=>{cv.aibusy=false;cv.ai=(j&&j.ok)?j:null;if(!(j&&j.ok))toast((j&&(j.message||j.error))||'Not enough quant-linked data to analyze.');renderConverge(activeStep());}).catch(()=>{cv.aibusy=false;toast('Analysis failed.');renderConverge(activeStep());});}
+function cvHead(s){return `<div class="ws-header"><div class="eyebrow">Convergence & divergence · where the strands meet <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function cvNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function cvMsg(s,msg){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+cvNav();}
+function cvAiPanel(){if(cv.aibusy)return `<div class="th-quotes" style="padding:16px 18px">ReliCheck Intelligence is analyzing alignment…</div>`;if(!cv.ai)return '';const f=cv.ai.findings||[];const rows=f.map(x=>`<tr><td class="dx-name">${esc(x.quant_label||'')}</td><td><span class="tt-status ${x.alignment==='aligned'?'ok':'rev'}">${esc(x.alignment||'')}</span></td><td class="dx-interp">${esc(x.interpretation||'')}</td></tr>`).join('');return `<div class="ov-sec" style="margin-top:6px">ReliCheck Intelligence · suggested alignment</div>${cv.ai.summary?`<div class="dm-note" style="margin:0 0 8px">${esc(cv.ai.summary)}</div>`:''}${f.length?`<div class="panel"><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Finding</th><th class="l">Alignment</th><th class="l">Reading</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`:`<div class="th-quotes" style="padding:14px 18px">No quant-linked findings to align yet.</div>`}`;}
+function renderConverge(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<p class="lede">Connect a project with themes and analyses to compare the strands.</p>`+cvNav();return;}
+  if(cv.err){cvMsg(s,cv.err);return;}
+  if(!cv.base){
+    if(!cv.busy){cv.busy=true;cvFetch().then(j=>{cv.busy=false;if(j&&j.ok){cv.base=j;}else{cv.err=(j&&(j.message||j.error))||'Could not load the comparison.';}renderConverge(activeStep());}).catch(()=>{cv.busy=false;cv.err='Could not load your data.';renderConverge(activeStep());});}
+    cvMsg(s,'Laying out the two strands…');return;
+  }
+  const rows=cv.base.rows||[];
+  if(!rows.length){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<div class="th-empty"><h3>Nothing to compare yet</h3><p>Build themes, tag responses, and run your tests first. This step then lays each theme's quantitative and qualitative evidence side by side.</p></div>`+cvNav();return;}
+  const cards=rows.map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};const note=(cv.edits[r.theme_id]!=null)?cv.edits[r.theme_id]:(r.notes||'');const sv=cv.saving===r.theme_id;
+    return `<div class="panel"><div class="panel-b">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px">${esc(r.theme_name)}</div>
+      <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Quantitative</div><div class="ov-v"><span class="th-cov">${f.n||0} (${f.percent||0}%)</span> · ${jdAnalysis(r.analysis)}</div></div>
+      <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Qualitative</div><div class="ov-v"><span class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</span>${r.quote&&r.quote.text?' · “'+esc(r.quote.text.slice(0,120))+'”':''}</div></div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${['Converge','Nuanced','Diverge'].map(l=>`<button class="btn" style="padding:4px 10px" onclick="cvClassify(${r.theme_id},'${l}')">${l}</button>`).join('')}</div>
+      <textarea id="cv_note_${r.theme_id}" class="ed-in" rows="2" style="margin-top:8px" placeholder="Your reading: where do the strands agree or diverge, and why?">${esc(note)}</textarea>
+      <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="cvSave(${r.theme_id})">${sv?'Saving…':'Save reading'}</button></div>
+    </div></div>`;}).join('');
+  const aiBar=`<div class="dm-save"><button class="btn" ${cv.aibusy?'disabled':''} onclick="cvSuggest()">${cv.aibusy?'Analyzing…':'✦ Suggest alignment with ReliCheck Intelligence'}</button><span class="dm-note">Classify each theme yourself above, or get a suggested alignment from the quant-linked findings.</span></div>`;
+  $("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+cards+aiBar+cvAiPanel()+cvNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1850,6 +1891,7 @@ function renderCenter(){
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderMeasureTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
+  if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
