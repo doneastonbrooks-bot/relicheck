@@ -850,6 +850,12 @@ const AHELP={
     use:`Use it in an exploratory design once you have themes: quantitize them, then test them (for example, does a theme appear more in one group?) on Build & Test Measures. The results flow back into the Joint Display.`,
     steps:[`<b>Choose what to create</b> from your themes — presence is the usual starting point.`,`<b>Create the measurable variables.</b>`,`<b>Go to Build & Test Measures</b> to test them.`,`<b>Check the Joint Display</b> — the statistical result now links back to each theme.`],
     example:`<p><b>Reading it:</b> turning "Equity and access gaps" into a 0/1 presence variable lets you test whether that theme appears more often for one group, and that result then sits beside the theme in the joint display.</p>`},
+  'interp':{title:`Integrated Interpretation`,
+    what:`Integrated interpretation is where you say, theme by theme, what the combined quantitative and qualitative evidence means — weaving the numbers and the narratives into one reading.`,
+    measures:`For each theme it gathers the evidence (how often it appears, its sentiment, any statistical result, and a quote) and gives you a paragraph to interpret what it all means for your decision.`,
+    use:`Use it after convergence: write a short integration paragraph per theme that a reader could act on. These paragraphs become the body of your report.`,
+    steps:[`<b>Read each theme's evidence</b> across both strands.`,`<b>Write what it means</b> for the decision in a short paragraph.`,`<b>Optionally let ReliCheck Intelligence draft</b> a starting paragraph to edit.`,`<b>Save</b> each; they flow into the report.`],
+    example:`<p><b>Reading it:</b> for an equity theme, the paragraph might note it is frequent and negative, a test shows lower scores for under-resourced groups, and a quote illustrates the lived experience — so the recommendation is targeted investment.</p>`},
   'meta':{title:`Meta-inferences`,
     what:`Meta-inferences are the higher-order conclusions that only the combined quantitative and qualitative evidence supports — the takeaways neither strand could establish on its own.`,
     measures:`It gathers your per-theme convergence readings and gives you a space to write the study's overarching inferences, which then carry into the report.`,
@@ -1909,6 +1915,38 @@ function renderMeta(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">A meta-inference is a conclusion the combined evidence supports that neither strand could establish on its own. Draw on where the strands converged and diverged.</div></div></div>`;
   $("#centerInner").innerHTML=miHead(s)+helpBar('meta')+refPanel+composer+layers+miNav();
 }
+/* ============ Integrated Interpretation (interp) — per-theme integration paragraphs ============
+   integration.php GET gives each theme's combined evidence + an editable
+   interpretation paragraph (save_text manual / generate AI). Manual-first; the
+   tool box and a per-theme button offer ReliCheck Intelligence as the assist. */
+const ip={base:null,busy:false,err:'',edits:{},saving:0,gen:0,genAll:false};
+function ipFetch(){return fetch('/api/mm/integration.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function ipCapture(){((ip.base&&ip.base.rows)||[]).forEach(r=>{const el=document.getElementById('ip_'+r.theme_id);if(el)ip.edits[r.theme_id]=el.value;});}
+function ipPara(r){return (ip.edits[r.theme_id]!=null)?ip.edits[r.theme_id]:(r.paragraph||'');}
+function ipSave(themeId){ipCapture();const text=ip.edits[themeId]||'';ip.saving=themeId;renderInterp(activeStep());fetch('/api/mm/integration.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_text',theme_id:themeId,paragraph_text:text})}).then(r=>r.json()).then(j=>{ip.saving=0;if(j&&j.ok){toast('Interpretation saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderInterp(activeStep());}).catch(()=>{ip.saving=0;toast('Save failed.');renderInterp(activeStep());});}
+function ipGenerate(themeId){if(ip.gen)return;ipCapture();ip.gen=themeId;renderInterp(activeStep());fetch('/api/mm/integration.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate',theme_id:themeId})}).then(r=>r.json()).then(j=>{ip.gen=0;if(j&&j.ok&&j.paragraph){ip.edits[themeId]=j.paragraph;toast('Draft ready — review and save');}else{toast((j&&(j.message||j.error))||'Could not draft.');}renderInterp(activeStep());}).catch(()=>{ip.gen=0;toast('Draft failed.');renderInterp(activeStep());});}
+function ipGenerateAll(){if(ip.genAll)return;ipCapture();ip.genAll=true;renderInterp(activeStep());fetch('/api/mm/integration.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_all'})}).then(r=>r.json()).then(j=>{ip.genAll=false;if(j&&j.ok){ip.base=null;ip.edits={};toast('Interpretations drafted');}else{toast((j&&(j.message||j.error))||'Could not draft.');}renderInterp(activeStep());}).catch(()=>{ip.genAll=false;toast('Draft failed or timed out.');renderInterp(activeStep());});}
+function ipHead(s){return `<div class="ws-header"><div class="eyebrow">Integrated interpretation · what it means, theme by theme <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function ipNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function ipMsg(s,msg){$("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+ipNav();}
+function renderInterp(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+`<p class="lede">Connect a project to interpret the combined evidence.</p>`+ipNav();return;}
+  if(ip.err){ipMsg(s,ip.err);return;}
+  if(!ip.base){
+    if(!ip.busy){ip.busy=true;ipFetch().then(j=>{ip.busy=false;if(j&&j.ok){ip.base=j;}else{ip.err=(j&&(j.message||j.error))||'Could not load the interpretation.';}renderInterp(activeStep());}).catch(()=>{ip.busy=false;ip.err='Could not load your data.';renderInterp(activeStep());});}
+    ipMsg(s,'Gathering the evidence per theme…');return;
+  }
+  const rows=ip.base.rows||[];
+  if(!rows.length){$("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+`<div class="th-empty"><h3>Nothing to interpret yet</h3><p>Build themes and tag responses first. This step then lays out each theme's combined evidence for you to interpret.</p></div>`+ipNav();return;}
+  const cards=rows.map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};const sv=ip.saving===r.theme_id;const gn=ip.gen===r.theme_id;const src=r.source==='ai'?'<span class="tt-status rev">ReliCheck Intelligence draft</span>':(r.source==='user'?'<span class="tt-status ok">Yours</span>':'');
+    return `<div class="panel"><div class="panel-b">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:700">${esc(r.theme_name)}</div>${src}</div>
+      <div class="dm-note" style="margin:6px 0 8px">${f.n||0} (${f.percent||0}%) · ${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})} · ${jdAnalysis(r.analysis)}${r.quote&&r.quote.text?' · “'+esc(r.quote.text.slice(0,100))+'”':''}</div>
+      <textarea id="ip_${r.theme_id}" class="ed-in" rows="4" placeholder="What does the combined evidence mean for this theme, and for the decision?">${esc(ipPara(r))}</textarea>
+      <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="ipSave(${r.theme_id})">${sv?'Saving…':'Save interpretation'}</button><button class="btn" ${gn?'disabled':''} onclick="ipGenerate(${r.theme_id})">${gn?'Drafting…':'✦ Draft with ReliCheck Intelligence'}</button></div>
+    </div></div>`;}).join('');
+  $("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+cards+ipNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1923,6 +1961,7 @@ function renderCenter(){
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='meta'){ return renderMeta(s); }
+  if(s.id==='interp'){ return renderInterp(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }

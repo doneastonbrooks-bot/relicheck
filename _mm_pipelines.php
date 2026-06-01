@@ -52,10 +52,12 @@ $SETUP = [
    ]],
 ];
 $CONCLUDE = [
-  ['id'=>'interp','label'=>'Integrated Interpretation','strand'=>'neutral','mode'=>'work','route'=>'/cohort-summary.php',
+  // Native integrated interpretation (renderInterp) on integration.php's per-theme
+  // paragraphs. route=null so it does NOT iframe the legacy 360 cohort-summary stub.
+  ['id'=>'interp','label'=>'Integrated Interpretation','strand'=>'neutral','mode'=>'work','route'=>null,
    'title'=>'Integrated Interpretation','lede'=>'Interpret what the combined evidence means for the decision.',
-   'palette'=>['intro'=>'Interpretation views:','groups'=>[['name'=>'Lenses','items'=>[
-     ['name'=>'For the decision','strand'=>'both'],['name'=>'For the field','strand'=>'both']]]]]],
+   'palette'=>['intro'=>'Interpretation','groups'=>[
+     ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Draft all interpretations','strand'=>'both','action'=>'ipGenerateAll()']]]]]],
   ['id'=>'evidence_strength','label'=>'Evidence Strength','strand'=>'both','mode'=>'work','route'=>null,
    'title'=>'Evidence Strength','lede'=>'Gauge how strong the integrated evidence is before you report it.',
    'palette'=>['intro'=>'Strength views:','groups'=>[['name'=>'Strength','items'=>[
