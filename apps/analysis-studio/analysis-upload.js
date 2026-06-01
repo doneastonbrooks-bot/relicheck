@@ -50,6 +50,43 @@
     return out;
   }
 
+  // ---- Excel (.xlsx/.xls) via SheetJS, lazy-loaded from CDN (same as RSSI) ----
+  let _xlsxPromise = null;
+  function loadXlsx(){
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (_xlsxPromise) return _xlsxPromise;
+    _xlsxPromise = new Promise(function(resolve, reject){
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload = function(){ resolve(window.XLSX); };
+      s.onerror = function(){ reject(new Error('Could not load the Excel parser.')); };
+      document.head.appendChild(s);
+    });
+    return _xlsxPromise;
+  }
+  function parseXlsxFile(file){
+    return loadXlsx().then(function(XLSX){
+      return new Promise(function(resolve, reject){
+        const r = new FileReader();
+        r.onload = function(e){
+          try {
+            const wb = XLSX.read(e.target.result, { type:'array' });
+            const sheet = wb.Sheets[wb.SheetNames[0]];
+            const json = XLSX.utils.sheet_to_json(sheet, { header:1, defval:'' });
+            if (!json.length){ reject(new Error('The spreadsheet has no data.')); return; }
+            const headers = json[0].map(function(h,i){ h=String(h==null?'':h).trim(); return h || ('Column '+(i+1)); });
+            const rows = json.slice(1).map(function(arr){ return headers.map(function(h,i){ return arr[i]!=null ? String(arr[i]).trim() : ''; }); })
+              .filter(function(r){ return r.some(function(c){ return String(c).trim()!==''; }); });
+            resolve({ headers: headers, rows: rows });
+          } catch(err){ reject(err); }
+        };
+        r.onerror = function(){ reject(new Error('Could not read the file.')); };
+        r.readAsArrayBuffer(file);
+      });
+    });
+  }
+  function isExcel(name){ return /\.(xlsx|xls)$/i.test(name||''); }
+
   function detectRole(values, colIdx){
     const nm = values.filter(function(v){ return v!=null && String(v).trim()!==''; });
     if (!nm.length) return 'ignore';
@@ -106,7 +143,7 @@
       '<div class="au-panel" role="dialog" aria-label="Bring in your data">'
       + '<button class="au-close" aria-label="Close">&times;</button>'
       + '<h2 class="au-title">Bring in your data</h2>'
-      + '<p class="au-sub">Drag a file, paste from a spreadsheet, or choose a file. CSV, TSV, or tab-separated text.</p>'
+      + '<p class="au-sub">Drag in or choose an Excel (.xlsx), CSV, or TSV file.</p>'
       + '<div class="au-stage" id="auStage"></div>'
       + '</div>';
     document.body.appendChild(overlay);
@@ -115,31 +152,32 @@
     overlay.querySelector('.au-close').addEventListener('click', close);
     const stage = overlay.querySelector('#auStage');
     let fileName = 'Uploaded data';
+    let sourceFormat = 'csv';
 
+    function handleFile(f){
+      if (!f) return;
+      fileName = f.name.replace(/\.[^.]+$/, '');
+      const fail = function(err){ alert((err && err.message) ? err.message : 'Could not read that file.'); };
+      sourceFormat = isExcel(f.name) ? 'xlsx' : 'csv';
+      if (isExcel(f.name)) { parseXlsxFile(f).then(toConfirm).catch(fail); }
+      else { f.text().then(function(t){ toConfirm(parse(t)); }).catch(fail); }
+    }
     function showDrop(){
       stage.innerHTML =
         '<div class="au-drop" id="auDrop">'
         + '<div class="au-drop-ico">&#8681;</div>'
         + '<div class="au-drop-h">Drop your data file here</div>'
-        + '<div class="au-drop-sub">CSV, TSV, or tab-separated text</div>'
-        + '<div class="au-drop-actions"><button class="au-btn" id="auPaste">Paste data</button>'
-        + '<span class="au-or">or</span><button class="au-btn primary" id="auChoose">Choose file</button></div>'
-        + '<input type="file" id="auFile" accept=".csv,.tsv,.txt,text/csv,text/plain" hidden>'
-        + '</div>'
-        + '<textarea id="auPasteBox" class="au-paste" placeholder="Paste tab- or comma-separated rows here, including the header row…" hidden></textarea>'
-        + '<div class="au-paste-actions" hidden id="auPasteActions"><button class="au-btn primary" id="auPasteGo">Use pasted data</button></div>';
+        + '<div class="au-drop-sub">Excel (.xlsx), CSV, or TSV · up to 50 MB</div>'
+        + '<div class="au-drop-actions"><button class="au-btn primary" id="auChoose">Choose file</button></div>'
+        + '<input type="file" id="auFile" accept=".xlsx,.xls,.csv,.tsv,.txt,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/plain" hidden>'
+        + '</div>';
       const drop = stage.querySelector('#auDrop');
       const fileInput = stage.querySelector('#auFile');
       stage.querySelector('#auChoose').addEventListener('click', function(){ fileInput.click(); });
-      fileInput.addEventListener('change', function(){ const f=fileInput.files[0]; if(f){ fileName=f.name.replace(/\.[^.]+$/,''); f.text().then(function(t){ toConfirm(parse(t)); }); } });
+      fileInput.addEventListener('change', function(){ handleFile(fileInput.files[0]); });
       ['dragover','dragenter'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); }); });
       ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
-      drop.addEventListener('drop', function(e){ const f=e.dataTransfer.files[0]; if(f){ fileName=f.name.replace(/\.[^.]+$/,''); f.text().then(function(t){ toConfirm(parse(t)); }); } });
-      stage.querySelector('#auPaste').addEventListener('click', function(){
-        const box=stage.querySelector('#auPasteBox'), act=stage.querySelector('#auPasteActions');
-        box.hidden=false; act.hidden=false; box.focus();
-      });
-      stage.querySelector('#auPasteGo').addEventListener('click', function(){ const t=stage.querySelector('#auPasteBox').value; fileName='Pasted data'; toConfirm(parse(t)); });
+      drop.addEventListener('drop', function(e){ handleFile(e.dataTransfer.files[0]); });
     }
 
     function toConfirm(parsed){
@@ -160,6 +198,7 @@
         const sels = stage.querySelectorAll('.au-role');
         const roles2 = []; sels.forEach(function(s){ roles2[+s.getAttribute('data-col')] = s.value; });
         const payload = buildTablePayload(parsed, roles2, fileName);
+        payload.source_format = sourceFormat;
         if (!payload.column_meta.length){ stage.querySelector('#auMsg').textContent = 'Every column is set to Ignore — keep at least one.'; return; }
         persist(payload, stage.querySelector('#auUse'), stage.querySelector('#auMsg'));
       });
