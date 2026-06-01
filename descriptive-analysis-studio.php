@@ -36,7 +36,7 @@ include __DIR__ . '/_landing_head.php';
   <h1 class="sl-h1 rv rv-d1"><span class="thin">Know what is</span><br>in your data.</h1>
   <p class="sl-body rv rv-d2">Descriptive Studio summarizes what is present before you test what is true. Frequencies, distributions, group summaries, and item rankings. The full picture before any inference.</p>
   <div class="sl-actions rv rv-d3">
-    <a href="/analysis-upload-wizard.php?studio=descriptive" class="sl-btn-a">Open Descriptive Studio</a>
+    <a href="/descriptive-analysis-workspace.php" class="sl-btn-a">Open Descriptive Studio</a>
   </div>
   <div class="sl-scroll rv" style="transition-delay:.5s">Scroll</div>
 </section>
@@ -100,7 +100,7 @@ include __DIR__ . '/_landing_head.php';
 
 <section class="sl-cta">
   <h2 class="sl-cta-h rv">Before you test anything,<br><em>know what you have.</em></h2>
-  <div class="rv rv-d1"><a href="/analysis-upload-wizard.php?studio=descriptive" class="sl-cta-btn">Open Descriptive Studio</a></div>
+  <div class="rv rv-d1"><a href="/descriptive-analysis-workspace.php" class="sl-cta-btn">Open Descriptive Studio</a></div>
 </section>
 
 <script>

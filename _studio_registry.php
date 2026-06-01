@@ -31,7 +31,7 @@ return [
       'context' => '412 responses',
     ],
     'route'  => '/survey-dev.php',
-    'direct' => '/develop.php?db=1',
+    'direct' => '/develop.php?db=1&start=choose',
   ],
   'mm' => [
     'slug'           => 'mm',
@@ -107,7 +107,7 @@ return [
       'context' => '412 responses',
     ],
     'route'  => '/descriptive-analysis-studio.php',
-    'direct' => '/analysis-upload-wizard.php?studio=descriptive',
+    'direct' => '/descriptive-analysis-workspace.php',
   ],
   'inferential' => [
     'slug'           => 'inferential',
@@ -126,7 +126,7 @@ return [
       'context' => '412 responses',
     ],
     'route'  => '/inferential-statistics-studio.php',
-    'direct' => '/analysis-upload-wizard.php?studio=inferential',
+    'direct' => '/inferential-statistics-workspace.php',
   ],
   'basic' => [
     'slug'           => 'basic',

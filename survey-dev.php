@@ -36,7 +36,7 @@ include __DIR__ . '/_landing_head.php';
   <h1 class="sl-h1 rv rv-d1"><span class="thin">Survey design,</span><br>done right.</h1>
   <p class="sl-body rv rv-d2">The Survey Intelligence Readiness Index evaluates your survey before launch. Validity, reliability, and administration reviewed and scored so you know exactly where your instrument stands.</p>
   <div class="sl-actions rv rv-d3">
-    <a href="/develop.php?db=1&start=scratch" class="sl-btn-a">Open SIRI</a>
+    <a href="/develop.php?db=1&start=choose" class="sl-btn-a">Open SIRI</a>
     <a href="/develop.php?db=1&start=import" class="sl-btn-b">Import existing survey &#8594;</a>
   </div>
   <div class="sl-scroll rv" style="transition-delay:.5s">Scroll</div>
@@ -91,7 +91,7 @@ include __DIR__ . '/_landing_head.php';
 
 <section class="sl-cta">
   <h2 class="sl-cta-h rv">Your survey is your instrument.<br><em>Make it hold up.</em></h2>
-  <div class="rv rv-d1"><a href="/develop.php?db=1&start=scratch" class="sl-cta-btn">Open SIRI</a></div>
+  <div class="rv rv-d1"><a href="/develop.php?db=1&start=choose" class="sl-cta-btn">Open SIRI</a></div>
 </section>
 
 <script>
