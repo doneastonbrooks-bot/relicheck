@@ -1,0 +1,685 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Platform Shell preview — ReliCheck</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap">
+  <style>
+    :root{
+      /* Brand tokens, drawn from styles-2026.css so this preview stays on-brand */
+      --bg:           #ffffff;
+      --bg-soft:      #f7f8fb;
+      --bg-tint:      #fbfcfe;
+      --ink-1:        #0f1322;
+      --ink-2:        #1a2238;
+      --ink-3:        #3b4259;
+      --ink-4:        #5b6378;
+      --ink-5:        #7a8499;
+      --ink-6:        #aab2c3;
+      --line:         #ebeef3;
+      --line-soft:    #f1f3f7;
+      --accent:       #e85d3a;
+      --accent-hover: #cc4a2a;
+      --accent-soft:  #fdeee9;
+      --accent-tint:  #fff7f3;
+
+      /* Studio accents (small dot / illustration only; chrome stays neutral) */
+      --survey:       #e85d3a;
+      --survey-soft:  #fdeee9;
+      --mm:           #6d4ad8;
+      --mm-soft:      #efeafd;
+      --tia:          #0e8a6f;
+      --tia-soft:     #e3f5ee;
+      --three60:      #2563eb;
+      --three60-soft: #e6efff;
+
+      --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+      --font-sans:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+      --r-sm: 10px;
+      --r-md: 14px;
+      --r-lg: 20px;
+      --r-xl: 28px;
+
+      --shadow-1: 0 1px 2px rgba(15,19,34,.04), 0 1px 1px rgba(15,19,34,.03);
+      --shadow-2: 0 1px 2px rgba(15,19,34,.05), 0 12px 32px rgba(15,19,34,.06);
+      --shadow-3: 0 2px 4px rgba(15,19,34,.06), 0 24px 56px rgba(15,19,34,.08);
+
+      --ease: cubic-bezier(.2,.7,.2,1);
+    }
+
+    *{ box-sizing: border-box; }
+    html,body{ margin:0; padding:0; }
+    html{ background: var(--bg-soft); }
+    body{
+      font-family: var(--font-sans);
+      color: var(--ink-2);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(232,93,58,.06), transparent 60%),
+        radial-gradient(1000px 500px at 5% 8%, rgba(109,74,216,.05), transparent 60%),
+        var(--bg);
+      min-height: 100vh;
+    }
+    a{ color: inherit; text-decoration: none; }
+    button{ font: inherit; cursor: pointer; }
+
+    /* ====== PREVIEW STRIP ====== */
+    .preview-strip{
+      background: var(--ink-1);
+      color: #f6f7fa;
+      font-size: 13px;
+      letter-spacing: .01em;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: center;
+      font-weight: 500;
+    }
+    .preview-strip .dot{
+      width: 7px; height: 7px; border-radius: 999px;
+      background: #f5b955; box-shadow: 0 0 0 4px rgba(245,185,85,.18);
+    }
+    .preview-strip strong{ font-weight: 600; color: #fff; }
+    .preview-strip span.dim{ color: #aab2c3; }
+
+    /* ====== TOP NAV ====== */
+    .shell-nav{
+      position: sticky; top: 0; z-index: 50;
+      backdrop-filter: saturate(1.6) blur(18px);
+      -webkit-backdrop-filter: saturate(1.6) blur(18px);
+      background: rgba(255,255,255,.72);
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .shell-nav-inner{
+      display: flex; align-items: center; gap: 14px;
+      /* Same gutter as .relicheck-page-frame so brand lines up with content */
+      padding: 14px clamp(32px, 4vw, 72px);
+    }
+    .brand{
+      display: inline-flex; align-items: center;
+      color: var(--ink-1);
+    }
+    .brand-logo{
+      height: 52px; width: auto; display: block;
+    }
+    .shell-footer .brand-logo{ height: 40px; }
+
+    .project-switcher{
+      display: inline-flex; align-items: center; gap: 8px;
+      height: 36px; padding: 0 12px 0 12px;
+      border: 1px solid var(--line);
+      background: var(--bg);
+      border-radius: 999px;
+      font-size: 14px; font-weight: 500;
+      color: var(--ink-2);
+      transition: border-color .2s var(--ease), background .2s var(--ease);
+      margin-left: 6px;
+    }
+    .project-switcher:hover{ border-color: #d8dde7; background: #fff; }
+    .project-switcher .ico{ color: var(--ink-5); }
+    .project-switcher .caret{ color: var(--ink-5); margin-left: 2px; }
+
+    .nav-spacer{ flex: 1; }
+
+    .nav-search{
+      display: inline-flex; align-items: center; gap: 10px;
+      height: 36px; padding: 0 14px;
+      border: 1px solid var(--line);
+      background: var(--bg-tint);
+      border-radius: 999px;
+      color: var(--ink-5);
+      font-size: 14px; font-weight: 500;
+      width: 280px;
+      transition: border-color .2s var(--ease), background .2s var(--ease);
+    }
+    .nav-search:hover{ border-color: #d8dde7; background: #fff; }
+    .nav-search .kbd{
+      margin-left: auto;
+      font-family: var(--font-sans);
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-5);
+      padding: 2px 7px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .icon-btn{
+      width: 36px; height: 36px; border-radius: 999px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-3);
+      transition: background .2s var(--ease), border-color .2s var(--ease);
+    }
+    .icon-btn:hover{ background: #fff; border-color: var(--line); }
+    .icon-btn .badge-dot{
+      position: absolute; transform: translate(8px,-8px);
+      width: 8px; height: 8px; border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 2px #fff;
+    }
+
+    .avatar{
+      width: 36px; height: 36px; border-radius: 999px;
+      background: linear-gradient(135deg, #1a2238, #3b4259);
+      color: #fff;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600;
+      letter-spacing: .02em;
+      border: 1px solid rgba(15,19,34,.08);
+      box-shadow: var(--shadow-1);
+    }
+
+    /* ====== APP SHELL + PAGE FRAME ====== */
+    /* Full viewport width with controlled gutters. No fixed max-width cap.
+       app-shell is the outermost wrapper. page-frame holds every section
+       on the page and owns the single shared left/right gutter that all
+       headings, hero copy, grids, and cards align to. Do not add extra
+       horizontal padding on sections inside the frame. */
+    .relicheck-app-shell{
+      position: relative;
+      width: 100%; max-width: none;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .relicheck-page-frame{
+      position: relative; z-index: 1;
+      width: 100%; max-width: none;
+      padding-left: clamp(32px, 4vw, 72px);
+      padding-right: clamp(32px, 4vw, 72px);
+      box-sizing: border-box;
+    }
+
+    /* ====== HERO ====== */
+    .hero{
+      position: relative;
+      padding: 84px 0 56px;
+    }
+    .hero-eyebrow{
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 13px; font-weight: 600; letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--ink-5);
+      margin-bottom: 18px;
+    }
+    .hero-eyebrow .pip{
+      width: 6px; height: 6px; border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-soft);
+    }
+    .hero h1{
+      margin: 0 0 14px;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(40px, 4.6vw, 64px);
+      letter-spacing: -.028em;
+      line-height: 1.04;
+      color: var(--ink-1);
+    }
+    .hero h1 em{
+      font-style: italic;
+      font-weight: 300;
+      color: var(--ink-3);
+    }
+    .hero p.lede{
+      margin: 0;
+      max-width: 640px;
+      font-size: 18px;
+      line-height: 1.55;
+      color: var(--ink-4);
+    }
+    /* Decorative wash. Positioned relative to .relicheck-app-shell so it can
+       bleed past the page-frame gutter all the way to the viewport's right
+       edge. App-shell's overflow-x: hidden clips the overflow cleanly. */
+    .hero-blob{
+      position: absolute;
+      top: -120px;
+      right: -260px;
+      width: 760px; height: 760px;
+      border-radius: 50%;
+      background:
+        radial-gradient(closest-side, rgba(232,93,58,.18), rgba(232,93,58,0) 70%),
+        radial-gradient(closest-side, rgba(109,74,216,.12), rgba(109,74,216,0) 75%);
+      filter: blur(6px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ====== STUDIO PICKER ====== */
+    .section-head{
+      display: flex; align-items: end; justify-content: space-between; gap: 24px;
+      margin: 22px 0 18px;
+    }
+    .section-head h2{
+      margin: 0;
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: clamp(22px, 2vw, 28px);
+      letter-spacing: -.02em;
+      color: var(--ink-1);
+    }
+    .section-head .head-meta{
+      font-size: 14px;
+      color: var(--ink-5);
+    }
+
+    .studio-grid{
+      display: grid;
+      grid-template-columns: repeat(4, minmax(260px, 1fr));
+      gap: clamp(16px, 2vw, 28px);
+      width: 100%;
+    }
+    @media (max-width: 1300px){
+      .studio-grid{ grid-template-columns: repeat(2, minmax(280px, 1fr)); }
+    }
+    @media (max-width: 760px){
+      .studio-grid{ grid-template-columns: 1fr; }
+    }
+
+    .studio-tile{
+      position: relative;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      padding: 26px 24px 22px;
+      box-shadow: var(--shadow-1);
+      transition: transform .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease);
+      display: flex; flex-direction: column; gap: 14px;
+      min-height: 248px;
+    }
+    .studio-tile:hover{
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-3);
+      border-color: #dde2eb;
+    }
+    .studio-tile .glyph{
+      width: 64px; height: 64px;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: transparent;
+    }
+    .studio-tile .glyph img{
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 6px 14px rgba(15,19,34,.10));
+    }
+    .studio-tile .name{
+      margin: 0;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 22px;
+      letter-spacing: -.018em;
+      color: var(--ink-1);
+      line-height: 1.15;
+    }
+    .studio-tile .desc{
+      margin: 0;
+      font-size: 14px;
+      color: var(--ink-4);
+      line-height: 1.5;
+    }
+    .studio-tile .footer{
+      margin-top: auto;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px;
+      padding-top: 6px;
+    }
+    .studio-tile .open-link{
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; font-weight: 600;
+      color: var(--ink-2);
+      transition: color .2s var(--ease), gap .2s var(--ease);
+    }
+    .studio-tile:hover .open-link{ color: var(--accent); gap: 9px; }
+
+    /* Status pill */
+    .pill{
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px 3px 8px;
+      border-radius: 999px;
+      font-size: 12px; font-weight: 600;
+      letter-spacing: .01em;
+      border: 1px solid var(--line);
+      background: var(--bg-tint);
+      color: var(--ink-4);
+    }
+    .pill .pip{ width: 6px; height: 6px; border-radius: 999px; background: var(--ink-5); }
+    .pill[data-status="live"]    { color:#0a6b4a; background:#e6f6ef; border-color:#cbecdc; }
+    .pill[data-status="live"]    .pip{ background:#15a06b; box-shadow: 0 0 0 3px rgba(21,160,107,.16); }
+    .pill[data-status="beta"]    { color:#7a4b06; background:#fff4dc; border-color:#fae3b1; }
+    .pill[data-status="beta"]    .pip{ background:#e09b18; box-shadow: 0 0 0 3px rgba(224,155,24,.18); }
+    .pill[data-status="demo"]    { color:#3b4259; background:#eef1f7; border-color:#dde2eb; }
+    .pill[data-status="demo"]    .pip{ background:#7a8499; }
+    .pill[data-status="dev"]     { color:#3a3a3a; background:#f5f5f5; border-color:#e6e6e6; }
+    .pill[data-status="dev"]     .pip{ background:#aab2c3; border: 1px dashed #7a8499; box-shadow: none; }
+
+    /* ====== RECENT PROJECTS ====== */
+    .recent-grid{
+      display: grid;
+      grid-template-columns: repeat(3, minmax(280px, 1fr));
+      gap: clamp(16px, 2vw, 28px);
+      width: 100%;
+    }
+    @media (max-width: 1100px){
+      .recent-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Small-screen fallback: tighter gutters everywhere so nothing kisses
+       the viewport edge on phones. Keeps the same alignment rule. */
+    @media (max-width: 760px){
+      .relicheck-page-frame,
+      .shell-nav-inner,
+      .shell-footer-inner{
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+    }
+
+    .recent-card{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 18px 18px 16px;
+      display: flex; flex-direction: column; gap: 8px;
+      box-shadow: var(--shadow-1);
+      transition: transform .2s var(--ease), box-shadow .2s var(--ease);
+    }
+    .recent-card:hover{ transform: translateY(-2px); box-shadow: var(--shadow-2); }
+    .recent-card .stripe{
+      width: 36px; height: 4px; border-radius: 999px; background: var(--accent);
+      opacity: .85;
+    }
+    .recent-card[data-studio="mm"]   .stripe{ background: var(--mm); }
+    .recent-card[data-studio="tia"]  .stripe{ background: var(--tia); }
+    .recent-card[data-studio="360"]  .stripe{ background: var(--three60); }
+    .recent-card .title{
+      font-size: 15.5px; font-weight: 600; color: var(--ink-1);
+      letter-spacing: -.005em;
+      line-height: 1.3;
+    }
+    .recent-card .meta{
+      font-size: 13px; color: var(--ink-5);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .recent-card .meta .sep{ width: 3px; height: 3px; border-radius: 999px; background: var(--ink-6); }
+
+    /* ====== ANALYSIS APPS ====== */
+    .apps-card{
+      margin-top: 8px;
+      background:
+        radial-gradient(700px 240px at 90% -20%, rgba(232,93,58,.07), transparent 60%),
+        #fff;
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      padding: 26px 26px 22px;
+      box-shadow: var(--shadow-1);
+    }
+    .apps-card .head{
+      display: flex; align-items: end; justify-content: space-between; gap: 24px;
+      margin-bottom: 16px;
+    }
+    .apps-card .head h3{
+      margin: 0 0 4px;
+      font-family: var(--font-display);
+      font-weight: 500;
+      font-size: 20px;
+      letter-spacing: -.015em;
+      color: var(--ink-1);
+    }
+    .apps-card .head p{
+      margin: 0;
+      font-size: 14px; color: var(--ink-5);
+      max-width: 480px;
+    }
+    .apps-card .head .registry-link{
+      font-size: 13px; font-weight: 600; color: var(--ink-2);
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--bg-tint);
+      transition: background .2s var(--ease), border-color .2s var(--ease);
+    }
+    .apps-card .head .registry-link:hover{ background: #fff; border-color: #d8dde7; }
+
+    .app-pills{
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .app-pill{
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 12px 7px 10px;
+      border-radius: 999px;
+      background: var(--bg-tint);
+      border: 1px solid var(--line);
+      font-size: 13px; font-weight: 500;
+      color: var(--ink-2);
+      transition: background .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+    }
+    .app-pill:hover{ background: #fff; border-color: #d8dde7; transform: translateY(-1px); }
+    .app-pill .dot{
+      width: 6px; height: 6px; border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .app-pill[data-fam="qual"] .dot{ background: var(--mm); box-shadow: 0 0 0 3px var(--mm-soft); }
+    .app-pill[data-fam="test"] .dot{ background: var(--tia); box-shadow: 0 0 0 3px var(--tia-soft); }
+    .app-pill[data-fam="report"] .dot{ background: var(--three60); box-shadow: 0 0 0 3px var(--three60-soft); }
+
+    /* ====== SECTIONS SPACING ====== */
+    .section{ padding: 14px 0 28px; }
+    .section + .section{ padding-top: 6px; }
+    .section.tight{ padding-top: 0; }
+
+    /* ====== FOOTER ====== */
+    .shell-footer{
+      margin-top: 56px;
+      border-top: 1px solid var(--line-soft);
+      background: transparent;
+    }
+    .shell-footer-inner{
+      /* Same gutter as .relicheck-page-frame */
+      padding: 22px clamp(32px, 4vw, 72px) 40px;
+      display: flex; align-items: center; gap: 18px;
+      flex-wrap: wrap;
+      font-size: 13px;
+      color: var(--ink-5);
+    }
+    .shell-footer-inner .brand{ font-size: 14px; color: var(--ink-3); }
+    .shell-footer-inner .links{ display: flex; gap: 18px; margin-left: auto; }
+    .shell-footer-inner .links a{ color: var(--ink-4); }
+    .shell-footer-inner .links a:hover{ color: var(--ink-1); }
+
+    /* ====== SR-only ====== */
+    .sr-only{
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+
+    /* ====== Small touches ====== */
+    .with-arrow svg{ transition: transform .2s var(--ease); }
+    .open-link:hover .with-arrow svg{ transform: translateX(2px); }
+  </style>
+</head>
+<body>
+
+<!-- Preview banner so the user knows this is a draft and nothing's wired yet -->
+<div class="preview-strip" role="status">
+  <span class="dot" aria-hidden="true"></span>
+  <strong>Platform Shell preview</strong>
+  <span class="dim">Design draft for review. Not wired into the live app.</span>
+</div>
+
+<!-- Frosted, sticky top nav -->
+<header class="shell-nav" role="banner">
+  <div class="shell-nav-inner">
+    <a class="brand" href="#" aria-label="ReliCheck home">
+      <img src="/logo-brand.svg" alt="ReliCheck" class="brand-logo">
+    </a>
+
+    <button class="project-switcher" type="button" aria-haspopup="menu">
+      <svg class="ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg>
+      Workplace Equity Survey, 2026
+      <span class="caret" aria-hidden="true">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </span>
+    </button>
+
+    <span class="nav-spacer" aria-hidden="true"></span>
+
+    <button class="nav-search" type="button" aria-label="Search anything in ReliCheck (press cmd K)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      Search projects, items, analyses
+      <span class="kbd">⌘K</span>
+    </button>
+
+    <button class="icon-btn" type="button" aria-label="Notifications" style="position:relative;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+      <span class="badge-dot" aria-hidden="true"></span>
+    </button>
+
+    <button class="icon-btn" type="button" aria-label="Help">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .7-1.5 1.3-1.5 2.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
+    </button>
+
+    <span class="avatar" aria-label="Don Easton-Brooks">DE</span>
+  </div>
+</header>
+
+<!-- App shell + page frame: every section below aligns to one shared gutter -->
+<main class="relicheck-app-shell">
+  <div class="hero-blob" aria-hidden="true"></div>
+  <div class="relicheck-page-frame">
+
+<!-- Hero greeting -->
+<section class="hero" aria-labelledby="hero-title">
+  <div class="hero-eyebrow"><span class="pip" aria-hidden="true"></span>Wednesday, May 25</div>
+  <h1 id="hero-title">Good afternoon, Don. <em>Pick a studio, or pick up where you left off.</em></h1>
+  <p class="lede">Four studios, each built for a different kind of research question. Pick the one that fits, or pick up a project you have already started.</p>
+</section>
+
+<!-- Studio picker -->
+<section class="section" aria-labelledby="studios-title">
+  <div class="section-head">
+    <h2 id="studios-title">Studios</h2>
+    <div class="head-meta">Four studios. One platform.</div>
+  </div>
+
+  <div class="studio-grid">
+    <a class="studio-tile" data-studio="survey" href="#" aria-label="Open Survey Studio">
+      <span class="glyph" aria-hidden="true"><img src="/Survey%20Studio.png" alt=""></span>
+      <h3 class="name">Survey Studio</h3>
+      <p class="desc">Build, distribute, and judge the strength of any survey. Reliability, validity, response quality, in one report.</p>
+      <div class="footer">
+        <span class="pill" data-status="live"><span class="pip" aria-hidden="true"></span>Live</span>
+        <span class="open-link with-arrow">Open studio
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <a class="studio-tile" data-studio="mm" href="#" aria-label="Open MM Studio">
+      <span class="glyph" aria-hidden="true"><img src="/MM%20Studio.png" alt=""></span>
+      <h3 class="name">MM Studio</h3>
+      <p class="desc">Mixed methods. Pair quantitative scales with qualitative themes under one explanatory, exploratory, or convergent design.</p>
+      <div class="footer">
+        <span class="pill" data-status="beta"><span class="pip" aria-hidden="true"></span>Beta</span>
+        <span class="open-link with-arrow">Open studio
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <a class="studio-tile" data-studio="tia" href="#" aria-label="Open TIA Studio">
+      <span class="glyph" aria-hidden="true"><img src="/TIA%20Studio.png" alt=""></span>
+      <h3 class="name">TIA Studio</h3>
+      <p class="desc">Test and item analysis. Difficulty, discrimination, distractors, rubrics, and cognitive demand for classroom and standardized tests.</p>
+      <div class="footer">
+        <span class="pill" data-status="dev"><span class="pip" aria-hidden="true"></span>In development</span>
+        <span class="open-link with-arrow">Open studio
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+
+    <a class="studio-tile" data-studio="360" href="#" aria-label="Open 360 Studio">
+      <span class="glyph" aria-hidden="true"><img src="/360%20Studio.png" alt=""></span>
+      <h3 class="name">360 Studio</h3>
+      <p class="desc">Multi-rater feedback. Self, peer, manager, and direct reports. Perception gaps, competency profiles, and growth signals.</p>
+      <div class="footer">
+        <span class="pill" data-status="demo"><span class="pip" aria-hidden="true"></span>Demo</span>
+        <span class="open-link with-arrow">Open studio
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+        </span>
+      </div>
+    </a>
+  </div>
+</section>
+
+<!-- Recent projects -->
+<section class="section" aria-labelledby="recent-title">
+  <div class="section-head">
+    <h2 id="recent-title">Recent</h2>
+    <div class="head-meta">Jump back in.</div>
+  </div>
+  <div class="recent-grid">
+    <a class="recent-card" data-studio="survey" href="#" aria-label="Open Workplace Equity Survey">
+      <span class="stripe" aria-hidden="true"></span>
+      <div class="title">Workplace Equity Survey, 2026</div>
+      <div class="meta">
+        <span>Survey Studio</span>
+        <span class="sep" aria-hidden="true"></span>
+        <span>Opened 2 hours ago</span>
+      </div>
+    </a>
+    <a class="recent-card" data-studio="mm" href="#" aria-label="Open Belonging and Retention Study">
+      <span class="stripe" aria-hidden="true"></span>
+      <div class="title">Belonging and Retention Study</div>
+      <div class="meta">
+        <span>MM Studio, convergent design</span>
+        <span class="sep" aria-hidden="true"></span>
+        <span>Yesterday</span>
+      </div>
+    </a>
+    <a class="recent-card" data-studio="360" href="#" aria-label="Open Leadership 360, Cohort 4">
+      <span class="stripe" aria-hidden="true"></span>
+      <div class="title">Leadership 360, Cohort 4</div>
+      <div class="meta">
+        <span>360 Studio</span>
+        <span class="sep" aria-hidden="true"></span>
+        <span>Last week</span>
+      </div>
+    </a>
+  </div>
+</section>
+
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="shell-footer" role="contentinfo">
+  <div class="shell-footer-inner">
+    <a class="brand" href="#" aria-label="ReliCheck home">
+      <img src="/logo-brand.svg" alt="ReliCheck" class="brand-logo">
+    </a>
+    <span>Platform Shell, preview build.</span>
+    <nav class="links" aria-label="Footer">
+      <a href="#">Methodology</a>
+      <a href="#">Help</a>
+      <a href="#">Status</a>
+      <a href="#">Privacy</a>
+    </nav>
+  </div>
+</footer>
+
+</body>
+</html>

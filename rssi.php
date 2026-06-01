@@ -1,7 +1,10 @@
 <?php
-// rssi.php — RSSI app LANDING page (Light Centered with Sample Report).
-// Clean white background. Three CTA tiles. Live sample report card inline.
-// Modals open for Upload + Saved Reports per earlier request.
+// rssi.php — RSSI app LANDING page.
+// Now on the SHARED landing chrome (_landing_head + _landing_foot), matching
+// the Descriptive/Inferential/MM/TIA/360 studios: shared header, .lp-* hero +
+// CTA tiles, shared footer + sticky studio dock. The RSSI-specific sample
+// report card and the Upload/Saved modals stay as page-local components.
+// See [[project_landing_alignment]].
 
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';
@@ -17,530 +20,213 @@ if (!$rssi_user) { $_SESSION = []; session_destroy(); header('Location: /login.h
 
 $rssi_user_full = $rssi_user['name'] ?? $rssi_user['email'] ?? 'You';
 $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_full) ?: 'U', 0, 2));
-?><!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ReliCheck Strength Survey Index</title>
-  <link rel="icon" type="image/png" href="/RSSI-logo.png">
-  <style>
-    /* ═════════════════════════════════════════════════════════════════
-       RSSI Landing — Light, centered, with inline sample report
-       ═════════════════════════════════════════════════════════════════ */
-    * { box-sizing: border-box; }
-    :root {
-      --bg:           #F6F7F9;
-      --surface:      #FFFFFF;
-      --hairline:     rgba(15, 23, 42, 0.06);
-      --hairline-2:   rgba(15, 23, 42, 0.10);
-      --text:         #15171a;
-      --text-2:       #5f6368;
-      --text-3:       #8E8E93;
-      --blue:         #2D8DFF;
-      --blue-hi:      #4FA3FF;
-      --blue-deep:    #0A6FE8;
-      --good:         #34C759;
-      --purple:       #7856DC;
-      --reliable:     #007AFF;
-      --warn:         #FF9F0A;
-      --radius-card:  20px;
-      --radius-pill:  999px;
-      --shadow-sm:    0 1px 3px rgba(15, 23, 42, 0.05);
-      --shadow-md:    0 4px 16px rgba(15, 23, 42, 0.06);
-      --shadow-lg:    0 14px 40px rgba(15, 23, 42, 0.08);
-    }
-    html, body {
-      margin: 0; padding: 0;
-      min-height: 100vh;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Inter, system-ui, sans-serif;
-      letter-spacing: -0.005em;
-      -webkit-font-smoothing: antialiased;
-    }
 
-    /* ───────────────── Header ───────────────── */
-    .rssi-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 18px 36px;
-      border-bottom: 1px solid var(--hairline);
-      background: rgba(255, 255, 255, 0.85);
-      backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-      position: sticky; top: 0; z-index: 50;
-    }
-    .rssi-brand {
-      display: flex; align-items: center;
-      text-decoration: none; color: inherit;
-    }
-    .rssi-brand-logo {
-      display: block;
-      height: 144px;  /* doubled from 72px */
-      width: auto;
-    }
-    /* Larger logo needs more vertical room in the sticky header */
-    .rssi-head { padding-top: 16px; padding-bottom: 16px; }
-    .rssi-head-right { display: flex; align-items: center; gap: 14px; }
-    .rssi-app-pill {
-      padding: 7px 14px; border-radius: var(--radius-pill);
-      background: #EEF3FA;
-      color: var(--blue-deep);
-      font-size: 13px; font-weight: 600;
-      letter-spacing: -0.005em;
-    }
-    .rssi-user {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: #EEF0F3;
-      border: 1px solid var(--hairline-2);
-      display: grid; place-items: center;
-      color: var(--text);
-      font-size: 12.5px; font-weight: 600;
-      text-decoration: none;
-      transition: background 0.15s;
-    }
-    .rssi-user:hover { background: #E4E6EA; }
+$studios = require __DIR__ . '/_studio_registry.php';
+$studio  = $studios['rssi'];
 
-    /* ───────────────── Page wrapper ───────────────── */
-    .rssi-page {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 56px 32px 80px;
-    }
+$landing_title         = 'ReliCheck Survey Strength Index';
+$landing_accent        = $studio['accent'];
+$landing_accent_deep   = $studio['accent_deep'] ?? $studio['accent'];
+$landing_accent_soft   = $studio['accent_soft'];
+$landing_logo          = $studio['mark'];
+$landing_logo_name     = $studio['name'];
+$landing_pill_label    = $studio['status_label'];
+$landing_show_back     = true;
+$landing_user_initials = $rssi_initials;
+$landing_user_full     = $rssi_user_full;
+$landing_favicon       = '/RSSI-logo.png';
 
-    /* ───────────────── Hero (centered, big two-line headline) ───────────────── */
-    .rssi-hero {
-      text-align: center;
-      max-width: 1040px;
-      margin: 0 auto 44px;
-    }
-    .rssi-hero h1 {
-      font-size: 78px;
-      font-weight: 800;
-      letter-spacing: -0.035em;
-      line-height: 1.04;
-      margin: 0 0 30px;
-      color: var(--text);
-    }
-    .rssi-hero h1 .accent {
-      color: var(--blue);
-      display: block;
-    }
-    .rssi-hero p.lede {
-      font-size: 18px;
-      color: var(--text-2);
-      line-height: 1.55;
-      margin: 0 auto;
-      max-width: 60ch;
-    }
+include __DIR__ . '/_landing_head.php';
+?>
 
-    /* ───────────────── Three CTA tiles ───────────────── */
-    .cta-row {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      max-width: 900px;
-      margin: 0 auto 56px;
-    }
-    .cta-tile {
-      display: flex; align-items: center; gap: 14px;
-      padding: 18px 22px;
-      border-radius: 16px;
-      background: var(--surface);
-      border: 1px solid var(--hairline);
-      box-shadow: var(--shadow-sm);
-      text-decoration: none; color: var(--text);
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s, background 0.15s;
-      cursor: pointer;
-    }
-    .cta-tile:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-      border-color: rgba(45, 141, 255, 0.30);
-    }
-    .cta-tile.primary {
-      background: linear-gradient(160deg, #2D8DFF 0%, #1075E0 100%);
-      border-color: transparent;
-      color: #fff;
-      box-shadow: 0 6px 20px rgba(0, 80, 180, 0.28);
-    }
-    .cta-tile.primary:hover {
-      box-shadow: 0 10px 28px rgba(0, 80, 180, 0.40);
-    }
-    .cta-tile-icon {
-      width: 38px; height: 38px;
-      border-radius: 11px;
-      background: #EEF3FA;
-      color: var(--blue);
-      display: grid; place-items: center;
-      flex-shrink: 0;
-    }
-    .cta-tile.primary .cta-tile-icon {
-      background: rgba(255, 255, 255, 0.22);
-      color: #fff;
-    }
-    .cta-tile-icon svg { width: 18px; height: 18px; }
-    .cta-tile-text { min-width: 0; }
-    .cta-tile-title {
-      font-size: 15px; font-weight: 700; letter-spacing: -0.01em;
-      line-height: 1.2;
-    }
-    .cta-tile-sub {
-      font-size: 12.5px; color: var(--text-2);
-      margin-top: 2px;
-    }
-    .cta-tile.primary .cta-tile-sub { color: rgba(255, 255, 255, 0.85); }
+<!-- Page-local components: sample report card + Upload/Saved modals.
+     Chrome (header, hero type scale, CTA tiles, footer, dock) is shared via landing.css. -->
+<style>
+  /* Alias the legacy RSSI blue tokens onto the shared accent system. */
+  .rssi-lp { --blue: var(--accent); --blue-deep: var(--accent-deep); --blue-soft-bg: var(--accent-soft); }
 
-    /* ───────────────── Sample report card ───────────────── */
-    .sample-card {
-      background: var(--surface);
-      border: 1px solid var(--hairline);
-      border-radius: 22px;
-      padding: 42px 48px 44px;
-      box-shadow: var(--shadow-md);
-      max-width: 940px;
-      margin: 0 auto;
-    }
-    .sample-eyebrow {
-      text-align: center;
-      font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: var(--blue-deep);
-      margin-bottom: 10px;
-    }
-    .sample-title {
-      text-align: center;
-      font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
-      color: var(--text);
-      margin: 0 0 28px;
-    }
-    .sample-ring-wrap {
-      display: flex; justify-content: center;
-      margin: 0 auto 36px;
-    }
-    .sample-ring {
-      position: relative;
-      width: 220px; height: 220px;
-    }
-    .sample-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
-    .sample-ring-text {
-      position: absolute; inset: 0;
-      display: grid; place-items: center;
-      text-align: center;
-    }
-    .sample-ring-text .num {
-      font-size: 56px; font-weight: 700; letter-spacing: -0.04em;
-      color: var(--text); line-height: 1;
-    }
-    .sample-ring-text .out {
-      font-size: 13px; color: var(--text-2);
-      margin-top: 6px;
-    }
-    .sample-metrics {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-    }
-    .metric-card {
-      background: #FAFBFC;
-      border: 1px solid var(--hairline);
-      border-radius: 14px;
-      padding: 16px 14px 18px;
-    }
-    .metric-icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: grid; place-items: center;
-      margin-bottom: 12px;
-    }
-    .metric-icon.green  { background: rgba(52, 199, 89, 0.12);  color: #2BAE51; }
-    .metric-icon.purple { background: rgba(120, 86, 220, 0.12); color: #7856DC; }
-    .metric-icon.blue   { background: rgba(0, 122, 255, 0.12);  color: #0A6FE8; }
-    .metric-icon.orange { background: rgba(255, 159, 10, 0.14); color: #E08800; }
-    .metric-icon svg { width: 18px; height: 18px; }
-    .metric-label {
-      font-size: 13px; font-weight: 600; color: var(--text);
-      line-height: 1.3;
-      margin-bottom: 10px;
-      min-height: 34px; /* keeps the score baselines aligned */
-    }
-    .metric-score {
-      display: flex; align-items: baseline; gap: 4px;
-      margin-bottom: 10px;
-    }
-    .metric-score .pct {
-      font-size: 28px; font-weight: 700; letter-spacing: -0.025em;
-      line-height: 1;
-    }
-    .metric-score .pct-sym {
-      font-size: 13px; color: var(--text-3); font-weight: 500;
-    }
-    .metric-bar {
-      height: 4px; border-radius: 999px;
-      background: rgba(15, 23, 42, 0.06);
-      overflow: hidden;
-    }
-    .metric-bar > i {
-      display: block; height: 100%;
-      border-radius: inherit;
-    }
-    .metric-bar.green  > i { background: linear-gradient(90deg, #34C759, #2BAE51); }
-    .metric-bar.purple > i { background: linear-gradient(90deg, #9476ED, #7856DC); }
-    .metric-bar.blue   > i { background: linear-gradient(90deg, #4FA3FF, #007AFF); }
-    .metric-bar.orange > i { background: linear-gradient(90deg, #FFB23B, #FF9F0A); }
+  /* ───────────────── Sample report card ───────────────── */
+  .sample-card {
+    background: var(--surface);
+    border: 1px solid var(--line, rgba(15,23,42,0.06));
+    border-radius: 22px;
+    padding: 42px 48px 44px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+    max-width: 940px;
+    margin: 0 auto;
+  }
+  .sample-eyebrow {
+    text-align: center;
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-deep);
+    margin-bottom: 10px;
+  }
+  .sample-title {
+    text-align: center;
+    font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
+    color: var(--text);
+    margin: 0 0 28px;
+  }
+  .sample-ring-wrap { display: flex; justify-content: center; margin: 0 auto 36px; }
+  .sample-ring { position: relative; width: 220px; height: 220px; }
+  .sample-ring svg { display: block; width: 100%; height: 100%; transform: rotate(-90deg); }
+  .sample-ring-text { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .sample-ring-text .num { font-size: 56px; font-weight: 700; letter-spacing: -0.04em; color: var(--text); line-height: 1; }
+  .sample-ring-text .out { font-size: 13px; color: var(--text-2); margin-top: 6px; }
+  .sample-lenses-cap {
+    text-align: center;
+    font-size: 12.5px; color: var(--text-3);
+    font-weight: 500; letter-spacing: -0.005em;
+    margin: -14px 0 18px;
+  }
+  .sample-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+  .metric-tag {
+    display: inline-block;
+    font-size: 9.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: var(--accent-deep); background: var(--accent-soft);
+    padding: 1px 6px; border-radius: 999px;
+    vertical-align: middle; margin-left: 4px;
+  }
+  .metric-card {
+    background: var(--surface-2, #FAFBFC);
+    border: 1px solid var(--line, rgba(15,23,42,0.06));
+    border-radius: 14px;
+    padding: 16px 14px 18px;
+  }
+  .metric-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; margin-bottom: 12px; }
+  .metric-icon.green  { background: rgba(52, 199, 89, 0.12);  color: #2BAE51; }
+  .metric-icon.purple { background: rgba(120, 86, 220, 0.12); color: #7856DC; }
+  .metric-icon.blue   { background: rgba(0, 122, 255, 0.12);  color: #0A6FE8; }
+  .metric-icon.orange { background: rgba(255, 159, 10, 0.14); color: #E08800; }
+  .metric-icon svg { width: 18px; height: 18px; }
+  .metric-label { font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.3; margin-bottom: 10px; min-height: 34px; }
+  .metric-score { display: flex; align-items: baseline; gap: 4px; margin-bottom: 10px; }
+  .metric-score .pct { font-size: 28px; font-weight: 700; letter-spacing: -0.025em; line-height: 1; }
+  .metric-score .pct-sym { font-size: 13px; color: var(--text-3); font-weight: 500; }
+  .metric-bar { height: 4px; border-radius: 999px; background: rgba(15, 23, 42, 0.06); overflow: hidden; }
+  .metric-bar > i { display: block; height: 100%; border-radius: inherit; }
+  .metric-bar.green  > i { background: linear-gradient(90deg, #34C759, #2BAE51); }
+  .metric-bar.purple > i { background: linear-gradient(90deg, #9476ED, #7856DC); }
+  .metric-bar.blue   > i { background: linear-gradient(90deg, #4FA3FF, #007AFF); }
+  .metric-bar.orange > i { background: linear-gradient(90deg, #FFB23B, #FF9F0A); }
 
-    /* ───────────────── Bottom tagline ───────────────── */
-    .rssi-tagline {
-      text-align: center;
-      margin-top: 44px;
-      font-size: 15px;
-      color: var(--text-2);
-      font-weight: 500;
-      letter-spacing: -0.005em;
-    }
+  /* ───────────────── Modals (Upload + Saved Reports) ───────────────── */
+  .rssi-modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+    animation: rssiFadeIn 0.18s ease;
+  }
+  .rssi-modal-backdrop[hidden] { display: none; }
+  @keyframes rssiFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes rssiPopIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+  .rssi-modal {
+    width: 100%; max-width: 540px;
+    background: #fff;
+    border-radius: 22px;
+    padding: 32px 32px 28px;
+    box-shadow: 0 22px 60px rgba(15, 23, 42, 0.28);
+    animation: rssiPopIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+  }
+  .rssi-modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #F0F1F3; border: none; cursor: pointer;
+    color: var(--text-2);
+    display: grid; place-items: center;
+    transition: background 0.15s;
+  }
+  .rssi-modal-close:hover { background: #E4E6EA; color: var(--text); }
+  .rssi-modal-close svg { width: 14px; height: 14px; }
+  .rssi-modal h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 6px; color: var(--text); }
+  .rssi-modal p.modal-lede { font-size: 14px; color: var(--text-2); margin: 0 0 22px; line-height: 1.5; }
+  .modal-dropzone {
+    border: 2px dashed rgba(15, 23, 42, 0.10);
+    border-radius: 16px;
+    padding: 36px 24px;
+    text-align: center; cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    background: var(--surface-2, #FAFBFC);
+  }
+  .modal-dropzone:hover,
+  .modal-dropzone.dragover { border-color: var(--accent); background: var(--accent-soft); }
+  .modal-dropzone .dz-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    background: var(--accent-soft); color: var(--accent);
+    display: inline-grid; place-items: center; margin-bottom: 14px;
+  }
+  .modal-dropzone .dz-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+  .modal-dropzone .dz-sub { font-size: 12.5px; color: var(--text-2); }
+  .modal-dropzone .dz-sub strong { color: var(--accent); }
+  .modal-status { margin-top: 14px; padding: 12px 14px; border-radius: 10px; font-size: 13px; display: none; }
+  .modal-status.show { display: block; }
+  .modal-status.info  { background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 35%, white); color: var(--accent-deep); }
+  .modal-status.error { background: #FFF1F2; border: 1px solid #FECACA; color: #991B1B; }
+  .modal-help { margin-top: 14px; font-size: 12.5px; color: var(--text-2); text-align: center; }
+  .modal-help a { color: var(--accent); font-weight: 500; text-decoration: none; }
+  .modal-help a:hover { text-decoration: underline; }
+  .modal-saved-list { display: flex; flex-direction: column; gap: 8px; max-height: 50vh; overflow-y: auto; margin: 0 -8px; padding: 0 8px; }
+  .saved-row {
+    display: grid; grid-template-columns: 54px 1fr auto; align-items: center; gap: 14px;
+    padding: 14px;
+    background: var(--surface-2, #FAFBFC);
+    border: 1px solid var(--line, rgba(15,23,42,0.06));
+    border-radius: 12px;
+    text-decoration: none; color: inherit;
+    transition: background 0.15s, border-color 0.15s, transform 0.15s;
+  }
+  .saved-row:hover { background: #F2F4F7; border-color: rgba(15, 23, 42, 0.10); transform: translateX(2px); }
+  .saved-score {
+    width: 54px; height: 54px; border-radius: 12px;
+    background: linear-gradient(160deg, var(--accent) 0%, var(--accent-deep) 100%);
+    display: grid; place-items: center;
+    font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -0.02em;
+  }
+  .saved-name { font-size: 14px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .saved-date { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+  .saved-row-arrow { width: 30px; height: 30px; border-radius: 50%; background: #EEF0F3; color: var(--text-2); display: grid; place-items: center; }
+  .saved-row-arrow svg { width: 12px; height: 12px; }
+  .saved-empty { text-align: center; padding: 36px 20px; color: var(--text-2); font-size: 13.5px; }
+  .saved-empty strong { display: block; color: var(--text); margin-bottom: 4px; font-size: 15px; }
 
-    /* ───────────────── Footer ───────────────── */
-    .rssi-foot {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 24px 32px 28px;
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 12.5px;
-      color: var(--text-3);
-      border-top: 1px solid var(--hairline);
-    }
-    .rssi-foot a {
-      color: var(--text-2);
-      text-decoration: none;
-      margin-left: 28px;
-      transition: color 0.15s;
-    }
-    .rssi-foot a:hover { color: var(--text); }
+  @media (max-width: 880px) { .sample-metrics { grid-template-columns: 1fr 1fr; } .sample-card { padding: 32px 24px; } }
+  @media (max-width: 560px) { .sample-metrics { grid-template-columns: 1fr; } }
+</style>
 
-    /* ───────────────── Modals (Upload + Saved Reports) ───────────────── */
-    .rssi-modal-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(15, 23, 42, 0.45);
-      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-      z-index: 200;
-      display: flex; align-items: center; justify-content: center;
-      padding: 24px;
-      animation: rssiFadeIn 0.18s ease;
-    }
-    .rssi-modal-backdrop[hidden] { display: none; }
-    @keyframes rssiFadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes rssiPopIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+<div class="rssi-lp">
 
-    .rssi-modal {
-      width: 100%; max-width: 540px;
-      background: #fff;
-      border-radius: 22px;
-      padding: 32px 32px 28px;
-      box-shadow: 0 22px 60px rgba(15, 23, 42, 0.28);
-      animation: rssiPopIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-      position: relative;
-    }
-    .rssi-modal-close {
-      position: absolute; top: 16px; right: 16px;
-      width: 32px; height: 32px; border-radius: 50%;
-      background: #F0F1F3; border: none; cursor: pointer;
-      color: var(--text-2);
-      display: grid; place-items: center;
-      transition: background 0.15s;
-    }
-    .rssi-modal-close:hover { background: #E4E6EA; color: var(--text); }
-    .rssi-modal-close svg { width: 14px; height: 14px; }
-    .rssi-modal h2 {
-      font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
-      margin: 0 0 6px; color: var(--text);
-    }
-    .rssi-modal p.modal-lede {
-      font-size: 14px; color: var(--text-2);
-      margin: 0 0 22px; line-height: 1.5;
-    }
+<!-- ===== Hero ===== -->
+<section class="lp-hero">
+  <div class="eyebrow"><img src="<?= htmlspecialchars($studio['mark']) ?>" alt=""><?= htmlspecialchars($studio['status_label']) ?></div>
+  <h1>Know if your survey <span class="accent">is strong enough to trust.</span></h1>
+  <p class="lede">ReliCheck analyzes your survey's psychometric properties and gives you a clear, actionable strength score &mdash; before you rely on the results.</p>
+</section>
 
-    .modal-dropzone {
-      border: 2px dashed var(--hairline-2);
-      border-radius: 16px;
-      padding: 36px 24px;
-      text-align: center; cursor: pointer;
-      transition: border-color 0.15s, background 0.15s;
-      background: #FAFBFC;
-    }
-    .modal-dropzone:hover,
-    .modal-dropzone.dragover {
-      border-color: var(--blue);
-      background: #EEF3FA;
-    }
-    .modal-dropzone .dz-icon {
-      width: 48px; height: 48px;
-      border-radius: 14px;
-      background: #EEF3FA;
-      color: var(--blue);
-      display: inline-grid; place-items: center;
-      margin-bottom: 14px;
-    }
-    .modal-dropzone .dz-title {
-      font-size: 15px; font-weight: 600; color: var(--text);
-      margin-bottom: 5px;
-    }
-    .modal-dropzone .dz-sub {
-      font-size: 12.5px; color: var(--text-2);
-    }
-    .modal-dropzone .dz-sub strong { color: var(--blue); }
-
-    .modal-status {
-      margin-top: 14px; padding: 12px 14px;
-      border-radius: 10px; font-size: 13px;
-      display: none;
-    }
-    .modal-status.show { display: block; }
-    .modal-status.info  { background: #EEF3FA; border: 1px solid #CDE0F5; color: #1A6FD9; }
-    .modal-status.error { background: #FFF1F2; border: 1px solid #FECACA; color: #991B1B; }
-
-    .modal-help {
-      margin-top: 14px;
-      font-size: 12.5px; color: var(--text-2);
-      text-align: center;
-    }
-    .modal-help a { color: var(--blue); font-weight: 500; text-decoration: none; }
-    .modal-help a:hover { text-decoration: underline; }
-
-    /* Saved reports list */
-    .modal-saved-list {
-      display: flex; flex-direction: column; gap: 8px;
-      max-height: 50vh; overflow-y: auto;
-      margin: 0 -8px; padding: 0 8px;
-    }
-    .saved-row {
-      display: grid;
-      grid-template-columns: 54px 1fr auto;
-      align-items: center;
-      gap: 14px;
-      padding: 14px;
-      background: #FAFBFC;
-      border: 1px solid var(--hairline);
-      border-radius: 12px;
-      text-decoration: none; color: inherit;
-      transition: background 0.15s, border-color 0.15s, transform 0.15s;
-    }
-    .saved-row:hover {
-      background: #F2F4F7; border-color: var(--hairline-2);
-      transform: translateX(2px);
-    }
-    .saved-score {
-      width: 54px; height: 54px; border-radius: 12px;
-      background: linear-gradient(160deg, #2D8DFF 0%, #0A6FE8 100%);
-      display: grid; place-items: center;
-      font-size: 20px; font-weight: 700; color: #fff;
-      letter-spacing: -0.02em;
-    }
-    .saved-name {
-      font-size: 14px; font-weight: 600; color: var(--text);
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-    }
-    .saved-date {
-      font-size: 12px; color: var(--text-2); margin-top: 2px;
-    }
-    .saved-row-arrow {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: #EEF0F3; color: var(--text-2);
-      display: grid; place-items: center;
-    }
-    .saved-row-arrow svg { width: 12px; height: 12px; }
-    .saved-empty {
-      text-align: center; padding: 36px 20px;
-      color: var(--text-2); font-size: 13.5px;
-    }
-    .saved-empty strong {
-      display: block; color: var(--text);
-      margin-bottom: 4px; font-size: 15px;
-    }
-
-    /* ───────────────── Responsive ───────────────── */
-    @media (max-width: 1100px) {
-      .rssi-hero h1 { font-size: 60px; }
-    }
-    @media (max-width: 880px) {
-      .cta-row { grid-template-columns: 1fr; gap: 10px; }
-      .sample-metrics { grid-template-columns: 1fr 1fr; }
-      .rssi-hero h1 { font-size: 44px; }
-      .sample-card { padding: 32px 24px; }
-    }
-    @media (max-width: 560px) {
-      .rssi-hero h1 { font-size: 34px; }
-    }
-    @media (max-width: 560px) {
-      .rssi-head { padding: 14px 18px; }
-      .rssi-page { padding: 36px 18px 56px; }
-      .rssi-app-pill { display: none; }
-      .sample-metrics { grid-template-columns: 1fr; }
-      .rssi-foot { flex-direction: column; gap: 10px; align-items: flex-start; padding-left: 18px; padding-right: 18px; }
-      .rssi-foot a { margin-left: 0; margin-right: 20px; }
-    }
-  </style>
-</head>
-<body>
-
-<!-- ─────────── Header ─────────── -->
-<header class="rssi-head">
-  <a class="rssi-brand" href="/app-2026v4.php" title="Back to ReliCheck">
-    <img src="/RSSI-logo.png" alt="ReliCheck Strength Survey Index" class="rssi-brand-logo">
+<!-- ===== Primary actions ===== -->
+<div class="lp-cta-row">
+  <a class="lp-cta-tile primary" href="/rssi-app.php">
+    <span class="lp-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+    <span class="lp-cta-text"><div class="lp-cta-title">Upload Survey</div><div class="lp-cta-sub">Analyze a new survey</div></span>
   </a>
-  <div class="rssi-head-right">
-    <span class="rssi-app-pill">Survey Strength Index</span>
-    <a class="rssi-user" href="#" title="<?= htmlspecialchars($rssi_user_full) ?>">
-      <?= htmlspecialchars($rssi_initials) ?>
-    </a>
-  </div>
-</header>
+  <a class="lp-cta-tile" href="#" data-open-modal="saved">
+    <span class="lp-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+    <span class="lp-cta-text"><div class="lp-cta-title">Open Saved Report</div><div class="lp-cta-sub">Resume where you left off</div></span>
+  </a>
+  <a class="lp-cta-tile" href="/rssi-app.php?sample=1">
+    <span class="lp-cta-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+    <span class="lp-cta-text"><div class="lp-cta-title">View Sample Report</div><div class="lp-cta-sub">See what's possible</div></span>
+  </a>
+</div>
 
-<!-- ─────────── Page body ─────────── -->
-<main class="rssi-page">
-
-  <!-- Hero -->
-  <section class="rssi-hero">
-    <h1>
-      Know if your survey
-      <span class="accent">is strong enough to trust.</span>
-    </h1>
-    <p class="lede">
-      ReliCheck analyzes your survey's psychometric properties and gives you a clear, actionable strength score &mdash; before you rely on the results.
-    </p>
-  </section>
-
-  <!-- Three CTAs -->
-  <div class="cta-row">
-    <a class="cta-tile primary" href="#" data-open-modal="upload">
-      <span class="cta-tile-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      </span>
-      <span class="cta-tile-text">
-        <div class="cta-tile-title">Upload Survey</div>
-        <div class="cta-tile-sub">Analyze a new survey</div>
-      </span>
-    </a>
-    <a class="cta-tile" href="#" data-open-modal="saved">
-      <span class="cta-tile-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-      </span>
-      <span class="cta-tile-text">
-        <div class="cta-tile-title">Open Saved Report</div>
-        <div class="cta-tile-sub">Resume where you left off</div>
-      </span>
-    </a>
-    <a class="cta-tile" href="/rssi-upload.php?demo=1">
-      <span class="cta-tile-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-      </span>
-      <span class="cta-tile-text">
-        <div class="cta-tile-title">View Sample Report</div>
-        <div class="cta-tile-sub">See what's possible</div>
-      </span>
-    </a>
-  </div>
-
-  <!-- Sample report card -->
-  <section class="sample-card">
+<!-- ===== Sample report card ===== -->
+<section class="lp-section">
+  <div class="sample-card">
     <div class="sample-eyebrow">Sample Report</div>
     <h2 class="sample-title">Survey Strength Index</h2>
 
@@ -549,18 +235,14 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <defs>
             <linearGradient id="ringGradLight" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"  stop-color="#4FA3FF"/>
-              <stop offset="100%" stop-color="#0A6FE8"/>
+              <stop offset="0%"  stop-color="<?= htmlspecialchars($landing_accent) ?>"/>
+              <stop offset="100%" stop-color="<?= htmlspecialchars($landing_accent_deep) ?>"/>
             </linearGradient>
           </defs>
-          <circle cx="100" cy="100" r="86"
-                  fill="none" stroke="#EAEDF1" stroke-width="14"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#EAEDF1" stroke-width="14"/>
           <!-- 82% sweep: dasharray ≈ 540.35, offset ≈ 97.26 -->
-          <circle cx="100" cy="100" r="86"
-                  fill="none" stroke="url(#ringGradLight)" stroke-width="14"
-                  stroke-linecap="round"
-                  stroke-dasharray="540.35"
-                  stroke-dashoffset="97.26"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="url(#ringGradLight)" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="540.35" stroke-dashoffset="97.26"/>
         </svg>
         <div class="sample-ring-text">
           <div>
@@ -571,56 +253,35 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
       </div>
     </div>
 
-    <div class="sample-metrics">
-      <div class="metric-card">
-        <div class="metric-icon green">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg>
-        </div>
-        <div class="metric-label">Question<br>Quality</div>
-        <div class="metric-score"><span class="pct">88</span><span class="pct-sym">%</span></div>
-        <div class="metric-bar green"><i style="width:88%"></i></div>
-      </div>
-      <div class="metric-card">
-        <div class="metric-icon purple">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="12" width="4" height="9" rx="1"/><rect x="10" y="6" width="4" height="15" rx="1"/><rect x="17" y="14" width="4" height="7" rx="1"/></svg>
-        </div>
-        <div class="metric-label">Scale<br>Strength</div>
-        <div class="metric-score"><span class="pct">76</span><span class="pct-sym">%</span></div>
-        <div class="metric-bar purple"><i style="width:76%"></i></div>
-      </div>
+    <div class="sample-lenses-cap">Three lenses on the same eight diagnostic domains</div>
+    <div class="sample-metrics" style="grid-template-columns:repeat(3,minmax(0,1fr))">
       <div class="metric-card">
         <div class="metric-icon blue">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5 4 5.5v6c0 4.5 3.5 8 8 9 4.5-1 8-4.5 8-9v-6z"/></svg>
         </div>
-        <div class="metric-label">Reliability</div>
-        <div class="metric-score"><span class="pct">91</span><span class="pct-sym">%</span></div>
-        <div class="metric-bar blue"><i style="width:91%"></i></div>
+        <div class="metric-label">Psychometric<br>Core</div>
+        <div class="metric-score"><span class="pct">84</span><span class="pct-sym">%</span></div>
+        <div class="metric-bar blue"><i style="width:84%"></i></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon green">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+        <div class="metric-label">Respondent-Centered <span class="metric-tag">Headline</span></div>
+        <div class="metric-score"><span class="pct">82</span><span class="pct-sym">%</span></div>
+        <div class="metric-bar green"><i style="width:82%"></i></div>
       </div>
       <div class="metric-card">
         <div class="metric-icon orange">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></svg>
         </div>
-        <div class="metric-label">Validity</div>
-        <div class="metric-score"><span class="pct">73</span><span class="pct-sym">%</span></div>
-        <div class="metric-bar orange"><i style="width:73%"></i></div>
+        <div class="metric-label">Validity-<br>Forward</div>
+        <div class="metric-score"><span class="pct">71</span><span class="pct-sym">%</span></div>
+        <div class="metric-bar orange"><i style="width:71%"></i></div>
       </div>
     </div>
-  </section>
-
-  <!-- Bottom tagline -->
-  <div class="rssi-tagline">Move from uncertainty to insight &mdash; in minutes.</div>
-
-</main>
-
-<!-- ─────────── Footer ─────────── -->
-<footer class="rssi-foot">
-  <div>&copy; <?= date('Y') ?> ReliCheck. All rights reserved.</div>
-  <nav>
-    <a href="/help/">Help Center</a>
-    <a href="/privacy.html">Privacy Policy</a>
-    <a href="/terms.html">Terms of Use</a>
-  </nav>
-</footer>
+  </div>
+</section>
 
 <!-- ─────────── MODAL: Upload Survey ─────────── -->
 <div class="rssi-modal-backdrop" id="rssiUploadModal" hidden role="dialog" aria-modal="true" aria-labelledby="rssiUploadModalTitle">
@@ -643,7 +304,7 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
     <div class="modal-status" id="modalStatus"></div>
 
     <div class="modal-help">
-      Don't have a file handy? <a href="/rssi-upload.php?demo=1">View a sample report &rarr;</a>
+      Don't have a file handy? <a href="/rssi-app.php?sample=1">View a sample report &rarr;</a>
     </div>
   </div>
 </div>
@@ -659,6 +320,8 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
     <div class="modal-saved-list" id="modalSavedList"></div>
   </div>
 </div>
+
+</div><!-- /.rssi-lp -->
 
 <script>
 (function () {
@@ -733,10 +396,8 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
   function populateSavedList() {
     const list = document.getElementById('modalSavedList');
     if (!list) return;
-    // Server-side saved datasets (Phase 1 Q7). Replaces the previous
-    // localStorage-only walk so projects persist across browsers and
-    // devices. Each row routes to /rssi-upload.php?dataset_id=N, which
-    // triggers _loadFromDataset on init.
+    // Server-side saved datasets. Each row routes to
+    // /rssi-app.php?dataset_id=N, which triggers _loadFromDataset on init.
     list.innerHTML = '<div class="saved-empty"><strong>Loading saved projects…</strong></div>';
     fetch('/api/datasets/list.php', { credentials: 'same-origin' })
       .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
@@ -759,9 +420,9 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
                           (rowCnt ? (rowCnt + ' responses') : '') +
                           ((likert || rowCnt) && when ? ' · ' : '') + escapeHtml(when);
           const title   = r.title || r.source_filename || 'Untitled';
-          const href    = '/rssi-upload.php?dataset_id=' + encodeURIComponent(r.id);
+          const href    = '/rssi-app.php?dataset_id=' + encodeURIComponent(r.id);
           return '<a class="saved-row" href="' + href + '">' +
-                   '<div class="saved-score" style="background:var(--blue-soft-bg);color:var(--blue-deep);font-size:14px;">📄</div>' +
+                   '<div class="saved-score" style="font-size:14px;">📄</div>' +
                    '<div><div class="saved-name">' + escapeHtml(title) + '</div>' +
                    '<div class="saved-date">' + meta + '</div></div>' +
                    '<span class="saved-row-arrow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg></span>' +
@@ -781,5 +442,6 @@ $rssi_initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $rssi_user_f
 })();
 </script>
 
-</body>
-</html>
+<?php
+$landing_tagline = 'Move from uncertainty to insight — in minutes.';
+include __DIR__ . '/_landing_foot.php';

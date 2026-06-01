@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Studio Card — MM Studio workspace preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0b1733; --navy-mid:#162040; --navy-soft:#1e2d50;
+  --ink-8:#1c2745; --ink-7:#2d3a5c; --ink-6:#4a5578;
+  --ink-5:#6b7691; --ink-4:#8d97b1; --ink-3:#b3bbcc;
+  --line:#e6eaf2; --warm-line:#e5ded4;
+  --bg:#fff; --cream:#faf7f2; --bg-soft:#f5f7fb;
+  --brand:#e85d3a; --brand-deep:#c2451f;
+  --gold:#d4a04a; --teal:#0f9e7b; --teal-bright:#1cb89a;
+  --serif:'Fraunces',Georgia,serif; --sans:'Inter',system-ui,sans-serif;
+  --ease:cubic-bezier(.22,.61,.36,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:var(--sans); background:var(--cream);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh; display:flex; align-items:center;
+  justify-content:center; padding:48px 24px; color:var(--navy);
+}
+.label{
+  position:fixed; top:14px; left:0; right:0; text-align:center;
+  font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+  color:var(--ink-4);
+}
+
+/* ═══════════════════════════════════════════
+   THE STUDIO CARD
+   Shows the real workspace, not an icon.
+   Left: identity + what this studio is for.
+   Right: miniature of the actual interface.
+═══════════════════════════════════════════ */
+.studio-card{
+  width:100%; max-width:1060px;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-radius:24px; overflow:hidden;
+  box-shadow:0 2px 4px rgba(11,23,51,.04),0 28px 60px -18px rgba(11,23,51,.18);
+  display:grid;
+  grid-template-columns:1fr 1.15fr;
+}
+@media(max-width:800px){.studio-card{grid-template-columns:1fr}}
+
+/* ── LEFT: identity ── */
+.sc-left{
+  padding:40px 40px 36px;
+  display:flex; flex-direction:column;
+  border-right:1px solid var(--line);
+}
+.sc-eyebrow{
+  font-size:10px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--brand); margin-bottom:14px;
+}
+.sc-title{
+  font-family:var(--serif); font-weight:500;
+  font-size:clamp(1.8rem,2.4vw,2.5rem);
+  color:var(--navy); letter-spacing:-.025em;
+  line-height:1.05; margin-bottom:6px;
+}
+.sc-subtitle{
+  font-family:var(--serif); font-style:italic; font-weight:400;
+  font-size:1rem; color:var(--ink-5); margin-bottom:20px;
+}
+.sc-desc{
+  font-size:14px; color:var(--ink-6); line-height:1.7;
+  margin-bottom:28px; flex:1;
+}
+
+/* What you can do — the family of work */
+.sc-family-label{
+  font-size:10px; font-weight:700; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-4); margin-bottom:12px;
+}
+.sc-family{
+  display:flex; flex-direction:column; gap:0;
+  margin-bottom:28px;
+  border-top:1px solid var(--line);
+}
+.sc-task{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px solid var(--line);
+  font-size:13px; font-weight:500; color:var(--ink-7);
+}
+.sc-task-tag{
+  font-size:10px; font-weight:600; letter-spacing:.05em;
+  text-transform:uppercase; padding:3px 8px; border-radius:999px;
+}
+.tag-quant{background:rgba(15,158,123,.1);color:var(--teal)}
+.tag-qual {background:rgba(212,160,74,.12);color:var(--gold)}
+.tag-both {background:rgba(79,70,229,.08);color:#4f46e5}
+
+.sc-ctas{display:flex;gap:10px;align-items:center}
+.btn-enter{
+  font-family:var(--sans); font-size:14px; font-weight:600;
+  background:var(--navy); color:#fff; border:none;
+  border-radius:999px; padding:12px 22px; cursor:pointer;
+  display:flex; align-items:center; gap:7px;
+  transition:background .2s,transform .2s var(--ease),box-shadow .2s;
+}
+.btn-enter:hover{
+  background:var(--brand-deep); transform:translateY(-1px);
+  box-shadow:0 6px 20px -6px rgba(232,93,58,.5);
+}
+.btn-learn{
+  font-family:var(--sans); font-size:13px; font-weight:500;
+  background:transparent; color:var(--ink-6);
+  border:1px solid var(--line); border-radius:999px;
+  padding:11px 18px; cursor:pointer;
+  transition:border-color .15s,color .15s;
+}
+.btn-learn:hover{border-color:var(--ink-4);color:var(--navy)}
+
+/* ── RIGHT: the real interface, miniaturised ── */
+.sc-right{
+  background:var(--bg-soft);
+  display:flex; flex-direction:column;
+  overflow:hidden;
+}
+
+/* Browser chrome bar */
+.app-chrome{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:10px 14px;
+  background:var(--navy);
+  border-bottom:1px solid rgba(255,255,255,.07);
+  flex-shrink:0;
+}
+.app-dots{display:flex;gap:5px}
+.app-dots span{width:9px;height:9px;border-radius:50%;display:block}
+.app-breadcrumb{
+  font-size:10px; color:rgba(255,255,255,.3);
+  display:flex; align-items:center; gap:5px;
+}
+.app-breadcrumb .current{color:rgba(255,255,255,.7);font-weight:500}
+
+/* Mini app shell */
+.app-shell{
+  display:grid;
+  grid-template-columns:140px 1fr;
+  flex:1; overflow:hidden;
+  min-height:0;
+}
+
+/* Sidebar */
+.app-sidebar{
+  background:var(--navy);
+  padding:14px 0;
+  border-right:1px solid rgba(255,255,255,.07);
+  overflow-y:auto;
+  flex-shrink:0;
+}
+.app-sidebar-project{
+  padding:8px 12px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  margin-bottom:8px;
+}
+.app-sidebar-project .pname{
+  font-size:10px; font-weight:600;
+  color:rgba(255,255,255,.65); line-height:1.3;
+}
+.app-sidebar-project .pid{
+  font-size:9px; color:var(--brand); margin-top:3px;
+}
+
+.app-nav-group{margin-bottom:4px}
+.app-nav-parent{
+  padding:7px 12px 3px;
+  font-size:10px; font-weight:600;
+  color:rgba(255,255,255,.55); line-height:1.3;
+}
+.app-nav-parent .sub{
+  display:block; font-size:9px; font-weight:400;
+  color:rgba(255,255,255,.25); font-style:italic;
+  margin-top:1px;
+}
+.app-nav-item{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:5px 12px;
+  font-size:10px; color:rgba(255,255,255,.38);
+  cursor:pointer;
+}
+.app-nav-item.active{
+  color:#fff; font-weight:600;
+  background:rgba(232,93,58,.18);
+  border-right:2px solid var(--brand);
+}
+.app-nav-tag{
+  font-size:8px; font-weight:700;
+  padding:1px 5px; border-radius:999px;
+  background:rgba(212,160,74,.2); color:var(--gold);
+  text-transform:uppercase;
+}
+
+/* Main content area */
+.app-main{
+  overflow-y:auto; padding:18px 16px;
+  background:var(--bg);
+}
+.app-eyebrow{
+  font-size:8.5px; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--ink-4); margin-bottom:6px;
+}
+.app-h1{
+  font-family:var(--serif); font-weight:600;
+  font-size:1.15rem; color:var(--navy);
+  letter-spacing:-.02em; margin-bottom:4px;
+}
+.app-sub{
+  font-size:10px; color:var(--ink-5); line-height:1.5;
+  margin-bottom:12px; max-width:42ch;
+}
+
+/* Source bar */
+.app-source{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 10px;
+  background:var(--bg-soft); border:1px solid var(--line);
+  border-radius:7px; margin-bottom:14px; font-size:9.5px;
+}
+.app-source .dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--teal);margin-right:6px;display:inline-block
+}
+.app-source .name{font-weight:600;color:var(--ink-8)}
+.app-source .meta{color:var(--ink-4)}
+
+/* Score card — RSI */
+.rsi-card{
+  border:1px solid var(--line); border-radius:10px;
+  overflow:hidden; margin-bottom:12px;
+}
+.rsi-inner{
+  display:grid; grid-template-columns:110px 1fr;
+}
+.rsi-gauge-pane{
+  background:var(--navy);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:14px 10px;
+}
+.rsi-num{
+  font-family:var(--serif);font-weight:600;font-size:1.7rem;
+  color:#fff;letter-spacing:-.04em;line-height:1
+}
+.rsi-den{font-size:9px;color:rgba(255,255,255,.3);margin-top:2px}
+.rsi-verdict{
+  font-family:var(--serif);font-style:italic;
+  font-size:11px;color:rgba(255,255,255,.5);margin-top:6px
+}
+.rsi-pill{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:8.5px;font-weight:600;color:var(--teal-bright);
+  background:rgba(28,184,154,.15);
+  padding:3px 8px;border-radius:999px;margin-top:5px;
+}
+.rsi-bars-pane{padding:12px 12px}
+.rsi-bars-title{
+  font-size:9px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-4);margin-bottom:8px
+}
+.rsi-bar{
+  display:grid;grid-template-columns:1fr 22px;
+  gap:6px;align-items:center;margin-bottom:7px
+}
+.rsi-bar:last-child{margin-bottom:0}
+.rsi-bar-name{font-size:9.5px;color:var(--ink-6);margin-bottom:3px}
+.rsi-track{height:4px;background:var(--bg-soft);border-radius:999px;overflow:hidden}
+.rsi-fill{height:100%;border-radius:999px}
+.rsi-pct{font-size:9px;font-weight:700;text-align:right;font-family:var(--serif)}
+
+/* Reliability table preview */
+.rel-card{
+  border:1px solid var(--line);border-radius:10px;
+  overflow:hidden;
+}
+.rel-header{
+  padding:10px 12px;background:var(--bg-soft);
+  border-bottom:1px solid var(--line);
+}
+.rel-tag{
+  font-size:8.5px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--teal);margin-bottom:3px
+}
+.rel-title{font-size:11px;font-weight:600;color:var(--navy)}
+.rel-stats{font-size:9px;color:var(--ink-5);margin-top:2px}
+.rel-table{width:100%;border-collapse:collapse}
+.rel-table th{
+  font-size:8.5px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--ink-4);
+  padding:6px 8px;background:var(--bg-soft);
+  border-bottom:1px solid var(--line);text-align:left
+}
+.rel-table td{
+  font-size:9.5px;color:var(--ink-7);
+  padding:6px 8px;border-bottom:1px solid var(--line)
+}
+.rel-table tr:last-child td{border-bottom:none}
+.flag{
+  display:inline-block;font-size:8.5px;font-weight:600;
+  padding:2px 7px;border-radius:999px;
+}
+.f-strong{background:rgba(15,158,123,.1);color:var(--teal)}
+.f-good  {background:rgba(15,107,90,.08);color:#0a7a5f}
+.f-problem{background:rgba(208,64,48,.1);color:#d04030}
+</style>
+</head>
+<body>
+
+<div class="label">Studio card sample · MM Studio · based on real interface</div>
+
+<div class="studio-card">
+
+  <!-- LEFT: studio identity -->
+  <div class="sc-left">
+    <div class="sc-eyebrow">Methodological Workspace</div>
+    <div class="sc-title">Mixed Methods Studio</div>
+    <div class="sc-subtitle">Where numbers and narratives meet</div>
+    <p class="sc-desc">A studio for researchers who need both quantitative patterns and qualitative meaning. Not a single analysis — a full workspace for a discipline. You might spend hours here across a project, moving between statistical output, coded themes, joint displays, and a report that integrates everything.</p>
+
+    <div class="sc-family-label">Work you do in this studio</div>
+    <div class="sc-family">
+      <div class="sc-task">Descriptive &amp; reliability analysis <span class="sc-task-tag tag-quant">Quant</span></div>
+      <div class="sc-task">Group comparisons &amp; correlations <span class="sc-task-tag tag-quant">Quant</span></div>
+      <div class="sc-task">Qualitative theme analysis <span class="sc-task-tag tag-qual">Qual</span></div>
+      <div class="sc-task">Codebook development <span class="sc-task-tag tag-qual">Qual</span></div>
+      <div class="sc-task">Joint displays &amp; integration <span class="sc-task-tag tag-both">Mixed</span></div>
+      <div class="sc-task">Methods-aligned reporting <span class="sc-task-tag tag-both">Mixed</span></div>
+    </div>
+
+    <div class="sc-ctas">
+      <button class="btn-enter">
+        Enter studio
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <button class="btn-learn">Learn more</button>
+    </div>
+  </div>
+
+  <!-- RIGHT: the real interface, miniaturised -->
+  <div class="sc-right">
+
+    <!-- Browser chrome -->
+    <div class="app-chrome">
+      <div class="app-dots">
+        <span style="background:#ff5f57"></span>
+        <span style="background:#febc2e"></span>
+        <span style="background:#28c840"></span>
+      </div>
+      <div class="app-breadcrumb">
+        MM Sample Project
+        <span>›</span> Instrument Quality
+        <span>›</span> <span class="current">ReliCheck Strength Index</span>
+      </div>
+      <div style="font-size:9px;color:rgba(255,255,255,.2)">Ask ReliCheck</div>
+    </div>
+
+    <!-- App shell: sidebar + content -->
+    <div class="app-shell">
+
+      <!-- Sidebar — the studio navigation -->
+      <div class="app-sidebar">
+        <div class="app-sidebar-project">
+          <div class="pname">MM Sample Project — Belonging &amp; Ret...</div>
+          <div class="pid">● Project ID 176</div>
+        </div>
+
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Overview <span class="sub">what do we have?</span></div>
+          <div class="app-nav-item">Project Snapshot</div>
+          <div class="app-nav-item">Purpose &amp; Research Q.</div>
+          <div class="app-nav-item">Data Quality</div>
+        </div>
+
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Instrument Quality <span class="sub">can we trust it?</span></div>
+          <div class="app-nav-item active">ReliCheck Strength Index</div>
+          <div class="app-nav-item">Reliability</div>
+          <div class="app-nav-item">Validity</div>
+          <div class="app-nav-item">Construct Alignment</div>
+          <div class="app-nav-item">Item Quality</div>
+          <div class="app-nav-item">Bias &amp; Clarity</div>
+          <div class="app-nav-item">Trustworthiness <span class="app-nav-tag">QUAL</span></div>
+        </div>
+
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Descriptive Analysis <span class="sub">what does it show?</span></div>
+        </div>
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Inferential Analysis <span class="sub">what can we test?</span></div>
+        </div>
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Interpretation <span class="sub">what does it mean?</span></div>
+        </div>
+        <div class="app-nav-group">
+          <div class="app-nav-parent">Reporting <span class="sub">how do we report it?</span></div>
+        </div>
+      </div>
+
+      <!-- Main content -->
+      <div class="app-main">
+        <div class="app-eyebrow">Instrument Quality · Can we trust it?</div>
+        <div class="app-h1">ReliCheck Strength Index</div>
+        <p class="app-sub">One headline number, six domains, every check you need to publish, share, or act on this instrument.</p>
+
+        <div class="app-source">
+          <span><span class="dot"></span><span class="name">MM Sample Project — Belonging &amp; Retention</span> <span class="meta">· 250 rows · 32 variables</span></span>
+          <span style="color:var(--brand);font-size:9.5px;font-weight:500">Replace data →</span>
+        </div>
+
+        <!-- RSI score card -->
+        <div class="rsi-card">
+          <div class="rsi-inner">
+            <div class="rsi-gauge-pane">
+              <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg)">
+                <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="5"/>
+                <circle cx="28" cy="28" r="22" fill="none" stroke="var(--teal)" stroke-width="5"
+                  stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="20.7"/>
+              </svg>
+              <div style="margin-top:-44px;text-align:center;position:relative;z-index:1">
+                <div class="rsi-num">85</div>
+                <div class="rsi-den">/100</div>
+              </div>
+              <div class="rsi-verdict" style="margin-top:8px">Strong</div>
+              <div class="rsi-pill">✓ Decision-ready</div>
+            </div>
+            <div class="rsi-bars-pane">
+              <div class="rsi-bars-title">Score by domain</div>
+              <div class="rsi-bar">
+                <div><div class="rsi-bar-name">Reliability</div><div class="rsi-track"><div class="rsi-fill" style="width:68%;background:linear-gradient(90deg,#b8821e,#d4a04a)"></div></div></div>
+                <span class="rsi-pct" style="color:var(--gold)">68</span>
+              </div>
+              <div class="rsi-bar">
+                <div><div class="rsi-bar-name">Validity</div><div class="rsi-track"><div class="rsi-fill" style="width:80%;background:linear-gradient(90deg,var(--teal),var(--teal-bright))"></div></div></div>
+                <span class="rsi-pct" style="color:var(--teal-bright)">80</span>
+              </div>
+              <div class="rsi-bar">
+                <div><div class="rsi-bar-name">Trustworthiness</div><div class="rsi-track"><div class="rsi-fill" style="width:100%;background:linear-gradient(90deg,var(--teal),var(--teal-bright))"></div></div></div>
+                <span class="rsi-pct" style="color:var(--teal-bright)">100</span>
+              </div>
+              <div class="rsi-bar">
+                <div><div class="rsi-bar-name">Construct Alignment</div><div class="rsi-track"><div class="rsi-fill" style="width:88%;background:linear-gradient(90deg,var(--teal),var(--teal-bright))"></div></div></div>
+                <span class="rsi-pct" style="color:var(--teal-bright)">88</span>
+              </div>
+              <div class="rsi-bar">
+                <div><div class="rsi-bar-name">Item Quality</div><div class="rsi-track"><div class="rsi-fill" style="width:64%;background:linear-gradient(90deg,#b8821e,#d4a04a)"></div></div></div>
+                <span class="rsi-pct" style="color:var(--gold)">64</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Reliability table preview -->
+        <div class="rel-card">
+          <div class="rel-header">
+            <div class="rel-tag">Reliability</div>
+            <div class="rel-title">24 Likert items across 4 scale(s)</div>
+            <div class="rel-stats">Cronbach's α = 0.810 · 18 strong · 1 good · 5 problem · 250 complete rows</div>
+          </div>
+          <table class="rel-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Item–Rest R</th>
+                <th>Flag</th>
+                <th>Plain-language meaning</th>
+                <th>Recommended action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>SA1 (Self-Awareness)</td>
+                <td>0.578</td>
+                <td><span class="flag f-good">Good</span></td>
+                <td>This item moves well with the rest of the scale.</td>
+                <td>Keep item.</td>
+              </tr>
+              <tr>
+                <td>SA2 (Self-Awareness)</td>
+                <td>0.645</td>
+                <td><span class="flag f-strong">Strong</span></td>
+                <td>This item strongly fits the rest of the scale.</td>
+                <td>Keep item.</td>
+              </tr>
+              <tr>
+                <td>SA4_R (Self-Awareness)</td>
+                <td style="color:#d04030">−0.699</td>
+                <td><span class="flag f-problem">Problem</span></td>
+                <td>This item moves opposite to the rest.</td>
+                <td style="font-weight:600;color:var(--navy)">Confirm scoring direction.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div><!-- /app-main -->
+    </div><!-- /app-shell -->
+  </div><!-- /sc-right -->
+
+</div><!-- /studio-card -->
+
+</body>
+</html>

@@ -681,6 +681,11 @@
   gap: 10px;
   align-items: center;
 }
+/* The display:flex above otherwise beats the [hidden] attribute, so the
+   banner showed on live/non-sample reports even though rssi.js correctly
+   sets hidden=true. Let [hidden] win so the banner appears only for
+   sample/demo data. */
+.rssi-app .sample-banner[hidden] { display: none !important; }
 .rssi-app .sample-banner a { color: #B45309; font-weight: 600; text-decoration: underline; }
 
 /* ============================================================================
@@ -1679,4 +1684,174 @@
   .rssi-app .rssi-float-lens-label { font-size: 9.5px; }
   .rssi-app .rssi-float-lens-score { font-size: 16px; }
   .rssi-app .rssi-score-float-tier2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SIMPLIFIED STANDALONE RSSI REPORT  (UX/IA simplification)
+   Score → Meaning → Evidence → Caution → Next action, with all the
+   dense analyst chrome moved behind a "Technical diagnostics" accordion.
+   Scoped entirely to .rssi-app so develop.php / landing are untouched.
+   The simplified summary + accordion are built by rssi.js
+   (buildSimplifiedReport); the rules below collapse the legacy
+   three-column dashboard chrome so both report surfaces (render.php
+   report viewer + rssi-upload.php dashboard) read the same.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Single column: drop the left diagnostic sidebar and right rail from
+   the default view. Their content is preserved (sidebar nav was purely
+   in-page scroll; rail copy is folded into the simplified summary +
+   Technical diagnostics accordion). */
+.rssi-app[data-simplified] .app { grid-template-columns: 1fr; }
+.rssi-app[data-simplified] .sidebar,
+.rssi-app[data-simplified] .rail { display: none; }
+
+/* Hide the dense always-on lens chrome from the hero: the three-lens
+   triplet and the floating score bar. The three lenses remain available
+   inside the Technical diagnostics accordion ("What Do These Numbers
+   Mean?"). */
+.rssi-app[data-simplified] .lens-triplet { display: none; }
+.rssi-app[data-simplified] .rssi-score-float { display: none !important; }
+
+/* Hero row collapses to a single column — the "What Do These Numbers
+   Mean?" side card is relocated into the accordion by rssi.js. */
+.rssi-app[data-simplified] .rssi-hero-row { grid-template-columns: 1fr !important; }
+
+/* ── Simplified summary ─────────────────────────────────────────────── */
+.rssi-app .rssi-simple { margin: 0 0 22px; }
+.rssi-app .rssi-simple-meaning {
+  font-size: 15px; line-height: 1.55; color: var(--text);
+  margin: 4px 0 14px;
+}
+.rssi-app .rssi-simple-note {
+  display: flex; align-items: flex-start; gap: 10px;
+  background: var(--surface-muted); border-radius: var(--radius-md);
+  padding: 12px 16px; margin: 0 0 20px;
+  font-size: 13px; color: var(--text-2);
+}
+.rssi-app .rssi-simple-note svg { flex-shrink: 0; margin-top: 1px; color: var(--blue); }
+.rssi-app .rssi-simple-note.warn { background: rgba(255,159,10,0.10); }
+.rssi-app .rssi-simple-note.warn svg { color: var(--fair); }
+
+.rssi-app .rssi-simple-h {
+  font-size: 13px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--text-3); margin: 22px 0 12px;
+}
+
+/* Four simplified domain cards */
+.rssi-app .rssi-simple-cards {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.rssi-app .rssi-simple-card {
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: var(--radius-md); padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+}
+.rssi-app .rssi-simple-card-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+}
+.rssi-app .rssi-simple-card-title { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.rssi-app .rssi-simple-card-score { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.rssi-app .rssi-simple-card-score .out { font-size: 12px; font-weight: 600; color: var(--text-3); }
+.rssi-app .rssi-meter {
+  height: 7px; border-radius: 999px; background: var(--surface-muted);
+  margin: 12px 0 0; overflow: hidden;
+}
+.rssi-app .rssi-meter > span { display: block; height: 100%; border-radius: 999px; transition: width .5s ease; }
+.rssi-app .rssi-meter.status-strong  > span { background: var(--good); }
+.rssi-app .rssi-meter.status-good     > span { background: var(--blue); }
+.rssi-app .rssi-meter.status-fair     > span { background: var(--fair); }
+.rssi-app .rssi-meter.status-weak     > span { background: var(--weak); }
+.rssi-app .rssi-simple-card .pill {
+  display: inline-block; margin-top: 10px; font-size: 11px;
+}
+.rssi-app .rssi-simple-card-band {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  padding: 2px 7px; border-radius: 999px; background: var(--surface-muted); color: var(--text-3);
+}
+.rssi-app .rssi-simple-card-band.status-strong { background: rgba(52,199,89,0.12);  color: #1A7E36; }
+.rssi-app .rssi-simple-card-band.status-good    { background: rgba(0,122,255,0.10);  color: #1A6FD9; }
+.rssi-app .rssi-simple-card-band.status-fair    { background: rgba(255,159,10,0.14); color: #B26A00; }
+.rssi-app .rssi-simple-card-band.status-weak    { background: rgba(255,59,48,0.12);  color: #B82318; }
+
+/* Top-issues callouts (simplified) */
+.rssi-app .rssi-simple-issue {
+  display: flex; gap: 10px; align-items: flex-start;
+  border: 1px solid var(--hairline); border-left-width: 3px;
+  border-radius: 10px; padding: 12px 14px; margin: 0 0 8px;
+  background: var(--surface);
+}
+.rssi-app .rssi-simple-issue.sev-high { border-left-color: var(--weak); }
+.rssi-app .rssi-simple-issue.sev-med  { border-left-color: var(--fair); }
+.rssi-app .rssi-simple-issue.sev-low  { border-left-color: var(--blue); }
+.rssi-app .rssi-simple-issue.ok       { border-left-color: var(--good); }
+.rssi-app .rssi-simple-issue-title { font-size: 13.5px; font-weight: 700; color: var(--text); margin: 0 0 2px; }
+.rssi-app .rssi-simple-issue-sub   { font-size: 12.5px; color: var(--text-2); margin: 0; }
+.rssi-app .rssi-simple-more { font-size: 12.5px; color: var(--text-3); margin: 8px 0 0; }
+
+/* Interpretation guidance trio */
+.rssi-app .rssi-guide-card {
+  background: var(--surface); border: 1px solid var(--hairline);
+  border-radius: var(--radius-md); padding: 14px 18px; margin: 0 0 12px;
+}
+.rssi-app .rssi-guide-card h4 { font-size: 13.5px; font-weight: 700; color: var(--text); margin: 0 0 6px; }
+.rssi-app .rssi-guide-card ul { margin: 0; padding-left: 18px; }
+.rssi-app .rssi-guide-card li { font-size: 13px; line-height: 1.5; color: var(--text-2); margin: 0 0 4px; }
+.rssi-app .rssi-guide-card p  { font-size: 13px; line-height: 1.5; color: var(--text-2); margin: 0; }
+
+/* Action row (Print / Save PDF + secondary Open Survey Studio) */
+.rssi-app .rssi-simple-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 0; }
+
+/* Technical diagnostics accordion */
+.rssi-app .rssi-tech-acc {
+  border: 1px solid var(--hairline); border-radius: var(--radius-md);
+  background: var(--surface); margin: 26px 0 18px; overflow: hidden;
+}
+.rssi-app .rssi-tech-acc > summary {
+  list-style: none; cursor: pointer; padding: 16px 20px;
+  font-size: 14px; font-weight: 700; color: var(--text);
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+.rssi-app .rssi-tech-acc > summary::-webkit-details-marker { display: none; }
+.rssi-app .rssi-tech-acc > summary .rssi-tech-caret { transition: transform .2s ease; color: var(--text-3); }
+.rssi-app .rssi-tech-acc[open] > summary .rssi-tech-caret { transform: rotate(180deg); }
+.rssi-app .rssi-tech-acc > summary .rssi-tech-sub { font-weight: 500; font-size: 12.5px; color: var(--text-3); }
+.rssi-app .rssi-tech-body { padding: 4px 20px 20px; border-top: 1px solid var(--hairline); }
+.rssi-app .rssi-tech-h {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--text-3); margin: 22px 0 10px;
+}
+.rssi-app .rssi-tech-body > .rssi-tech-h:first-child { margin-top: 14px; }
+
+@media (max-width: 760px) {
+  .rssi-app .rssi-simple-cards { grid-template-columns: 1fr; }
+}
+
+/* ── Reliability Lab (interactive item analysis, surfaced as a primary
+   learning workspace — not buried in the technical accordion) ───────── */
+.rssi-app .rssi-lab { margin: 26px 0 18px; }
+.rssi-app .rssi-lab-head { margin: 0 0 12px; }
+.rssi-app .rssi-lab-title {
+  font-size: 19px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--text); margin: 0;
+}
+.rssi-app .rssi-lab-sub {
+  font-size: 13.5px; color: var(--text-2); margin: 4px 0 0;
+}
+.rssi-app .rssi-lab-note {
+  font-size: 12.5px; line-height: 1.55; color: var(--text-2);
+  background: var(--surface-muted); border-radius: var(--radius-md);
+  padding: 12px 16px; margin: 0 0 4px;
+}
+.rssi-app .rssi-lab-note strong { color: var(--text); }
+/* The analyzer injects margin-top:20px on .rel-analyzer; trim it so it
+   sits tight under the lab note. */
+.rssi-app .rssi-lab .rel-analyzer { margin-top: 14px; }
+
+/* Print: expand the accordion so the saved PDF still contains every
+   technical detail (rssi.js also force-opens it on beforeprint). */
+@media print {
+  .rssi-app .rssi-tech-acc { border: none; }
+  .rssi-app .rssi-tech-acc > summary { display: none; }
+  .rssi-app .rssi-tech-body { border-top: none; padding: 0; }
 }

@@ -38,11 +38,7 @@ $mount_user = current_user();
 if (!$mount_user) { $_SESSION = []; session_destroy(); header('Location: /login.html'); exit; }
 
 // ---------- Validate studio + project ----------
-// 'descriptive' and 'inferential' are the new analysis destinations. They
-// mount the same universal engines headless (embed mode) and read a survey
-// project's responses exactly like 'survey' does — so they share the survey
-// ownership check and the server-side response→dataset injection below.
-$valid_studios = ['survey', 'mm', 'tia', '360', 'strength-survey', 'descriptive', 'inferential'];
+$valid_studios = ['survey', 'mm', 'tia', '360', 'strength-survey'];
 $studio_slug   = $_GET['studio'] ?? 'survey';
 if (!in_array($studio_slug, $valid_studios, true)) $studio_slug = 'survey';
 $projectId = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
@@ -54,12 +50,7 @@ $mount_project = null;
 if ($projectId > 0) {
   $pdo = db();
   try {
-    if (in_array($studio_slug, ['descriptive', 'inferential'], true)) {
-      // The new analysis destinations standardize on the SIRI / survey-dev
-      // project identity (survey_projects.id) — the same id RSSI keys on.
-      $stmt = $pdo->prepare('SELECT id, title FROM survey_projects WHERE id = :id AND user_id = :uid AND status <> "archived"');
-    } elseif ($studio_slug === 'survey' || $studio_slug === 'strength-survey') {
-      // Legacy Survey Studio roof keeps the legacy surveys.id identity.
+    if ($studio_slug === 'survey' || $studio_slug === 'strength-survey') {
       $stmt = $pdo->prepare('SELECT id, title FROM surveys WHERE id = :id AND owner_id = :uid AND (archived_at IS NULL)');
     } elseif ($studio_slug === 'mm') {
       $stmt = $pdo->prepare('SELECT id, title FROM mm_projects WHERE id = :id AND user_id = :uid AND status <> "archived"');
@@ -76,11 +67,7 @@ if ($projectId > 0) {
 }
 // If a project_id was supplied but ownership failed, bounce to the picker.
 if ($projectId > 0 && !$mount_project) {
-  $_bounce = [
-    'descriptive' => '/descriptive-analysis-studio.php',
-    'inferential' => '/inferential-statistics-studio.php',
-  ][$studio_slug] ?? ('/studio-' . $studio_slug . '-projects.php');
-  header('Location: ' . $_bounce);
+  header('Location: /studio-' . $studio_slug . '-projects.php');
   exit;
 }
 
@@ -463,8 +450,6 @@ if (empty($mount_no_save_to_report) && $mount_stub_resolved !== false && !empty(
   const lensKey   = <?= json_encode($mount_lens ?? '') ?>;
   const pageTitle = <?= json_encode($mount_title ?? '') ?>;
   const projectName = <?= json_encode($mount_project['title'] ?? 'Untitled project') ?>;
-  const mountStage      = <?= json_encode($current_section ?? '') ?>;
-  const mountStageLabel = <?= json_encode($mount_section_label ?? '') ?>;
   const storageKey = 'relicheck.report.' + projectId + '.default';
 
   const bar  = document.getElementById('rcSaveBar');
@@ -546,8 +531,6 @@ if (empty($mount_no_save_to_report) && $mount_stub_resolved !== false && !empty(
       lens: lensKey,
       pageTitle: pageTitle,
       summary: summary,
-      stage: mountStage,
-      stageLabel: mountStageLabel,
       payload: state,
     };
     // Upsert: replace any existing block with the same id, otherwise append
@@ -556,227 +539,7 @@ if (empty($mount_no_save_to_report) && $mount_stub_resolved !== false && !empty(
     r.studio = studio; r.project = projectName; r.projectId = projectId;
     writeReport(r);
     refreshMeta();
-    // Announce so the Report Draft inspector (separate IIFE below) re-renders.
-    document.dispatchEvent(new CustomEvent('rc:report-updated'));
   });
-})();
-</script>
-
-<?php
-// ─────────────────────────────────────────────────────────────────────────
-// Report Draft inspector.
-// A right-side slide-over that lists the analyses saved to this project's
-// report (the same localStorage corpus the Save to Report bar writes and the
-// Report Builder reads), grouped by methodology stage, with per-item removal.
-// This is the reporting thread; it is deliberately independent of the
-// promote-to-integration / joint-display action, which is a different flow.
-// Self-contained markup + scoped style + script, styled on the site palette.
-?>
-<button id="rcDraftTab" class="rc-draft-tab" type="button" aria-controls="rcDraftPanel" aria-expanded="false" hidden>
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-  <span>Report Draft</span>
-  <span class="rc-draft-tab-count" id="rcDraftTabCount">0</span>
-</button>
-
-<div id="rcDraftOverlay" class="rc-draft-overlay" hidden></div>
-
-<aside id="rcDraftPanel" class="rc-draft-panel" hidden aria-label="Report draft">
-  <header class="rc-draft-head">
-    <div>
-      <div class="rc-draft-eyebrow">REPORT DRAFT</div>
-      <div class="rc-draft-title">Saved analyses</div>
-    </div>
-    <button class="rc-draft-close" id="rcDraftClose" type="button" aria-label="Close report draft">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
-    </button>
-  </header>
-  <div class="rc-draft-body" id="rcDraftBody"></div>
-  <footer class="rc-draft-foot">
-    <a class="rc-draft-open" href="/report-builder.php?studio=<?= htmlspecialchars($studio_slug) ?>&project_id=<?= (int)$projectId ?>">Open Report Builder →</a>
-  </footer>
-</aside>
-
-<style>
-.rc-draft-tab {
-  position: fixed; right: 0; top: 50%; transform: translateY(-50%);
-  z-index: 60;
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 14px 10px 16px;
-  border: 1px solid rgba(15,23,42,0.08); border-right: none;
-  border-radius: 12px 0 0 12px;
-  background: #fff; color: #1f2328;
-  font-family: inherit; font-size: 13px; font-weight: 650; cursor: pointer;
-  box-shadow: 0 4px 18px rgba(15,23,42,0.10);
-  transition: background .14s, box-shadow .14s, transform .14s;
-}
-.rc-draft-tab:hover { background: var(--bg-soft, #f7f8fb); transform: translateY(-50%) translateX(-2px); }
-.rc-draft-tab svg { color: var(--accent, #e85d3a); }
-.rc-draft-tab-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px;
-  background: var(--accent, #e85d3a); color: #fff; font-size: 11.5px; font-weight: 700;
-}
-.rc-draft-overlay {
-  position: fixed; inset: 0; z-index: 70;
-  background: rgba(20,24,38,0.30);
-  backdrop-filter: blur(1.5px); -webkit-backdrop-filter: blur(1.5px);
-  animation: rcDraftFade .18s ease;
-}
-@keyframes rcDraftFade { from { opacity: 0; } to { opacity: 1; } }
-.rc-draft-panel {
-  position: fixed; top: 0; right: 0; bottom: 0; z-index: 71;
-  width: min(380px, 92vw);
-  background: #fff; border-left: 1px solid var(--line, #ebeef3);
-  box-shadow: -16px 0 48px rgba(15,23,42,0.16);
-  display: flex; flex-direction: column;
-  animation: rcDraftIn .22s cubic-bezier(.2,.7,.2,1);
-}
-@keyframes rcDraftIn { from { transform: translateX(16px); opacity: 0; } to { transform: none; opacity: 1; } }
-.rc-draft-head {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 22px 22px 16px; border-bottom: 1px solid var(--line, #ebeef3);
-}
-.rc-draft-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; color: var(--ink-5, #7a8499); }
-.rc-draft-title { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--ink-1, #0f1322); margin-top: 3px; }
-.rc-draft-close {
-  background: transparent; border: none; cursor: pointer; padding: 4px;
-  border-radius: 8px; color: var(--ink-5, #7a8499); line-height: 0;
-}
-.rc-draft-close:hover { background: var(--bg-soft, #f7f8fb); color: var(--ink-1, #0f1322); }
-.rc-draft-body { flex: 1; overflow-y: auto; padding: 14px 18px 20px; }
-.rc-draft-empty { color: var(--ink-5, #7a8499); font-size: 14px; line-height: 1.55; padding: 28px 6px; text-align: center; }
-.rc-draft-group { margin-top: 18px; }
-.rc-draft-group:first-child { margin-top: 4px; }
-.rc-draft-group-label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-5, #7a8499); margin: 0 2px 8px; }
-.rc-draft-item {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 11px 12px; border: 1px solid var(--line, #ebeef3); border-radius: 12px;
-  background: var(--bg-soft, #f7f8fb); margin-bottom: 8px;
-}
-.rc-draft-item-main { flex: 1; min-width: 0; }
-.rc-draft-item-title { font-size: 14px; font-weight: 650; color: var(--ink-1, #0f1322); line-height: 1.3; }
-.rc-draft-item-sub { font-size: 12.5px; color: var(--ink-4, #5b6378); line-height: 1.45; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.rc-draft-item-remove {
-  flex-shrink: 0; background: transparent; border: none; cursor: pointer; padding: 3px;
-  border-radius: 7px; color: var(--ink-5, #7a8499); line-height: 0;
-}
-.rc-draft-item-remove:hover { background: #fdeee9; color: var(--accent, #e85d3a); }
-.rc-draft-foot { padding: 14px 18px; border-top: 1px solid var(--line, #ebeef3); }
-.rc-draft-open { display: inline-block; font-size: 13.5px; font-weight: 700; color: var(--accent, #e85d3a); }
-.rc-draft-open:hover { text-decoration: underline; }
-/* The display rules above would otherwise beat the [hidden] attribute, so the
-   tab/overlay/panel must re-assert display:none while hidden. */
-.rc-draft-tab[hidden], .rc-draft-overlay[hidden], .rc-draft-panel[hidden] { display: none !important; }
-</style>
-
-<script>
-(function () {
-  const projectId  = <?= json_encode((int)$projectId) ?>;
-  const storageKey = 'relicheck.report.' + projectId + '.default';
-  // Stage order mirrors the methodology arc so groups read top-to-bottom.
-  const STAGE_ORDER = ['overview','instrument_quality','descriptive','inferential','interpretation','reporting'];
-  const STAGE_LABELS = {
-    overview: 'Overview', instrument_quality: 'Instrument Quality',
-    descriptive: 'Descriptive Analysis', inferential: 'Inferential Analysis',
-    interpretation: 'Interpretation', reporting: 'Reporting'
-  };
-
-  const tab     = document.getElementById('rcDraftTab');
-  const count   = document.getElementById('rcDraftTabCount');
-  const overlay = document.getElementById('rcDraftOverlay');
-  const panel   = document.getElementById('rcDraftPanel');
-  const closeEl = document.getElementById('rcDraftClose');
-  const body    = document.getElementById('rcDraftBody');
-  if (!tab || !panel || !body) return;
-
-  function esc(s) {
-    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
-      return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[c];
-    });
-  }
-  function readReport() {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (raw) { const p = JSON.parse(raw); if (p && Array.isArray(p.blocks)) return p; }
-    } catch (e) {}
-    return { blocks: [] };
-  }
-  function writeReport(r) {
-    try { window.localStorage.setItem(storageKey, JSON.stringify(r)); } catch (e) {}
-  }
-
-  function render() {
-    const r = readReport();
-    const blocks = r.blocks || [];
-    count.textContent = String(blocks.length);
-    tab.hidden = blocks.length === 0 && !isOpen();
-
-    if (!blocks.length) {
-      body.innerHTML = '<div class="rc-draft-empty">No analyses saved yet. Use <strong>Save to Report</strong> on an analysis to add it here.</div>';
-      return;
-    }
-    // Group by stage, preserving the methodology order; unknown stages last.
-    const groups = {};
-    blocks.forEach(function (b) {
-      const key = b.stage && STAGE_ORDER.indexOf(b.stage) >= 0 ? b.stage : (b.stage || 'other');
-      (groups[key] = groups[key] || []).push(b);
-    });
-    const order = STAGE_ORDER.filter(function (k) { return groups[k]; })
-      .concat(Object.keys(groups).filter(function (k) { return STAGE_ORDER.indexOf(k) < 0; }));
-
-    let html = '';
-    order.forEach(function (key) {
-      const label = STAGE_LABELS[key] || (groups[key][0] && groups[key][0].stageLabel) || 'Other';
-      html += '<div class="rc-draft-group"><div class="rc-draft-group-label">' + esc(label) + '</div>';
-      groups[key].forEach(function (b) {
-        const title = b.pageTitle || b.appName || 'Saved analysis';
-        const sub = b.summary || '';
-        html += '<div class="rc-draft-item" data-id="' + esc(b.id) + '">'
-          + '<div class="rc-draft-item-main"><div class="rc-draft-item-title">' + esc(title) + '</div>'
-          + (sub ? '<div class="rc-draft-item-sub">' + esc(sub) + '</div>' : '')
-          + '</div>'
-          + '<button class="rc-draft-item-remove" type="button" data-remove="' + esc(b.id) + '" aria-label="Remove from report">'
-          + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
-          + '</button></div>';
-      });
-      html += '</div>';
-    });
-    body.innerHTML = html;
-  }
-
-  function isOpen() { return !panel.hidden; }
-  function open() {
-    render();
-    overlay.hidden = false; panel.hidden = false;
-    tab.setAttribute('aria-expanded', 'true');
-  }
-  function close() {
-    overlay.hidden = true; panel.hidden = true;
-    tab.setAttribute('aria-expanded', 'false');
-    render();
-  }
-
-  tab.addEventListener('click', open);
-  overlay.addEventListener('click', close);
-  closeEl.addEventListener('click', close);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && isOpen()) close(); });
-
-  body.addEventListener('click', function (e) {
-    const btn = e.target.closest('[data-remove]');
-    if (!btn) return;
-    const id = btn.getAttribute('data-remove');
-    const r = readReport();
-    r.blocks = (r.blocks || []).filter(function (b) { return b.id !== id; });
-    writeReport(r);
-    render();
-    document.dispatchEvent(new CustomEvent('rc:report-updated'));
-  });
-
-  // Re-render when a save happens (same tab) or storage changes (other tab).
-  document.addEventListener('rc:report-updated', render);
-  window.addEventListener('storage', function (e) { if (e.key === storageKey) render(); });
-
-  render();
 })();
 </script>
 
@@ -795,50 +558,42 @@ if (empty($mount_no_save_to_report) && $mount_stub_resolved !== false && !empty(
 // analysis engines have real data on the first page load without any async
 // fetch. The same transform is available via /api/surveys/responses-dataset.php
 // for client-side refresh.
-if (in_array($studio_slug, ['survey', 'descriptive', 'inferential'], true) && $projectId > 0 && !empty($mount_dataset_global)):
+if ($studio_slug === 'survey' && $projectId > 0 && !empty($mount_dataset_global)):
+    // Load the shared transform function if not already loaded
+    if (!function_exists('relicheck_survey_build_dataset')) {
+        require_once __DIR__ . '/api/surveys/_build_dataset.php';
+    }
+    // Fetch questions
     try {
-        if ($studio_slug === 'descriptive' || $studio_slug === 'inferential') {
-            // NEW analysis destinations: SIRI / survey-dev identity. Build from
-            // survey_items + survey_dev_answers via the shared survey-dev
-            // transform (which delegates to the same tested engine builder, so
-            // the dataset shape is identical). $mount_project['title'] is the
-            // survey_projects title verified in the ownership check above.
-            require_once __DIR__ . '/api/dev/_build_dev_dataset.php';
-            $__dataset = relicheck_surveydev_build_dataset($pdo, (int)$projectId, (string)($mount_project['title'] ?? ''));
-        } else {
-            // Legacy Survey Studio roof: surveys.id + responses table. Untouched.
-            if (!function_exists('relicheck_survey_build_dataset')) {
-                require_once __DIR__ . '/api/surveys/_build_dataset.php';
-            }
-            $__sq = $pdo->prepare('SELECT title, questions, settings FROM surveys WHERE id = :id');
-            $__sq->execute([':id' => $projectId]);
-            $__sr = $__sq->fetch(PDO::FETCH_ASSOC);
-            $__questions = $__sr ? (json_decode((string)$__sr['questions'], true) ?: []) : [];
-            $__title     = $__sr ? (string)$__sr['title'] : '';
-            $__settings  = $__sr ? (json_decode((string)($__sr['settings'] ?? ''), true) ?: []) : [];
+        $__sq = $pdo->prepare('SELECT title, questions, settings FROM surveys WHERE id = :id');
+        $__sq->execute([':id' => $projectId]);
+        $__sr = $__sq->fetch(PDO::FETCH_ASSOC);
+        $__questions = $__sr ? (json_decode((string)$__sr['questions'], true) ?: []) : [];
+        $__title     = $__sr ? (string)$__sr['title'] : '';
+        $__settings  = $__sr ? (json_decode((string)($__sr['settings'] ?? ''), true) ?: []) : [];
 
-            $__hasArm = false;
-            try { $__c = $pdo->query("SHOW COLUMNS FROM responses LIKE 'arm_id'"); if ($__c && $__c->fetch()) $__hasArm = true; } catch (Throwable $__e) {}
-            $__sql = $__hasArm
-                ? 'SELECT id, submitted_at, answers, arm_id FROM responses WHERE survey_id = :sid ORDER BY submitted_at ASC'
-                : 'SELECT id, submitted_at, answers FROM responses WHERE survey_id = :sid ORDER BY submitted_at ASC';
-            $__rs = $pdo->prepare($__sql);
-            $__rs->execute([':sid' => $projectId]);
-            $__responses = [];
-            while ($__row = $__rs->fetch(PDO::FETCH_ASSOC)) {
-                $__ans = json_decode((string)$__row['answers'], true);
-                $__responses[] = ['id' => (int)$__row['id'], 'submitted_at' => $__row['submitted_at'], 'answers' => is_array($__ans) ? $__ans : []];
-            }
-            $__dataset = relicheck_survey_build_dataset($__title, $__questions, $__responses, $__settings);
+        // Detect arm_id column
+        $__hasArm = false;
+        try { $__c = $pdo->query("SHOW COLUMNS FROM responses LIKE 'arm_id'"); if ($__c && $__c->fetch()) $__hasArm = true; } catch (Throwable $__e) {}
+        $__sql = $__hasArm
+            ? 'SELECT id, submitted_at, answers, arm_id FROM responses WHERE survey_id = :sid ORDER BY submitted_at ASC'
+            : 'SELECT id, submitted_at, answers FROM responses WHERE survey_id = :sid ORDER BY submitted_at ASC';
+        $__rs = $pdo->prepare($__sql);
+        $__rs->execute([':sid' => $projectId]);
+        $__responses = [];
+        while ($__row = $__rs->fetch(PDO::FETCH_ASSOC)) {
+            $__ans = json_decode((string)$__row['answers'], true);
+            $__responses[] = ['id' => (int)$__row['id'], 'submitted_at' => $__row['submitted_at'], 'answers' => is_array($__ans) ? $__ans : []];
         }
+        $__dataset = relicheck_survey_build_dataset($__title, $__questions, $__responses, $__settings);
     } catch (Throwable $__ex) {
         $__dataset = ['source' => 'Error loading responses', 'variables' => [], 'rowCount' => 0];
-        error_log('[relicheck] analysis dataset build failed: ' . $__ex->getMessage());
+        error_log('[relicheck] survey dataset build failed: ' . $__ex->getMessage());
     }
     $__savedAt = time();
     echo '<script>window.RELICHECK_SURVEY_INLINE='.json_encode([
         'savedAt' => $__savedAt,
-        'studio'  => $studio_slug,
+        'studio'  => 'survey',
         'payload' => ['dataset' => $__dataset],
     ], JSON_UNESCAPED_UNICODE).';</script>' . "\n";
 endif;
@@ -887,7 +642,7 @@ endif;
     // responses. Otherwise we'd clobber whatever the user uploaded via
     // Evidence Intake. Critical: a 0-row inline dataset must never overwrite
     // a user-uploaded CSV sitting in localStorage.
-    if ((STUDIO === 'survey' || STUDIO === 'descriptive' || STUDIO === 'inferential') && window.RELICHECK_SURVEY_INLINE && PROJECT_ID) {
+    if (STUDIO === 'survey' && window.RELICHECK_SURVEY_INLINE && PROJECT_ID) {
       const inline = window.RELICHECK_SURVEY_INLINE;
       const inlineRows = (inline && inline.payload && inline.payload.dataset)
         ? (inline.payload.dataset.rowCount || 0) : 0;
@@ -968,16 +723,6 @@ endif;
     }
   })();
 </script>
-
-<?php
-// Descriptive Analysis Studio boundary: reliability lives in RSSI only.
-// Set a render flag the descriptive engine reads to skip Cronbach's α (and
-// any reliability output) in the Scale Scores lens. The flag is studio-scoped
-// here, so the old Survey Studio roof keeps its full α-bearing behavior.
-if ($studio_slug === 'descriptive'):
-?>
-<script>window.DESCRIPTIVE_OPTIONS = Object.assign({}, window.DESCRIPTIVE_OPTIONS, { reliabilityHidden: true });</script>
-<?php endif; ?>
 
 <?php
   // Cache-bust the engine JS by appending the file's mtime as ?v=. Without

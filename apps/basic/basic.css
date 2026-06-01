@@ -1,0 +1,352 @@
+/* =============================================================================
+   basic.css — ReliCheck Basic. Studio-STYLED entry product (the analysis-page
+   template look: left step rail + header band + roomy workspace), in a neutral
+   teal/slate identity. Gives a real-product feel WITHOUT being a studio: no
+   mounted analysis engines, no labs, no full reports. Reliability/strength are
+   headline scores with a plain explanation, nothing more.
+   ============================================================================= */
+
+:root {
+  --rb-accent: #0e7490;     /* teal-blue, matches the RB icon family */
+  --rb-accent2:#0ea5a4;
+  --rb-deep:   #155e75;
+  --rb-soft:   #ecfeff;
+  --rb-slate:  #64748b;
+}
+
+.rb-back { display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink-4,#5a657a); text-decoration:none; margin-bottom:16px; }
+.rb-back:hover { color:var(--ink-2,#1c2238); }
+
+/* ---- Landing (relicheck-basic.php) ---- */
+.rb-hero { position:relative; padding:8px 0 18px; overflow:hidden; }
+.rb-hero::before { content:""; position:absolute; top:-130px; right:-150px; width:520px; height:520px; background:radial-gradient(closest-side, var(--rb-soft), transparent 70%); border-radius:50%; z-index:0; }
+.rb-hero > * { position:relative; z-index:1; }
+.rb-eyebrow { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; background:var(--rb-soft); color:var(--rb-deep); border-radius:999px; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:14px; }
+.rb-eyebrow img { width:18px; height:18px; border-radius:5px; }
+.rb-hero h1 { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size:40px; line-height:1.1; font-weight:600; color:var(--ink-1,#1c2238); margin:0 0 12px; max-width:720px; }
+.rb-lede { font-size:16.5px; line-height:1.55; color:var(--ink-3,#424a5e); max-width:600px; margin:0 0 20px; }
+.rb-cta-primary { display:inline-flex; align-items:center; gap:8px; padding:13px 20px; border-radius:12px; background:var(--rb-deep); color:#fff; font-weight:700; font-size:15px; text-decoration:none; transition:transform .14s, background .14s; }
+.rb-cta-primary:hover { background:#0c4a5e; transform:translateY(-1px); }
+.rb-cols { display:grid; grid-template-columns:1fr 1fr; gap:28px; margin-top:34px; align-items:start; }
+@media (max-width:760px){ .rb-cols { grid-template-columns:1fr; } }
+.rb-h3 { font-family:Inter,sans-serif; font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-5,#7a8499); margin:0 0 12px; }
+.rb-steps-list { list-style:none; padding:0; margin:0; }
+.rb-steps-list li { display:flex; align-items:flex-start; gap:10px; font-size:14.5px; color:var(--ink-2,#1c2238); margin-bottom:10px; line-height:1.45; }
+.rb-steps-list li span { flex-shrink:0; width:22px; height:22px; border-radius:50%; background:var(--rb-soft); color:var(--rb-deep); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.rb-note { font-size:14px; line-height:1.55; color:var(--ink-4,#5a657a); margin:0 0 12px; }
+
+/* ============================ STUDIO-STYLE WORKSPACE ============================ */
+.rb-root { max-width:1040px; }
+.rb-loading { padding:48px; text-align:center; color:var(--ink-4,#5a657a); }
+
+/* Header band */
+.rb-head { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:18px; }
+.rb-head-main { min-width:0; }
+.rb-head .rb-eyebrow { margin-bottom:10px; }
+.rb-head h1 { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size:30px; line-height:1.12; font-weight:600; color:var(--ink-1,#1c2238); margin:0 0 6px; }
+.rb-head .rb-sub { font-size:14.5px; line-height:1.5; color:var(--ink-4,#5a657a); margin:0; max-width:560px; }
+.rb-progress { flex-shrink:0; font-size:12.5px; font-weight:700; color:var(--rb-deep); background:var(--rb-soft); border-radius:999px; padding:6px 13px; }
+
+/* Two-column studio body */
+.rb-body { display:grid; grid-template-columns:240px 1fr; gap:22px; align-items:start; }
+@media (max-width:860px){ .rb-body { grid-template-columns:1fr; } }
+
+/* Left step rail (the studio sidebar look) */
+.rb-rail { border:1px solid var(--line,#e6e9f0); border-radius:16px; background:#fff; padding:10px; position:sticky; top:18px; box-shadow:0 2px 10px rgba(15,23,42,0.04); }
+.rb-rail .rail-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-5,#7a8499); padding:8px 10px 6px; }
+.rb-step { display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left; padding:11px 12px; border:none; background:none; border-radius:11px; cursor:pointer; font-family:inherit; transition:background .12s; }
+.rb-step:not(.is-locked):hover { background:var(--rb-soft); }
+.rb-step .num { flex-shrink:0; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12.5px; font-weight:700; background:#eef2f6; color:var(--rb-slate); border:1.5px solid transparent; }
+.rb-step .lbl { font-size:14px; font-weight:600; color:var(--ink-2,#1c2238); line-height:1.25; }
+.rb-step .lbl small { display:block; font-size:11.5px; font-weight:500; color:var(--ink-5,#7a8499); margin-top:1px; }
+.rb-step.is-active { background:var(--rb-soft); }
+.rb-step.is-active .num { background:var(--rb-accent); color:#fff; }
+.rb-step.is-active .lbl { color:var(--rb-deep); }
+.rb-step.is-done .num { background:#0e7490; color:#fff; }
+.rb-step.is-locked { cursor:default; opacity:0.55; }
+.rb-step.is-locked .lbl { color:var(--ink-5,#7a8499); }
+
+/* Main workspace */
+.rb-main { min-height:460px; }
+.rb-card { border:1px solid var(--line,#e6e9f0); border-radius:16px; background:#fff; box-shadow:0 2px 10px rgba(15,23,42,0.05); padding:24px; margin-bottom:16px; }
+.rb-card-head { display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+.rb-card-head h2 { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size:22px; font-weight:600; color:var(--ink-1,#1c2238); margin:0; }
+.rb-badge { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; padding:3px 9px; border-radius:6px; background:var(--rb-soft); color:var(--rb-deep); }
+.rb-card-lede { font-size:14px; line-height:1.55; color:var(--ink-4,#5a657a); margin:0 0 18px; }
+
+/* Forms / builder */
+.rb-label { display:block; font-size:12.5px; font-weight:700; color:var(--ink-3,#424a5e); margin-bottom:6px; }
+.rb-opt { font-weight:500; color:var(--ink-5,#7a8499); }
+.rb-input, .rb-select { width:100%; box-sizing:border-box; padding:10px 12px; border:1px solid var(--line,#e6e9f0); border-radius:10px; font-family:inherit; font-size:14px; color:var(--ink-1,#1c2238); background:#fff; }
+.rb-input:focus, .rb-select:focus { outline:none; border-color:var(--rb-accent); box-shadow:0 0 0 3px var(--rb-soft); }
+.rb-field { margin-bottom:14px; }
+.rb-item-row { display:flex; gap:8px; margin-bottom:8px; align-items:flex-start; }
+.rb-item-row .rb-select { width:155px; flex-shrink:0; }
+.rb-item-row .rb-item-main { flex:1; }
+.rb-item-row .rb-item-prompt { width:100%; }
+.rb-item-row .rb-preview { font-size:12px; color:var(--ink-5,#7a8499); margin-top:5px; padding-left:2px; }
+.rb-x { flex-shrink:0; width:34px; height:40px; border:1px solid var(--line,#e6e9f0); border-radius:9px; background:#fff; color:var(--ink-5,#7a8499); font-size:18px; cursor:pointer; line-height:1; }
+.rb-x:hover { border-color:#c2271b; color:#c2271b; }
+
+.rb-actions { display:flex; align-items:center; gap:12px; margin-top:18px; flex-wrap:wrap; }
+.rb-btn { padding:11px 18px; border-radius:11px; border:none; background:var(--rb-deep); color:#fff; font-family:inherit; font-size:14px; font-weight:700; cursor:pointer; transition:background .14s, transform .14s; }
+.rb-btn:hover:not(:disabled) { background:#0c4a5e; transform:translateY(-1px); }
+.rb-btn:disabled { opacity:.5; cursor:default; }
+.rb-btn-ghost { padding:9px 15px; border-radius:11px; border:1px solid var(--line,#e6e9f0); background:#fff; color:var(--ink-2,#1c2238); font-family:inherit; font-size:13.5px; font-weight:600; cursor:pointer; }
+.rb-btn-ghost:hover { border-color:var(--rb-accent); }
+.rb-mini { font-size:12.5px; color:var(--ink-5,#7a8499); }
+.rb-err { color:#9a271b; font-size:14px; margin:0 0 12px; }
+
+/* Score block + explanation */
+.rb-scorerow { display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.rb-score { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size:58px; font-weight:600; color:var(--ink-1,#1c2238); line-height:1; }
+.rb-score span { font-size:20px; color:var(--ink-5,#7a8499); font-family:Inter,sans-serif; font-weight:600; margin-left:6px; }
+.rb-score.withheld { font-size:30px; color:var(--ink-4,#5a657a); }
+.rb-band { display:inline-block; font-size:13px; font-weight:700; padding:5px 13px; border-radius:999px; background:var(--rb-soft); color:var(--rb-deep); }
+.rb-explain { margin-top:18px; padding:16px 18px; background:var(--bg-tint,#f8fafc); border:1px solid var(--line,#e6e9f0); border-radius:12px; font-size:14px; line-height:1.6; color:var(--ink-3,#424a5e); }
+.rb-explain strong { color:var(--ink-1,#1c2238); }
+.rb-status { font-size:14.5px; line-height:1.5; color:var(--ink-3,#424a5e); margin:14px 0 0; }
+
+/* Upgrade teaser — shows the depth behind the free tier */
+.rb-upgrade { margin-top:18px; border:1px solid var(--line,#e6e9f0); border-radius:13px; overflow:hidden; }
+.rb-upgrade-head { padding:13px 16px; background:linear-gradient(120deg, var(--rb-soft), #fff); border-bottom:1px solid var(--line,#e6e9f0); }
+.rb-upgrade-head strong { font-size:14px; color:var(--ink-1,#1c2238); }
+.rb-upgrade-head p { margin:3px 0 0; font-size:13px; color:var(--ink-4,#5a657a); line-height:1.5; }
+.rb-locked-list { list-style:none; margin:0; padding:10px 16px; }
+.rb-locked-list li { display:flex; align-items:center; gap:9px; font-size:13.5px; color:var(--ink-4,#5a657a); padding:5px 0; }
+.rb-locked-list li svg { flex-shrink:0; color:var(--rb-slate); }
+.rb-upgrade-foot { padding:12px 16px; border-top:1px solid var(--line,#e6e9f0); }
+.rb-upgrade-link { font-size:14px; font-weight:700; color:var(--rb-deep); text-decoration:none; }
+.rb-upgrade-link:hover { text-decoration:underline; }
+
+/* Share */
+.rb-share { display:flex; gap:8px; margin-top:12px; }
+.rb-share .rb-input { font-size:13px; color:var(--ink-3,#424a5e); }
+.rb-count { margin-top:14px; font-size:15px; color:var(--ink-3,#424a5e); }
+.rb-count strong { color:var(--ink-1,#1c2238); font-size:18px; }
+.rb-count.full { color:#9a271b; }
+.rb-meter { height:8px; border-radius:5px; background:#eef2f6; overflow:hidden; margin-top:8px; max-width:320px; }
+.rb-meter i { display:block; height:100%; background:var(--rb-accent); }
+
+.rb-foot-note { font-size:12.5px; color:var(--ink-5,#7a8499); margin-top:14px; }
+
+/* ============================ BASIC BUILDER (faithful clone of the SIRI builder feel) ============================ */
+.rb-builder { }
+.rb-name-card { max-width:540px; }
+.rb-composer-grid { display:grid; grid-template-columns:minmax(0,1fr) 270px; gap:18px; align-items:start; }
+@media (max-width:900px){ .rb-composer-grid { grid-template-columns:1fr; } }
+.rb-build-main { min-width:0; }
+
+/* Composer */
+.rb-composer { background:#fff; border:1px solid var(--line,#e6e9f0); border-radius:14px; box-shadow:0 2px 10px rgba(15,23,42,0.05); padding:18px 20px; }
+.rb-composer-head { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+.rb-composer-eyebrow { font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--rb-deep); }
+.rb-qclose { border:none; background:none; font-size:22px; line-height:1; color:var(--ink-5,#7a8499); cursor:pointer; }
+.rb-composer-q { width:100%; box-sizing:border-box; border:1px solid var(--line,#e6e9f0); border-radius:10px; padding:12px 14px; font:inherit; font-size:16px; line-height:1.4; color:var(--ink-1,#1c2238); resize:vertical; min-height:62px; }
+.rb-composer-q:focus { outline:none; border-color:var(--rb-accent); box-shadow:0 0 0 3px var(--rb-soft); }
+.rb-csettings { margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+.rb-field { }
+.rb-field > label { display:block; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--ink-5,#7a8499); margin-bottom:5px; }
+.rb-field select, .rb-field input[type=number] { padding:7px 10px; border:1px solid var(--line,#e6e9f0); border-radius:8px; font:inherit; font-size:13.5px; }
+.rb-opt-row { display:flex; gap:6px; margin-bottom:6px; }
+.rb-opt-row input { flex:1; padding:7px 10px; border:1px solid var(--line,#e6e9f0); border-radius:8px; font:inherit; font-size:13.5px; }
+.rb-opt-del { width:30px; border:1px solid var(--line,#e6e9f0); border-radius:8px; background:#fff; color:var(--ink-5,#7a8499); cursor:pointer; }
+.rb-reqtoggle { padding:6px 12px; border-radius:999px; border:1px solid var(--line,#e6e9f0); background:#fff; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-4,#5a657a); cursor:pointer; }
+.rb-reqtoggle.on { background:var(--rb-soft); border-color:var(--rb-accent); color:var(--rb-deep); }
+.rb-composer-prev { margin-top:14px; padding-top:14px; border-top:1px solid var(--line,#e6e9f0); }
+.rb-composer-prev .lbl { font-size:11.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-5,#7a8499); margin-bottom:8px; }
+.rb-composer-foot { margin-top:16px; display:flex; gap:10px; }
+
+/* Previews */
+.rb-pvopt { display:flex; align-items:center; gap:7px; font-size:13.5px; color:var(--ink-3,#424a5e); margin:3px 0; }
+.rb-pvscale { display:flex; gap:8px; font-size:14px; color:var(--ink-3,#424a5e); }
+.rb-pvscale span { width:26px; height:26px; border:1px solid var(--line,#e6e9f0); border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:12.5px; }
+.rb-pvinput { width:100%; box-sizing:border-box; border:1px solid var(--line,#e6e9f0); border-radius:8px; padding:8px 10px; font:inherit; font-size:13.5px; color:var(--ink-5,#7a8499); background:var(--bg-tint,#f8fafc); }
+
+/* Live clarity checks (teaser of ReliCheck's intelligence) */
+.rb-checks { margin-top:14px; padding:13px 15px; border:1px solid var(--line,#e6e9f0); border-radius:11px; background:var(--bg-tint,#f8fafc); }
+.rb-checks .eyebrow { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-5,#7a8499); margin-bottom:8px; }
+.rb-lens { display:flex; align-items:center; gap:9px; margin:6px 0; font-size:13.5px; color:var(--ink-3,#424a5e); }
+.rb-ckdot { width:9px; height:9px; border-radius:50%; flex-shrink:0; }
+.rb-ckdot.ok { background:#0e8a6f; }
+.rb-ckdot.warn { background:#d6932b; }
+.rb-lens .rb-pill { margin-left:auto; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; }
+.rb-pill.ok { background:#e8f6ee; color:#0b5e3a; }
+.rb-pill.warn { background:#fdf3e3; color:#8a5a08; }
+
+/* Type palette */
+.rb-palette { border:1px solid var(--line,#e6e9f0); border-radius:14px; background:#fff; padding:12px; position:sticky; top:18px; }
+.rb-palette h3 { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-5,#7a8499); margin:8px 6px 6px; }
+.rb-ptype { display:block; width:100%; text-align:left; padding:9px 11px; border:1px solid transparent; border-radius:9px; background:none; font:inherit; font-size:13.5px; font-weight:600; color:var(--ink-2,#1c2238); cursor:pointer; }
+.rb-ptype:hover { background:var(--rb-soft); border-color:var(--rb-accent); }
+.rb-palette-note { font-size:11.5px; color:var(--ink-5,#7a8499); padding:8px 6px 2px; line-height:1.4; }
+
+/* qcard list */
+.rb-saved-head { margin:24px 0 12px; display:flex; align-items:baseline; gap:10px; }
+.rb-saved-head h2 { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size:18px; font-weight:600; margin:0; color:var(--ink-1,#1c2238); }
+.rb-saved-head .sp { flex:1; }
+.rb-qcard { background:#fff; border:1px solid var(--line,#e6e9f0); border-radius:12px; padding:12px 14px; margin-bottom:10px; display:flex; gap:12px; align-items:flex-start; cursor:pointer; transition:border-color .12s, box-shadow .12s; }
+.rb-qcard:hover { border-color:var(--rb-accent); background:var(--rb-soft); }
+.rb-qcard.active { border-color:var(--rb-accent); box-shadow:0 0 0 2px var(--rb-soft); }
+.rb-qcard .qn { flex:0 0 24px; height:24px; border-radius:50%; background:var(--bg-tint,#f1f5f9); color:var(--ink-2,#1c2238); font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; margin-top:2px; }
+.rb-qcard-body { flex:1; min-width:0; }
+.rb-qcard-top { display:flex; gap:6px 10px; align-items:baseline; flex-wrap:wrap; }
+.rb-qcard-text { flex:1 1 60%; min-width:0; font-size:14px; font-weight:500; color:var(--ink-1,#1c2238); overflow-wrap:break-word; }
+.rb-qbadge { flex:0 0 auto; white-space:nowrap; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; background:#eef2f6; color:var(--rb-slate); }
+.rb-qprev { margin-top:8px; }
+.rb-qcard-actions { flex:0 0 auto; display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+.rb-qbtns { display:flex; gap:4px; }
+.rb-qbtns button { width:28px; height:28px; border:1px solid var(--line,#e6e9f0); border-radius:7px; background:#fff; color:var(--ink-4,#5a657a); cursor:pointer; font-size:13px; }
+.rb-qbtns button:hover:not(:disabled) { border-color:var(--rb-accent); color:var(--rb-deep); }
+.rb-qbtns button:disabled { opacity:.4; cursor:default; }
+.rb-cap-note { font-size:12.5px; color:var(--ink-5,#7a8499); margin:6px 0 0; }
+
+/* ============================ LAYOUT + APPLE-STYLE POLISH (Basic builder) ============================ */
+/* Center the whole workspace on the page. */
+.rb-root { max-width: 1100px; margin-left: auto; margin-right: auto; }
+.rb-main { padding-left: 0; }
+.rb-composer-grid { grid-template-columns: minmax(0,1fr) 300px; column-gap: 40px; padding-left: 0; }
+@media (max-width: 1140px) { .rb-composer-grid { grid-template-columns: 1fr; } }
+
+/* Apple-looking surfaces: deeper rounding, soft layered shadows, faint hairline
+   borders, translucent sticky panels, glossy buttons. */
+.rb-card, .rb-composer, .rb-palette, .rb-name-card {
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.07);
+}
+.rb-rail, .rb-palette {
+  background: rgba(255,255,255,0.82);
+  -webkit-backdrop-filter: saturate(1.3) blur(10px);
+  backdrop-filter: saturate(1.3) blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.06);
+}
+.rb-composer-q, .rb-input, .rb-select, .rb-opt-row input, .rb-field select, .rb-field input[type=number] { border-radius: 12px; }
+.rb-qcard { border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
+.rb-qcard:hover { box-shadow: 0 2px 6px rgba(15,23,42,0.06); }
+
+/* Glossy, dimensional buttons (matches the RB icon family) */
+.rb-btn, .rb-cta-primary {
+  border-radius: 13px;
+  background: linear-gradient(180deg, #1a8aab 0%, #155e75 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 8px rgba(14,116,144,0.30);
+}
+.rb-btn:hover:not(:disabled), .rb-cta-primary:hover {
+  background: linear-gradient(180deg, #1f97ba 0%, #124e63 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), 0 4px 12px rgba(14,116,144,0.34);
+}
+.rb-btn-ghost, .rb-ptype { border-radius: 12px; }
+.rb-step { border-radius: 13px; }
+.rb-score { letter-spacing: -1.5px; }
+
+/* ============================ TONE: darker hairlines + light-gray backdrop ============================ */
+/* Light-gray page background so the white cards lift off it (Apple-style). */
+body[data-relicheck-basic] { background: #eef1f5; }
+body[data-relicheck-basic] .relicheck-app-shell { background: transparent; }
+
+/* Slightly darker borders across the Basic surfaces. */
+.rb-card, .rb-composer, .rb-palette, .rb-name-card, .rb-rail, .rb-qcard {
+  border-color: rgba(15,23,42,0.12) !important;
+}
+.rb-input, .rb-select, .rb-composer-q, .rb-opt-row input, .rb-field select,
+.rb-field input[type=number], .rb-btn-ghost, .rb-ptype, .rb-x, .rb-qbtns button,
+.rb-share .rb-input, .rb-reqtoggle, .rb-checks, .rb-explain, .rb-upgrade {
+  border-color: #cbd3dd;
+}
+
+/* ============================ PREVIEW LIST + SMALL UPGRADE LINK ============================ */
+.rb-preview-list { display:flex; flex-direction:column; gap:14px; margin:4px 0 4px; }
+.rb-prevq { border:1px solid #cbd3dd; border-radius:16px; padding:14px 16px; background:#fff; box-shadow:0 1px 2px rgba(15,23,42,0.03); }
+.rb-prevq-head { display:flex; gap:10px; align-items:baseline; margin-bottom:8px; }
+.rb-prevq-head .qn { flex:0 0 22px; height:22px; border-radius:50%; background:#eef2f6; color:var(--rb-slate); font-size:11.5px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.rb-prevq-text { font-size:14.5px; font-weight:600; color:var(--ink-1,#1c2238); }
+.rb-upgrade-line { margin:18px 0 0; padding-top:14px; border-top:1px solid #e6e9f0; font-size:13.5px; line-height:1.5; color:var(--ink-4,#5a657a); }
+
+/* Apple-style consistency across the whole build (composer, palette, qcards, name card). */
+.rb-builder .rb-card, .rb-composer, .rb-palette, .rb-name-card, .rb-checks, .rb-explain {
+  border-radius: 18px;
+}
+
+/* ============================ UNIFIED APPLE STYLE — whole Basic build ============================ */
+/* Authoritative pass scoped to the Basic workspace so every surface is consistent.
+   Attribute+class specificity beats the base single-class rules without !important. */
+
+/* Panels & cards — consistent rounding, hairline, soft layered shadow */
+body[data-relicheck-basic] .rb-card,
+body[data-relicheck-basic] .rb-composer,
+body[data-relicheck-basic] .rb-name-card,
+body[data-relicheck-basic] .rb-prevq,
+body[data-relicheck-basic] .rb-checks,
+body[data-relicheck-basic] .rb-explain,
+body[data-relicheck-basic] .rb-upgrade {
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.08);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.07);
+}
+body[data-relicheck-basic] .rb-checks,
+body[data-relicheck-basic] .rb-explain { border-radius: 16px; box-shadow: none; background: #f7f9fc; }
+
+/* Frosted, translucent rail + palette (macOS sidebar feel) */
+body[data-relicheck-basic] .rb-rail,
+body[data-relicheck-basic] .rb-palette {
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: rgba(255,255,255,0.78);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  backdrop-filter: saturate(1.4) blur(12px);
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 30px rgba(15,23,42,0.06);
+}
+
+/* Inputs / selects / textareas — soft rounded fields */
+body[data-relicheck-basic] .rb-input,
+body[data-relicheck-basic] .rb-select,
+body[data-relicheck-basic] .rb-composer-q,
+body[data-relicheck-basic] .rb-opt-row input,
+body[data-relicheck-basic] .rb-field select,
+body[data-relicheck-basic] .rb-field input {
+  border-radius: 12px;
+  border: 1px solid #cbd3dd;
+  background: #fff;
+}
+
+/* Question cards & preview rows */
+body[data-relicheck-basic] .rb-qcard { border-radius: 16px; border: 1px solid rgba(15,23,42,0.08); box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
+body[data-relicheck-basic] .rb-prevq { border-radius: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
+
+/* Glossy, dimensional primary buttons + rounded secondaries */
+body[data-relicheck-basic] .rb-btn,
+body[data-relicheck-basic] .rb-cta-primary {
+  border-radius: 13px;
+  background: linear-gradient(180deg, #1a8aab 0%, #155e75 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 2px 8px rgba(14,116,144,0.30);
+}
+body[data-relicheck-basic] .rb-btn:hover:not(:disabled),
+body[data-relicheck-basic] .rb-cta-primary:hover {
+  background: linear-gradient(180deg, #1f97ba 0%, #124e63 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.30), 0 4px 12px rgba(14,116,144,0.34);
+}
+body[data-relicheck-basic] .rb-btn-ghost,
+body[data-relicheck-basic] .rb-ptype,
+body[data-relicheck-basic] .rb-reqtoggle { border-radius: 12px; }
+body[data-relicheck-basic] .rb-step { border-radius: 13px; }
+
+/* Pills / badges / score */
+body[data-relicheck-basic] .rb-badge,
+body[data-relicheck-basic] .rb-band,
+body[data-relicheck-basic] .rb-progress { border-radius: 999px; }
+body[data-relicheck-basic] .rb-score { letter-spacing: -1.5px; }
+
+/* ============================ LANDING: your Basic surveys ============================ */
+.rb-projects { margin-top: 30px; }
+.rb-proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.rb-proj-card {
+  display: block; text-decoration: none; padding: 16px 18px;
+  border-radius: 18px; border: 1px solid rgba(15,23,42,0.08); background: #fff;
+  box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 8px 22px rgba(15,23,42,0.06);
+  transition: transform .14s, box-shadow .14s, border-color .14s;
+}
+.rb-proj-card:hover { transform: translateY(-2px); border-color: var(--rb-accent); box-shadow: 0 2px 4px rgba(15,23,42,0.05), 0 12px 28px rgba(15,23,42,0.10); }
+.rb-proj-title { font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif; font-size: 17px; font-weight: 600; color: var(--ink-1,#1c2238); line-height: 1.25; }
+.rb-proj-meta { font-size: 12.5px; color: var(--ink-5,#7a8499); margin-top: 6px; }

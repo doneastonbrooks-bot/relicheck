@@ -36,23 +36,6 @@
   --three60:      #2563eb;
   --three60-soft: #e6efff;
 
-  /* Strand tags (MM Studio rail). The three methodological strands read as
-     equals; quantitative is never the silent default. Colors are drawn from
-     the site palette so the tags sit inside the existing system rather than
-     introducing a parallel one: QUAN reuses the blue, QUAL the teal, MM the
-     violet studio accent. RSSI is a source marker, not a strand, so it is
-     styled neutrally on the ink ramp. (--quant-* kept as an alias for the
-     prior class name so older selectors still resolve.) */
-  --quan-color:   #2563eb;
-  --quan-soft:    #e6efff;
-  --quant-color:  var(--quan-color);
-  --qual-color:   #0e8a6f;
-  --qual-soft:    #e3f5ee;
-  --mm-color:     #6d4ad8;
-  --mm-tag-soft:  #efeafd;
-  --rssi-color:   #5b6378;
-  --rssi-soft:    #eef0f4;
-
   /* App-wide font stack — Inter first, system fallback.
      --font-display previously resolved to Fraunces (serif); now points at
      the same Inter stack so headings, body, buttons, sidebar, marketing

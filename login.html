@@ -154,10 +154,10 @@
           showBanner('success', 'Welcome back. Loading…');
           const _qp = new URLSearchParams(location.search);
           const ret = _qp.get('next') || _qp.get('return');
-          // Phase 171: beta cohort users land in MM Studio (App 2.0 draft preview).
-          const defaultDest = data.is_beta_cohort
-            ? 'app-2026.html?draft=1#/mm'
-            : 'app.html';
+          // v4 cutover (2026-05-25): all successful logins land on the new
+          // Platform Shell welcome page. v4 is now the front door; the old
+          // app-2026.html SPA is retained only as a fallback (?next=/app-2026.html).
+          const defaultDest = '/app-2026v4.php';
           const dest = (ret && /^\/[A-Za-z0-9_\-./?=&%]*$/.test(ret)) ? ret : defaultDest;
           setTimeout(function () { window.location.href = dest; }, 400);
         } catch (err) {
@@ -251,10 +251,10 @@
           showBanner('success', 'Welcome back. Loading…');
           const _qp = new URLSearchParams(location.search);
           const ret = _qp.get('next') || _qp.get('return');
-          // Phase 171: beta cohort users land in MM Studio (App 2.0 draft preview).
-          const defaultDest = data.is_beta_cohort
-            ? 'app-2026.html?draft=1#/mm'
-            : 'app.html';
+          // v4 cutover (2026-05-25): all successful logins land on the new
+          // Platform Shell welcome page. v4 is now the front door; the old
+          // app-2026.html SPA is retained only as a fallback (?next=/app-2026.html).
+          const defaultDest = '/app-2026v4.php';
           const dest = (ret && /^\/[A-Za-z0-9_\-./?=&%]*$/.test(ret)) ? ret : defaultDest;
           setTimeout(() => { window.location.href = dest; }, 400);
         } catch (e) {

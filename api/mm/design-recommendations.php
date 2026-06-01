@@ -119,11 +119,14 @@ $DESIGNS = [
     'design_e' => [
         'name'        => 'E. Create a full integrated mixed-methods report',
         'sub'         => 'Best for research, evaluation, accreditation, or leadership reporting.',
+        // Dampened: E is the generalist. Having lots of data alone should not
+        // make it win — it should win only when the INTENT is a full report
+        // (findings_section / eval_evidence carry it in intent_score below).
         'data_score'  => [
-            'survey_plus_open'         => 3,
-            'survey_plus_interviews'   => 3,
-            'open_only'                => 2,
-            'quant_plus_interpretation'=> 2,
+            'survey_plus_open'         => 2,
+            'survey_plus_interviews'   => 2,
+            'open_only'                => 1,
+            'quant_plus_interpretation'=> 1,
             'build_from_scratch'       => 0,
         ],
         'intent_score' => [
@@ -153,27 +156,30 @@ foreach ($DESIGNS as $slug => $def) {
         'sub'         => $def['sub'],
         'score'       => $score,
         'recommended' => false,
+        'alternate'   => false,
     ];
 }
 
-// Recommended = the top 3 designs whose score is at least 3 AND at least
-// half of the top score. If everything is zero (no framing yet) we still
-// surface all five but recommend none, so the UI shows the catalogue.
+// ONE primary recommendation (the clear best fit), plus at most one close
+// runner-up flagged as an "alternate". A single confident pick reads as a real
+// recommendation; three highlighted designs read as the tool not knowing.
+// If everything is zero (no framing yet) we recommend none and show the catalogue.
 $top = 0;
 foreach ($results as $r) { if ($r['score'] > $top) $top = $r['score']; }
-$cutoff = max(3, (int)ceil($top * 0.5));
-if ($top > 0) {
-    // Rank, keep top 3 above cutoff.
+if ($top >= 3) {
     $sorted = array_values($results);
-    usort($sorted, function ($a, $b) { return $b['score'] <=> $a['score']; });
-    $picked = 0;
-    foreach ($sorted as $s) {
-        if ($picked < 3 && $s['score'] >= $cutoff) {
-            $results[$s['slug']]['recommended'] = true;
-            $picked++;
-        } else {
-            break;
-        }
+    // Deterministic tie-break: on equal scores, push design_e (the generalist)
+    // DOWN so a more specific design wins; otherwise hold catalogue order.
+    usort($sorted, function ($a, $b) {
+        if ($b['score'] !== $a['score']) return $b['score'] <=> $a['score'];
+        if ($a['slug'] === 'design_e' && $b['slug'] !== 'design_e') return 1;
+        if ($b['slug'] === 'design_e' && $a['slug'] !== 'design_e') return -1;
+        return strcmp($a['slug'], $b['slug']);
+    });
+    $results[$sorted[0]['slug']]['recommended'] = true;
+    // Runner-up within 1 point is offered as an alternate, not a co-winner.
+    if (isset($sorted[1]) && $sorted[1]['score'] >= 3 && ($sorted[0]['score'] - $sorted[1]['score']) <= 1) {
+        $results[$sorted[1]['slug']]['alternate'] = true;
     }
 }
 

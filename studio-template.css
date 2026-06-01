@@ -306,24 +306,28 @@ a { color: var(--accent); text-decoration: none; }
   flex-shrink: 0;
 }
 
-/* Studio strip — studio mark icon + studio name. */
+/* Studio strip — studio mark icon + studio name (now the top of the sidebar). */
 .sb-studio {
-  margin: 8px 12px 6px;
+  margin: 20px 12px 6px;
   padding: 4px 12px;
+}
+.sb-studio-link {
   display: flex;
   align-items: center;
   gap: 10px;
+  text-decoration: none;
+  color: inherit;
 }
 .sb-studio-mark {
-  width: 24px; height: 24px;
-  border-radius: 6px;
+  width: 38px; height: 38px;
+  border-radius: 8px;
   display: block;
   flex-shrink: 0;
 }
 .sb-studio-name {
   font-family: var(--rc-font-sans);
   font-weight: 600;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: -0.015em;
   color: var(--text);
   line-height: 1.2;
@@ -333,14 +337,14 @@ a { color: var(--accent); text-decoration: none; }
 .sb-project {
   margin: 6px 12px 14px;
   padding: 10px 12px;
-  background: var(--surface);
+  background: rgba(255,255,255,0.7);
   border-radius: var(--r-md);
   border: 1px solid var(--hairline);
   cursor: pointer;
   transition: background 0.15s;
   box-shadow: var(--rc-shadow-soft);
 }
-.sb-project:hover { background: var(--bg-tint, var(--surface)); }
+.sb-project:hover { background: rgba(255,255,255,0.95); }
 .sb-project-name {
   font-weight: 600;
   font-size: 13px;
@@ -408,14 +412,14 @@ a { color: var(--accent); text-decoration: none; }
   line-height: 1.2;
   letter-spacing: -0.01em;
   flex: 1;
-  color: var(--text);
+  color: #1f2328;
 }
 .sb-section-question {
   font-size: 13px;
   line-height: 1.25;
   font-style: italic;
   font-weight: 400;
-  color: var(--rc-text-muted);
+  color: #8a8f98;
   margin-top: 2px;
 }
 .sb-chevron {
@@ -442,7 +446,7 @@ a { color: var(--accent); text-decoration: none; }
   padding: 7px 14px;
   border-radius: 10px;
   cursor: pointer;
-  color: var(--text-2);
+  color: #555b64;
   font-size: 16px;
   line-height: 1.35;
   font-weight: 450;
@@ -477,56 +481,9 @@ a { color: var(--accent); text-decoration: none; }
   color: var(--text-3);
   flex-shrink: 0;
 }
-/* Strand tags — colors come from the shared token source (platform-shell.css)
-   so the studio adds nothing to a parallel system. The three strands read as
-   peers; RSSI is a neutral source marker, not a strand. */
-.sb-item-tag.quan, .sb-item-tag.QUAN { background: var(--quan-soft);   color: var(--quan-color); }
-.sb-item-tag.quant,.sb-item-tag.QUANT{ background: var(--quan-soft);   color: var(--quan-color); }
-.sb-item-tag.qual, .sb-item-tag.QUAL { background: var(--qual-soft);   color: var(--qual-color); }
-.sb-item-tag.mm,   .sb-item-tag.MM   { background: var(--mm-tag-soft); color: var(--mm-color); }
-.sb-item-tag.rssi, .sb-item-tag.RSSI { background: var(--rssi-soft);   color: var(--rssi-color); }
-
-/* =====================================================================
-   Two-level navigation — stage tabs (top of work area) + per-stage rail.
-   Stages move to a tab bar; the left rail shows only the active stage's
-   sub-pages. Active tab uses the studio accent. Shared tokens only.
-   ===================================================================== */
-.stage-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 0 28px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--hairline, var(--line));
-  overflow-x: auto;
-}
-.stage-tab {
-  flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 12px 16px 11px;
-  margin-bottom: -1px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  color: var(--text-2);
-}
-.stage-tab:hover { color: var(--text); background: var(--bg-tint, var(--surface-2)); }
-.stage-tab.active {
-  color: var(--studio-accent, var(--accent));
-  border-bottom-color: var(--studio-accent, var(--accent));
-}
-.stage-tab-label { font-size: 14px; font-weight: 650; letter-spacing: -0.01em; white-space: nowrap; }
-.stage-tab-q { font-size: 11.5px; font-weight: 450; color: var(--text-3); white-space: nowrap; }
-.stage-tab.active .stage-tab-q { color: var(--studio-accent, var(--accent)); opacity: 0.85; }
-
-/* Per-stage rail group: only the active stage's group is shown. The explicit
-   [hidden] rule re-asserts display:none, which the flex rule would otherwise
-   beat. */
-.sb-railgroup { display: flex; flex-direction: column; gap: 2px; }
-.sb-railgroup[hidden] { display: none; }
+.sb-item-tag.qual, .sb-item-tag.QUAL { background: rgba(175, 82, 222, 0.14); color: var(--qual-color); }
+.sb-item-tag.mm,   .sb-item-tag.MM   { background: rgba(255, 149, 0,  0.16); color: var(--mm-color); }
+.sb-item-tag.quant,.sb-item-tag.QUANT{ background: rgba(0, 122, 255, 0.12); color: var(--quant-color); }
 
 .sb-item.hero::before {
   content: "";
@@ -550,8 +507,8 @@ a { color: var(--accent); text-decoration: none; }
 .sb-footer .avatar {
   width: 24px; height: 24px;
   border-radius: 50%;
-  background: var(--accent);
-  color: #fff;
+  background: linear-gradient(135deg, #FF9500, #FF2D55);
+  color: white;
   display: grid; place-items: center;
   font-size: 11px;
   font-weight: 600;
@@ -607,7 +564,7 @@ a { color: var(--accent); text-decoration: none; }
   padding: 0 12px;
   border-radius: 8px;
   border: 1px solid var(--hairline-strong);
-  background: var(--surface);
+  background: white;
   font-size: 12.5px;
   color: var(--text);
   display: inline-flex;
@@ -730,190 +687,6 @@ body[data-current-studio] .strength-source {
 }
 
 .studio-work { display: block; }
-
-/* =====================================================================
-   Step 3 — document-first page surface (Overview stage only)
-   ---------------------------------------------------------------------
-   The mount partial already emits the document head (uppercase
-   "STAGE · QUESTION" eyebrow, large page title, description) and the
-   data-context strip above the work area. This block completes the
-   Pages-style surface by wrapping each Overview lens's existing engine
-   output in a card, so the page reads as a document: head + context
-   strip, then content on a card.
-
-   Scoped to the Overview section via [data-current-section="overview"]
-   so the other stages are unchanged until their own pass. Presentation
-   only — the engine markup and every computed value are untouched, and
-   no new colors are introduced (shared surface / line / shadow tokens).
-   ===================================================================== */
-body[data-current-section="overview"] .ov-lens:not([hidden]) {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="overview"] .ov-lens:not([hidden]) {
-    padding: 24px 20px;
-  }
-}
-/* The snapshot tiles are themselves small bordered cards. Inside the
-   document card, calm them to quiet insets so the surface does not read
-   as harsh card-in-card. Structure and values are unchanged. */
-body[data-current-section="overview"] .ov-lens .ov-snap-card,
-body[data-current-section="overview"] .ov-lens .ov-sp-card {
-  background: var(--bg-soft, var(--surface-2));
-  border-color: var(--line);
-  box-shadow: none;
-}
-
-/* =====================================================================
-   Step 3 — document-first page surface (Instrument Quality stage)
-   ---------------------------------------------------------------------
-   Same pattern as Overview. The instrument-quality engine renders one
-   visible .iq-lens section (the others stay [hidden]); the lens already
-   self-cards with an accent-tint gradient, so wrap it in the neutral
-   document card to match the rest of the site. Inner engine cards/tables
-   keep their own styling (they are bordered, so they read cleanly on the
-   white surface). Scoped to [data-current-section="instrument_quality"].
-   Presentation only — engine markup wrapped, not regenerated; no computed
-   value touched; no new colors. RSSI / Strength Index remains read-only. */
-body[data-current-section="instrument_quality"] .iq-lens:not([hidden]) {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="instrument_quality"] .iq-lens:not([hidden]) {
-    padding: 24px 20px;
-  }
-}
-
-/* =====================================================================
-   Step 3 — document-first page surface (Descriptive Analysis stage)
-   ---------------------------------------------------------------------
-   Same pattern as Overview / Instrument Quality. The Descriptive stage
-   shows the quantitative engine's results (.dx-results) and, in MM studio,
-   the qualitative theme pages (.mm-lens). Both self-card with an
-   accent-tint gradient; wrap whichever is visible in the neutral document
-   card so the page matches the site surface. The .dx-setup pickers above
-   the results keep their own input-card styling. Scoped to
-   [data-current-section="descriptive"]; other stages untouched.
-   Presentation only — engine markup wrapped, not regenerated; no computed
-   value touched; no new colors. */
-body[data-current-section="descriptive"] .dx-results:not([hidden]),
-body[data-current-section="descriptive"] .mm-lens:not([hidden]) {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="descriptive"] .dx-results:not([hidden]),
-  body[data-current-section="descriptive"] .mm-lens:not([hidden]) {
-    padding: 24px 20px;
-  }
-}
-
-/* =====================================================================
-   Step 3 — document-first page surface (Inferential Analysis stage)
-   ---------------------------------------------------------------------
-   Same pattern. The Inferential stage shows the test results card
-   (.inf-results), the extensions results (.ix-results), the effect-size
-   results (.es-results), and in MM studio the integration pages
-   (.mm-lens: joint display, integration quality, pattern matching). Each
-   self-cards; wrap whichever is visible in the neutral document card. The
-   setup pickers / input panes above keep their own card styling. Scoped
-   to [data-current-section="inferential"]; other stages untouched.
-   Presentation only — engine markup wrapped, not regenerated; no computed
-   value touched; no new colors. */
-body[data-current-section="inferential"] .inf-results:not([hidden]),
-body[data-current-section="inferential"] .ix-results:not([hidden]),
-body[data-current-section="inferential"] .es-results:not([hidden]),
-body[data-current-section="inferential"] .mm-lens:not([hidden]) {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="inferential"] .inf-results:not([hidden]),
-  body[data-current-section="inferential"] .ix-results:not([hidden]),
-  body[data-current-section="inferential"] .es-results:not([hidden]),
-  body[data-current-section="inferential"] .mm-lens:not([hidden]) {
-    padding: 24px 20px;
-  }
-}
-
-/* =====================================================================
-   Step 3 — document-first page surface (Interpretation stage)
-   ---------------------------------------------------------------------
-   Unlike the lens engines, the interpretation engine renders its content
-   (head, body, foot) as flat siblings inside .interp-app, which is reset
-   to no surface. Wrap .interp-app in the neutral document card so the page
-   matches the site. The inner empty-state tiles (.interp-empty-card) and
-   the AI hook (.interp-ai) self-card, so calm them to quiet insets to
-   avoid card-in-card. Scoped to [data-current-section="interpretation"];
-   other stages untouched. Presentation only — engine markup wrapped, not
-   regenerated; no computed value touched; no new colors. */
-body[data-current-section="interpretation"] .interp-app {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="interpretation"] .interp-app {
-    padding: 24px 20px;
-  }
-}
-body[data-current-section="interpretation"] .interp-empty-card {
-  background: var(--bg-soft, var(--surface-2));
-  border-color: var(--line);
-  box-shadow: none;
-}
-
-/* =====================================================================
-   Step 3 — document-first page surface (Reporting stage)
-   ---------------------------------------------------------------------
-   Same pattern as the lens engines. The reporting engine renders one
-   visible .rep-lens section (report builder, executive summary,
-   methodology, findings, tables, recommendations, export, appendix); the
-   others stay [hidden]. .rep-lens has no surface of its own, so wrap it in
-   the neutral document card. Inner section articles (.rep-section) self-
-   card white, so calm them to quiet insets to avoid card-in-card. Scoped
-   to [data-current-section="reporting"]; other stages untouched.
-   Presentation only — engine markup wrapped, not regenerated; no computed
-   value touched; no new colors. */
-body[data-current-section="reporting"] .rep-lens:not([hidden]) {
-  background: var(--rc-card-bg, var(--surface, #ffffff));
-  border: 1px solid var(--rc-border-soft, var(--line, #ebeef3));
-  border-radius: var(--rc-radius-xl, var(--r-lg));
-  padding: 32px 36px;
-  box-shadow: var(--rc-shadow-soft);
-  margin: 0 0 24px;
-}
-@media (max-width: 900px) {
-  body[data-current-section="reporting"] .rep-lens:not([hidden]) {
-    padding: 24px 20px;
-  }
-}
-body[data-current-section="reporting"] .rep-lens .rep-section {
-  background: var(--bg-soft, var(--surface-2));
-  border-color: var(--line);
-  box-shadow: none;
-}
 
 /* =====================================================================
    Cards

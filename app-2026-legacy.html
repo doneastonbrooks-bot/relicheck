@@ -11658,6 +11658,7 @@ const routes = {
   distribute:{ title: 'Distribute',     render: renderDistribute },
   reports:   { title: 'Reports',        render: renderReports },
   templates: { title: 'Templates',      render: renderTemplates },
+  'analyze-survey': { title: 'Analyze a survey', render: renderAnalyzeSurvey },
   ai:        { title: 'ReliCheck Intelligence', render: renderAITools },
   team:      { title: 'Team',           render: renderTeam },
   manager:   { title: 'Manager',        render: renderManager },
@@ -12281,11 +12282,20 @@ function tiaDrawRecentList(root) {
     const avgRaw   = Number(t.avg_percent);
     const avgTxt   = Number.isFinite(avgRaw) ? Math.round(avgRaw) + '% avg' : 'no avg yet';
     const updated  = timeAgo(t.updated_at || t.created_at);
+    // Phase 181: prefer the server's workflow status when present; fall back to
+    // the older response-count heuristic so legacy rows keep the right pill.
+    const status  = String(t.status || '').toLowerCase();
     let pillHtml;
-    if      (students >= 20)     pillHtml = '<span class="pill good">Analyzed</span>';
-    else if (students > 0)       pillHtml = '<span class="pill ready">Collecting</span>';
-    else if (t.is_published)     pillHtml = '<span class="pill ready">Published</span>';
-    else                         pillHtml = '<span class="pill draft">Draft</span>';
+    if      (status === 'complete')        pillHtml = '<span class="pill good">Analyzed</span>';
+    else if (status === 'running')         pillHtml = '<span class="pill ready">Running</span>';
+    else if (status === 'needs_attention') pillHtml = '<span class="pill warn">Needs attention</span>';
+    else if (status === 'ready')           pillHtml = '<span class="pill ready">Ready to analyze</span>';
+    else if (status === 'data_uploaded')   pillHtml = '<span class="pill ready">Data uploaded</span>';
+    else if (status === 'setup')           pillHtml = '<span class="pill draft">Setup incomplete</span>';
+    else if (students >= 20)               pillHtml = '<span class="pill good">Analyzed</span>';
+    else if (students > 0)                 pillHtml = '<span class="pill ready">Collecting</span>';
+    else if (t.is_published)               pillHtml = '<span class="pill ready">Published</span>';
+    else                                   pillHtml = '<span class="pill draft">Draft</span>';
     return '<div class="test-row">' +
         '<a class="test-row-main" data-test-id="' + escapeAttr(String(t.id)) + '">' +
           '<div>' +
@@ -12310,13 +12320,15 @@ function renderTiaWorkstation(root) {
   tiaEnsureStyles();
   root.innerHTML = tiaBuildWorkstationHTML();
 
+  // Phase 181: default to real-data mode. Sample classroom is still one click
+  // away via the "Use sample classroom" button on the setup stage.
   state.tia = state.tia || {
     stage:       'setup',
     project:     null,
     upload:      null,
     confirmed:   false,
     activeTest:  null,
-    sampleMode:  true,
+    sampleMode:  false,
   };
 
   // Make sure the project rail has data without blocking the first paint.
@@ -12685,11 +12697,21 @@ function tiaWireWorkstation(root) {
             // to read. Stakes default to medium if the test didn't
             // store one; the user can adjust on a follow-up.
             if (!state.tia.project) {
+              // Phase 181: pull decision_type back into a stakes pill.
+              const stakeFromDecision = {
+                low_stakes:'low', medium_stakes:'medium', high_stakes:'high'
+              }[data.test.decision_type] || (data.test.stakes || 'medium');
               state.tia.project = {
                 title:    data.test.title || '(untitled test)',
-                decision: data.test.decision || 'Evaluate item quality and overall assessment strength',
+                decision: data.test.description || data.test.decision || 'Evaluate item quality and overall assessment strength',
                 audience: data.test.audience || (responses.length + ' respondents'),
-                stakes:   data.test.stakes || 'medium',
+                stakes:   stakeFromDecision,
+                assessment_purpose:        data.test.assessment_purpose || null,
+                decision_type:             data.test.decision_type || null,
+                intended_cognitive_demand: data.test.intended_cognitive_demand || null,
+                includes_open_ended:       !!data.test.includes_open_ended,
+                includes_rubric:           !!data.test.includes_rubric,
+                includes_group_analysis:   !!data.test.includes_group_analysis,
               };
             }
             state.tia.upload    = state.tia.upload || { fileName: data.test.title + ' (saved)', rowCount: responses.length, itemCount: data.test.num_items || 0, openCount: 0, rubricCount: 0 };
@@ -12727,7 +12749,25 @@ function tiaHandleCta(root, what) {
       showToast('Give the project a title and a decision before continuing.');
       return;
     }
-    t.project   = { title:title.trim(), decision:decision.trim(), audience:audience.trim(), stakes:stakes };
+    // Phase 181: pull the optional metadata. Empty strings collapse to null
+    // server-side so existing tests stay valid.
+    const valOf = (n) => { const el = form.querySelector('[name="' + n + '"]'); return el ? el.value : ''; };
+    const checked = (n) => { const el = form.querySelector('[name="' + n + '"]'); return !!(el && el.checked); };
+    // Stake to decision_type mapping for the metadata field that drives the
+    // Interpretation panel; the existing stakes pill remains the primary UI.
+    const stakeMap = { low:'low_stakes', medium:'medium_stakes', high:'high_stakes' };
+    t.project   = {
+      title:    title.trim(),
+      decision: decision.trim(),
+      audience: audience.trim(),
+      stakes:   stakes,
+      assessment_purpose:        valOf('assessment_purpose') || null,
+      decision_type:             stakeMap[stakes] || null,
+      intended_cognitive_demand: valOf('intended_cognitive_demand') || null,
+      includes_open_ended:       checked('includes_open_ended'),
+      includes_rubric:           checked('includes_rubric'),
+      includes_group_analysis:   checked('includes_group_analysis'),
+    };
     t.stage     = 'upload';
     tiaRenderStage(root);
   } else if (what === 'load-sample') {
@@ -12740,7 +12780,7 @@ function tiaHandleCta(root, what) {
   } else if (what === 'go-upload')   { t.stage = 'upload';   tiaRenderStage(root); }
   else if   (what === 'go-confirm')  { t.upload = t.upload || { fileName:'sample-classroom-test.csv', rowCount:28, itemCount:12, openCount:1, rubricCount:1 }; t.stage = 'confirm'; tiaRenderStage(root); }
   else if   (what === 'confirm-yes') { t.confirmed = true; t.stage = 'analyze'; tiaRenderStage(root); }
-  else if   (what === 'reset')       { state.tia = { stage:'setup', project:null, upload:null, confirmed:false, sampleMode:true }; tiaRenderStage(root); }
+  else if   (what === 'reset')       { state.tia = { stage:'setup', project:null, upload:null, confirmed:false, sampleMode:false }; tiaRenderStage(root); }
   else if   (what === 'open-builder'){ openTestBuilderHandoff('new'); }
   else if   (what === 'open-upload') { openTestBuilderHandoff('upload'); }
   else if   (what === 'back-to-landing') { navigate('tests'); }
@@ -12858,6 +12898,25 @@ function tiaCenterSetupHTML() {
   const stakes = p.stakes || 'medium';
   const pill = (val, lab, desc) =>
     '<button type="button" class="tia-pill ' + (val === stakes ? 'is-active' : '') + '" data-stakes="' + val + '" title="' + escapeAttr(desc) + '">' + lab + '</button>';
+  // Phase 181: metadata selects feeding the Interpretation panel.
+  const sel = (field, label, current, opts, hint) => {
+    const optsHtml = opts.map(o => {
+      const v = o[0], lab = o[1];
+      return '<option value="' + escapeAttr(v) + '"' + (v === current ? ' selected' : '') + '>' + escapeHtml(lab) + '</option>';
+    }).join('');
+    return '<div class="tia-field">' +
+      '<label>' + escapeHtml(label) + '</label>' +
+      '<select name="' + field + '" style="width:100%;padding:9px 11px;border:1px solid #e2e6ea;border-radius:8px;background:#fff;font-size:13.5px;color:#1c2330;">' + optsHtml + '</select>' +
+      '<span class="hint">' + hint + '</span>' +
+    '</div>';
+  };
+  const checkRow = (field, label, current, hint) =>
+    '<label class="tia-check-row" style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;cursor:pointer;">' +
+      '<input type="checkbox" name="' + field + '"' + (current ? ' checked' : '') + ' style="margin-top:3px;" />' +
+      '<span><strong style="font-size:13px;color:#1c2330;">' + escapeHtml(label) + '</strong><br/>' +
+        '<span style="font-size:12px;color:#6b7382;">' + hint + '</span>' +
+      '</span>' +
+    '</label>';
   return '' +
     '<p class="tia-stage-eyebrow">Stage 1 of 4 . Project setup</p>' +
     '<h2 class="tia-stage-title">What decision does this test need to support?</h2>' +
@@ -12887,6 +12946,22 @@ function tiaCenterSetupHTML() {
             pill('high',   'High stakes',   'Placement, certification, gatekeeping. Reliability bar 0.85+.') +
           '</div>' +
           '<span class="hint">High-stakes decisions raise the floor on every dimension of the Assessment Strength Index.</span>' +
+        '</div>' +
+        sel('assessment_purpose', 'Assessment purpose', p.assessment_purpose || '',
+          [['','Optional'], ['practice','Practice'], ['formative','Formative'], ['summative','Summative'],
+           ['placement','Placement'], ['credential','Credential'], ['screening','Screening'], ['research','Research']],
+          'What the test is being used for. Shapes which evidence the Interpretation panel emphasizes.') +
+        sel('intended_cognitive_demand', 'Intended cognitive demand', p.intended_cognitive_demand || '',
+          [['','Optional'], ['recall','Recall'], ['understand','Understand'], ['apply','Apply'],
+           ['analyze','Analyze'], ['evaluate','Evaluate'], ['create','Create'], ['mixed','Mixed']],
+          'What kind of thinking the items were written to elicit, in your intent.') +
+        '<div class="tia-field" style="grid-column:1 / -1;">' +
+          '<label>This project includes</label>' +
+          '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;">' +
+            checkRow('includes_open_ended', 'Open-ended responses', !!p.includes_open_ended, 'Free-response text alongside multiple-choice items.') +
+            checkRow('includes_rubric', 'Rubric-scored items', !!p.includes_rubric, 'Items graded against a rubric with multiple criteria.') +
+            checkRow('includes_group_analysis', 'Group analysis', !!p.includes_group_analysis, 'Compare item behavior across subgroups (DIF, fairness).') +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="tia-actions">' +
@@ -13288,6 +13363,13 @@ async function tiaIngestText(text, fileName, root, setStatus) {
     item_labels:    parsed.itemLabels,
     skill_tags:     parsed.skillTags,
     responses:      parsed.rows,
+    // Phase 181: TIA Studio metadata captured on the Setup stage.
+    assessment_purpose:        project ? (project.assessment_purpose || null) : null,
+    decision_type:             project ? (project.decision_type || null) : null,
+    intended_cognitive_demand: project ? (project.intended_cognitive_demand || null) : null,
+    includes_open_ended:       project ? !!project.includes_open_ended : false,
+    includes_rubric:           project ? !!project.includes_rubric : false,
+    includes_group_analysis:   project ? !!project.includes_group_analysis : false,
   };
   try {
     const res = await api.createTest(payload);
@@ -17918,6 +18000,10 @@ function swEnsureLandingStyles() {
     // === Create / Upload intake panels =================================
     '.sw-intake { display:grid; grid-template-columns:1fr 1fr; gap:20px; }',
     '@media (max-width:900px) { .sw-intake { grid-template-columns:1fr; } }',
+    '.sw-intake.sw-intake-single { grid-template-columns:minmax(0, 1100px); justify-content:center; }',
+    '.sw-intake-single .sw-intake-panel { display:grid; grid-template-columns:repeat(3, 1fr); gap:14px; padding:18px; }',
+    '.sw-intake-single .sw-intake-card { margin-bottom:0; }',
+    '@media (max-width:900px) { .sw-intake-single .sw-intake-panel { grid-template-columns:1fr; } }',
     '.sw-intake-panel { padding:24px; border-radius:16px; background:#fff; border:1px solid var(--border); }',
     '.sw-intake-panel.build  { border-color:#fde2d7; background:linear-gradient(180deg, #fff 0%, #fff7f3 100%); }',
     '.sw-intake-panel.upload { border-color:#cdd9ef; background:linear-gradient(180deg, #fff 0%, #f4f8ff 100%); }',
@@ -18295,16 +18381,16 @@ function swBuildSurveyLandingHTML(opts) {
         '<a class="la-tile" data-route="create">' +
           '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M12 4v12"/><path d="M6 10l6-6 6 6"/><path d="M4 20h16"/></svg></div>' +
           '<div class="la-tile-lab">New survey</div>' +
-          '<div class="la-tile-sub">Start from scratch or a template</div>' +
+          '<div class="la-tile-sub">Start from scratch, a template, or Intelligence</div>' +
         '</a>' +
-        '<a class="la-tile" data-route="upload-dataset">' +
-          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg></div>' +
-          '<div class="la-tile-lab">Upload data</div>' +
-          '<div class="la-tile-sub">CSV, Excel, or paste</div>' +
+        '<a class="la-tile" data-route="analyze-survey">' +
+          '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6 16v-4"/><path d="M10 16V8"/><path d="M14 16v-6"/><path d="M18 16V6"/></svg></div>' +
+          '<div class="la-tile-lab">Analyze survey</div>' +
+          '<div class="la-tile-sub">Bring in responses or open a project</div>' +
         '</a>' +
         '<a class="la-tile" data-route="templates">' +
           '<div class="la-tile-ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg></div>' +
-          '<div class="la-tile-lab">Browse templates</div>' +
+          '<div class="la-tile-lab">Browse template suite</div>' +
           '<div class="la-tile-sub">Validated scales, ready to clone</div>' +
         '</a>' +
         '<a class="la-tile" data-route="projects">' +
@@ -29237,17 +29323,14 @@ async function saveUploadDataset() {
    directly. Upload-survey-responses routes to the existing native dataset
    uploader; uploaded datasets convert to surveys inside Analyze. */
 function renderCreateUpload(root) {
+  // Survey Studio scope: New-survey entry surfaces only survey-creation paths.
+  // Per relicheck-studio-scope-rule, test creation lives in TIA Studio and
+  // data-upload paths live on the Analyze-survey route. Three cards only:
+  // scratch, template, Intelligence.
   const buildCards = [
-    { ic: '+', cls: '', name: 'Create a survey',      desc: 'Likert, multiple choice, open-ended. Skip logic and reliability built in.',                                                       action: 'scratch' },
-    { ic: 'T', cls: '', name: 'Create a test',        desc: 'Multiple choice with answer keys. Item analysis runs automatically.',                                                              action: 'route:tests' },
-    { ic: 'L', cls: '', name: 'Start from a template',desc: 'Validated scales for engagement, well-being, resilience, and more.', meta: '5 starter scales',                                     action: 'route:templates' },
-    { ic: '*', cls: '', name: 'Generate with Intelligence', desc: 'Describe what you want to measure. ReliCheck Intelligence drafts items aligned to your purpose.', meta: 'INTELLIGENCE',                              action: 'ai' },
-  ];
-  const uploadCards = [
-    { ic: 'U', cls: 'alt', name: 'Upload survey responses', desc: 'CSV or Excel export from Qualtrics, SurveyMonkey, Google Forms.',                                  meta: '.csv .xlsx', action: 'route:upload-dataset' },
-    { ic: 'U', cls: 'alt', name: 'Upload test responses',   desc: 'Student responses with answer key. Generates item analysis and reliability.',                       meta: '.csv .xlsx', action: 'route:tests' },
-    { ic: 'D', cls: 'alt', name: 'Upload a dataset',        desc: 'Any wide-format dataset. Map columns to constructs after upload.',                                   meta: '.csv .xlsx', action: 'route:upload-dataset' },
-    { ic: 'I', cls: 'alt', name: 'Import survey definition',desc: 'Paste survey text or upload a Qualtrics .qsf. Opens in the builder.',                                meta: '.qsf .docx', action: 'import' },
+    { ic: '+', cls: '', name: 'Create a survey from scratch', desc: 'Likert, multiple choice, open-ended. Skip logic and reliability built in.',                                            action: 'scratch' },
+    { ic: 'L', cls: '', name: 'Create survey from template',  desc: 'Validated scales for engagement, well-being, resilience, and more.', meta: '5 starter scales',                         action: 'route:templates' },
+    { ic: '*', cls: '', name: 'Generate with Intelligence',   desc: 'Describe what you want to measure. ReliCheck Intelligence drafts items aligned to your purpose.', meta: 'INTELLIGENCE', action: 'ai' },
   ];
 
   swEnsureLandingStyles();
@@ -29271,21 +29354,14 @@ function renderCreateUpload(root) {
     '<section class="sw-page">' +
       '<div class="sw-page-hero">' +
         '<div>' +
-          '<h1 class="sw-page-title">How would you like<br>to get started?</h1>' +
-          '<p class="sw-page-sub">Build inside ReliCheck, or bring data in from another tool. You can switch paths later.</p>' +
+          '<h1 class="sw-page-title">New survey.<br>How would you like to start?</h1>' +
+          '<p class="sw-page-sub">Build from scratch, clone a validated template, or let Intelligence draft the items for you.</p>' +
         '</div>' +
       '</div>' +
 
-      '<div class="sw-intake">' +
+      '<div class="sw-intake sw-intake-single">' +
         '<div class="sw-intake-panel build">' +
-          '<h2>Build inside ReliCheck</h2>' +
-          '<p class="panel-sub">Create new surveys, tests, or start from a template.</p>' +
           buildCards.map(renderCard).join('') +
-        '</div>' +
-        '<div class="sw-intake-panel upload">' +
-          '<h2>Upload what you already have</h2>' +
-          '<p class="panel-sub">Bring in existing surveys, tests, or datasets.</p>' +
-          uploadCards.map(renderCard).join('') +
         '</div>' +
       '</div>' +
     '</section>';
@@ -29301,6 +29377,61 @@ function renderCreateUpload(root) {
       if (action === 'scratch') openCreateSurveyModal();
       else if (action === 'ai')      openAIGenerateModal();
       else if (action === 'import')  openImportSurveyModal();
+    });
+  });
+}
+
+/* ============================================================
+   VIEW: ANALYZE A SURVEY
+   The other half of Survey Studio's entry. Three paths for users
+   who already have something to analyze: upload responses, import
+   a survey definition from another tool, or jump to their existing
+   projects. Mirrors the create-page card style for visual continuity.
+   ============================================================ */
+function renderAnalyzeSurvey(root) {
+  const cards = [
+    { ic: 'U', name: 'Upload survey responses',  desc: 'CSV or Excel export from Qualtrics, SurveyMonkey, Google Forms.',                             meta: '.csv .xlsx', action: 'route:upload-dataset' },
+    { ic: 'I', name: 'Import survey definition', desc: 'Paste survey text or upload a Qualtrics .qsf. Opens in the builder.',                         meta: '.qsf .docx', action: 'import' },
+    { ic: 'P', name: 'My survey projects',       desc: 'Pick up where you left off. Reliability, validity, and the Strength Index in one place.',                        action: 'route:projects' },
+  ];
+
+  swEnsureLandingStyles();
+  const renderCard = (c) =>
+    '<a class="sw-intake-card" data-card-action="' + escapeHtml(c.action) + '">' +
+      '<div class="sw-intake-card-ico">' + escapeHtml(c.ic) + '</div>' +
+      '<div class="sw-intake-card-body">' +
+        '<div class="sw-intake-card-name">' + escapeHtml(c.name) + '</div>' +
+        '<div class="sw-intake-card-desc">' + escapeHtml(c.desc) + '</div>' +
+        (c.meta ? '<span class="sw-intake-card-meta">' + escapeHtml(c.meta) + '</span>' : '') +
+      '</div>' +
+      '<div class="sw-intake-card-arrow">&rsaquo;</div>' +
+    '</a>';
+
+  root.innerHTML =
+    '<section class="sw-page">' +
+      '<div class="sw-page-hero">' +
+        '<div>' +
+          '<h1 class="sw-page-title">Analyze a survey.<br>Bring in what you have.</h1>' +
+          '<p class="sw-page-sub">Upload responses, import a survey definition from another tool, or open a project already in ReliCheck.</p>' +
+        '</div>' +
+      '</div>' +
+
+      '<div class="sw-intake sw-intake-single">' +
+        '<div class="sw-intake-panel build">' +
+          cards.map(renderCard).join('') +
+        '</div>' +
+      '</div>' +
+    '</section>';
+
+  $all('[data-card-action]').forEach(c => {
+    c.addEventListener('click', (e) => {
+      e.preventDefault();
+      const action = c.getAttribute('data-card-action') || '';
+      if (action.startsWith('route:')) {
+        navigate(action.slice(6));
+        return;
+      }
+      if (action === 'import') openImportSurveyModal();
     });
   });
 }
@@ -42842,14 +42973,14 @@ async function mmTabQuantAnalysis(body) {
       '</div>';
   }
 
-  // Quant subset of the main app's analytics surface. We only render this
-  // section when the linked source actually has multi-item Likert data and
-  // enough responses to compute reliability or validity. For grad-student
-  // projects with a single numeric variable, this section is hidden entirely;
-  // the user goes straight from the teaching index to the four inferential
-  // test cards and the descriptives. No zero-state panels, no duplication
-  // with the cards below.
-  const showFullDashboard = isFullSurvey;
+  // The "ReliCheck analytics" collapsible used to mount the entire Survey
+  // Studio analyze shell (with its own topbar, ribbon, leftnav, methodology
+  // rail) inside this MM Studio surface. That violated [[relicheck-studio-scope-rule]]
+  // — MM Studio shouldn't embed Survey Studio's shell. Force it off so the
+  // dashboard card isn't built and renderAnalyze is never called. MM Studio's
+  // own Step-2 tools cards + recommended inferential tests are the surface
+  // for this view; they stay rendered below.
+  const showFullDashboard = false;
 
   // Phase 178p: run the dataset probe BEFORE building the card markup so each
   // card can be pre-colored (green border = will run, red = cannot, orange =

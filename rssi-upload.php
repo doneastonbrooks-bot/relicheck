@@ -558,8 +558,8 @@ $_ana_ver  = file_exists(__DIR__ . '/apps/rssi/rssi-analyses.js')    ? filemtime
             <span class="copy">
               <strong>I&rsquo;ve reviewed every item for reverse-coding.</strong>
               <span class="muted">Confirms the reverse checkboxes above are complete.
-              Required for &sect;4E Scale Structure to evaluate reverse-coded
-              balance; without this confirmation the sub-component is skipped.</span>
+              This lets the Scale Structure score check that reverse-coded items
+              are balanced; without it, that check is skipped.</span>
             </span>
           </label>
         </div>

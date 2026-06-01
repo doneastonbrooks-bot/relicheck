@@ -383,3 +383,62 @@ function stats_suggest_test(string $predType, string $outType, int $predGroups, 
     }
     return null;
 }
+
+// ============================================================
+// Inter-rater agreement (added Phase 182, for MM Trustworthiness).
+// Pure functions; no dependency on the rest of this file.
+// ============================================================
+
+// Cohen's kappa for two raters over aligned categorical judgments.
+// $a and $b are equal-length arrays of labels (e.g. '0'/'1' for code
+// applied / not applied). Returns null if not computable, else kappa in
+// [-1, 1]. Returns 1.0 on perfect, degenerate-agreement (pe == 1).
+function stats_cohen_kappa(array $a, array $b): ?float
+{
+    $n = count($a);
+    if ($n === 0 || $n !== count($b)) return null;
+    $a = array_values($a);
+    $b = array_values($b);
+    $labels = array_values(array_unique(array_merge($a, $b)));
+
+    $po = 0;
+    for ($i = 0; $i < $n; $i++) if ($a[$i] === $b[$i]) $po++;
+    $po /= $n;
+
+    $pe = 0.0;
+    foreach ($labels as $l) {
+        $pa = 0; $pb = 0;
+        for ($i = 0; $i < $n; $i++) { if ($a[$i] === $l) $pa++; if ($b[$i] === $l) $pb++; }
+        $pe += ($pa / $n) * ($pb / $n);
+    }
+    if ($pe >= 1.0) return 1.0;
+    return ($po - $pe) / (1 - $pe);
+}
+
+// Fleiss' kappa for 3+ raters. $table is one row per item; each row is the
+// per-category count of raters choosing that category, and every row must
+// sum to the same number of raters n (>= 2). Returns null if not computable.
+function stats_fleiss_kappa(array $table): ?float
+{
+    $N = count($table);
+    if ($N === 0) return null;
+    $n = array_sum($table[0]);
+    if ($n < 2) return null;
+    $k = count($table[0]);
+
+    $Pbar = 0.0;
+    $colSum = array_fill(0, $k, 0);
+    foreach ($table as $row) {
+        if (count($row) !== $k || array_sum($row) !== $n) return null; // ragged → not computable
+        $s = 0;
+        for ($j = 0; $j < $k; $j++) { $s += $row[$j] * $row[$j]; $colSum[$j] += $row[$j]; }
+        $Pbar += ($s - $n) / ($n * ($n - 1));
+    }
+    $Pbar /= $N;
+
+    $Pe = 0.0;
+    $tot = $N * $n;
+    for ($j = 0; $j < $k; $j++) { $pj = $colSum[$j] / $tot; $Pe += $pj * $pj; }
+    if ($Pe >= 1.0) return 1.0;
+    return ($Pbar - $Pe) / (1 - $Pe);
+}

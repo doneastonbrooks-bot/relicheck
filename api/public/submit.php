@@ -54,6 +54,33 @@ $questions = json_decode((string)$survey['questions'], true) ?: [];
 $settings  = json_decode((string)$survey['settings'],  true) ?: [];
 $kPoints   = max(2, min(11, (int)($settings['likertPoints'] ?? 5)));
 
+// ── Deployment-workspace enforcement (settings.deployment) ────
+// 1. Close date — block submissions after the close timestamp
+//    (unless grace period is enabled, in which case the survey just keeps
+//    accepting in-flight responses — same effect here since we don't track
+//    "in flight" sessions yet).
+// 2. One-response-per-person — cookie-based dedupe (good enough for the
+//    accidental-double-submit case; not a hard security boundary).
+$deploy = is_array($settings['deployment'] ?? null) ? $settings['deployment'] : null;
+if ($deploy) {
+    $schedule = is_array($deploy['schedule'] ?? null) ? $deploy['schedule'] : [];
+    $closeRaw = isset($schedule['closeDate']) ? (string)$schedule['closeDate'] : '';
+    if ($closeRaw !== '' && empty($schedule['gracePeriod'])) {
+        $closeTs = strtotime($closeRaw);
+        if ($closeTs !== false && time() > $closeTs) {
+            fail('survey_closed', 'This survey has closed and is no longer accepting responses.', 410);
+        }
+    }
+
+    $access = is_array($deploy['access'] ?? null) ? $deploy['access'] : [];
+    if (!empty($access['onePerPerson'])) {
+        $cookieKey = 'rc_done_' . (int)$survey['id'];
+        if (!empty($_COOKIE[$cookieKey])) {
+            fail('already_responded', 'It looks like you have already submitted a response to this survey.', 409);
+        }
+    }
+}
+
 if (!is_array($body['answers'] ?? null)) {
     fail('bad_answers', 'answers must be an object keyed by question id.', 400);
 }
@@ -194,6 +221,18 @@ $ins->execute([
     ':arm' => $armId,
 ]);
 $responseId = (int)$pdo->lastInsertId();
+
+// Drop a long-lived cookie when one-per-person is on so the next attempt
+// from this browser is rejected client-side via the check above.
+if ($deploy && !empty($deploy['access']['onePerPerson'])) {
+    @setcookie('rc_done_' . (int)$survey['id'], '1', [
+        'expires'  => time() + 60 * 60 * 24 * 365,
+        'path'     => '/',
+        'secure'   => !empty($_SERVER['HTTPS']),
+        'httponly' => false, // take.html JS reads it to short-circuit the form
+        'samesite' => 'Lax',
+    ]);
+}
 
 /* Fire the response.received webhook (non-blocking; errors swallowed in helper).
    Bookkeeping failure must never break submission, so the whole block is wrapped. */

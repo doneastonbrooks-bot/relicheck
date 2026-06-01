@@ -20,6 +20,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
+require_once __DIR__ . '/_tia_schema.php';
 
 require_method('POST');
 check_origin();
@@ -28,6 +29,8 @@ $user = require_auth();
 // Enforce per-tier test count limit.
 require_once __DIR__ . '/../_tiers.php';
 $pdo = db();
+// Phase 181: ensure the metadata columns exist before INSERT touches them.
+tia_ensure_tests_schema($pdo);
 $cs = $pdo->prepare('SELECT COUNT(*) AS c FROM tests WHERE user_id = :u');
 $cs->execute([':u' => (int)$user['id']]);
 $cur = (int)($cs->fetch()['c'] ?? 0);
@@ -96,13 +99,39 @@ if (!is_array($responsesIn)) {
     fail('bad_input', 'responses must be an array.');
 }
 
+// Phase 181: TIA Studio metadata fields. All optional; defaults preserve
+// previous behavior. Validated against fixed enums so the studio's
+// interpretation panel can safely switch on them.
+$enumValidate = function ($val, array $allowed) {
+    if ($val === null || $val === '') return null;
+    $s = clean_string((string)$val, 40);
+    return in_array($s, $allowed, true) ? $s : null;
+};
+$assessmentPurpose = $enumValidate($body['assessment_purpose'] ?? null,
+    ['practice', 'formative', 'summative', 'placement', 'credential', 'screening', 'research']);
+$decisionType = $enumValidate($body['decision_type'] ?? null,
+    ['low_stakes', 'medium_stakes', 'high_stakes']);
+$intendedCogDemand = $enumValidate($body['intended_cognitive_demand'] ?? null,
+    ['recall', 'understand', 'apply', 'analyze', 'evaluate', 'create', 'mixed']);
+$includesOpenEnded     = !empty($body['includes_open_ended'])     ? 1 : 0;
+$includesRubric        = !empty($body['includes_rubric'])         ? 1 : 0;
+$includesGroupAnalysis = !empty($body['includes_group_analysis']) ? 1 : 0;
+
+// Initial status: 'data_uploaded' if responses came with the create call,
+// otherwise 'setup' so the landing badge reads "setup incomplete" until
+// the user uploads or sees their data.
+$initialStatus = (count($responsesIn) > 0) ? 'data_uploaded' : 'setup';
+
 $pdo = db();
 try {
     $pdo->beginTransaction();
 
     $stmt = $pdo->prepare(
-        'INSERT INTO tests (user_id, title, description, num_items, answer_key, item_labels, skill_tags, pass_threshold)
-         VALUES (:uid, :title, :desc, :num, :key, :labels, :skills, :pass)'
+        'INSERT INTO tests (user_id, title, description, num_items, answer_key, item_labels, skill_tags, pass_threshold,
+                            assessment_purpose, decision_type, intended_cognitive_demand,
+                            includes_open_ended, includes_rubric, includes_group_analysis, status)
+         VALUES (:uid, :title, :desc, :num, :key, :labels, :skills, :pass,
+                 :ap, :dt, :icd, :ioe, :irub, :iga, :status)'
     );
     $stmt->execute([
         ':uid'    => $user['id'],
@@ -113,6 +142,13 @@ try {
         ':labels' => $itemLabels !== null ? json_encode($itemLabels, JSON_UNESCAPED_UNICODE) : null,
         ':skills' => $skillTags  !== null ? json_encode($skillTags,  JSON_UNESCAPED_UNICODE) : null,
         ':pass'   => $passThreshold,
+        ':ap'     => $assessmentPurpose,
+        ':dt'     => $decisionType,
+        ':icd'    => $intendedCogDemand,
+        ':ioe'    => $includesOpenEnded,
+        ':irub'   => $includesRubric,
+        ':iga'    => $includesGroupAnalysis,
+        ':status' => $initialStatus,
     ]);
     $testId = (int)$pdo->lastInsertId();
 
