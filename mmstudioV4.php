@@ -1634,10 +1634,12 @@ function renderTrust(s){
    Wired to codebook.php (themes + coverage + sentiment in ONE call),
    coded-responses.php (quotes per theme), and build.php (AI discovery). Studio
    pattern only: summary cards + dx-table + tt-status badges + a quotes panel. */
-const th={base:null,busy:false,err:'',building:false,sel:null,quotes:null,qbusy:false};
+const th={base:null,busy:false,err:'',building:false,coding:false,sel:null,quotes:null,qbusy:false};
 function thFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function thQuotesFetch(cid){return fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+cid+'&limit=8',{credentials:'same-origin'}).then(r=>r.json());}
 function thBuildReq(){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto'})}).then(r=>r.json());}
+function thCodeReq(){return fetch('/api/mm/code-existing.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
+function thCode(){if(th.coding)return;th.coding=true;renderThemes(activeStep());thCodeReq().then(j=>{th.coding=false;if(j&&j.ok){th.base=null;th.sel=null;th.quotes=null;toast('Tagged '+(j.coded_rows||0)+' responses to themes');renderThemes(activeStep());}else{toast((j&&(j.message||j.error))||'Could not tag responses.');renderThemes(activeStep());}}).catch(()=>{th.coding=false;toast('Tagging failed.');renderThemes(activeStep());});}
 function thHead(s){return `<div class="ws-header"><div class="eyebrow">Qualitative themes · what the responses mean <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
 function thNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
 function thMsg(s,msg){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+thNav();}
@@ -1674,7 +1676,9 @@ function renderThemes(s){
     return `<tr${sel?' class="dm-fit-sel"':''}><td class="dx-name">${esc(t.name)}${t.description?`<div class="th-sent" style="font-weight:600;margin-top:3px;white-space:normal">${esc(t.description)}</div>`:''}</td><td><div class="th-cov">${t.coded_count||0} <span style="color:var(--ink-3)">(${pct}%)</span></div><div class="th-bar"><i style="width:${Math.min(100,pct)}%"></i></div></td><td class="th-sent">${thSent(t.sentiment_mix)}</td><td>${thConf(t.confidence)}</td><td><button class="btn" style="padding:5px 11px" onclick="thSelect(${t.category_id})">${sel?'Hide quotes':'View quotes'}</button></td></tr>`;}).join('');
   const table=`<div class="panel"><div class="panel-h"><div><h3>Themes</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Theme</th><th class="l">Coverage</th><th class="l">Sentiment</th><th class="l">Confidence</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each theme is a pattern of meaning found across your open-ended responses. Coverage is how many responses were tagged with it; sentiment shows the balance of positive, negative, and neutral tone. Open a theme to read the participant quotes behind it.</div></div></div>`;
-  $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+cards+table+thQuotesPanel()+layers+thNav();
+  const allZero=themes.every(t=>(t.coded_count||0)===0);
+  const codeBar=`<div class="dm-save"><button class="btn primary" ${th.coding?'disabled':''} onclick="thCode()">${th.coding?'Tagging responses…':(allZero?'Tag responses to themes':'Re-tag responses')}</button><span class="dm-note">${allZero?'Your themes are not tagged to any responses yet — tag them to fill in coverage and quotes.':'Keyword-based tagging against the current themes.'}</span></div>`;
+  $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+cards+codeBar+table+thQuotesPanel()+layers+thNav();
 }
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
