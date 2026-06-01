@@ -424,7 +424,7 @@ label .tt-hint{margin-left:6px}
 .start-hero-wrap{text-align:center;max-width:800px;margin:14px auto 30px}
 .start-beta{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--btn);margin-bottom:18px}
 .start-beta .sb-dot{width:20px;height:20px;border-radius:6px;background:var(--btn)}
-.start-hero{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0 auto 16px;max-width:17ch}
+.start-hero{font-size:46px;font-weight:900;letter-spacing:-.035em;line-height:1.06;margin:0 auto 16px;max-width:17ch}
 .start-hero .accent{color:var(--btn)}
 .start-sub{font-size:15.5px;color:var(--ink-2);line-height:1.6;max-width:620px;margin:0 auto}
 @media(max-width:640px){.start-hero{font-size:32px}}
