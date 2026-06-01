@@ -93,7 +93,7 @@ $BOOT = [
   --acc:<?= htmlspecialchars($sd_accent) ?>; --acc-soft:<?= htmlspecialchars($sd_soft) ?>; --acc-deep:<?= htmlspecialchars($sd_deep) ?>;
   --green:#1f9e44; --green-soft:#e9f7ee; --quan:#0A6FE8; --quan-soft:#EEF3FA; --quan-ink:#085fcc;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
-  --rail:248px; --companion:320px;
+  --rail:220px; --companion:288px;
   --shadow:0 1px 2px rgba(20,28,45,.04),0 4px 16px rgba(20,28,45,.05);
 }
 *{box-sizing:border-box}
@@ -134,14 +134,14 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 36px 80px}
 .center-inner{max-width:860px;margin:0 auto}
 /* Toolbox / tool-palette card (MM's 4th panel) — holds the View toggle. */
-.palette{flex:none;width:240px;align-self:flex-start;margin:30px 24px 18px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px;position:sticky;top:30px}
+.palette{flex:none;width:216px;align-self:flex-start;margin:30px 20px 18px 0;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px}
 .palette h4{margin:0 0 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
 .pal-empty{font-size:12.5px;color:var(--ink-3);line-height:1.5}
 .pal-note{font-size:11.5px;color:var(--ink-3);margin-top:10px;line-height:1.45}
 .seg{display:inline-flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px;width:100%;box-sizing:border-box}
 .seg button{flex:1;border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-2);padding:7px 10px;border-radius:8px;cursor:pointer}
 .seg button.on{background:#fff;color:var(--acc-deep);box-shadow:0 1px 3px rgba(0,0,0,.08)}
-@media(max-width:1100px){.palette{display:none}}
+@media(max-width:900px){.palette{display:none}}
 .ws-header{margin-bottom:20px}
 .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:10px}
 .strand-chip{font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:999px;letter-spacing:.02em;background:var(--quan-soft);color:var(--quan-ink)}

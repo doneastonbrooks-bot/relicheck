@@ -13,7 +13,7 @@
 
 /* Contain long tables: a fixed-height scroll box with a sticky header, so a
    table with many rows never blows the page into a big scroll. */
-.dx-scroll { overflow:auto; max-height:360px; border:1px solid var(--line-2,#eef0f3); border-radius:10px; }
+.dx-scroll { overflow:auto; max-height:46vh; border:1px solid var(--line-2,#eef0f3); border-radius:10px; }
 .dx-table { width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums; }
 .dx-table th { font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; font-weight:700; color:var(--ink-3,#8a8f98); text-align:right; padding:8px 10px; border-bottom:1.5px solid var(--line,#e6e8ec); white-space:nowrap; position:sticky; top:0; background:#fff; z-index:1; }
 .dx-table th.l { text-align:left; }
@@ -86,7 +86,7 @@
 .au-example .dx-l-k { margin-bottom:8px; }
 
 /* Graph view (curated SVG charts) */
-.as-chart-wrap { padding:10px 4px 6px; overflow-x:auto; }
+.as-chart-wrap { padding:10px 4px 6px; overflow:auto; max-height:46vh; }
 .as-chart { display:block; max-width:100%; height:auto; }
 .as-chart-seg { display:inline-flex; gap:4px; background:var(--bg,#f5f6f8); border:1px solid var(--line,#e6e8ec); border-radius:9px; padding:3px; margin:0 0 12px; }
 .as-chart-seg button { border:none; background:none; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--ink-2,#5f6368); padding:6px 13px; border-radius:7px; cursor:pointer; }
