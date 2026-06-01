@@ -586,9 +586,9 @@ include __DIR__ . '/_platform_shell_header.php';
   });
   closeBtn.addEventListener('click', function () {
     if (state.projectId) {
-      window.location.href = '/studio-mm-projects.php?project_id=' + encodeURIComponent(state.projectId);
+      window.location.href = '/mmstudioV4.php?project_id=' + encodeURIComponent(state.projectId);
     } else {
-      window.location.href = '/studio-mm.php';
+      window.location.href = '/mmstudioV4.php';
     }
   });
 
