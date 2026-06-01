@@ -82,7 +82,7 @@ include __DIR__ . '/_landing_head.php';
 }
 .mm-hero-logo {
   width: 100px; height: 100px; object-fit: contain;
-  margin-bottom: 36px; border-radius: 22px;
+  margin-bottom: 56px; border-radius: 22px;
 }
 .mm-hero-h1 {
   font-size: clamp(42px, 6.5vw, 76px);
@@ -287,7 +287,7 @@ include __DIR__ . '/_landing_head.php';
   </h1>
   <p class="mm-hero-body rv rv-d2">
     Mixed Methods Studio connects your quantitative results with your qualitative
-    responses — so every finding has evidence, and every statistic has a human explanation.
+    responses. Every finding has evidence. Every statistic has a human explanation.
   </p>
   <div class="mm-hero-actions rv rv-d3">
     <a href="/mmstudioV4.php" class="mm-btn-a">Open MM Studio</a>
@@ -319,7 +319,7 @@ include __DIR__ . '/_landing_head.php';
         <div class="mm-eco-ico">⟁</div>
         <div class="mm-eco-name">MM Studio</div>
         <div class="mm-eco-full">Mixed Methods Studio</div>
-        <div class="mm-eco-desc">Analyze both strands. Integrate them. Build a credible story from numbers and narratives — in one connected studio.</div>
+        <div class="mm-eco-desc">Analyze both strands. Integrate them. Build a credible story from numbers and narratives, in one connected studio.</div>
         <span class="eco-current-badge">You are here</span>
       </div>
 
@@ -330,7 +330,7 @@ include __DIR__ . '/_landing_head.php';
           <div class="mm-eco-ico">◎</div>
           <div class="mm-eco-name">RSSI</div>
           <div class="mm-eco-full">ReliCheck Survey Strength Index</div>
-          <div class="mm-eco-desc">Once responses are in, evaluate the strength of your evidence — reliability, item performance, and interpretability.</div>
+          <div class="mm-eco-desc">Once responses are in, evaluate the strength of your evidence: reliability, item performance, and interpretability.</div>
           <span class="eco-go">Go to RSSI →</span>
         </a>
       </div>
@@ -347,7 +347,7 @@ include __DIR__ . '/_landing_head.php';
   <div>
     <div class="mm-fs-tag rv">Step 01</div>
     <h2 class="mm-fs-h rv rv-d1">Know what<br>you have<br><span class="light">before you analyze it.</span></h2>
-    <p class="mm-fs-body rv rv-d2">Map your variables. See what the numbers look like before you ask what they mean. Data quality checks surface problems early — so your analysis is built on solid ground, not assumptions.</p>
+    <p class="mm-fs-body rv rv-d2">Map your variables. See what the numbers look like before you ask what they mean. Data quality checks surface problems early. Your analysis is built on solid ground, not assumptions.</p>
   </div>
   <div class="mm-visual rv rv-d1">
     <div class="mm-pipe">
@@ -368,7 +368,7 @@ include __DIR__ . '/_landing_head.php';
   <div>
     <div class="mm-fs-tag rv">Step 02</div>
     <h2 class="mm-fs-h rv rv-d1">Surface the themes<br><span class="light">no question box<br>could predict.</span></h2>
-    <p class="mm-fs-body rv rv-d2">Open-ended responses hold what your scales couldn't capture. ReliCheck Intelligence helps surface patterns — but you read, you code, you decide what's real. The insight is yours.</p>
+    <p class="mm-fs-body rv rv-d2">Open-ended responses hold what your scales couldn't capture. ReliCheck Intelligence helps surface patterns. You read, you code, you decide what's real. The insight is yours.</p>
   </div>
   <div class="mm-visual rv rv-d1">
     <div class="mm-ai-visual">
@@ -382,7 +382,7 @@ include __DIR__ . '/_landing_head.php';
       </div>
       <div class="mm-ai-bubble">
         <div class="mm-ai-label">Your call</div>
-        Yes — "Perceived invisibility." Add to codebook.
+        Yes. "Perceived invisibility." Add to codebook.
       </div>
     </div>
   </div>
@@ -463,7 +463,7 @@ include __DIR__ . '/_landing_head.php';
     .then(function(data){
       var projects=(data&&data.ok&&Array.isArray(data.projects))?data.projects.slice(0,6):[];
       if(!projects.length){
-        host.innerHTML='<p class="mm-recent-empty">No MM projects yet — <a href="/mmstudioV4.php" style="color:var(--accent);font-weight:700">open MM Studio</a> to start one.</p>';
+        host.innerHTML='<p class="mm-recent-empty">No MM projects yet. <a href="/mmstudioV4.php" style="color:var(--accent);font-weight:700">open MM Studio</a> to start one.</p>';
         return;
       }
       host.innerHTML=projects.map(function(p){
