@@ -93,7 +93,7 @@ function lp_card(array $s, string $open_label): void {
 
 <!-- ===== Apps ===== -->
 <?php if (!empty($apps_only)): ?>
-<section class="lp-section" style="max-width:none;">
+<section class="lp-section">
   <div class="lp-section-head">
     <h2>Apps</h2>
     <p>Build a survey end to end, or score the evidence you have already collected.</p>
@@ -105,7 +105,7 @@ function lp_card(array $s, string $open_label): void {
 <?php endif; ?>
 
 <!-- ===== Studios ===== -->
-<section class="lp-section" style="max-width:none;">
+<section class="lp-section">
   <div class="lp-section-head">
     <h2>Studios</h2>
     <p>Exploratory workspaces. Pick the one that fits your study design.</p>
@@ -116,7 +116,7 @@ function lp_card(array $s, string $open_label): void {
 </section>
 
 <!-- ===== Recent projects strip ===== -->
-<section class="lp-section" style="max-width:none;">
+<section class="lp-section">
   <div class="lp-section-head">
     <h2>Recent</h2>
     <p>Jump back in. Reopening a recent project goes straight to its workspace.</p>

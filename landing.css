@@ -87,11 +87,23 @@ html, body {
 .lp-back-link:hover { color: var(--text); }
 .lp-back-link svg { width: 14px; height: 14px; }
 
-/* ───────────────── Page wrapper ───────────────── */
+/* ───────────────── Page wrapper — Apple-style shell ───────────────── */
+/* Same shell behaviour as studio landing pages: 75vw centred, capped 1280px.
+   Studio landing pages override this entirely via studio-landing.css.       */
 .lp-page {
-  max-width: 1180px;
+  width: min(75vw, 1280px);
   margin: 0 auto;
-  padding: 56px 32px 80px;
+  padding-top: 56px;
+  padding-bottom: 80px;
+}
+@media (max-width: 1200px) {
+  .lp-page { width: auto; margin: 0; padding-left: 48px; padding-right: 48px; }
+}
+@media (max-width: 768px) {
+  .lp-page { padding-left: 24px; padding-right: 24px; }
+}
+@media (max-width: 480px) {
+  .lp-page { padding-left: 16px; padding-right: 16px; }
 }
 .lp-page.narrow { max-width: 1040px; }
 
@@ -179,7 +191,8 @@ html, body {
 .lp-cta-tile.primary .lp-cta-sub { color: rgba(255, 255, 255, 0.85); }
 
 /* ───────────────── Section heading ───────────────── */
-.lp-section { max-width: 940px; margin: 0 auto 40px; }
+/* Container (.lp-page) handles centering; sections just stack. */
+.lp-section { margin-bottom: 40px; }
 .lp-section-head { margin-bottom: 18px; }
 .lp-section-head h2 {
   font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
@@ -256,9 +269,11 @@ html, body {
 .lp-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
 }
 .lp-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .lp-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .lp-grid, .lp-grid.cols-3 { grid-template-columns: 1fr; } }
 .lp-card {
   --card-accent: var(--accent);
   display: flex; flex-direction: column;
