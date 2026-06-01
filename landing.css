@@ -262,35 +262,52 @@ html, body {
 .lp-card {
   --card-accent: var(--accent);
   display: flex; flex-direction: column;
-  padding: 24px 24px 20px;
+  padding: 0;
   background: var(--surface);
   border: 1px solid var(--hairline);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-sm);
-  text-decoration: none; color: var(--text);
+  color: var(--text);
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
-  min-height: 178px;
+  overflow: hidden;
 }
 .lp-card:hover {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
   border-color: color-mix(in srgb, var(--card-accent) 40%, transparent);
 }
-.lp-card .glyph {
-  width: 92px; height: 92px; border-radius: 22px;
-  background: transparent;
-  display: grid; place-items: center;
-  margin-bottom: 16px;
+/* Card body — the clickable intro area */
+.lp-card-body {
+  display: flex; flex-direction: column;
+  padding: 22px 22px 14px;
+  text-decoration: none; color: var(--text);
+  flex: 1;
 }
-.lp-card .glyph img { width: 56px; height: 56px; object-fit: contain; }
+.lp-card .glyph { margin-bottom: 14px; }
+.lp-card .glyph img { width: 68px; height: 68px; object-fit: contain; display: block; }
 .lp-card .name { font-size: 17px; font-weight: 700; letter-spacing: -0.015em; margin: 0 0 6px; }
-.lp-card .desc { font-size: 13.5px; color: var(--text-2); line-height: 1.5; margin: 0 0 18px; flex: 1; }
-.lp-card .foot { display: flex; align-items: center; justify-content: space-between; }
-.lp-card .open-link {
-  display: inline-flex; align-items: center; gap: 5px;
-  font-size: 13px; font-weight: 600; color: var(--card-accent);
+.lp-card .desc { font-size: 13px; color: var(--text-2); line-height: 1.5; margin: 0; flex: 1; }
+/* Card footer — two buttons */
+.lp-card .foot {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 22px 16px;
+  border-top: 1px solid var(--hairline);
 }
-.lp-card .open-link svg { width: 14px; height: 14px; }
+.card-btns { display: flex; align-items: center; gap: 7px; }
+.card-btn-intro {
+  font-size: 12px; font-weight: 600; color: var(--card-accent);
+  text-decoration: none; padding: 5px 11px;
+  border: 1px solid color-mix(in srgb, var(--card-accent) 28%, transparent);
+  border-radius: 999px; transition: .14s; white-space: nowrap;
+}
+.card-btn-intro:hover { background: color-mix(in srgb, var(--card-accent) 8%, transparent); }
+.card-btn-open {
+  font-size: 12px; font-weight: 700; color: #fff;
+  text-decoration: none; padding: 5px 13px;
+  background: var(--card-accent);
+  border-radius: 999px; transition: .14s; white-space: nowrap;
+}
+.card-btn-open:hover { opacity: .84; }
 
 /* ───────────────── Action tiles (studio entry: pick / upload / sample / how) ── */
 .lp-action-grid {

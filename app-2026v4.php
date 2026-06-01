@@ -60,23 +60,24 @@ include __DIR__ . '/_landing_head.php';
 
 // Card renderer shared by Studios + Apps.
 function lp_card(array $s, string $open_label): void {
-  $accent      = $s['accent']      ?? '#2D8DFF';
-  $accent_deep = $s['accent_deep'] ?? $accent;
+  $accent = $s['accent'] ?? '#2D8DFF';
+  $intro  = htmlspecialchars($s['route']  ?? '#');
+  $direct = htmlspecialchars($s['direct'] ?? $s['route'] ?? '#');
   ?>
-  <a class="lp-card"
-     style="--card-accent: <?= htmlspecialchars($accent) ?>;"
-     href="<?= htmlspecialchars($s['route'] ?? '#') ?>"
-     aria-label="Open <?= htmlspecialchars($s['name']) ?>">
-    <span class="glyph" aria-hidden="true"><img src="<?= htmlspecialchars($s['mark']) ?>" alt=""></span>
-    <h3 class="name"><?= htmlspecialchars($s['name']) ?></h3>
-    <p class="desc"><?= htmlspecialchars($s['description']) ?></p>
+  <div class="lp-card" style="--card-accent: <?= htmlspecialchars($accent) ?>;">
+    <a class="lp-card-body" href="<?= $intro ?>" aria-label="Learn about <?= htmlspecialchars($s['name']) ?>">
+      <span class="glyph" aria-hidden="true"><img src="<?= htmlspecialchars($s['mark']) ?>" alt=""></span>
+      <h3 class="name"><?= htmlspecialchars($s['name']) ?></h3>
+      <p class="desc"><?= htmlspecialchars($s['description']) ?></p>
+    </a>
     <div class="foot">
       <span class="lp-status" data-status="<?= htmlspecialchars($s['status']) ?>"><?= htmlspecialchars($s['status_label']) ?></span>
-      <span class="open-link"><?= htmlspecialchars($open_label) ?>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
-      </span>
+      <div class="card-btns">
+        <a class="card-btn-intro" href="<?= $intro ?>">Intro</a>
+        <a class="card-btn-open"  href="<?= $direct ?>"><?= htmlspecialchars($open_label) ?> →</a>
+      </div>
     </div>
-  </a>
+  </div>
   <?php
 }
 ?>

@@ -30,7 +30,8 @@ return [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
-    'route' => '/survey-dev.php',
+    'route'  => '/survey-dev.php',
+    'direct' => '/develop.php?db=1',
   ],
   'mm' => [
     'slug'           => 'mm',
@@ -48,7 +49,8 @@ return [
       'project' => 'Belonging & Retention Study',
       'context' => '212 surveys, 18 interviews',
     ],
-    'route' => '/studio-mm.php',
+    'route'  => '/studio-mm.php',
+    'direct' => '/mmstudioV4.php',
   ],
   'tia' => [
     'slug'           => 'tia',
@@ -66,7 +68,8 @@ return [
       'project' => '8th Grade Math Test, 2026',
       'context' => '184 students, 40 items',
     ],
-    'route' => '/studio-tia.php',
+    'route'  => '/studio-tia.php',
+    'direct' => '/tia-wizard.php?step=1',
   ],
   '360' => [
     'slug'           => '360',
@@ -84,7 +87,8 @@ return [
       'project' => 'Leadership 360, Cohort 4',
       'context' => '12 ratees, 84 raters',
     ],
-    'route' => '/studio-360.php',
+    'route'  => '/studio-360.php',
+    'direct' => '/360-wizard.php?step=1',
   ],
   'descriptive' => [
     'slug'           => 'descriptive',
@@ -102,7 +106,8 @@ return [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
-    'route' => '/descriptive-analysis-studio.php',
+    'route'  => '/descriptive-analysis-studio.php',
+    'direct' => '/analysis-upload-wizard.php?studio=descriptive',
   ],
   'inferential' => [
     'slug'           => 'inferential',
@@ -120,7 +125,8 @@ return [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
-    'route' => '/inferential-statistics-studio.php',
+    'route'  => '/inferential-statistics-studio.php',
+    'direct' => '/analysis-upload-wizard.php?studio=inferential',
   ],
   'basic' => [
     'slug'           => 'basic',
@@ -139,7 +145,8 @@ return [
       'project' => 'Quick Pulse',
       'context' => 'up to 25 responses',
     ],
-    'route' => '/relicheck-basic.php',
+    'route'  => '/relicheck-basic.php',
+    'direct' => '/relicheck-basic-workspace.php',
   ],
   'rssi' => [
     'slug'           => 'rssi',
@@ -158,6 +165,7 @@ return [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
-    'route' => '/rssi.php',
+    'route'  => '/rssi.php',
+    'direct' => '/rssi-app.php',
   ],
 ];
