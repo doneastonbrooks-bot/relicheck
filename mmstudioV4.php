@@ -1680,6 +1680,54 @@ function renderThemes(s){
   const codeBar=`<div class="dm-save"><button class="btn primary" ${th.coding?'disabled':''} onclick="thCode()">${th.coding?'Tagging responses…':(allZero?'Tag responses to themes':'Re-tag responses')}</button><span class="dm-note">${allZero?'Your themes are not tagged to any responses yet — tag them to fill in coverage and quotes.':'Keyword-based tagging against the current themes.'}</span></div>`;
   $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+cards+codeBar+table+thQuotesPanel()+layers+thNav();
 }
+/* ============ Codebook & Evidence (l_book) — the rulebook for each code ============
+   Wired to codebook.php (entries + POST save + POST draft[AI]) and
+   codebook-evidence.php (coded quotes behind a code). Per-code editor with an
+   AI-draft assist and an evidence panel. Studio pattern only. */
+const bk={base:null,busy:false,err:'',sel:null,edits:{},saving:false,drafting:false,evidence:null,ebusy:false};
+function bkFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function bkEvidenceFetch(cid){return fetch('/api/mm/codebook-evidence.php?project_id='+BOOT.projectId+'&category_id='+cid,{credentials:'same-origin'}).then(r=>r.json());}
+function bkVal(cid,k){const e=bk.edits[cid];if(e&&e[k]!=null)return e[k];const t=((bk.base&&bk.base.entries)||[]).find(x=>x.category_id===cid)||{};return t[k]!=null?t[k]:'';}
+function bkCapture(){if(bk.sel==null)return;const g=id=>{const e=document.getElementById(id);return e?e.value:undefined;};const f={};['short_definition','full_description','inclusion_rules','exclusion_rules','borderline_cases','status'].forEach(k=>{const v=g('bk_'+k);if(v!==undefined)f[k]=v;});if(Object.keys(f).length)bk.edits[bk.sel]=Object.assign({},bk.edits[bk.sel],f);}
+function bkLoadEvidence(cid){bk.ebusy=true;bkEvidenceFetch(cid).then(j=>{bk.ebusy=false;bk.evidence=(j&&j.ok)?j:null;renderBook(activeStep());}).catch(()=>{bk.ebusy=false;bk.evidence=null;renderBook(activeStep());});}
+function bkSelect(v){bkCapture();bk.sel=+v;bk.evidence=null;renderBook(activeStep());bkLoadEvidence(bk.sel);}
+function bkSave(){if(bk.saving||bk.sel==null)return;bkCapture();bk.saving=true;renderBook(activeStep());const cid=bk.sel,e=bk.edits[cid]||{};fetch('/api/mm/codebook.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',project_id:BOOT.projectId,category_id:cid,short_definition:e.short_definition||'',full_description:e.full_description||'',inclusion_rules:e.inclusion_rules||'',exclusion_rules:e.exclusion_rules||'',borderline_cases:e.borderline_cases||'',status:e.status||'draft'})}).then(r=>r.json()).then(j=>{bk.saving=false;if(j&&j.ok){toast('Codebook entry saved');renderBook(activeStep());}else{toast((j&&(j.message||j.error))||'Could not save.');renderBook(activeStep());}}).catch(()=>{bk.saving=false;toast('Save failed.');renderBook(activeStep());});}
+function bkDraft(){if(bk.drafting||bk.sel==null)return;bkCapture();bk.drafting=true;renderBook(activeStep());const cid=bk.sel;fetch('/api/mm/codebook.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'draft',project_id:BOOT.projectId,category_id:cid})}).then(r=>r.json()).then(j=>{bk.drafting=false;if(j&&j.ok&&j.draft){const d=j.draft;bk.edits[cid]=Object.assign({},bk.edits[cid],{short_definition:d.short_definition||'',full_description:d.full_description||'',inclusion_rules:d.inclusion_rules||'',exclusion_rules:d.exclusion_rules||'',borderline_cases:d.borderline_cases||''});toast('AI draft ready — review and save');renderBook(activeStep());}else{toast((j&&(j.message||j.error))||'Could not draft (needs tagged responses).');renderBook(activeStep());}}).catch(()=>{bk.drafting=false;toast('Draft failed.');renderBook(activeStep());});}
+function bkHead(s){return `<div class="ws-header"><div class="eyebrow">Codebook & evidence · the rulebook for your codes <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function bkNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function bkMsg(s,msg){$("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+bkNav();}
+function bkField(label,id,val,rows){return `<label class="ed-l">${label}</label>`+(rows?`<textarea id="${id}" class="ed-in" rows="${rows}">${esc(val)}</textarea>`:`<input id="${id}" class="ed-in" value="${esc(val)}">`);}
+function bkEvidencePanel(){
+  if(bk.ebusy)return `<div class="th-quotes" style="padding:16px 18px">Loading evidence…</div>`;
+  const q=bk.evidence;
+  if(!q||!q.responses||!q.responses.length)return `<div class="th-quotes" style="padding:16px 18px">No coded evidence for this code yet. Tag responses on the Qualitative Themes step first.</div>`;
+  const rows=q.responses.slice(0,12).map(r=>`<div class="th-quote"><div class="th-quote-t">“${esc(r.text)}”</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}</div></div>`).join('');
+  return `<div class="ov-sec" style="margin-top:2px">Evidence · ${q.responses.length} coded responses</div><div class="th-quotes">${rows}</div>`;
+}
+function renderBook(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+`<p class="lede">Connect a project to build the codebook.</p>`+bkNav();return;}
+  if(bk.err){bkMsg(s,bk.err);return;}
+  if(!bk.base){
+    if(!bk.busy){bk.busy=true;bkFetch().then(j=>{bk.busy=false;if(j&&j.ok){bk.base=j;if(bk.sel==null&&j.entries&&j.entries.length){bk.sel=j.entries[0].category_id;bkLoadEvidence(bk.sel);}}else{bk.err=(j&&(j.message||j.error))||'Could not load the codebook.';}renderBook(activeStep());}).catch(()=>{bk.busy=false;bk.err='Could not load your data.';renderBook(activeStep());});}
+    bkMsg(s,'Loading your codebook…');return;
+  }
+  const themes=bk.base.entries||[];
+  if(!themes.length){$("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+`<div class="th-empty"><h3>No codes yet</h3><p>Discover themes on the Qualitative Themes step first, then return here to define each code and document its evidence.</p></div>`+bkNav();return;}
+  if(bk.sel==null)bk.sel=themes[0].category_id;
+  const cur=themes.find(t=>t.category_id===bk.sel)||themes[0];bk.sel=cur.category_id;
+  const opts=themes.map(t=>`<option value="${t.category_id}" ${t.category_id===bk.sel?'selected':''}>${esc(t.name)} (${t.coded_count||0})</option>`).join('');
+  const picker=`<div style="margin:0 0 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"><label class="ed-l" style="margin:0">Code</label><select class="ed-in dm-sel" style="max-width:340px" onchange="bkSelect(this.value)">${opts}</select><span class="dm-note">${themes.length} codes · ${cur.coded_count||0} responses tagged</span></div>`;
+  const editor=`<div class="panel"><div class="panel-h"><div><h3>${esc(cur.name)}</h3><div class="ph-sub">Define this code so another reader could apply it the same way</div></div></div><div class="panel-b">
+    ${bkField('Short definition (one sentence)','bk_short_definition',bkVal(bk.sel,'short_definition'),0)}
+    ${bkField('Full description','bk_full_description',bkVal(bk.sel,'full_description'),3)}
+    ${bkField('Inclusion rules — when this code applies','bk_inclusion_rules',bkVal(bk.sel,'inclusion_rules'),2)}
+    ${bkField('Exclusion rules — when it does NOT apply','bk_exclusion_rules',bkVal(bk.sel,'exclusion_rules'),2)}
+    ${bkField('Borderline cases','bk_borderline_cases',bkVal(bk.sel,'borderline_cases'),2)}
+    <label class="ed-l">Status</label><select id="bk_status" class="ed-in dm-sel">${['draft','reviewed','approved'].map(o=>`<option ${o===(bkVal(bk.sel,'status')||'draft')?'selected':''}>${o}</option>`).join('')}</select>
+    <div class="dm-save"><button class="btn primary" ${bk.saving?'disabled':''} onclick="bkSave()">${bk.saving?'Saving…':'Save code'}</button><button class="btn" ${bk.drafting?'disabled':''} onclick="bkDraft()">${bk.drafting?'Drafting…':'✦ AI draft from evidence'}</button><span class="dm-note">AI draft reads this code's tagged responses and proposes the definition and rules to review.</span></div></div></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">Why this matters</div><div class="dx-l-t">A codebook makes your qualitative analysis transparent and repeatable: each code carries a clear definition, rules for when it applies and when it does not, and the evidence behind it, so another reader could code the same way.</div></div></div>`;
+  $("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+picker+editor+bkEvidencePanel()+layers+bkNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1688,6 +1736,7 @@ function renderCenter(){
   if(s.mode==='quality'){ return renderQuality(s); }
   if(s.id==='l_trust'){ return renderTrust(s); }
   if(s.id==='l_themes'){ return renderThemes(s); }
+  if(s.id==='l_book'){ return renderBook(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
