@@ -13,12 +13,14 @@
 -- ============================================================
 USE dbs15641829;
 
+-- No FOREIGN KEY to mm_projects on purpose: the endpoint only reads/writes by
+-- project_id and never relies on cascade delete, and an FK to mm_projects can
+-- fail on shared hosting with an errno-150 type/charset/engine mismatch. Keeping
+-- this table self-contained makes the migration run reliably everywhere.
 CREATE TABLE IF NOT EXISTS mm_trustworthiness (
   project_id       BIGINT UNSIGNED NOT NULL PRIMARY KEY,
   member_checking  MEDIUMTEXT      NULL
     COMMENT 'JSON array of member-checking entries: [{id, finding, date, outcome, feedback}, ...]',
   created_at       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  CONSTRAINT fk_mm_trust_project
-    FOREIGN KEY (project_id) REFERENCES mm_projects(id) ON DELETE CASCADE
+  updated_at       DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
