@@ -1,35 +1,23 @@
 <?php
-// survey-dev.php — Survey Development System LANDING page.
-// RSSI-style entry surface (no left rail) that sits in front of the
-// develop.php builder workspace. The three primary actions deep-link into
-// develop.php with a ?start= hint so the user lands on the right entry.
-//
-// User flow:
-//   1. /app-2026v4.php  hub
-//   2. /survey-dev.php   ← this file (hero + 3 actions + flow preview)
-//   3. /develop.php?db=1&start=...  the workspace (with the stepper rail)
-
+// survey-dev.php — Survey Development System landing page (v4 style, matches studio-mm.php).
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';
 
 start_session_secure();
 $uid = current_user_id();
 if (!$uid) {
-  header('Location: /login.html?return=' . urlencode('/survey-dev.php'));
+  $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
+  header('Location: /login.html?return=' . urlencode('/survey-dev.php' . $qs));
   exit;
 }
 $user = current_user();
-if (!$user) {
-  $_SESSION = []; session_destroy();
-  header('Location: /login.html');
-  exit;
-}
+if (!$user) { $_SESSION = []; session_destroy(); header('Location: /login.html'); exit; }
 
 $studios = require __DIR__ . '/_studio_registry.php';
 $studio  = $studios['survey'];
 
-$user_full  = $user['name'] ?? $user['email'] ?? 'You';
-$initials   = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U', 0, 2));
+$user_full = $user['name'] ?? $user['email'] ?? 'You';
+$initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U', 0, 2));
 
 $landing_title         = 'Survey Development System — ReliCheck';
 $landing_accent        = $studio['accent'];
@@ -44,111 +32,60 @@ $landing_user_full     = $user_full;
 
 include __DIR__ . '/_landing_head.php';
 ?>
+<link rel="stylesheet" href="/studio-landing.css">
 
-<!-- ===== Hero ===== -->
-<section class="lp-hero">
-  <h1>
-    Build a survey
-    <span class="accent">strong enough to trust.</span>
-  </h1>
-  <p class="lede">
-    ReliCheck guides your survey from first draft to launch readiness, response collection, and evidence-strength reporting.
-  </p>
+<!-- HERO -->
+<section class="sl-hero">
+  <img src="/SIRI.png" alt="Survey Development System" class="sl-logo rv">
+  <h1 class="sl-h1 rv rv-d1"><span class="thin">Survey design,</span><br>done right.</h1>
+  <p class="sl-body rv rv-d2">The Survey Intelligence Readiness Index evaluates your survey before launch. Validity, reliability, and administration reviewed and scored so you know exactly where your instrument stands.</p>
+  <div class="sl-actions rv rv-d3">
+    <a href="/develop.php?db=1&start=scratch" class="sl-btn-a">Open SIRI</a>
+    <a href="/develop.php?db=1&start=import" class="sl-btn-b">Import existing survey →</a>
+  </div>
+  <div class="sl-scroll rv" style="transition-delay:.5s">Scroll</div>
 </section>
 
-<!-- ===== Three primary actions ===== -->
-<div class="lp-cta-row">
-  <a class="lp-cta-tile primary" href="/develop.php?db=1&amp;start=scratch">
-    <span class="lp-cta-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-    </span>
-    <span class="lp-cta-text">
-      <div class="lp-cta-title">Start New Survey</div>
-      <div class="lp-cta-sub">A blank workspace, full control</div>
-    </span>
-  </a>
-  <a class="lp-cta-tile" href="/develop.php?db=1&amp;start=import">
-    <span class="lp-cta-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-    </span>
-    <span class="lp-cta-text">
-      <div class="lp-cta-title">Bring In Existing Survey</div>
-      <div class="lp-cta-sub">Paste or import what you have</div>
-    </span>
-  </a>
-  <a class="lp-cta-tile" href="/develop.php?db=1&amp;start=existing">
-    <span class="lp-cta-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-    </span>
-    <span class="lp-cta-text">
-      <div class="lp-cta-title">Open Saved Project</div>
-      <div class="lp-cta-sub">Resume where you left off</div>
-    </span>
-  </a>
-</div>
-
-<div style="text-align:center;margin:-34px 0 56px">
-  <a href="#flow" style="font-size:13.5px;font-weight:600;color:var(--accent);text-decoration:none">View sample workflow ↓</a>
-</div>
-
-<!-- ===== Flow preview ===== -->
-<section class="lp-section" id="flow" style="scroll-margin-top:90px">
-  <div class="lp-eyebrow-c">How it works</div>
-  <div class="lp-flow-card">
-    <div class="lp-flow">
-      <div class="lp-flow-step">
-        <div class="n">1</div>
-        <h4>SDSI Build Check</h4>
-        <p>Score the survey's development strength while you build it.</p>
-      </div>
-      <div class="lp-flow-step">
-        <div class="n">2</div>
-        <h4>Revise and Strengthen</h4>
-        <p>Act on item-level guidance to tighten constructs and wording.</p>
-      </div>
-      <div class="lp-flow-step">
-        <div class="n">3</div>
-        <h4>SIRI Launch Check</h4>
-        <p>Confirm the completed survey is ready before it goes live.</p>
-      </div>
-      <div class="lp-flow-step">
-        <div class="n">4</div>
-        <h4>Publish and Collect</h4>
-        <p>Share a live link and gather responses securely.</p>
-      </div>
-      <div class="lp-flow-step">
-        <div class="n">5</div>
-        <h4>RSSI Evidence Strength</h4>
-        <p>Judge whether the collected data is strong enough to trust.</p>
-      </div>
+<!-- FEATURES -->
+<section class="sl-features">
+  <div class="sl-features-inner">
+    <div class="sl-feature-card rv">
+      <span class="sl-fc-icon">🔍</span>
+      <h3 class="sl-fc-h">Design Strength</h3>
+      <p class="sl-fc-body">Check construct validity, item clarity, response scales, and domain coverage before a single response arrives.</p>
+    </div>
+    <div class="sl-feature-card rv rv-d1">
+      <span class="sl-fc-icon">📊</span>
+      <h3 class="sl-fc-h">100-Point Readiness Score</h3>
+      <p class="sl-fc-body">SIRI's index breaks down exactly where your survey is ready and where it needs attention, with specific fixes to act on.</p>
+    </div>
+    <div class="sl-feature-card rv rv-d2">
+      <span class="sl-fc-icon">🚀</span>
+      <h3 class="sl-fc-h">Launch with Confidence</h3>
+      <p class="sl-fc-body">Generate a readiness report you can show to stakeholders before collecting your first response.</p>
     </div>
   </div>
 </section>
 
-<!-- ===== What this helps you do ===== -->
-<section class="lp-section">
-  <div class="lp-section-head" style="text-align:center;">
-    <h2>What the Survey Development System helps you do</h2>
-  </div>
-  <div class="lp-features">
-    <div class="lp-feature">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></div>
-      <h3>Build with structure</h3>
-      <p>Define constructs and items in a workspace that checks your design as it grows, not after it is too late.</p>
-    </div>
-    <div class="lp-feature">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-      <h3>Launch with confidence</h3>
-      <p>Resolve readiness blockers before publishing, so you collect responses on an instrument that holds up.</p>
-    </div>
-    <div class="lp-feature">
-      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg></div>
-      <h3>Report evidence you can defend</h3>
-      <p>Turn collected responses into a clear strength report that says what you can claim, and what you should not.</p>
-    </div>
+<!-- DARK CTA -->
+<section class="sl-cta">
+  <h2 class="sl-cta-h rv">Your survey is your instrument.<br><em>Build it to hold up.</em></h2>
+  <div class="rv rv-d1">
+    <a href="/develop.php?db=1&start=scratch" class="sl-cta-btn">Open SIRI</a>
   </div>
 </section>
+
+
+
+<script>
+(function(){
+  var obs = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); obs.unobserve(e.target); }});
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.rv').forEach(function(el){ obs.observe(el); });
+})();
+</script>
 
 <?php
-$landing_tagline = 'From first draft to evidence you can defend.';
+$landing_tagline = 'Survey design done right.';
 include __DIR__ . '/_landing_foot.php';
