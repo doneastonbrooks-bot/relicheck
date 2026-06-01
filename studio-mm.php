@@ -60,7 +60,7 @@ include __DIR__ . '/_landing_head.php';
   --bg-w:   #ffffff;
   --bg-l:   #f5f5f7;
   --bg-dk:  #1d1d1f;
-  --w:      1100px;
+  --w:      min(75vw, 1280px);
 }
 
 /* ── Scroll-reveal ── */
@@ -75,11 +75,15 @@ include __DIR__ . '/_landing_head.php';
   min-height: 94vh;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
-  padding: 100px 32px 80px;
+  padding-top: 100px; padding-bottom: 80px;
+  padding-left:  max(48px, calc(50% - 640px));
+  padding-right: max(48px, calc(50% - 640px));
   background:
     radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 60%),
     var(--bg-w);
 }
+@media (max-width: 768px) { .mm-hero { padding-left: 24px; padding-right: 24px; } }
+@media (max-width: 480px) { .mm-hero { padding-left: 16px; padding-right: 16px; } }
 .mm-hero-logo {
   width: 100px; height: 100px; object-fit: contain;
   margin-bottom: 56px; border-radius: 22px;
@@ -167,9 +171,20 @@ include __DIR__ . '/_landing_head.php';
    FEATURE SECTIONS
 ════════════════════════════════════════ */
 .mm-feature {
-  padding: 96px 32px;
+  width: var(--w); margin: 0 auto;
+  padding-top: 96px; padding-bottom: 96px;
+  padding-left: 0; padding-right: 0;
   display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
-  align-items: center; max-width: var(--w); margin: 0 auto;
+  align-items: center;
+}
+@media (max-width: 1200px) {
+  .mm-feature, .mm-feature.flip { width: auto; margin: 0; padding-left: 48px; padding-right: 48px; }
+}
+@media (max-width: 768px) {
+  .mm-feature, .mm-feature.flip { grid-template-columns: 1fr; direction: ltr; gap: 40px; padding-left: 24px; padding-right: 24px; }
+}
+@media (max-width: 480px) {
+  .mm-feature, .mm-feature.flip { padding-left: 16px; padding-right: 16px; }
 }
 .mm-feature.flip { direction: rtl; }
 .mm-feature.flip > * { direction: ltr; }
@@ -225,9 +240,13 @@ include __DIR__ . '/_landing_head.php';
    This is the only place we say it.
 ════════════════════════════════════════ */
 .mm-start {
-  background: var(--bg-dk); color: #fff;
-  padding: 130px 32px; text-align: center;
+  background: var(--bg-dk); color: #fff; text-align: center;
+  padding-top: 130px; padding-bottom: 130px;
+  padding-left:  max(48px, calc(50% - 640px));
+  padding-right: max(48px, calc(50% - 640px));
 }
+@media (max-width: 768px) { .mm-start { padding-left: 24px; padding-right: 24px; } }
+@media (max-width: 480px) { .mm-start { padding-left: 16px; padding-right: 16px; } }
 .mm-start-quote {
   font-size: clamp(14px, 1.6vw, 17px); font-weight: 300; letter-spacing: .02em;
   color: rgba(255,255,255,.4); line-height: 2; margin-bottom: 40px;
@@ -254,8 +273,15 @@ include __DIR__ . '/_landing_head.php';
 /* ════════════════════════════════════════
    RECENT PROJECTS
 ════════════════════════════════════════ */
-.mm-recent-wrap { padding: 80px 32px 100px; background: var(--bg-w); border-top: 1px solid rgba(0,0,0,.06); }
-.mm-recent-inner { max-width: 960px; margin: 0 auto; }
+.mm-recent-wrap {
+  padding-top: 80px; padding-bottom: 100px;
+  padding-left:  max(48px, calc(50% - 640px));
+  padding-right: max(48px, calc(50% - 640px));
+  background: var(--bg-w); border-top: 1px solid rgba(0,0,0,.06);
+}
+@media (max-width: 768px) { .mm-recent-wrap { padding-left: 24px; padding-right: 24px; } }
+@media (max-width: 480px) { .mm-recent-wrap { padding-left: 16px; padding-right: 16px; } }
+.mm-recent-inner { max-width: 1280px; margin: 0 auto; }
 .mm-recent-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px; }
 .mm-recent-h { font-size: 22px; font-weight: 800; color: var(--ink-a); }
 .mm-recent-all { font-size: 13px; font-weight: 700; color: var(--accent); text-decoration: none; }
