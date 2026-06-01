@@ -189,7 +189,9 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 @media(max-width:820px){.studio-dock-logo{display:none}}
 .dock-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none}
 .dock-btn:hover{border-color:var(--acc)}
-.dock-chip{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);margin-left:auto}
+.dock-chip{position:absolute;right:22px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.dock-chip[hidden]{display:none}
+@media(max-width:980px){.dock-chip{position:static;transform:none;margin-left:auto}}
 .dock-chip .gdot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .placeholder{padding:40px;text-align:center;color:var(--ink-3);border:1.5px dashed var(--line);border-radius:14px}
 </style>
@@ -232,8 +234,8 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
       <button class="dock-btn" id="dkSiri">&#9889; Open from SIRI responses</button>
       <button class="dock-btn" id="dkUpload">&#8681; Upload data</button>
       <button class="dock-btn" id="dkSaved">&#9638; Open saved project</button>
-      <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
     </div>
+    <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
   </footer>
 </div>
 
