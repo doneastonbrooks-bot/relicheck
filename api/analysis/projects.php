@@ -20,8 +20,12 @@ analysis_ensure_schema($pdo);
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $kind = clean_string((string)($_GET['kind'] ?? ''), 20);
     if (!analysis_valid_kind($kind)) fail('bad_kind', 'kind must be descriptive or inferential.');
+    // Light list: never pull the (potentially large) dataset_payload — just a
+    // boolean has_data flag derived from it / the dataset_id link.
     $stmt = $pdo->prepare(
-        'SELECT * FROM analysis_projects
+        'SELECT id, kind, title, dataset_id, status, notes, created_at, updated_at,
+                (dataset_payload IS NOT NULL OR dataset_id IS NOT NULL) AS has_data
+           FROM analysis_projects
           WHERE user_id = :uid AND kind = :kind AND status <> "archived"
           ORDER BY updated_at DESC LIMIT 200'
     );

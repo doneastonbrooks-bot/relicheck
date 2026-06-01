@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS analysis_projects (
     user_id     BIGINT UNSIGNED NOT NULL,
     kind        ENUM('descriptive','inferential') NOT NULL,
     title       VARCHAR(200) NOT NULL,
-    dataset_id  BIGINT UNSIGNED NULL,          -- FK-by-convention to datasets.id
+    dataset_id  BIGINT UNSIGNED NULL,          -- FK-by-convention to datasets.id (SIRI / existing dataset)
+    dataset_payload LONGTEXT NULL,             -- verbatim Evidence-Intake payload (engine-native shape)
     status      ENUM('draft','active','archived') NOT NULL DEFAULT 'active',
     notes       MEDIUMTEXT NULL,
     created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

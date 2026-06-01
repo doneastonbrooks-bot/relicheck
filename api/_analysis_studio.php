@@ -44,6 +44,7 @@ function analysis_ensure_schema(PDO $pdo): void
             kind        ENUM('descriptive','inferential') NOT NULL,
             title       VARCHAR(200) NOT NULL,
             dataset_id  BIGINT UNSIGNED NULL,
+            dataset_payload LONGTEXT NULL,
             status      ENUM('draft','active','archived') NOT NULL DEFAULT 'active',
             notes       MEDIUMTEXT NULL,
             created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -67,6 +68,14 @@ function analysis_ensure_schema(PDO $pdo): void
               FOREIGN KEY (project_id) REFERENCES analysis_projects(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+    // Defensive: if analysis_projects was created by an earlier build without
+    // the dataset_payload column, add it. Guarded so it runs at most once.
+    try {
+        $col = $pdo->query("SHOW COLUMNS FROM analysis_projects LIKE 'dataset_payload'");
+        if ($col && !$col->fetch()) {
+            $pdo->exec('ALTER TABLE analysis_projects ADD COLUMN dataset_payload LONGTEXT NULL AFTER dataset_id');
+        }
+    } catch (Throwable $e) { /* table brand-new (already has it) or race — ignore */ }
 }
 
 /**
@@ -92,6 +101,10 @@ function analysis_project_out(array $row): array
         'kind'       => (string)$row['kind'],
         'title'      => (string)$row['title'],
         'dataset_id' => $row['dataset_id'] !== null ? (int)$row['dataset_id'] : null,
+        // has_data: prefer a precomputed flag (light list query) else derive.
+        'has_data'   => array_key_exists('has_data', $row)
+                          ? (bool)$row['has_data']
+                          : (!empty($row['dataset_payload']) || !empty($row['dataset_id'])),
         'status'     => (string)$row['status'],
         'notes'      => $row['notes'] !== null ? (string)$row['notes'] : '',
         'created_at' => (string)$row['created_at'],
