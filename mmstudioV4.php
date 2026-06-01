@@ -1807,6 +1807,37 @@ function renderQ2Q(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What happens next</div><div class="dx-l-t">These quantitized variables join your dataset linked to the themes they came from. Test them on Build & Test Measures (for example, does a theme appear more in one group?), and the result will appear beside the theme in the Joint Display.</div></div></div>`;
   $("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<div class="ov-sec" style="margin-top:2px">Choose what to create from your ${themes.length} themes</div>`+opts+buildBar+resultCard+layers+q2Nav();
 }
+/* ============ Build & Test Measures — test theme-derived variables (PERSISTED) ============
+   Lists the q2q generated variables (generated-variables.php), runs a stored test
+   on two of them via analysis-run.php (writes mm_analysis_results), so the result
+   links back to the theme and the Joint Display's statistical column populates. */
+const mt={vars:null,busy:false,err:'',pred:0,out:0,test:'t_test',running:false,result:null};
+function mtFetch(){return fetch('/api/mm/generated-variables.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function mtSet(k,v){mt[k]=(k==='test')?v:+v;renderMeasureTest(activeStep());}
+function mtRun(){if(mt.running||!mt.pred||!mt.out||mt.pred===mt.out)return;mt.running=true;renderMeasureTest(activeStep());fetch('/api/mm/analysis-run.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,predictor_id:mt.pred,outcome_id:mt.out,test:mt.test})}).then(r=>r.json()).then(j=>{mt.running=false;if(j&&j.ok){mt.result=j.result;jd.base=null;toast('Test run and saved');renderMeasureTest(activeStep());}else{toast((j&&(j.message||j.error))||'Could not run the test.');renderMeasureTest(activeStep());}}).catch(()=>{mt.running=false;toast('Test failed.');renderMeasureTest(activeStep());});}
+function mtHead(s){return `<div class="ws-header"><div class="eyebrow">Build & test measures · test the measures from your themes <span class="strand-chip quan">QUAN</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function mtNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function mtMsg(s,msg){$("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+mtNav();}
+function mtSel(cur,vars,onch){return `<select class="ed-in dm-sel" style="max-width:320px" onchange="${onch}"><option value="0">— choose —</option>${vars.map(v=>`<option value="${v.id}" ${v.id===cur?'selected':''}>${esc(v.name)}${v.theme?' · '+esc(v.theme):''}</option>`).join('')}</select>`;}
+function renderMeasureTest(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+`<p class="lede">Connect a project to test your measures.</p>`+mtNav();return;}
+  if(mt.err){mtMsg(s,mt.err);return;}
+  if(mt.vars==null){
+    if(!mt.busy){mt.busy=true;mtFetch().then(j=>{mt.busy=false;if(j&&j.ok){mt.vars=j.variables||[];}else{mt.err=(j&&(j.message||j.error))||'Could not load measures.';}renderMeasureTest(activeStep());}).catch(()=>{mt.busy=false;mt.err='Could not load your data.';renderMeasureTest(activeStep());});}
+    mtMsg(s,'Loading your measures…');return;
+  }
+  const vars=mt.vars;
+  if(!vars.length){$("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+`<div class="th-empty"><h3>No theme measures yet</h3><p>Turn your themes into measurable variables on the <b>Qual → Quant</b> step first. Then come back here to test them — for example, whether a theme's presence relates to a group or another measure.</p></div>`+mtNav();return;}
+  const TESTS=[['t_test','t-test'],['chi_square','Chi-square'],['anova','ANOVA'],['pearson','Correlation']];
+  const picker=`<div class="panel"><div class="panel-h"><div><h3>Test a measure</h3><div class="ph-sub">Pick two of your theme-derived variables and a test</div></div></div><div class="panel-b">
+    <label class="ed-l">Predictor / group</label>${mtSel(mt.pred,vars,"mtSet('pred',this.value)")}
+    <label class="ed-l">Outcome / measure</label>${mtSel(mt.out,vars,"mtSet('out',this.value)")}
+    <label class="ed-l">Test</label><select class="ed-in dm-sel" style="max-width:200px" onchange="mtSet('test',this.value)">${TESTS.map(t=>`<option value="${t[0]}" ${t[0]===mt.test?'selected':''}>${t[1]}</option>`).join('')}</select>
+    <div class="dm-save"><button class="btn primary" ${mt.running||!mt.pred||!mt.out||mt.pred===mt.out?'disabled':''} onclick="mtRun()">${mt.running?'Running…':'Run test'}</button><span class="dm-note">Runs the test and saves it, so the result appears beside the theme in the Joint Display.</span></div></div></div>`;
+  let resultCard='';
+  if(mt.result){const r=mt.result;resultCard=`<div class="panel"><div class="panel-h"><div><h3>Result</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Test</th><th>Statistic</th><th>p</th><th class="l">Effect</th><th>N</th></tr></thead><tbody><tr><td class="dx-name">${esc(r.predictor_name)} × ${esc(r.outcome_name)} (${esc(r.test)})</td><td>${r.statistic!=null?Number(r.statistic).toFixed(3):'—'}</td><td>${r.p_value!=null?Number(r.p_value).toFixed(4):'—'}</td><td class="dx-interp">${r.effect_size!=null?Number(r.effect_size).toFixed(3)+(r.effect_label?' ('+esc(r.effect_label)+')':''):'—'}</td><td>${r.n_total||'—'}</td></tr></tbody></table></div>${r.summary?`<div class="dx-layers" style="margin-top:14px"><div class="dx-l"><div class="dx-l-k">Reading it</div><div class="dx-l-t">${esc(r.summary)} This result is now linked to its theme in the Joint Display.</div></div></div>`:''}</div></div>`;}
+  $("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+picker+resultCard+mtNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1816,7 +1847,7 @@ function renderCenter(){
   if(s.id==='l_trust'){ return renderTrust(s); }
   if(s.id==='l_themes'){ return renderThemes(s); }
   if(s.id==='l_book'){ return renderBook(s); }
-  if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderTTest(s):renderReliability(s); }
+  if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderMeasureTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
