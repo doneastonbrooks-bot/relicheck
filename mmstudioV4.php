@@ -2107,7 +2107,42 @@ function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g
 function alignPalette(){const panel=document.querySelector('.center .panel');const pal=$("#palette");const body=document.querySelector('.body');
   if(!panel||!pal||!body)return;pal.style.marginTop='0px';
   const off=panel.getBoundingClientRect().top-body.getBoundingClientRect().top;pal.style.marginTop=Math.max(0,Math.round(off))+'px';}
-function render(){renderSwitch();renderRail();renderCenter();renderPalette();renderCompanion();alignPalette();}
+function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();}
+// Per-area "Save to report": on any analysis area (work/output step), append a
+// "Save to report" button that adds this area's result to the report's Findings
+// section. Reuses the existing report.php (save_section) + .dm-save styling.
+function appendReportSave(){
+  const s=activeStep();
+  if((s.mode!=='work'&&s.mode!=='output')||s.id==='report') return;
+  if(!(BOOT.projectId&&BOOT.projectId>0)) return;
+  const ci=document.getElementById('centerInner'); if(!ci) return;
+  const panel=ci.querySelector('.panel'); if(!panel) return;
+  if(document.getElementById('mmReportSave')) return;
+  const bar=document.createElement('div'); bar.id='mmReportSave'; bar.className='dm-save'; bar.style.marginTop='14px';
+  bar.innerHTML='<button class="btn primary" id="mmReportSaveBtn">＋ Save to report</button>'
+    +'<span class="dm-note" id="mmReportSaveNote">Adds this area’s result to the report’s Findings section.</span>';
+  const nav=ci.querySelector('.footer-nav');
+  if(nav) ci.insertBefore(bar,nav); else ci.appendChild(bar);
+  document.getElementById('mmReportSaveBtn').addEventListener('click',function(){ saveAreaToReport(s); });
+}
+function saveAreaToReport(s){
+  const btn=document.getElementById('mmReportSaveBtn'), note=document.getElementById('mmReportSaveNote');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  const ci=document.getElementById('centerInner'); const panel=ci?ci.querySelector('.panel'):null;
+  let text='';
+  if(panel){ if(panel.querySelector('iframe')){ text='(Engine output — see the “'+(s.title||'')+'” step in MM Studio.)'; }
+    else { text=(panel.innerText||panel.textContent||'').trim().replace(/\n{3,}/g,'\n\n'); } }
+  const entry='## '+(s.title||'Analysis')+'\n'+(text||'(no result captured)');
+  fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin',headers:{Accept:'application/json'}})
+    .then(function(r){return r.json();}).then(function(j){
+      let cur=''; if(j&&j.ok&&Array.isArray(j.rows)){ const row=j.rows.find(function(x){return x.section_key==='findings';}); if(row) cur=row.body_text||''; }
+      const combined=(cur?cur.trim()+'\n\n':'')+entry;
+      return fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_section',section_key:'findings',body_text:combined})});
+    }).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){ if(btn)btn.textContent='Saved to report ✓'; if(note)note.textContent='Added to the Findings section. Open the Report step to see it.'; if(typeof toast==='function')toast('Saved to report'); }
+      else { throw 0; }
+    }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='＋ Save to report';} if(note)note.textContent='Could not save — please try again.'; });
+}
 
 /* persist the design choice on the project (Phase 2 wiring; no-op in demo) */
 function persistDesign(coreSlug){

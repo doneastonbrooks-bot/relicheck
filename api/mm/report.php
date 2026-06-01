@@ -60,6 +60,10 @@ $REPORT_SECTIONS = [
     ['key' => 'methods',           'title' => 'Methods',               'source' => 'template'],
     ['key' => 'results_qual',      'title' => 'Results — Qualitative', 'source' => 'template'],
     ['key' => 'results_quant',    'title' => 'Results — Quantitative','source' => 'template'],
+    // Findings: collects per-area "Save to report" entries. 'ai' source so
+    // generate_all preserves it once the user has saved into it (it is never
+    // auto-built: rep_build_section has no 'findings' case → returns empty).
+    ['key' => 'findings',          'title' => 'Findings',              'source' => 'ai'],
     ['key' => 'integration',       'title' => 'Integration',           'source' => 'ai'],
     ['key' => 'recommendations',   'title' => 'Recommendations',       'source' => 'ai'],
     ['key' => 'strength_appendix', 'title' => 'Strength Check appendix','source' => 'template'],
