@@ -420,28 +420,20 @@ label .tt-hint{margin-left:6px}
 .ed-in{width:100%;font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
 .ed-in:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
 .ed-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
-/* MM Studio — cinematic intro / Start screen */
-@keyframes mm-shift{0%,100%{background-position:0% 60%}50%{background-position:100% 40%}}
-@keyframes mm-up{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
-.mm-launch{animation:mm-up .45s ease both}
-.mm-launch-hero{margin:-30px -4px 0 0;padding:72px 52px 60px;background:linear-gradient(135deg,#08080f 0%,#130a2c 30%,#0c1535 65%,#08080f 100%);background-size:300% 300%;animation:mm-shift 16s ease infinite;position:relative;overflow:hidden}
-.mm-launch-hero::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 25%,rgba(108,63,196,.15) 0%,transparent 60%);pointer-events:none}
-.mm-launch-badge{display:inline-flex;align-items:center;gap:8px;font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.38);margin-bottom:32px}
-.mm-launch-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--btn);display:block;flex:none}
-.mm-launch-h1{font-size:56px;font-weight:900;line-height:1.05;letter-spacing:-.04em;color:#fff;margin:0 0 28px;max-width:24ch}
-.mm-launch-h1 em{color:var(--btn);font-style:normal}
-.mm-launch-tag{font-size:14.5px;color:rgba(255,255,255,.48);line-height:1.7;max-width:50ch;margin:0;padding-top:22px;border-top:1px solid rgba(255,255,255,.1)}
-@media(max-width:720px){.mm-launch-hero{padding:48px 26px 44px;margin:-30px -4px 0 0}.mm-launch-h1{font-size:36px}}
-/* Pillars row */
-.mm-pillars{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);margin-bottom:38px}
-.mm-pillar{padding:20px 22px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
-.mm-pillar:last-child{border-right:none}
-.mp-num{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--btn);margin-bottom:2px}
-.mp-title{font-size:14.5px;font-weight:800;color:var(--ink)}
-.mp-desc{font-size:12px;color:var(--ink-3);line-height:1.4}
-@media(max-width:760px){.mm-pillars{grid-template-columns:repeat(2,1fr)}.mm-pillar:nth-child(2){border-right:none}.mm-pillar:nth-child(1),.mm-pillar:nth-child(2){border-bottom:1px solid var(--line)}}
-/* Design cards */
-.mm-sec-label{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+/* MM Studio — Start step (studio entry, continuation of landing page) */
+.rs-wrap{padding:28px 4px 40px 0;max-width:720px}
+.rs-head{margin-bottom:28px;border-bottom:2px solid var(--btn);padding-bottom:20px}
+.rs-wordmark{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--btn);margin-bottom:6px}
+.rs-lede{font-size:18px;font-weight:300;color:var(--ink-2);line-height:1.5;margin:0}
+.rs-project-banner{background:var(--panel);border:1.5px solid var(--btn);border-radius:14px;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:28px;box-shadow:0 0 0 3px var(--accent-soft)}
+.rs-pb-left{display:flex;flex-direction:column;gap:3px}
+.rs-pb-label{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--btn)}
+.rs-pb-title{font-size:16px;font-weight:800;color:var(--ink)}
+.rs-pb-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.rs-no-project{display:flex;align-items:center;gap:10px;margin-bottom:28px;padding:14px 18px;background:var(--bg);border:1px solid var(--line);border-radius:12px}
+.rs-np-text{font-size:13.5px;color:var(--ink-3);flex:1}
+.rs-sec{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin:0 0 14px}
+/* Design cards (used on Start step) */
 .mm-design-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 36px}
 @media(max-width:760px){.mm-design-grid{grid-template-columns:1fr}}
 .mm-dcard{text-align:left;background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:20px;cursor:pointer;transition:.14s;box-shadow:var(--shadow)}
@@ -450,26 +442,7 @@ label .tt-hint{margin-left:6px}
 .mdc-name{font-size:14.5px;font-weight:800;color:var(--ink)}
 .mdc-pill{font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--btn);background:var(--accent-soft);padding:3px 9px;border-radius:999px;flex:none}
 .mm-dcard p{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin:0}
-/* Upload CTA */
-.mm-upload-cta{background:var(--panel);border:1.5px solid var(--line);border-radius:16px;padding:22px 24px;display:flex;align-items:center;gap:20px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);margin-bottom:24px;width:100%;text-align:left}
-.mm-upload-cta:hover{border-color:var(--btn)}
-.mm-upload-ico{width:48px;height:48px;border-radius:14px;background:var(--accent-soft);color:var(--btn);display:grid;place-items:center;font-size:22px;flex:none}
-.mm-upload-cta h4{font-size:17px;font-weight:800;color:var(--ink);margin:0 0 5px}
-.mm-upload-cta p{font-size:13.5px;color:var(--ink-2);line-height:1.5;margin:0}
-.mm-upload-cta .muc-go{font-size:13px;font-weight:800;color:var(--btn);display:block;margin-top:8px}
-/* Secondary entry cards */
-.mm-alt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
-@media(max-width:900px){.mm-alt-grid{grid-template-columns:1fr}}
-.mm-alt-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;cursor:pointer;transition:.14s;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;text-align:left}
-.mm-alt-card:hover{border-color:var(--btn);transform:translateY(-2px)}
-.mm-alt-card .mac-ico{font-size:19px;margin-bottom:4px}
-.mm-alt-card h4{font-size:14px;font-weight:800;color:var(--ink);margin:0}
-.mm-alt-card p{font-size:12px;color:var(--ink-2);line-height:1.45;margin:0;flex:1}
-.mm-alt-card .mac-go{font-size:12px;font-weight:800;color:var(--ink-3);margin-top:6px}
-/* Project-loaded bar + project select (shared) */
-.begin-loaded{display:flex;align-items:center;gap:10px;padding:11px 16px;border:1px solid var(--line);background:var(--panel);border-radius:12px;font-size:13.5px;color:var(--ink-2);margin-bottom:20px;box-shadow:var(--shadow)}
-.begin-loaded .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
-.begin-loaded .bl-k{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
+/* Project select (shared) */
 .proj-select{font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:7px 30px 7px 12px;cursor:pointer;max-width:380px;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='3' stroke-linecap='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 10px center}
 .proj-select:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
 .work-surface{border:1.5px dashed var(--line);border-radius:13px;background:var(--bg);padding:24px;color:var(--ink-2);font-size:13.5px;line-height:1.6}
@@ -651,41 +624,34 @@ function renderStart(s){
       <div class="mdc-top"><span class="mdc-name">${esc(d.short)}</span><span class="mdc-pill">${esc(d.leadLabel)}</span></div>
       <p>${esc(desc)}</p></button>`;
   }).join('');
-  const projectBar = loaded ? `<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
-    <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
-      ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
-    </select>
-    <button class="btn primary" style="margin-left:auto" onclick="stepBy(1)">Continue to analysis →</button></div>` : '';
-  $("#centerInner").innerHTML=`
-    <div class="mm-launch">
-      <div class="mm-launch-hero">
-        <div class="mm-launch-badge">Mixed Methods Studio · ReliCheck</div>
-        <h1 class="mm-launch-h1">You're not here for the data.<br>You're here because <em>something matters.</em></h1>
-        <p class="mm-launch-tag">Mixed methods research is how you find out why — and prove it. Numbers show what happened. Narratives show why. Together, they show what it means for the people who matter.</p>
-      </div>
-      <div class="mm-pillars">
-        <div class="mm-pillar"><span class="mp-num">01 · Discover</span><span class="mp-title">Map &amp; Check</span><span class="mp-desc">Organize variables. Audit data quality before you analyze.</span></div>
-        <div class="mm-pillar"><span class="mp-num">02 · Analyze</span><span class="mp-title">Both Strands</span><span class="mp-desc">Run statistics. Surface themes. Build and test constructs.</span></div>
-        <div class="mm-pillar"><span class="mp-num">03 · Integrate</span><span class="mp-title">Joint Display</span><span class="mp-desc">Convergence, divergence, and higher-order meta-inferences.</span></div>
-        <div class="mm-pillar"><span class="mp-num">04 · Report</span><span class="mp-title">Findings</span><span class="mp-desc">Evidence-backed write-up, ready to download and share.</span></div>
-      </div>
-      ${projectBar}
-      <div class="mm-sec-label">Choose your research design</div>
-      <div class="mm-design-grid">${designs}</div>
-      <button class="mm-upload-cta" onclick="go('/mm-wizard.php?return=mmstudioV4')">
-        <span class="mm-upload-ico">⤓</span>
-        <div>
-          <h4>Bring in your data</h4>
-          <p>Have a survey plus interviews or open-ended responses? Upload a CSV or Excel file and build your project — then come back here to analyze.</p>
-          <span class="muc-go">Upload data →</span>
+  /* If a project is already loaded, lead with it prominently */
+  const projectSection = loaded
+    ? `<div class="rs-project-banner">
+        <div class="rs-pb-left">
+          <span class="rs-pb-label">Continue your project</span>
+          <span class="rs-pb-title">${esc(BOOT.projectLabel)}</span>
         </div>
-      </button>
-      <div class="mm-sec-label">Or start another way</div>
-      <div class="mm-alt-grid">
-        <button class="mm-alt-card" onclick="go('/studio-mm-projects.php')"><span class="mac-ico">▦</span><h4>Open a saved project</h4><p>Return to a mixed-methods study already in ReliCheck.</p><span class="mac-go">Open projects →</span></button>
-        <button class="mm-alt-card" onclick="go('/develop.php?db=1&amp;start=choose')"><span class="mac-ico">✎</span><h4>Build a survey</h4><p>Design and strengthen a new survey in SIRI, then bring its responses here.</p><span class="mac-go">Go to SIRI →</span></button>
-        <button class="mm-alt-card" onclick="go('/rssi.php')"><span class="mac-ico">◉</span><h4>Check survey strength</h4><p>Run RSSI to gauge how strong and reliable your survey evidence is.</p><span class="mac-go">Go to RSSI →</span></button>
+        <div class="rs-pb-right">
+          <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
+            ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
+          </select>
+          <button class="btn primary" onclick="stepBy(1)">Continue →</button>
+        </div>
+      </div>`
+    : `<div class="rs-no-project">
+        <span class="rs-np-text">No project loaded yet.</span>
+        <button class="btn" onclick="go('/studio-mm-projects.php')">Open a project</button>
+        <button class="btn" onclick="go('/mm-wizard.php?return=mmstudioV4')">Upload data</button>
+      </div>`;
+  $("#centerInner").innerHTML=`
+    <div class="rs-wrap">
+      <div class="rs-head">
+        <div class="rs-wordmark">Mixed Methods Studio</div>
+        <p class="rs-lede">Choose your research design, then begin.</p>
       </div>
+      ${projectSection}
+      <div class="rs-sec">Research design</div>
+      <div class="mm-design-grid" style="margin-bottom:0">${designs}</div>
     </div>`;
 }
 const DK_LABEL={survey_plus_open:"Survey + open-ended",survey_plus_interviews:"Survey + interviews",quant_plus_interpretation:"Quant + interpretation",open_only:"Open-ended only",build_from_scratch:"Build from scratch"};
