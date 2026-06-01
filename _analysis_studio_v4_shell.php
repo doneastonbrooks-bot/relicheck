@@ -263,15 +263,16 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const host = document.getElementById('centerInner');
     const s = activeStep();
     if (s.mode==='start') return renderStart(host);
+    if (s.mode==='overview') return renderOverview(host);
     if (s.mode==='report') return renderReport(host, s);
     return renderWork(host, s);
   }
 
+  // Start is ALWAYS the data hub: bring in new data or open a saved project.
   function renderStart(host){
-    const loaded = BOOT.canPersist;
-    let html = '<div class="ws-header"><div class="eyebrow">'
-      + (loaded ? esc(BOOT.projectLabel) : 'New analysis')
-      + '</div><h1 class="start-hero">'
+    const has = !!state.dataset;
+    let html = '<div class="ws-header"><div class="eyebrow">'+(has?'Your data':'New analysis')+'</div>'
+      + '<h1 class="start-hero">'
       + (BOOT.slug==='descriptive'
           ? 'See what is <span class="accent">in your data.</span>'
           : 'Test what your data <span class="accent">can support.</span>')
@@ -280,27 +281,49 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
           : 'Comparisons, relationships, regression, effect sizes, and assumptions — with supported interpretation.')
       + '</p></div>';
 
-    if (loaded) {
-      html += '<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>'
-        + '<span>' + esc(BOOT.projectLabel) + '</span>'
-        + '<button class="btn primary" style="margin-left:auto" id="stBegin">Continue to analysis &rarr;</button></div>';
-      html += '<div class="placeholder" id="dataState">' + (state.dataset
-        ? ('<strong>Data loaded.</strong> ' + (state.dataset.rowCount||0) + ' rows — pick a step from the left to analyze.')
-        : 'Checking for this project’s data&hellip;') + '</div>';
-    } else {
-      html += '<button class="begin-feature" id="stUpload"><span class="bc-ico">&#8681;</span>'
-        + '<div><h4>Bring in your data</h4><p>Upload a CSV or Excel file and tag your columns — the same way RSSI does.</p>'
-        + '<span class="bc-go">Upload data &rarr;</span></div></button>';
-      html += '<div class="begin-sec">Or start another way</div><div class="begin-grid2">'
-        + '<button class="begin-card2" id="stSiri"><span class="bc-ico">&#9889;</span><h4>From SIRI responses</h4><p>Analyze a published survey’s collected responses.</p></button>'
-        + '<button class="begin-card2" id="stProjects"><span class="bc-ico">&#9638;</span><h4>Open a saved project</h4><p>Reopen an analysis you already started.</p></button>'
-        + '</div>';
+    if (has) {
+      html += '<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Loaded</span>'
+        + '<span>' + esc(state.dataset.source || BOOT.projectLabel) + ' · ' + (state.dataset.rowCount||0) + ' rows</span>'
+        + '<button class="btn primary" style="margin-left:auto" id="stOverview">Go to Overview &rarr;</button></div>';
     }
+    html += '<button class="begin-feature" id="stUpload"><span class="bc-ico">&#8681;</span>'
+      + '<div><h4>Upload data</h4><p>Drop an Excel (.xlsx), CSV, or TSV file and tag your columns.</p>'
+      + '<span class="bc-go">Upload data &rarr;</span></div></button>';
+    html += '<div class="begin-sec">Or</div><div class="begin-grid2">'
+      + '<button class="begin-card2" id="stSiri"><span class="bc-ico">&#9889;</span><h4>Open from SIRI responses</h4><p>Analyze a published survey’s collected responses.</p></button>'
+      + '<button class="begin-card2" id="stProjects"><span class="bc-ico">&#9638;</span><h4>Open a saved project</h4><p>Your saved data, from any ReliCheck studio.</p></button>'
+      + '</div>';
     host.innerHTML = html;
-    const b = document.getElementById('stBegin'); if (b) b.addEventListener('click', function(){ state.stepId=steps()[1].id; render(); });
+    const ov = document.getElementById('stOverview'); if (ov) ov.addEventListener('click', function(){ state.stepId='overview'; render(); });
     const u = document.getElementById('stUpload'); if (u) u.addEventListener('click', openUpload);
     const si = document.getElementById('stSiri'); if (si) si.addEventListener('click', openSiri);
     const pr = document.getElementById('stProjects'); if (pr) pr.addEventListener('click', openSaved);
+  }
+
+  // Overview is the landing view once data is loaded (mirrors MM's Overview):
+  // a quick read of what's in the dataset before any analysis.
+  function renderOverview(host){
+    const ds = state.dataset;
+    if (!ds) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Overview</h1></div>'
+        + '<div class="placeholder">No data yet. Go to <strong>Start</strong> to upload a file or open a saved project.</div>';
+      return;
+    }
+    const vars = ds.variables || [];
+    const isNum = function(v){ return /likert|numeric/.test((v.types||[]).join(',').toLowerCase()); };
+    const valid = function(v){ return (v.values||[]).filter(function(x){ return x!=='' && x!=null; }).length; };
+    const stat = function(n,l){ return '<div><div style="font-size:26px;font-weight:700;line-height:1">'+n+'</div><div style="font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px">'+l+'</div></div>'; };
+    const rows = vars.map(function(v){ const n=valid(v), total=(v.values||[]).length;
+      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td class="l">'+esc((v.types||['—'])[0])+'</td><td>'+n+'</td><td>'+(total-n)+'</td></tr>'; }).join('');
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Overview</h1>'
+      + '<p class="lede">What is in this dataset, before you analyze it.</p></div>'
+      + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
+      + '<div style="display:flex;gap:34px;flex-wrap:wrap">' + stat(ds.rowCount||0,'Rows') + stat(vars.length,'Variables') + stat(vars.filter(isNum).length,'Numeric') + '</div>'
+      + '<p style="margin:14px 0 0;color:var(--ink-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'
+      + '<div class="panel"><div class="panel-h"><h3>Variables</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
+      + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>'
+      + '<div style="margin-top:6px"><button class="btn primary" id="ovGo">Continue to analysis &rarr;</button></div>';
+    const go = document.getElementById('ovGo'); if (go) go.addEventListener('click', function(){ const nx=steps()[2]; if(nx){ state.stepId=nx.id; render(); } });
   }
 
   function renderWork(host, s){
@@ -386,6 +409,9 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   function applyDataset(ds){
     state.dataset = ds;
     showChip((ds.rowCount||0) + ' rows · ' + ((ds.variables||[]).length) + ' variables');
+    // Once data is loaded, Overview becomes the landing view (Start stays the
+    // data hub you can return to). Don't yank the user off a step they chose.
+    if (state.stepId === 'start') state.stepId = 'overview';
     render();
   }
   let _loaded=false;

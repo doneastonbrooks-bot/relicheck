@@ -11,6 +11,7 @@
 return [
   'descriptive' => [
     ['id' => 'start',            'label' => 'Start',                'dot' => 'quan', 'mode' => 'start'],
+    ['id' => 'overview',         'label' => 'Overview',             'dot' => 'quan', 'mode' => 'overview'],
     ['id' => 'frequencies',      'label' => 'Frequencies',          'dot' => 'quan', 'mode' => 'work', 'tool' => 'frequencies'],
     ['id' => 'distributions',    'label' => 'Means & Distributions','dot' => 'quan', 'mode' => 'work', 'tool' => 'distributions'],
     ['id' => 'cross_tabs',       'label' => 'Cross-Tabs',           'dot' => 'quan', 'mode' => 'work', 'tool' => 'cross_tabs'],
@@ -21,6 +22,7 @@ return [
   ],
   'inferential' => [
     ['id' => 'start',            'label' => 'Start',                'dot' => 'quan', 'mode' => 'start'],
+    ['id' => 'overview',         'label' => 'Overview',             'dot' => 'quan', 'mode' => 'overview'],
     ['id' => 'variables_fit',    'label' => 'Variables & Fit',      'dot' => 'quan', 'mode' => 'work', 'tool' => 'variables_fit'],
     ['id' => 't_test',           'label' => 't-Test',               'dot' => 'quan', 'mode' => 'work', 'tool' => 't_test'],
     ['id' => 'anova',            'label' => 'ANOVA',                'dot' => 'quan', 'mode' => 'work', 'tool' => 'anova'],
