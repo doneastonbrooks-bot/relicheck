@@ -421,8 +421,13 @@ label .tt-hint{margin-left:6px}
 .ed-in:focus{outline:none;border-color:var(--btn);box-shadow:0 0 0 3px var(--accent-soft)}
 .ed-foot{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
 /* Start step — bold landing-style hero + SIRI begin layout */
-.start-hero{font-size:28px;font-weight:650;letter-spacing:-.02em;line-height:1.25;margin-bottom:10px;max-width:30ch}
+.start-hero-wrap{text-align:center;max-width:800px;margin:14px auto 30px}
+.start-beta{display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--btn);margin-bottom:18px}
+.start-beta .sb-dot{width:20px;height:20px;border-radius:6px;background:var(--btn)}
+.start-hero{font-size:46px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0 auto 16px;max-width:17ch}
 .start-hero .accent{color:var(--btn)}
+.start-sub{font-size:15.5px;color:var(--ink-2);line-height:1.6;max-width:620px;margin:0 auto}
+@media(max-width:640px){.start-hero{font-size:32px}}
 .begin-loaded{display:flex;align-items:center;gap:10px;padding:11px 16px;border:1px solid var(--line);background:var(--panel);border-radius:12px;font-size:13.5px;color:var(--ink-2);margin-bottom:20px;box-shadow:var(--shadow)}
 .begin-loaded .dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex:none}
 .begin-loaded .bl-k{font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3)}
@@ -616,9 +621,9 @@ function renderRail(){
 function renderStart(s){
   const loaded = BOOT.projectId>0;
   $("#centerInner").innerHTML=`
-    <div class="ws-header"><div class="eyebrow">New project</div>
+    <div class="start-hero-wrap"><div class="start-beta"><span class="sb-dot"></span>Beta</div>
       <h1 class="start-hero">Connect numbers, narratives, <span class="accent">and meaning.</span></h1>
-      <p class="lede">${esc(s.lede)}</p></div>
+      <p class="start-sub">${esc(s.lede)}</p></div>
     ${loaded?`<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
       <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
         ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}

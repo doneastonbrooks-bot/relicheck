@@ -24,7 +24,7 @@
 // footer dock carries the upload / pull-data intake.
 $SETUP = [
   ['id'=>'start','label'=>'Start','strand'=>'neutral','mode'=>'start','route'=>null,
-   'title'=>'Connect numbers, narratives, and meaning.','lede'=>'Bring your quantitative and qualitative evidence into one project, then move through the analysis. Pick a starting point — you can change course at any step.','done'=>false,
+   'title'=>'Connect numbers, narratives, and meaning.','lede'=>'Use mixed-methods evidence to connect quantitative results with qualitative themes, group differences, and explanatory patterns.','done'=>false,
    'palette'=>['intro'=>'Orientation','groups'=>[]]],
   // Overview: a review of everything from setup — the data brought in and the
   // framing questions answered, plus the chosen design. Users can return here
