@@ -278,7 +278,7 @@ html, body {
 }
 .lp-card .glyph {
   width: 92px; height: 92px; border-radius: 22px;
-  background: color-mix(in srgb, var(--card-accent) 12%, #fff);
+  background: transparent;
   display: grid; place-items: center;
   margin-bottom: 16px;
 }
