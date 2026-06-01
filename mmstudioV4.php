@@ -2022,7 +2022,8 @@ function renderReport(s){
       <textarea id="rp_${sec.key}" class="ed-in" rows="5" style="margin-top:8px" placeholder="${esc(sec.title)} — build it from your analysis, or write it yourself.">${esc(rpVal(sec.key,row))}</textarea>
       <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="rpSave('${sec.key}')">${sv?'Saving…':'Save section'}</button><button class="btn" ${gn?'disabled':''} onclick="rpGenerate('${sec.key}',${isAi})">${gn?(isAi?'Generating…':'Refreshing…'):(isAi?'✦ Generate with ReliCheck Intelligence':'Refresh from data')}</button></div>
     </div></div>`;}).join('');
-  $("#centerInner").innerHTML=rpHead(s)+helpBar('report')+note+bulkBar+cards+rpNav();
+  const exportBar=`<div class="panel"><div class="panel-h"><div><h3>Download your report</h3><div class="ph-sub">Includes your edits; build or save the sections first</div></div></div><div class="panel-b"><div class="dm-save" style="margin:0"><a class="btn primary" href="/api/mm/report-docx.php?project_id=${BOOT.projectId}">⬇ Download Word (.docx)</a><a class="btn" href="/api/mm/report-export.php?project_id=${BOOT.projectId}&format=md">⬇ Download Markdown</a></div></div></div>`;
+  $("#centerInner").innerHTML=rpHead(s)+helpBar('report')+note+bulkBar+cards+exportBar+rpNav();
 }
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
