@@ -62,8 +62,10 @@ $initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U
 // Cache-bust the work-step presentation module by file mtime.
 $_as_css = '/apps/analysis-studio/analysis-studio.css';
 $_as_js  = '/apps/analysis-studio/analysis-studio.js';
+$_au_js  = '/apps/analysis-studio/analysis-upload.js';
 $_as_css_v = is_file(__DIR__ . $_as_css) ? filemtime(__DIR__ . $_as_css) : time();
 $_as_js_v  = is_file(__DIR__ . $_as_js)  ? filemtime(__DIR__ . $_as_js)  : time();
+$_au_js_v  = is_file(__DIR__ . $_au_js)  ? filemtime(__DIR__ . $_au_js)  : time();
 
 $BOOT = [
   'slug'         => $sd_slug,
@@ -185,6 +187,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 </style>
 <link rel="stylesheet" href="<?= htmlspecialchars($_as_css . '?v=' . $_as_css_v) ?>">
 <script src="<?= htmlspecialchars($_as_js . '?v=' . $_as_js_v) ?>"></script>
+<script src="<?= htmlspecialchars($_au_js . '?v=' . $_au_js_v) ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -338,7 +341,21 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   }
 
   // ---- Data dock ----
-  function openUpload(){ window.location.href = '/evidence-intake.php?studio=survey&return=' + encodeURIComponent(BOOT.slug==='descriptive'?'/descriptive-analysis-workspace.php':'/inferential-statistics-workspace.php'); }
+  const WORKSPACE_ROUTE = BOOT.slug==='descriptive' ? '/descriptive-analysis-workspace.php' : '/inferential-statistics-workspace.php';
+  function openUpload(){
+    if (!window.AnalysisUpload) return;
+    window.AnalysisUpload.open({
+      kind: BOOT.slug,
+      projectId: BOOT.projectId,
+      onLoaded: function(dataset, pid){
+        // A new project was created → reopen project-scoped so it persists.
+        if (pid && pid !== BOOT.projectId) { window.location.href = WORKSPACE_ROUTE + '?v4=1&project_id=' + encodeURIComponent(pid); return; }
+        applyDataset(dataset);
+        if (state.stepId === 'start') { state.stepId = steps()[1].id; }
+        render();
+      }
+    });
+  }
   function openSiri(){ alert('SIRI source picker — wired in the data-intake chunk.'); }
 
   // Most-recent localStorage dataset (engine shape), as a fallback when the
