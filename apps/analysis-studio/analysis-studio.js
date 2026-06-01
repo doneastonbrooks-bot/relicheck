@@ -106,6 +106,27 @@
     scale_scores: { title:'Scale Scores', what:'Combine several numeric items into one composite (the average of the chosen items per respondent). Descriptive only — no reliability.',
       steps:['Tick the items that belong to the scale (at least two).','Read the composite’s N, mean, and SD.','For reliability (Cronbach’s α), use RSSI — not here.'],
       example:'<strong>Reading it:</strong> a 4-item composite with mean 3.8 / SD 0.7 summarizes the scale; whether the items hang together is an RSSI question.' },
+    variables_fit: { title:'Variables \u0026 Fit', what:'Detects each variable\'s measurement type (numeric or categorical) and suggests the right statistical test for each pair.',
+      steps:['Review the Variables table \u2014 confirm the detected type for each variable.','Check the Suggested tests table to see which test fits each pair.','Note any misclassified variables, then continue to the relevant test step.'],
+      example:'<strong>Reading it:</strong> a numeric outcome paired with a 2-level categorical predictor suggests a t-test; 3+ levels suggests ANOVA.' },
+    t_test: { title:'Independent t-test', what:'Tests whether the means of two groups on a numeric outcome are statistically different.',
+      steps:['Pick your numeric outcome and a grouping variable with exactly 2 levels.','Click Run t-test.','Read t, df, and p \u2014 then Cohen\'s d for effect size.'],
+      example:'<strong>Reading it:</strong> t(28) = 2.41, p = .023, d = 0.58 \u2014 a medium-effect significant difference between the two groups.' },
+    anova: { title:'One-way ANOVA', what:'Tests whether a numeric outcome differs significantly across three or more groups.',
+      steps:['Pick your numeric outcome and a grouping variable with 3+ levels.','Click Run ANOVA.','Read F, p, and \u03b7\u00b2. Inspect group means for the pattern.'],
+      example:'<strong>Reading it:</strong> F(2,57) = 5.12, p = .009, \u03b7\u00b2 = .15 \u2014 a large effect; at least one group mean differs from the others.' },
+    chi_square: { title:'Chi-square', what:'Tests whether two categorical variables are statistically independent.',
+      steps:['Pick two categorical variables.','Click Run chi-square.','Read \u03c7\u00b2, df, p, and Cram\u00e9r\'s V. Inspect the contingency table for the pattern.'],
+      example:'<strong>Reading it:</strong> \u03c7\u00b2(2) = 8.34, p = .015, V = 0.29 \u2014 a moderate association; the two variables are not independent.' },
+    correlation: { title:'Correlation', what:'Measures the strength and direction of the linear relationship between two numeric variables.',
+      steps:['Pick two numeric variables.','Click Run correlation.','Read r and p. r\u00b2 tells you the proportion of variance the two variables share.'],
+      example:'<strong>Reading it:</strong> r = .54, p < .001 \u2014 a moderate positive significant correlation; r\u00b2 = .29 means 29% of shared variance.' },
+    regression: { title:'Regression', what:'Fits a simple OLS regression line to predict a numeric outcome from a numeric predictor.',
+      steps:['Pick an outcome (Y) and a predictor (X).','Click Run regression.','Read the slope, intercept, R\u00b2, and p. The equation shows how Y changes with X.'],
+      example:'<strong>Reading it:</strong> Y = 1.2 + 0.6X, R\u00b2 = .34, p = .002 \u2014 for each 1-unit rise in X, Y rises 0.6; X accounts for 34% of Y\'s variance.' },
+    effect_sizes: { title:'Effect Sizes', what:'Computes practical effect sizes for all numeric-by-group and numeric-by-numeric variable pairs in your dataset.',
+      steps:['Review the table \u2014 sorted from largest to smallest effect.','Look at the Effect column: Cohen\'s d (t-test pairs), \u03b7\u00b2 (ANOVA pairs), r\u00b2 (correlation pairs).','Use the size label (small / medium / large) as a first screen.'],
+      example:'<strong>Reading it:</strong> Cohen\'s d = 0.62 is a medium effect for a 2-group comparison; \u03b7\u00b2 = 0.14 is a large effect for a 3+ group comparison.' },
   };
   function helpButton(key){ return HELP[key] ? '<div class="as-help-bar"><button class="btn-help" data-as-help="'+esc(key)+'">📘 How to use this</button></div>' : ''; }
   AS.help = function(key){
@@ -137,6 +158,13 @@
     group_summaries:{ measures:'Each group’s mean, SD, and gap from the overall mean on a numeric outcome.', use:'To compare a numeric outcome across groups, descriptively.' },
     top_bottom_items:{ measures:'Every numeric item’s mean and SD, ranked, with ceiling / floor / low-variance flags.', use:'To spot the strongest and weakest items, and items that may not discriminate.' },
     scale_scores:{ measures:'A composite (average of chosen items per respondent) with its N, mean, SD, and range.', use:'To summarize a set of items as one score. Whether the set is reliable lives in RSSI.' },
+    variables_fit:{ measures:'Variable types (numeric vs categorical) and a test-suggestion table for each variable pair.', use:'At the start of the Inferential Studio, to confirm variable types and choose the right test.' },
+    t_test:{ measures:'Welch\'s t statistic, degrees of freedom, two-tailed p-value, and Cohen\'s d.', use:'To test whether two group means on a numeric outcome differ beyond sampling noise.' },
+    anova:{ measures:'F statistic, between/within df, p-value, and eta-squared (\u03b7\u00b2), with group means.', use:'To test whether a numeric outcome differs across three or more groups.' },
+    chi_square:{ measures:'Chi-square statistic, df, p-value, Cram\u00e9r\'s V, and a contingency table.', use:'To test whether two categorical variables are statistically independent.' },
+    correlation:{ measures:'Pearson r, r\u00b2, t statistic, df, and p-value for the linear relationship.', use:'To measure the strength and direction of a linear relationship between two numeric variables.' },
+    regression:{ measures:'OLS slope, intercept, R\u00b2, t statistic for the slope, and p-value.', use:'To predict a numeric outcome from a numeric predictor and describe how Y changes with X.' },
+    effect_sizes:{ measures:'Cohen\'s d (2-group), \u03b7\u00b2 (3+ groups), or r\u00b2 (numeric pairs) for all variable combinations.', use:'To get a quick overview of practical effect sizes across all pairs before focusing on specific tests.' },
   };
   // Report-ready sentence drafts per step (the "Draft a sentence" suggestion).
   const DRAFT = {
@@ -147,6 +175,13 @@
     group_summaries:'Group means were compared descriptively across the grouping variable, with each group’s gap from the overall mean noted.',
     top_bottom_items:'Items were ranked by mean to identify the highest- and lowest-scoring items, flagging ceiling and low-variance items.',
     scale_scores:'A composite scale score was computed as the mean of the selected items for each respondent.',
+    variables_fit:'Variable types were reviewed and test-variable pairs were identified to guide subsequent inferential analyses.',
+    t_test:'An independent-samples t-test was conducted to compare the means of the two groups on the outcome variable.',
+    anova:'A one-way ANOVA was conducted to examine differences in the outcome variable across groups.',
+    chi_square:'A chi-square test of independence examined whether the two categorical variables were related.',
+    correlation:'A Pearson correlation was computed to examine the linear relationship between the two variables.',
+    regression:'Simple OLS regression was used to predict the outcome variable from the predictor variable.',
+    effect_sizes:'Effect sizes were computed for all variable pairs to describe the practical magnitude of associations.',
   };
   // ReliCheck Intelligence — deterministic, content-aware responses (no fake AI).
   AS.intel = function(kind, key, label){
@@ -185,18 +220,21 @@
   // ---- public ----
   AS.renderWork = function(host, ctx){
     const ds = ctx.dataset, tool = ctx.tool;
+    const eyebrow = ctx.kind === 'inferential' ? 'Inferential Analysis' : 'Descriptive Analysis';
     VIEW = ctx.view || 'table';
     if (!ds || !Array.isArray(ds.variables) || !ds.variables.length){
-      host.innerHTML = header('Descriptive Analysis', titleFor(tool), '')
+      host.innerHTML = header(eyebrow, titleFor(tool), '')
         + '<div class="as-empty-tool">Load data first — use the <strong>Data</strong> bar below.</div>';
       return;
     }
-    const fns = { frequencies:renderFreq, distributions:renderMeans, cross_tabs:renderCross, group_summaries:renderGroups, top_bottom_items:renderTopBottom, scale_scores:renderScale };
+    const fns = { frequencies:renderFreq, distributions:renderMeans, cross_tabs:renderCross, group_summaries:renderGroups, top_bottom_items:renderTopBottom, scale_scores:renderScale,
+      variables_fit:renderVariablesFit, t_test:renderTTest, anova:renderAnova,
+      chi_square:renderChiSquare, correlation:renderCorrelation, regression:renderRegression, effect_sizes:renderEffectSizes };
     const fn = fns[tool];
-    if (!fn){ host.innerHTML = header('Descriptive Analysis', titleFor(tool), '') + '<div class="as-empty-tool">This analysis is being built.</div>'; return; }
-    fn(host, ds);
+    if (!fn){ host.innerHTML = header(eyebrow, titleFor(tool), '') + '<div class="as-empty-tool">This analysis is being built.</div>'; return; }
+    fn(host, ds, ctx);
   };
-  function titleFor(t){ return ({frequencies:'Frequencies',distributions:'Means & Distributions',cross_tabs:'Cross-Tabs',group_summaries:'Group Summaries',top_bottom_items:'Top & Bottom Items',scale_scores:'Scale Scores'})[t]||'Descriptive'; }
+  function titleFor(t){ return ({frequencies:'Frequencies',distributions:'Means & Distributions',cross_tabs:'Cross-Tabs',group_summaries:'Group Summaries',top_bottom_items:'Top & Bottom Items',scale_scores:'Scale Scores',variables_fit:'Variables & Fit',t_test:'Independent t-test',anova:'One-way ANOVA',chi_square:'Chi-square',correlation:'Correlation',regression:'Regression',effect_sizes:'Effect Sizes'})[t]||'Analysis'; }
 
   // ---- Frequencies ----
   function renderFreq(host, ds){
@@ -425,6 +463,373 @@
     };
     host.querySelectorAll('.scItem').forEach(function(cb){ cb.addEventListener('change',function(){ const v=cb.value; const i=sel.scale.indexOf(v); if(cb.checked&&i<0) sel.scale.push(v); else if(!cb.checked&&i>=0) sel.scale.splice(i,1); const lab=cb.closest('.sc-item'); if(lab) lab.classList.toggle('on', cb.checked); drawOut(); }); });
     drawOut();
+  }
+
+  // ---- Inferential helpers ----
+  function formatP(p){ if(p<0.0001) return '<.0001'; if(p<0.001) return '<.001'; return p.toFixed(3); }
+  function effLabel(label,val){
+    if(val==null||!isFinite(val)) return '';
+    var thresholds;
+    if(label==='cohens_d')   thresholds=[[0.8,'large'],[0.5,'medium'],[0.2,'small']];
+    else if(label==='eta_squared') thresholds=[[0.14,'large'],[0.06,'medium'],[0.01,'small']];
+    else if(label==='cramers_v')   thresholds=[[0.5,'large'],[0.3,'medium'],[0.1,'small']];
+    else if(label==='r_squared')   thresholds=[[0.25,'large'],[0.09,'medium'],[0.01,'small']];
+    else return '';
+    var a=Math.abs(val);
+    for(var i=0;i<thresholds.length;i++){ if(a>=thresholds[i][0]) return thresholds[i][1]; }
+    return 'negligible';
+  }
+  function inferFetch(tool,body,btn,btnLabel,out,onDone){
+    btn.disabled=true; btn.textContent='Running…';
+    fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        btn.disabled=false; btn.textContent='Re-run';
+        if(!d||!d.ok){ out.innerHTML='<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Server error — please try again.')+'</div>'; return; }
+        onDone(d);
+      })
+      .catch(function(){
+        btn.disabled=false; btn.textContent=btnLabel;
+        out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+      });
+  }
+  function statTable(rows,maxW){
+    var body=rows.map(function(r){return '<tr><td class="dx-name">'+esc(r[0])+'</td><td>'+esc(String(r[1]))+'</td></tr>';}).join('');
+    return '<div class="dx-scroll" style="margin-bottom:12px"><table class="dx-table"'+(maxW?' style="max-width:'+maxW+'px"':'')+'>'+
+      '<thead><tr><th class="l">Statistic</th><th>Value</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  }
+
+  // ---- Variables & Fit ----
+  function renderVariablesFit(host,ds,ctx){
+    var nv=numericVars(ds),cv=catVars(ds);
+    var varBody=ds.variables.map(function(v){
+      var kind=isNumericVar(v)?'Numeric':(isCategoricalVar(v)?'Categorical':'Other');
+      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td>'+esc((v.types||['—'])[0])+'</td><td>'+kind+'</td><td>'+nonMissing(v.values).length+'</td></tr>';
+    }).join('');
+    var pairs=[];
+    nv.forEach(function(v1){
+      nv.forEach(function(v2){ if(v1.name<v2.name) pairs.push({a:v1.name,b:v2.name,test:'Pearson correlation'}); });
+      cv.forEach(function(c){
+        var levels=new Set(nonMissing(c.values));
+        var test=levels.size===2?'Independent t-test':(levels.size>=3?'One-way ANOVA':'— (need 2+ levels)');
+        pairs.push({a:v1.name,b:c.name,test:test});
+      });
+    });
+    cv.forEach(function(c1){
+      cv.forEach(function(c2){ if(c1.name<c2.name) pairs.push({a:c1.name,b:c2.name,test:'Chi-square'}); });
+    });
+    var pairBody=pairs.length?pairs.map(function(p){
+      return '<tr><td class="dx-name">'+esc(p.a)+'</td><td class="dx-name">'+esc(p.b)+'</td><td>'+esc(p.test)+'</td></tr>';
+    }).join(''):'<tr><td colspan="3">Need at least two numeric or categorical variables for suggestions.</td></tr>';
+    var layerBlocks=[
+      {k:'What this shows',t:'Variable types detected in your dataset and the statistical test that fits each pair.'},
+      {k:'Why this matters',t:'Matching the right test to the measurement level of your variables is the first step in valid inference.'},
+      {k:'Caution',caution:true,t:'Type detection is heuristic. Review the list and continue to the correct test step — the test itself will flag problems (wrong group count, etc.).'}
+    ];
+    host.innerHTML=header('Inferential Analysis','Variables & Fit','What types are your variables, and which tests fit each pair?','variables_fit')
+      +'<div class="panel"><div class="panel-h"><h3>Variables in this dataset</h3></div><div class="panel-b">'
+      +'<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variable</th><th class="l">Reported type</th><th>Role</th><th>Valid n</th></tr></thead><tbody>'
+      +varBody+'</tbody></table></div></div></div>'
+      +(pairs.length?'<div class="panel"><div class="panel-h"><h3>Suggested tests by pair</h3></div><div class="panel-b">'
+        +'<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variable A</th><th class="l">Variable B</th><th>Suggested test</th></tr></thead><tbody>'
+        +pairBody+'</tbody></table></div>'+layers(layerBlocks)+'</div></div>'
+      :'<div class="panel"><div class="panel-b">'+layers(layerBlocks)+'</div></div>');
+    if(ctx&&ctx.onResult) ctx.onResult();
+  }
+
+  // ---- Independent t-test ----
+  function renderTTest(host,ds,ctx){
+    var nv=numericVars(ds),cv=catVars(ds);
+    if(!nv.length||!cv.length){
+      host.innerHTML=header('Inferential Analysis','Independent t-test','','t_test')
+        +'<div class="as-empty-tool">Need at least one numeric outcome and one grouping variable.</div>'; return;
+    }
+    sel.tt_out=(sel.tt_out&&varByName(ds,sel.tt_out))?sel.tt_out:nv[0].name;
+    sel.tt_grp=(sel.tt_grp&&varByName(ds,sel.tt_grp))?sel.tt_grp:cv[0].name;
+    host.innerHTML=header('Inferential Analysis','Independent t-test','Compare the means of two groups on a numeric outcome.','t_test')
+      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
+      +selectField('ttOut','Outcome (numeric)','',nv,sel.tt_out)
+      +selectField('ttGrp','Group variable','2 levels',cv,sel.tt_grp)
+      +'</div><button class="btn primary" id="ttRun" style="margin-top:12px">Run t-test</button>'
+      +'</div></div><div id="ttResult"></div>';
+    var outEl=host.querySelector('#ttOut'),grpEl=host.querySelector('#ttGrp');
+    if(outEl) outEl.addEventListener('change',function(e){sel.tt_out=e.target.value;});
+    if(grpEl) grpEl.addEventListener('change',function(e){sel.tt_grp=e.target.value;});
+    var btn=host.querySelector('#ttRun');
+    if(btn) btn.addEventListener('click',function(){
+      var ov=varByName(ds,sel.tt_out),gv=varByName(ds,sel.tt_grp); if(!ov||!gv) return;
+      var n=Math.min(ov.values.length,gv.values.length),vals=[],grps=[];
+      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gv.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
+      var out=host.querySelector('#ttResult');
+      inferFetch('t_test',{tool:'t_test',values:vals,groups:grps},btn,'Run t-test',out,function(d){
+        var gkeys=d.details&&d.details.groups?Object.keys(d.details.groups):[];
+        var grpRows=gkeys.map(function(g){
+          var info=d.details.groups[g];
+          return '<tr><td class="dx-name">'+esc(g)+'</td><td>'+info.n+'</td><td>'+n2(info.mean)+'</td><td>'+n2(Math.sqrt(info.var||0))+'</td></tr>';
+        }).join('');
+        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
+        var sumRows=[['t',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],
+          ['Cohen\'s d',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—']];
+        var layerBlocks=[
+          {k:'What this shows',t:esc(d.summary||'')},
+          {k:'Why this matters',t:'A significant result (p < .05) means the group difference is unlikely to be sampling noise. Pair with Cohen\'s d for practical significance.'},
+          {k:'Caution',caution:true,t:'Welch\'s t-test does not assume equal variances, but assumes roughly normal distributions in each group — especially with small N.'}
+        ];
+        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
+          +statTable(sumRows,360)
+          +(grpRows?'<div class="dx-scroll" style="margin-bottom:8px"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th></tr></thead><tbody>'+grpRows+'</tbody></table></div>':'')
+          +layers(layerBlocks)+'</div></div>';
+        if(ctx&&ctx.onResult) ctx.onResult();
+      });
+    });
+  }
+
+  // ---- One-way ANOVA ----
+  function renderAnova(host,ds,ctx){
+    var nv=numericVars(ds),cv=catVars(ds);
+    if(!nv.length||!cv.length){
+      host.innerHTML=header('Inferential Analysis','One-way ANOVA','','anova')
+        +'<div class="as-empty-tool">Need at least one numeric outcome and one grouping variable (3+ levels).</div>'; return;
+    }
+    sel.an_out=(sel.an_out&&varByName(ds,sel.an_out))?sel.an_out:nv[0].name;
+    sel.an_grp=(sel.an_grp&&varByName(ds,sel.an_grp))?sel.an_grp:cv[0].name;
+    host.innerHTML=header('Inferential Analysis','One-way ANOVA','Test whether a numeric outcome differs across 3 or more groups.','anova')
+      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
+      +selectField('anOut','Outcome (numeric)','',nv,sel.an_out)
+      +selectField('anGrp','Group variable','3+ levels',cv,sel.an_grp)
+      +'</div><button class="btn primary" id="anRun" style="margin-top:12px">Run ANOVA</button>'
+      +'</div></div><div id="anResult"></div>';
+    var outEl=host.querySelector('#anOut'),grpEl=host.querySelector('#anGrp');
+    if(outEl) outEl.addEventListener('change',function(e){sel.an_out=e.target.value;});
+    if(grpEl) grpEl.addEventListener('change',function(e){sel.an_grp=e.target.value;});
+    var btn=host.querySelector('#anRun');
+    if(btn) btn.addEventListener('click',function(){
+      var ov=varByName(ds,sel.an_out),gv=varByName(ds,sel.an_grp); if(!ov||!gv) return;
+      var n=Math.min(ov.values.length,gv.values.length),vals=[],grps=[];
+      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gv.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
+      var out=host.querySelector('#anResult');
+      inferFetch('anova',{tool:'anova',values:vals,groups:grps},btn,'Run ANOVA',out,function(d){
+        var gkeys=d.details&&d.details.groups?Object.keys(d.details.groups):[];
+        var grandMean=d.details&&d.details.grand_mean!=null?d.details.grand_mean:null;
+        var grpRows=gkeys.map(function(g){
+          var info=d.details.groups[g]; var delta=grandMean!=null?info.mean-grandMean:null;
+          return '<tr><td class="dx-name">'+esc(g)+'</td><td>'+info.n+'</td><td>'+n2(info.mean)+'</td>'
+            +(delta!=null?'<td class="'+(delta<0?'dx-neg':'dx-pos')+'">'+(delta>0?'+':'')+n2(delta)+'</td>':'<td>—</td>')+'</tr>';
+        }).join('');
+        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
+        var sumRows=[['F',n2(d.statistic)+' (df₁='+n2(d.df1)+', df₂='+n2(d.df2)+')'],
+          ['p',pStr+(sig?' *':' n.s.')],
+          ['η²',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—'],['N',String(d.n_total)]];
+        var layerBlocks=[
+          {k:'What this shows',t:esc(d.summary||'')},
+          {k:'Why this matters',t:'A significant F means at least one group mean differs. Pair η² with this result for effect size; a post-hoc test (e.g., Tukey) identifies which groups.'},
+          {k:'Caution',caution:true,t:'ANOVA tests the omnibus null only. A significant result does not identify which groups differ — only that at least one does.'}
+        ];
+        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
+          +statTable(sumRows,420)
+          +(grpRows?'<div class="dx-scroll" style="margin-bottom:8px"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>Δ from grand mean</th></tr></thead><tbody>'+grpRows+'</tbody></table></div>':'')
+          +layers(layerBlocks)+'</div></div>';
+        if(ctx&&ctx.onResult) ctx.onResult();
+      });
+    });
+  }
+
+  // ---- Chi-square ----
+  function renderChiSquare(host,ds,ctx){
+    var cv=catVars(ds);
+    if(cv.length<2){
+      host.innerHTML=header('Inferential Analysis','Chi-square','','chi_square')
+        +'<div class="as-empty-tool">Need at least two categorical variables.</div>'; return;
+    }
+    sel.cs_a=(sel.cs_a&&varByName(ds,sel.cs_a))?sel.cs_a:cv[0].name;
+    sel.cs_b=(sel.cs_b&&varByName(ds,sel.cs_b))?sel.cs_b:cv[1].name;
+    host.innerHTML=header('Inferential Analysis','Chi-square','Test whether two categorical variables are independent.','chi_square')
+      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
+      +selectField('csA','Variable A','categorical',cv,sel.cs_a)
+      +selectField('csB','Variable B','categorical',cv,sel.cs_b)
+      +'</div><button class="btn primary" id="csRun" style="margin-top:12px">Run chi-square</button>'
+      +'</div></div><div id="csResult"></div>';
+    var elA=host.querySelector('#csA'),elB=host.querySelector('#csB');
+    if(elA) elA.addEventListener('change',function(e){sel.cs_a=e.target.value;});
+    if(elB) elB.addEventListener('change',function(e){sel.cs_b=e.target.value;});
+    var btn=host.querySelector('#csRun');
+    if(btn) btn.addEventListener('click',function(){
+      var va=varByName(ds,sel.cs_a),vb=varByName(ds,sel.cs_b); if(!va||!vb) return;
+      var n=Math.min(va.values.length,vb.values.length),a=[],b=[];
+      for(var i=0;i<n;i++){if(!isMissing(va.values[i])&&!isMissing(vb.values[i])){a.push(String(va.values[i]));b.push(String(vb.values[i]));}}
+      var out=host.querySelector('#csResult');
+      inferFetch('chi_square',{tool:'chi_square',values:a,groups:b},btn,'Run chi-square',out,function(d){
+        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
+        var sumRows=[['\u03c7\u00b2',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],
+          ['Cram\u00e9r\'s V',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—'],['N',String(d.n_total)]];
+        var ctHtml='';
+        if(d.details&&d.details.rows&&d.details.cols&&d.details.contingency){
+          var rkeys=Object.keys(d.details.rows),ckeys=Object.keys(d.details.cols);
+          var ctRows=rkeys.map(function(rk){
+            var cells=d.details.contingency[rk]||{},rtot=d.details.rows[rk];
+            var tds=ckeys.map(function(ck){var v=cells[ck]||0;return '<td>'+v+'</td><td>'+pc(rtot?100*v/rtot:0)+'</td>';}).join('');
+            return '<tr><td class="dx-name">'+esc(rk)+'</td>'+tds+'<td>'+rtot+'</td></tr>';
+          }).join('');
+          var colHdrs=ckeys.map(function(c){return '<th>'+esc(c)+' n</th><th>'+esc(c)+' %</th>';}).join('');
+          ctHtml='<div class="dx-scroll" style="margin-top:10px;margin-bottom:8px"><table class="dx-table"><thead><tr>'
+            +'<th class="l">'+esc(sel.cs_a)+'</th>'+colHdrs+'<th>Total</th></tr></thead><tbody>'+ctRows+'</tbody></table></div>';
+        }
+        var layerBlocks=[
+          {k:'What this shows',t:esc(d.summary||'')},
+          {k:'Why this matters',t:'A significant result means the two variables are not distributed independently. Cramér\'s V quantifies the strength of the association.'},
+          {k:'Caution',caution:true,t:'Chi-square is unreliable when expected cell counts fall below 5. Check that your sample is large enough for the number of categories.'}
+        ];
+        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
+          +statTable(sumRows,360)+ctHtml+layers(layerBlocks)+'</div></div>';
+        if(ctx&&ctx.onResult) ctx.onResult();
+      });
+    });
+  }
+
+  // ---- Correlation ----
+  function renderCorrelation(host,ds,ctx){
+    var nv=numericVars(ds);
+    if(nv.length<2){
+      host.innerHTML=header('Inferential Analysis','Correlation','','correlation')
+        +'<div class="as-empty-tool">Need at least two numeric variables.</div>'; return;
+    }
+    sel.cor_x=(sel.cor_x&&varByName(ds,sel.cor_x))?sel.cor_x:nv[0].name;
+    sel.cor_y=(sel.cor_y&&varByName(ds,sel.cor_y))?sel.cor_y:nv[1].name;
+    host.innerHTML=header('Inferential Analysis','Correlation','Measure the linear relationship between two numeric variables.','correlation')
+      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
+      +selectField('corX','Variable X','numeric',nv,sel.cor_x)
+      +selectField('corY','Variable Y','numeric',nv,sel.cor_y)
+      +'</div><button class="btn primary" id="corRun" style="margin-top:12px">Run correlation</button>'
+      +'</div></div><div id="corResult"></div>';
+    var elX=host.querySelector('#corX'),elY=host.querySelector('#corY');
+    if(elX) elX.addEventListener('change',function(e){sel.cor_x=e.target.value;});
+    if(elY) elY.addEventListener('change',function(e){sel.cor_y=e.target.value;});
+    var btn=host.querySelector('#corRun');
+    if(btn) btn.addEventListener('click',function(){
+      var vx=varByName(ds,sel.cor_x),vy=varByName(ds,sel.cor_y); if(!vx||!vy) return;
+      var n=Math.min(vx.values.length,vy.values.length),xs=[],ys=[];
+      for(var i=0;i<n;i++){var xi=num(vx.values[i]),yi=num(vy.values[i]);if(xi!==null&&yi!==null){xs.push(xi);ys.push(yi);}}
+      var out=host.querySelector('#corResult');
+      inferFetch('correlation',{tool:'correlation',x:xs,y:ys},btn,'Run correlation',out,function(d){
+        var pStr=formatP(d.p_value),sig=d.p_value<0.05;
+        var rabs=Math.abs(d.statistic);
+        var rStrength=rabs>=0.7?'strong':(rabs>=0.4?'moderate':(rabs>=0.2?'weak':'negligible'));
+        var rDir=d.statistic>=0?'positive':'negative';
+        var sumRows=[['r',n2(d.statistic)],['r\u00b2',d.effect_size!=null?n2(d.effect_size):'—'],
+          ['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],['N',String(d.n_total)]];
+        var layerBlocks=[
+          {k:'What this shows',t:esc(d.summary||'')},
+          {k:'Why this matters',t:'r describes direction and strength. r\u00b2 = '+n2(d.effect_size||0)+' means '+n2((d.effect_size||0)*100)+'% of variance in one variable is explained by the other.'},
+          {k:'Caution',caution:true,t:'Pearson r measures linear association only. Non-linear relationships and outliers can distort or hide a real association.'}
+        ];
+        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Pearson r: '+esc(sel.cor_x)+' \u00d7 '+esc(sel.cor_y)+'</h3></div><div class="panel-b">'
+          +'<p style="color:var(--ink-2);font-size:13px;margin:0 0 10px">'+rStrength.charAt(0).toUpperCase()+rStrength.slice(1)+' '+rDir+' '+(sig?'significant':'non-significant')+' correlation</p>'
+          +statTable(sumRows,360)+layers(layerBlocks)+'</div></div>';
+        if(ctx&&ctx.onResult) ctx.onResult();
+      });
+    });
+  }
+
+  // ---- Regression (simple OLS via server) ----
+  function renderRegression(host,ds,ctx){
+    var nv=numericVars(ds);
+    if(nv.length<2){
+      host.innerHTML=header('Inferential Analysis','Regression','','regression')
+        +'<div class="as-empty-tool">Need at least two numeric variables.</div>'; return;
+    }
+    sel.reg_y=(sel.reg_y&&varByName(ds,sel.reg_y))?sel.reg_y:nv[0].name;
+    sel.reg_x=(sel.reg_x&&varByName(ds,sel.reg_x))?sel.reg_x:nv[1].name;
+    host.innerHTML=header('Inferential Analysis','Regression','Predict a numeric outcome from a numeric predictor (simple OLS).','regression')
+      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
+      +selectField('regY','Outcome (Y)','numeric',nv,sel.reg_y)
+      +selectField('regX','Predictor (X)','numeric',nv,sel.reg_x)
+      +'</div><button class="btn primary" id="regRun" style="margin-top:12px">Run regression</button>'
+      +'</div></div><div id="regResult"></div>';
+    var elY=host.querySelector('#regY'),elX=host.querySelector('#regX');
+    if(elY) elY.addEventListener('change',function(e){sel.reg_y=e.target.value;});
+    if(elX) elX.addEventListener('change',function(e){sel.reg_x=e.target.value;});
+    var btn=host.querySelector('#regRun');
+    if(btn) btn.addEventListener('click',function(){
+      var vy=varByName(ds,sel.reg_y),vx=varByName(ds,sel.reg_x); if(!vy||!vx) return;
+      var n=Math.min(vy.values.length,vx.values.length),xs=[],ys=[];
+      for(var i=0;i<n;i++){var xi=num(vx.values[i]),yi=num(vy.values[i]);if(xi!==null&&yi!==null){xs.push(xi);ys.push(yi);}}
+      var out=host.querySelector('#regResult');
+      inferFetch('regression',{tool:'regression',x:xs,y:ys},btn,'Run regression',out,function(d){
+        var det=d.details||{};
+        var slope=det.slope||0,intercept=det.intercept||0,r2=det.r_squared||0;
+        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel('r_squared',r2);
+        var eqn='Ŷ = '+n2(intercept)+(slope>=0?' + ':' − ')+n2(Math.abs(slope))+' \u00d7 '+esc(sel.reg_x);
+        var sumRows=[['Intercept (a)',n2(intercept)],['Slope (b)',n2(slope)],['R\u00b2',n2(r2)+(eff?' ('+eff+')':'')],
+          ['t (slope)',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],['N',String(d.n_total)]];
+        var layerBlocks=[
+          {k:'What this shows',t:'Simple OLS regression of '+esc(sel.reg_y)+' on '+esc(sel.reg_x)+'. Equation: '+eqn
+            +'. R\u00b2 = '+n2(r2)+' ('+n2(r2*100)+'% of variance in Y explained by X).'},
+          {k:'Why this matters',t:'The slope tells you how much Y changes per 1-unit increase in X. '
+            +(slope>=0?'Positive slope: Y rises as X increases.':'Negative slope: Y falls as X increases.')},
+          {k:'Caution',caution:true,t:'This is a simple bivariate OLS model with no controls. Results may reflect confounds. Verify linearity before reporting.'}
+        ];
+        out.innerHTML='<div class="panel"><div class="panel-h"><h3>'+esc(sel.reg_y)+' ~ '+esc(sel.reg_x)+'</h3></div><div class="panel-b">'
+          +'<p style="font-size:13px;color:var(--ink-2);margin:0 0 10px;font-style:italic">'+eqn+'</p>'
+          +statTable(sumRows,380)+layers(layerBlocks)+'</div></div>';
+        if(ctx&&ctx.onResult) ctx.onResult();
+      });
+    });
+  }
+
+  // ---- Effect Sizes (client-side) ----
+  function renderEffectSizes(host,ds,ctx){
+    var nv=numericVars(ds),cv=catVars(ds);
+    var rows=[];
+    nv.forEach(function(ov){
+      cv.forEach(function(gv){
+        var n=Math.min(ov.values.length,gv.values.length),groups={};
+        for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gv.values[i];if(v!==null&&!isMissing(g)){(groups[g]=groups[g]||[]).push(v);}}
+        var gkeys=Object.keys(groups); if(gkeys.length<2) return;
+        var all=[].concat.apply([],gkeys.map(function(k){return groups[k];}));
+        var grandMean=mean(all),tss=0;
+        all.forEach(function(x){tss+=(x-grandMean)*(x-grandMean);});
+        if(gkeys.length===2){
+          var a=groups[gkeys[0]],b=groups[gkeys[1]];
+          var sp=Math.sqrt((((a.length-1)*variance(a))+((b.length-1)*variance(b)))/Math.max(a.length+b.length-2,1));
+          var d=sp>0?Math.abs(mean(a)-mean(b))/sp:0;
+          rows.push({outcome:ov.name,group:gv.name,test:'t-test',effect:'Cohen\'s d',value:d,label:effLabel('cohens_d',d)});
+        } else {
+          var ssBetween=0;
+          gkeys.forEach(function(g){var a2=groups[g];ssBetween+=a2.length*Math.pow(mean(a2)-grandMean,2);});
+          var eta2=tss>0?ssBetween/tss:0;
+          rows.push({outcome:ov.name,group:gv.name,test:'ANOVA',effect:'η²',value:eta2,label:effLabel('eta_squared',eta2)});
+        }
+      });
+    });
+    nv.forEach(function(v1){
+      nv.forEach(function(v2){
+        if(v1.name>=v2.name) return;
+        var n=Math.min(v1.values.length,v2.values.length),xs=[],ys=[];
+        for(var i=0;i<n;i++){var xi=num(v1.values[i]),yi=num(v2.values[i]);if(xi!==null&&yi!==null){xs.push(xi);ys.push(yi);}}
+        if(xs.length<3) return;
+        var mx=mean(xs),my=mean(ys),sxy=0,sxx=0,syy=0;
+        for(var i=0;i<xs.length;i++){sxy+=(xs[i]-mx)*(ys[i]-my);sxx+=(xs[i]-mx)*(xs[i]-mx);syy+=(ys[i]-my)*(ys[i]-my);}
+        if(sxx>0&&syy>0){var r=sxy/Math.sqrt(sxx*syy),r2=r*r;
+          rows.push({outcome:v1.name,group:v2.name,test:'correlation',effect:'r²',value:r2,label:effLabel('r_squared',r2)});
+        }
+      });
+    });
+    rows.sort(function(a,b){return b.value-a.value;});
+    var body=rows.length?rows.map(function(r){
+      var badge=r.label?'<span class="eff-badge eff-'+esc(r.label)+'">'+esc(r.label)+'</span>':'';
+      return '<tr><td class="dx-name">'+esc(r.outcome)+'</td><td class="dx-name">'+esc(r.group)+'</td>'
+        +'<td>'+esc(r.test)+'</td><td>'+esc(r.effect)+'</td><td>'+n2(r.value)+' '+badge+'</td></tr>';
+    }).join(''):'<tr><td colspan="5">No effect sizes computed — need numeric outcomes paired with grouping or numeric variables.</td></tr>';
+    var layerBlocks=[
+      {k:'What this shows',t:'Effect sizes for all variable pairs — Cohen\'s d (2-group), \u03b7\u00b2 (3+ groups), r\u00b2 (numeric pairs). Sorted largest to smallest.'},
+      {k:'Why this matters',t:'Effect sizes describe practical importance independently of sample size. Use them to prioritize which relationships to investigate.'},
+      {k:'Caution',caution:true,t:'These are descriptive and not adjusted for multiple comparisons. Treat as a screening tool, not final inference.'}
+    ];
+    host.innerHTML=header('Inferential Analysis','Effect Sizes','Practical magnitude of associations, sorted largest to smallest.','effect_sizes')
+      +'<div class="panel"><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
+      +'<thead><tr><th class="l">Outcome / Variable A</th><th class="l">By / Variable B</th><th>Test</th><th>Measure</th><th>Effect</th></tr></thead><tbody>'
+      +body+'</tbody></table></div>'+layers(layerBlocks)+'</div></div>';
+    if(ctx&&ctx.onResult) ctx.onResult();
   }
 
   // Delegated: any "How to use this" button (in a work step or the Overview)

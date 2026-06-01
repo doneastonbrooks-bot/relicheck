@@ -442,3 +442,50 @@ function stats_fleiss_kappa(array $table): ?float
     if ($Pe >= 1.0) return 1.0;
     return ($Pbar - $Pe) / (1 - $Pe);
 }
+
+// ---------------------------------------------------------------------------
+// Test: Simple OLS regression (numeric Y from numeric X).
+// ---------------------------------------------------------------------------
+function stats_regression(array $x, array $y): array {
+    $n = min(count($x), count($y));
+    $xs = []; $ys = [];
+    for ($i = 0; $i < $n; $i++) {
+        if (is_numeric($x[$i]) && is_numeric($y[$i])) {
+            $xs[] = (float)$x[$i]; $ys[] = (float)$y[$i];
+        }
+    }
+    $N = count($xs);
+    if ($N < 3) return ['ok' => false, 'error' => 'Regression needs at least 3 paired observations.'];
+    $mx = array_sum($xs) / $N; $my = array_sum($ys) / $N;
+    $sxy = 0.0; $sxx = 0.0; $syy = 0.0;
+    for ($i = 0; $i < $N; $i++) {
+        $dx = $xs[$i] - $mx; $dy = $ys[$i] - $my;
+        $sxy += $dx * $dy; $sxx += $dx * $dx; $syy += $dy * $dy;
+    }
+    if ($sxx == 0.0) return ['ok' => false, 'error' => 'Predictor has no variance — every value is the same.'];
+    $slope     = $sxy / $sxx;
+    $intercept = $my - $slope * $mx;
+    $rss = 0.0;
+    for ($i = 0; $i < $N; $i++) {
+        $res  = $ys[$i] - ($slope * $xs[$i] + $intercept);
+        $rss += $res * $res;
+    }
+    $r2  = $syy > 0.0 ? 1.0 - $rss / $syy : 0.0;
+    $df  = $N - 2;
+    $mse = $df > 0 ? $rss / $df : 0.0;
+    $se_slope = ($mse > 0.0 && $sxx > 0.0) ? sqrt($mse / $sxx) : 0.0;
+    $t_slope  = $se_slope > 0.0 ? $slope / $se_slope : 0.0;
+    $p = stats_t_pvalue($t_slope, (float)$df);
+    $summary = sprintf(
+        'OLS: Y = %.3f + %.3f*X, R² = %.3f, t(%d) = %.2f, p = %s, N = %d.',
+        $intercept, $slope, $r2, $df, $t_slope, stats_format_p($p), $N
+    );
+    return [
+        'ok' => true, 'test_name' => 'regression',
+        'statistic' => $t_slope, 'df1' => (float)$df, 'df2' => null,
+        'p_value' => $p, 'effect_size' => $r2, 'effect_label' => 'r_squared',
+        'n_total' => $N, 'summary' => $summary,
+        'details' => ['slope' => $slope, 'intercept' => $intercept, 'r_squared' => $r2,
+                      'se_slope' => $se_slope, 'mean_x' => $mx, 'mean_y' => $my],
+    ];
+}

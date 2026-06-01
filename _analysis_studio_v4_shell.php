@@ -375,11 +375,22 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       insertSaveBar(host, s, snapshotHtml);
       return;
     }
-    // Inferential presentations land in the next build chunk.
+    if (BOOT.slug === 'inferential' && window.AnalysisStudio) {
+      window.AnalysisStudio.renderWork(host, {
+        kind: BOOT.slug, tool: s.tool, dataset: state.dataset, view: state.view,
+        onResult: function() {
+          // Called by the render function after results are drawn (sync or after fetch).
+          const old = host.querySelector('.save-bar');
+          if (old) old.remove();
+          const snap = host.innerHTML;
+          insertSaveBar(host, s, snap);
+        }
+      });
+      return;
+    }
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+' <span class="strand-chip">QUAN</span></div>'
-      + '<h1 class="title">'+esc(s.label)+'</h1>'
-      + '<p class="lede">Dataset loaded: '+ (state.dataset.rowCount||0) +' rows, '+ ((state.dataset.variables||[]).length) +' variables.</p></div>'
-      + '<div class="placeholder">The <strong>'+esc(s.label)+'</strong> presentation (MM-style) is being built next.</div>';
+      + '<h1 class="title">'+esc(s.label)+'</h1></div>'
+      + '<div class="placeholder">Studio not recognized.</div>';
   }
 
   function toolLabel(tool){ const st = steps().find(function(x){ return x.tool===tool; }); return st ? st.label : tool; }
