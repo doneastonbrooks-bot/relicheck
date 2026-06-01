@@ -57,6 +57,7 @@ $landing_user_full     = $user_full;
 $landing_pill_label    = '';
 
 include __DIR__ . '/_landing_head.php';
+echo '<div class="relicheck-main-shell">';
 
 // Card renderer shared by Studios + Apps.
 function lp_card(array $s, string $open_label): void {
@@ -64,7 +65,7 @@ function lp_card(array $s, string $open_label): void {
   $intro  = htmlspecialchars($s['route']  ?? '#');
   $direct = htmlspecialchars($s['direct'] ?? $s['route'] ?? '#');
   ?>
-  <div class="lp-card" style="--card-accent: <?= htmlspecialchars($accent) ?>;">
+  <div class="lp-card relicheck-product-card" style="--card-accent: <?= htmlspecialchars($accent) ?>;">
     <a class="lp-card-body" href="<?= $intro ?>" aria-label="Learn about <?= htmlspecialchars($s['name']) ?>">
       <span class="glyph" aria-hidden="true"><img src="<?= htmlspecialchars($s['mark']) ?>" alt=""></span>
       <h3 class="name"><?= htmlspecialchars($s['name']) ?></h3>
@@ -95,10 +96,10 @@ function lp_card(array $s, string $open_label): void {
 <?php if (!empty($apps_only)): ?>
 <section class="lp-section">
   <div class="lp-section-head">
-    <h2>Apps</h2>
-    <p>Build a survey end to end, or score the evidence you have already collected.</p>
+    <h2 class="relicheck-section-title">Apps</h2>
+    <p class="relicheck-section-subtitle">Build a survey end to end, or score the evidence you have already collected.</p>
   </div>
-  <div class="lp-grid cols-3">
+  <div class="relicheck-card-grid">
     <?php foreach ($apps_only as $s) lp_card($s, 'Open'); ?>
   </div>
 </section>
@@ -107,10 +108,10 @@ function lp_card(array $s, string $open_label): void {
 <!-- ===== Studios ===== -->
 <section class="lp-section">
   <div class="lp-section-head">
-    <h2>Studios</h2>
-    <p>Exploratory workspaces. Pick the one that fits your study design.</p>
+    <h2 class="relicheck-section-title">Studios</h2>
+    <p class="relicheck-section-subtitle">Exploratory workspaces. Pick the one that fits your study design.</p>
   </div>
-  <div class="lp-grid cols-3">
+  <div class="relicheck-card-grid">
     <?php foreach ($studios_only as $s) lp_card($s, 'Open'); ?>
   </div>
 </section>
@@ -187,5 +188,6 @@ function lp_card(array $s, string $open_label): void {
 </script>
 
 <?php
+echo '</div>'; // .relicheck-main-shell
 $landing_tagline = 'From first draft to evidence you can defend.';
 include __DIR__ . '/_landing_foot.php';

@@ -87,25 +87,125 @@ html, body {
 .lp-back-link:hover { color: var(--text); }
 .lp-back-link svg { width: 14px; height: 14px; }
 
-/* ───────────────── Page wrapper — Apple-style shell ───────────────── */
-/* Same shell behaviour as studio landing pages: 75vw centred, capped 1280px.
-   Studio landing pages override this entirely via studio-landing.css.       */
-.lp-page {
-  width: min(75vw, 1280px);
+/* ───────────────── Page wrapper ───────────────── */
+/* lp-page is a transparent shell; named layouts below handle constraints.
+   Studio landing pages override this via studio-landing.css (max-width:none). */
+.lp-page { width: 100%; }
+.lp-page.narrow { max-width: 1040px; margin: 0 auto; padding: 56px 32px 80px; }
+
+/* ── ReliCheck main dashboard shell (hub page only) ────────────────
+   Named class applied to the hub page content container.
+   Sections and cards sit inside this; it never applies to workstations.
+   ────────────────────────────────────────────────────────────────── */
+.relicheck-main-shell {
+  width: min(82vw, 1500px);
   margin: 0 auto;
-  padding-top: 56px;
-  padding-bottom: 80px;
+  padding-top: 72px;
+  padding-bottom: 96px;
 }
 @media (max-width: 1200px) {
-  .lp-page { width: auto; margin: 0; padding-left: 48px; padding-right: 48px; }
+  .relicheck-main-shell {
+    width: auto;
+    padding-left: 48px;
+    padding-right: 48px;
+  }
 }
 @media (max-width: 768px) {
-  .lp-page { padding-left: 24px; padding-right: 24px; }
+  .relicheck-main-shell { padding-left: 28px; padding-right: 28px; }
 }
 @media (max-width: 480px) {
-  .lp-page { padding-left: 16px; padding-right: 16px; }
+  .relicheck-main-shell { padding-left: 18px; padding-right: 18px; padding-top: 48px; }
 }
-.lp-page.narrow { max-width: 1040px; }
+
+/* ── Hub: premium card grid (hub page only, does not affect studio pages) ── */
+.relicheck-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px;
+  align-items: stretch;
+}
+@media (max-width: 1000px) { .relicheck-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px)  { .relicheck-card-grid { grid-template-columns: 1fr; } }
+
+/* Overrides layered on top of .lp-card — only for hub cards.
+   Selectors that compete with .lp-card .X (specificity 0,2,0) use
+   .lp-card.relicheck-product-card .X (0,3,0) to guarantee a win. */
+.lp-card.relicheck-product-card {
+  min-height: 420px;
+  border-radius: 28px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+}
+.lp-card.relicheck-product-card .lp-card-body {
+  padding: 56px 56px 28px;
+}
+.lp-card.relicheck-product-card .glyph { margin-bottom: 34px; }
+.lp-card.relicheck-product-card .glyph img {
+  width: 128px;
+  height: 128px;
+  border-radius: 28px;
+}
+.lp-card.relicheck-product-card .name {
+  font-size: 34px;
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  margin: 0 0 18px;
+}
+.lp-card.relicheck-product-card .desc {
+  font-size: 25px;
+  line-height: 1.35;
+  color: #4f5560;
+}
+.lp-card.relicheck-product-card .foot {
+  padding: 28px 56px 36px;
+}
+.lp-card.relicheck-product-card .lp-status {
+  font-size: 20px;
+  padding: 10px 18px;
+}
+.lp-card.relicheck-product-card .lp-status::before {
+  width: 9px;
+  height: 9px;
+}
+.lp-card.relicheck-product-card .card-btn-intro,
+.lp-card.relicheck-product-card .card-btn-open {
+  font-size: 20px;
+  padding: 12px 24px;
+  font-weight: 700;
+}
+
+/* Hub typography — scoped through .relicheck-main-shell so specificity (0,3,1)
+   beats every base rule (max 0,2,1). Applies only to the hub page. */
+.relicheck-main-shell .lp-hero.left {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* (0,3,1) beats base .lp-hero.left h1 at (0,2,1) */
+.relicheck-main-shell .lp-hero.left h1 {
+  font-size: 72px;
+}
+/* (0,3,1) beats base .lp-hero p.lede at (0,2,1) */
+.relicheck-main-shell .lp-hero.left p.lede {
+  font-size: 24px;
+  line-height: 1.5;
+  color: #4b5563;
+  margin-left: auto;
+  margin-right: auto;
+}
+.relicheck-main-shell .lp-section-head h2 {
+  font-size: 44px;
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  margin: 0 0 12px;
+}
+.relicheck-main-shell .lp-section-head p {
+  font-size: 23px;
+  line-height: 1.35;
+  color: #4b5563;
+  margin: 0;
+}
 
 /* ───────────────── Hero (centered) ───────────────── */
 .lp-hero {
@@ -191,12 +291,12 @@ html, body {
 .lp-cta-tile.primary .lp-cta-sub { color: rgba(255, 255, 255, 0.85); }
 
 /* ───────────────── Section heading ───────────────── */
-/* Container (.lp-page) handles centering; sections just stack. */
-.lp-section { margin-bottom: 40px; }
-.lp-section-head { margin-bottom: 18px; }
+.lp-section { margin-bottom: 0; padding-top: 72px; padding-bottom: 4px; }
+.lp-section:first-child { padding-top: 0; }
+.lp-section-head { margin-bottom: 36px; }
 .lp-section-head h2 {
-  font-size: 22px; font-weight: 700; letter-spacing: -0.015em;
-  margin: 0 0 4px; color: var(--text);
+  font-size: 24px; font-weight: 700; letter-spacing: -0.02em;
+  margin: 0 0 6px; color: var(--text);
 }
 .lp-section-head p { font-size: 14px; color: var(--text-2); margin: 0; }
 .lp-eyebrow-c {
@@ -269,10 +369,11 @@ html, body {
 .lp-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 24px;
+  align-items: stretch;
 }
 .lp-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-@media (max-width: 900px) { .lp-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 960px) { .lp-grid.cols-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 560px) { .lp-grid, .lp-grid.cols-3 { grid-template-columns: 1fr; } }
 .lp-card {
   --card-accent: var(--accent);

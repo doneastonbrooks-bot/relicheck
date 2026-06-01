@@ -48,7 +48,7 @@ include __DIR__ . '/_landing_head.php';
 ?>
 
 <style>
-.lp-page { max-width: 1060px; padding-top: 48px; padding-bottom: 80px; }
+.lp-page { max-width: 1060px; margin: 0 auto; padding: 48px 40px 80px; }
 
 .mp-head { margin-bottom: 32px; }
 .mp-head h1 { font-size: 28px; font-weight: 800; letter-spacing: -.02em; color: #1d1d1f; margin-bottom: 6px; }
@@ -114,6 +114,16 @@ include __DIR__ . '/_landing_head.php';
   var host = document.getElementById('mpGrid');
   if (!host) return;
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
+  var PATHWAY_LABELS = {
+    'COMMENTS_ONLY':    'Qualitative only',
+    'CONVERGENT':       'Convergent Parallel',
+    'EXPLANATORY':      'Explanatory Sequential',
+    'EXPLORATORY':      'Exploratory Sequential',
+    'EQUAL':            'Convergent Parallel',
+    'QUAN_FIRST':       'Explanatory Sequential',
+    'QUAL_FIRST':       'Exploratory Sequential',
+  };
+  function pathwayLabel(p){ return PATHWAY_LABELS[p] || p || 'MM'; }
 
   var newCard = '<a class="mp-card mp-card-new" href="/mm-wizard.php?step=1">'
     + '<span class="mp-new-icon">⤓</span>'
@@ -132,7 +142,7 @@ include __DIR__ . '/_landing_head.php';
       }
       host.innerHTML = projects.map(function(p){
         return '<a class="mp-card" href="/mmstudioV4.php?project_id=' + encodeURIComponent(p.id) + '">'
-          + '<span class="mp-card-label">' + esc(p.pathway || 'MM') + '</span>'
+          + '<span class="mp-card-label">' + esc(pathwayLabel(p.pathway)) + '</span>'
           + '<span class="mp-card-title">'  + esc(p.title || 'Untitled project') + '</span>'
           + '<span class="mp-card-meta">Updated ' + esc((p.updated_at||'').slice(0,10)||'—') + '</span>'
           + '</a>';

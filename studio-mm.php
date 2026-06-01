@@ -60,7 +60,7 @@ include __DIR__ . '/_landing_head.php';
   --bg-w:   #ffffff;
   --bg-l:   #f5f5f7;
   --bg-dk:  #1d1d1f;
-  --w:      min(75vw, 1280px);
+  --w:      min(82vw, 1500px);
 }
 
 /* ── Scroll-reveal ── */
@@ -76,32 +76,32 @@ include __DIR__ . '/_landing_head.php';
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center;
   padding-top: 100px; padding-bottom: 80px;
-  padding-left:  max(48px, calc(50% - 640px));
-  padding-right: max(48px, calc(50% - 640px));
+  padding-left:  max(48px, calc(50% - 750px));
+  padding-right: max(48px, calc(50% - 750px));
   background:
     radial-gradient(ellipse at 50% -10%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 60%),
     var(--bg-w);
 }
-@media (max-width: 768px) { .mm-hero { padding-left: 24px; padding-right: 24px; } }
-@media (max-width: 480px) { .mm-hero { padding-left: 16px; padding-right: 16px; } }
+@media (max-width: 768px) { .mm-hero { padding-left: 28px; padding-right: 28px; } }
+@media (max-width: 480px) { .mm-hero { padding-left: 18px; padding-right: 18px; } }
 .mm-hero-logo {
-  width: 100px; height: 100px; object-fit: contain;
-  margin-bottom: 56px; border-radius: 22px;
+  width: 120px; height: 120px; object-fit: contain;
+  margin-bottom: 56px; border-radius: 26px;
 }
 .mm-hero-h1 {
-  font-size: clamp(42px, 6.5vw, 76px);
+  font-size: clamp(44px, 6.5vw, 80px);
   font-weight: 900; letter-spacing: -.05em; line-height: 1.03;
   color: var(--ink-a); margin: 0 auto 28px; max-width: 16ch;
 }
 .mm-hero-h1 .thin { font-weight: 200; color: var(--ink-b); }
 .mm-hero-body {
-  font-size: clamp(15px, 1.8vw, 18px); font-weight: 300; color: var(--ink-b);
-  line-height: 1.7; max-width: 50ch; margin: 0 auto 48px;
+  font-size: clamp(19px, 2.2vw, 24px); font-weight: 300; color: var(--ink-b);
+  line-height: 1.65; max-width: 52ch; margin: 0 auto 48px;
 }
 .mm-hero-actions { display: flex; align-items: center; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .mm-btn-a {
   background: var(--accent); color: #fff;
-  font-size: 15px; font-weight: 700; padding: 14px 30px; border-radius: 999px;
+  font-size: 18px; font-weight: 700; padding: 16px 36px; border-radius: 999px;
   text-decoration: none; transition: opacity .15s, transform .15s;
 }
 .mm-btn-a:hover { opacity: .86; transform: translateY(-1px); }
@@ -189,10 +189,10 @@ include __DIR__ . '/_landing_head.php';
 .mm-feature.flip { direction: rtl; }
 .mm-feature.flip > * { direction: ltr; }
 .mm-feature-wrap { background: var(--bg-l); }
-.mm-fs-tag { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 14px; }
-.mm-fs-h { font-size: clamp(28px, 3.8vw, 42px); font-weight: 800; letter-spacing: -.03em; line-height: 1.08; color: var(--ink-a); margin-bottom: 18px; }
+.mm-fs-tag { font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 16px; }
+.mm-fs-h { font-size: clamp(30px, 4vw, 48px); font-weight: 800; letter-spacing: -.03em; line-height: 1.08; color: var(--ink-a); margin-bottom: 20px; }
 .mm-fs-h .light { font-weight: 200; }
-.mm-fs-body { font-size: 17px; color: var(--ink-b); line-height: 1.7; max-width: 42ch; }
+.mm-fs-body { font-size: 20px; color: var(--ink-b); line-height: 1.65; max-width: 44ch; }
 .mm-visual {
   border-radius: 22px; overflow: hidden;
   background: linear-gradient(135deg, #f0ebff 0%, #e6eeff 100%);
@@ -260,12 +260,12 @@ include __DIR__ . '/_landing_head.php';
 .mm-start-actions { display: flex; align-items: center; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .mm-start-btn {
   background: var(--accent); color: #fff;
-  font-size: 16px; font-weight: 700; padding: 16px 34px; border-radius: 999px;
+  font-size: 19px; font-weight: 700; padding: 18px 40px; border-radius: 999px;
   text-decoration: none; transition: opacity .15s, transform .15s;
 }
 .mm-start-btn:hover { opacity: .88; transform: translateY(-1px); }
 .mm-start-ghost {
-  font-size: 15px; font-weight: 600; color: rgba(255,255,255,.45);
+  font-size: 17px; font-weight: 600; color: rgba(255,255,255,.45);
   text-decoration: none; transition: color .15s;
 }
 .mm-start-ghost:hover { color: rgba(255,255,255,.8); }
