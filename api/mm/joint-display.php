@@ -287,14 +287,15 @@ if ($action === 'set_quote') {
     $themeId    = (int)($body['theme_id'] ?? 0);
     $responseId = (int)($body['response_id'] ?? 0);
     if ($themeId <= 0 || $responseId <= 0) fail('bad_input', 'theme_id and response_id are required.');
-    $ck = $pdo->prepare(
-        'SELECT r.text FROM mm_coded_responses cr
-           JOIN mm_text_responses r ON r.id = cr.response_id
-          WHERE cr.project_id = :p AND cr.category_id = :t AND cr.response_id = :r LIMIT 1'
-    );
-    $ck->execute([':p' => $projectId, ':t' => $themeId, ':r' => $responseId]);
+    $tk = $pdo->prepare('SELECT id FROM mm_theme_categories WHERE id = :t AND project_id = :p');
+    $tk->execute([':t' => $themeId, ':p' => $projectId]);
+    if (!$tk->fetch()) fail('mm_theme_not_found', 'Theme not found.', 404);
+    // Any open-ended response in this project may be featured as a theme's quote
+    // — the human picks what is representative; it need not be machine-coded.
+    $ck = $pdo->prepare('SELECT text FROM mm_text_responses WHERE id = :r AND project_id = :p LIMIT 1');
+    $ck->execute([':r' => $responseId, ':p' => $projectId]);
     $row = $ck->fetch(PDO::FETCH_ASSOC);
-    if (!$row) fail('mm_quote_not_coded', 'That response is not coded to this theme.', 404);
+    if (!$row) fail('mm_response_not_found', 'Response not found.', 404);
     $up = $pdo->prepare(
         'INSERT INTO mm_joint_display_rows (project_id, theme_id, quote_response_id, quote_text)
          VALUES (:p, :t, :rid, :txt)
