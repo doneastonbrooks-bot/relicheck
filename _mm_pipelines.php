@@ -113,10 +113,11 @@ $TOOLS = [
     'title'=>'Exemplar Quotes','lede'=>'Select the quotes that best represent each theme for the report.',
     'palette'=>['intro'=>'Pull quotes:','groups'=>[['name'=>'Quotes','items'=>[
       ['name'=>'Quotes · Theme one','strand'=>'qual'],['name'=>'Quotes · Theme two','strand'=>'qual']]]]]],
-  'joint'=>['label'=>'Joint Displays','strand'=>'both','mode'=>'work','route'=>'/joint-display.php',
-    'title'=>'Joint Displays','lede'=>"Lay each research question's two strands side by side in one display.",
-    'palette'=>['intro'=>'Arrange the display:','groups'=>[['name'=>'Layout','items'=>[
-      ['name'=>'By research question','strand'=>'both'],['name'=>'By participant group','strand'=>'both']]]]]],
+  // Native joint display (renderJoint) on joint-display.php's GET JSON. route=null
+  // so it does NOT iframe the API endpoint (which would show raw JSON).
+  'joint'=>['label'=>'Joint Displays','strand'=>'both','mode'=>'work','route'=>null,
+    'title'=>'Joint Displays','lede'=>"Lay each theme's two strands side by side in one display.",
+    'palette'=>['intro'=>'Joint display','groups'=>[]]],
   'converge'=>['label'=>'Convergence & Divergence','strand'=>'both','mode'=>'work','route'=>null,
     'title'=>'Convergence & Divergence','lede'=>'Name where the strands agree, expand on each other, or contradict.',
     'palette'=>['intro'=>'Inspect the alignment:','groups'=>[['name'=>'Patterns','items'=>[

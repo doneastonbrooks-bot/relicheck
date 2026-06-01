@@ -844,6 +844,12 @@ function renderTTest(s){
    no em dashes. Keyed by palette tool name (quant tests, descriptives) or by
    step id (qualitative and other steps). ---- */
 const AHELP={
+  'joint':{title:`Joint Displays`,
+    what:`A joint display lays your quantitative and qualitative evidence side by side, one row per theme, so you can see how the numbers and the narratives line up.`,
+    measures:`For each theme it shows the quantitative picture (how often it appears, its intensity, and the strongest statistical result tied to it) next to the qualitative picture (the sentiment balance and a representative participant quote).`,
+    use:`Use it to integrate the two strands: where a number and a theme tell the same story you have convergence; where they disagree you have something to explain.`,
+    steps:[`<b>Read each row</b> as one theme across both strands.`,`<b>Compare the quantitative result</b> with the theme's quote and sentiment.`,`<b>Pick representative quotes</b> to bring each theme to life.`,`<b>Note where strands agree or diverge</b> for the next step.`],
+    example:`<p><b>Reading it:</b> if "Equity and access gaps" appears in 40% of responses with negative sentiment, and the t-test shows lower scores for under-resourced schools, the number and the narrative converge on the same finding.</p>`},
   'data_map':{title:`Data Map`,
     what:`The Data Map organizes your dataset into analysis roles before any statistics or theme discovery runs. It identifies which variables are identifiers, demographics, quantitative items, Likert scales, and open-ended responses, and how the quantitative and qualitative strands connect.`,
     measures:`It classifies every variable, proposes a role and strand for each, shows the qualitative-to-quantitative integration links, and reports which mixed methods designs the dataset can support. It organizes the dataset; it does not evaluate it. Evaluation (missingness, response quality, readiness, risk) is Data Quality, the next step.`,
@@ -1728,6 +1734,34 @@ function renderBook(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">Why this matters</div><div class="dx-l-t">A codebook makes your qualitative analysis transparent and repeatable: each code carries a clear definition, rules for when it applies and when it does not, and the evidence behind it, so another reader could code the same way.</div></div></div>`;
   $("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+picker+editor+bkEvidencePanel()+layers+bkNav();
 }
+/* ============ Joint Displays (joint) — quant + qual side by side per theme ============
+   Native table on joint-display.php GET (frequency + statistical result on the
+   quant side; sentiment + representative quote on the qual side). AI picks the
+   illustrative quote per theme. Studio pattern only. */
+const jd={base:null,busy:false,err:'',picking:false};
+function jdFetch(){return fetch('/api/mm/joint-display.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function jdPickAll(){if(jd.picking)return;jd.picking=true;renderJoint(activeStep());fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'pick_all_quotes'})}).then(r=>r.json()).then(j=>{jd.picking=false;if(j&&j.ok){jd.base=null;toast('Picked '+(j.picked||0)+' quotes');renderJoint(activeStep());}else{toast((j&&(j.message||j.error))||'Could not pick quotes.');renderJoint(activeStep());}}).catch(()=>{jd.picking=false;toast('Quote picking failed or timed out.');renderJoint(activeStep());});}
+function jdHead(s){return `<div class="ws-header"><div class="eyebrow">Joint display · numbers and narratives together <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function jdNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function jdMsg(s,msg){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+jdNav();}
+function jdAnalysis(a){if(!a||!a.test)return '—';const pp=a.predictor?esc(a.predictor):'';const oo=a.outcome?esc(a.outcome):'';const pair=(pp||oo)?` (${pp}${pp&&oo?' → ':''}${oo})`:'';return esc(a.test)+pair;}
+function renderJoint(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<p class="lede">Connect a project with themes and analyses to build a joint display.</p>`+jdNav();return;}
+  if(jd.err){jdMsg(s,jd.err);return;}
+  if(!jd.base){
+    if(!jd.busy){jd.busy=true;jdFetch().then(j=>{jd.busy=false;if(j&&j.ok){jd.base=j;}else{jd.err=(j&&(j.message||j.error))||'Could not load the joint display.';}renderJoint(activeStep());}).catch(()=>{jd.busy=false;jd.err='Could not load your data.';renderJoint(activeStep());});}
+    jdMsg(s,'Building your joint display…');return;
+  }
+  const d=jd.base,rows=d.rows||[];
+  if(!rows.length){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<div class="th-empty"><h3>Nothing to display yet</h3><p>Discover themes and tag responses on the Qualitative Themes step (and run your quantitative tests) first. The joint display merges both strands per theme.</p></div>`+jdNav();return;}
+  const anyQuote=rows.some(r=>r.quote&&r.quote.text);
+  const body=rows.map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};
+    return `<tr><td class="dx-name">${esc(r.theme_name)}</td><td><div class="th-cov">${f.n||0} <span style="color:var(--ink-3)">(${f.percent||0}%)</span></div></td><td class="dx-interp">${jdAnalysis(r.analysis)}</td><td class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</td><td class="dx-interp">${r.quote&&r.quote.text?'“'+esc(r.quote.text)+'”':'<span style="color:var(--ink-3)">— pick a quote —</span>'}</td></tr>`;}).join('');
+  const table=`<div class="panel"><div class="panel-h"><div><h3>Joint display · ${rows.length} themes</h3><div class="ph-sub">${d.total_responses||0} open-ended responses</div></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Theme</th><th class="l">Frequency (QUAN)</th><th class="l">Statistical result (QUAN)</th><th class="l">Sentiment (QUAL)</th><th class="l">Representative quote (QUAL)</th></tr></thead><tbody>${body}</tbody></table></div></div></div>`;
+  const bar=`<div class="dm-save"><button class="btn primary" ${jd.picking?'disabled':''} onclick="jdPickAll()">${jd.picking?'Picking quotes…':(anyQuote?'Re-pick representative quotes':'✦ Pick representative quotes')}</button><span class="dm-note">AI picks the most illustrative participant quote for each theme (one short call per theme).</span></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each row is one theme seen through both strands at once: how common and how strong it is in the numbers, and the tone and a real quote from the narratives. Rows where the number and the quote agree are convergence; rows where they disagree are what you explain next.</div></div></div>`;
+  $("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+bar+table+layers+jdNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -1738,6 +1772,7 @@ function renderCenter(){
   if(s.id==='l_themes'){ return renderThemes(s); }
   if(s.id==='l_book'){ return renderBook(s); }
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderTTest(s):renderReliability(s); }
+  if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='q_desc'){ return renderDescriptive(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='t-test'){ return renderTTest(s); }
   if(s.id==='q_inf' && currentTool(s) && currentTool(s).name==='ANOVA'){ return renderANOVA(s); }
