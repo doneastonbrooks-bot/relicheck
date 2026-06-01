@@ -201,6 +201,21 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 @media(max-width:980px){.dock-chip{position:static;transform:none;margin-left:auto}}
 .dock-chip .gdot{width:8px;height:8px;border-radius:50%;background:var(--green)}
 .placeholder{padding:40px;text-align:center;color:var(--ink-3);border:1.5px dashed var(--line);border-radius:14px}
+/* Save to report + Report step */
+.save-bar{display:flex;align-items:center;gap:14px;margin-top:18px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow)}
+.save-note{flex:1;font-size:13.5px;color:var(--ink-2)}
+.rep-actions{margin-bottom:16px}
+.rep-block{border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
+.rep-block-h{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid var(--line);font-size:13px;color:var(--ink-2)}
+.rep-del{border:none;background:none;color:#c2492f;font-weight:600;font-size:12.5px;cursor:pointer;font-family:inherit}
+.rep-snap{padding:16px}
+@media print{
+  .topbar,.rail,.companion,.studio-dock,.view-bar,.save-bar,.rep-actions,.rep-del{display:none!important}
+  .app{display:block!important;height:auto!important}
+  .body{display:block!important;overflow:visible!important}
+  .center{overflow:visible!important;padding:0!important}
+  .dx-scroll,.as-chart-wrap{max-height:none!important;overflow:visible!important}
+}
 </style>
 <link rel="stylesheet" href="<?= htmlspecialchars($_as_css . '?v=' . $_as_css_v) ?>">
 <script src="<?= htmlspecialchars($_as_js . '?v=' . $_as_js_v) ?>"></script>
@@ -355,7 +370,9 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     // (MM-style dx-table + interpretation layers).
     if (BOOT.slug === 'descriptive' && window.AnalysisStudio) {
       window.AnalysisStudio.renderWork(host, { kind: BOOT.slug, tool: s.tool, dataset: state.dataset, view: state.view });
+      const snapshotHtml = host.innerHTML;   // pure result, before chrome is added
       insertViewToggle(host);
+      insertSaveBar(host, s, snapshotHtml);
       return;
     }
     // Inferential presentations land in the next build chunk.
@@ -365,10 +382,55 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       + '<div class="placeholder">The <strong>'+esc(s.label)+'</strong> presentation (MM-style) is being built next.</div>';
   }
 
+  function toolLabel(tool){ const st = steps().find(function(x){ return x.tool===tool; }); return st ? st.label : tool; }
+  function extractSummary(html, fallback){ const m = String(html).match(/dx-l-t[^>]*>([^<]+)</); return ((m && m[1]) ? m[1] : fallback).slice(0,200); }
+
+  // "Save to report" — snapshot the current analysis to the project's report.
+  function insertSaveBar(host, s, snapshotHtml){
+    const bar = document.createElement('div'); bar.className = 'save-bar';
+    if (!BOOT.projectId) {
+      bar.innerHTML = '<span class="save-note">Save your data to a project (Upload, or Open saved project) to add analyses to a report.</span>';
+      host.appendChild(bar); return;
+    }
+    bar.innerHTML = '<span class="save-note" id="saveNote">Add this analysis to your report.</span>'
+      + '<button class="btn primary" id="saveBtn">Save to report</button>';
+    host.appendChild(bar);
+    const summary = extractSummary(snapshotHtml, s.label);
+    bar.querySelector('#saveBtn').addEventListener('click', function(){
+      const btn = this; btn.disabled = true; btn.textContent = 'Saving…';
+      fetch('/api/analysis/results.php', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ project_id: BOOT.projectId, tool_key: s.tool, inputs:{ view: state.view }, result:{ html: snapshotHtml, label: s.label }, summary: summary }) })
+        .then(function(r){ return r.json(); })
+        .then(function(d){ if(!d||!d.ok) throw 0; btn.textContent='Saved ✓'; const n=document.getElementById('saveNote'); if(n) n.textContent='Saved to your report. Open the Report step to assemble it.'; })
+        .catch(function(){ btn.disabled=false; btn.textContent='Save to report'; const n=document.getElementById('saveNote'); if(n) n.textContent='Could not save — please try again.'; });
+    });
+  }
+
   function renderReport(host){
-    host.innerHTML = '<div class="ws-header"><h1 class="title">Report</h1>'
-      + '<p class="lede">Assemble your saved analyses into a shareable report.</p></div>'
-      + '<div class="placeholder">Report builder lands in a later chunk.</div>';
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Report</h1>'
+      + '<p class="lede">Your saved analyses, assembled. Print or save as PDF.</p></div><div id="repBody"><div class="placeholder">Loading…</div></div>';
+    const body = host.querySelector('#repBody');
+    if (!BOOT.projectId) { body.innerHTML = '<div class="placeholder">Save your data to a project first, then click <strong>Save to report</strong> on any analysis step.</div>'; return; }
+    fetch('/api/analysis/results.php?project_id=' + encodeURIComponent(BOOT.projectId), { credentials:'same-origin', headers:{Accept:'application/json'} })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        const items = (d && Array.isArray(d.results)) ? d.results : [];
+        if (!items.length) { body.innerHTML = '<div class="placeholder">No saved analyses yet. Run a step and click <strong>Save to report</strong>.</div>'; return; }
+        body.innerHTML = '<div class="rep-actions"><button class="btn primary" id="repPrint">Print / Save as PDF</button></div>'
+          + items.map(function(it){
+              return '<div class="rep-block"><div class="rep-block-h"><strong>'+esc(toolLabel(it.tool_key))+'</strong>'
+                + '<button class="rep-del" data-id="'+it.id+'">Remove</button></div>'
+                + '<div class="rep-snap">'+((it.result && it.result.html) || '<p class="save-note">'+esc(it.summary||'')+'</p>')+'</div></div>';
+            }).join('');
+        const pr = document.getElementById('repPrint'); if (pr) pr.addEventListener('click', function(){ window.print(); });
+        body.querySelectorAll('.rep-del').forEach(function(b){
+          b.addEventListener('click', function(){
+            fetch('/api/analysis/results.php', { method:'DELETE', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id: +b.getAttribute('data-id') }) })
+              .then(function(){ render(); });
+          });
+        });
+      })
+      .catch(function(){ body.innerHTML = '<div class="placeholder">Could not load your report.</div>'; });
   }
 
   function renderCompanion(){
