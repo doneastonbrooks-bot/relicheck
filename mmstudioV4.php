@@ -1997,6 +1997,8 @@ function renderStrength(s){
    report" (generate_all) and per-section generate are the assists. */
 const rp={base:null,busy:false,err:'',edits:{},saving:'',gen:'',genAll:false};
 function rpFetch(){return fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function rpDownloadDocx(){const a=document.createElement('a');a.href='/api/mm/report-docx.php?project_id='+BOOT.projectId;a.click();toast('Downloading Word…');}
+function rpDownloadMd(){const a=document.createElement('a');a.href='/api/mm/report-export.php?project_id='+BOOT.projectId+'&format=md';a.click();toast('Downloading Markdown…');}
 function rpRowByKey(){const m={};((rp.base&&rp.base.rows)||[]).forEach(r=>m[r.section_key]=r);return m;}
 function rpVal(key,row){return (rp.edits[key]!=null)?rp.edits[key]:((row&&row.body_text)||'');}
 function rpCapture(){((rp.base&&rp.base.sections)||[]).forEach(sec=>{const el=document.getElementById('rp_'+sec.key);if(el)rp.edits[sec.key]=el.value;});}

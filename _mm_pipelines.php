@@ -67,7 +67,8 @@ $CONCLUDE = [
   ['id'=>'report','label'=>'Report Builder','strand'=>'neutral','mode'=>'work','route'=>null,
    'title'=>'Report Builder','lede'=>'Assemble findings, limitations, and quotes into the report.',
    'palette'=>['intro'=>'Report','groups'=>[
-     ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Build the full report','strand'=>'both','action'=>'rpGenerateAll()']]]]]],
+     ['name'=>'ReliCheck Intelligence','items'=>[['name'=>'✦ Build the full report','strand'=>'both','action'=>'rpGenerateAll()']]],
+     ['name'=>'Download','items'=>[['name'=>'⬇ Word (.docx)','strand'=>'both','action'=>'rpDownloadDocx()'],['name'=>'⬇ Markdown','strand'=>'both','action'=>'rpDownloadMd()']]]]]],
 ];
 
 // ---------- Step library (the design-specific middle) ----------
