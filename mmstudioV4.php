@@ -2274,6 +2274,11 @@ function renderExplain(s){
    from the staged findings. No new server endpoints. */
 const qs={loaded:false,busy:false,err:'',saving:false,findings:[],groupings:[],noteId:null,plan:'',hasTable:true};
 const QS_MARK='Qualitative sampling plan';
+// A grouping variable that is actually a qualitative theme-code column (e.g.
+// Coder1_Theme_Q1) must NOT appear as a demographic to sample from: selecting
+// participants by their own theme code is circular in a study where themes are
+// derived from the same responses. Excluded by the coder/theme naming convention.
+function qsIsCodingVar(name){return /coder|theme|_code\b|coding/i.test(String(name||''));}
 // Mirror Step 7's label fix: integer-coded groups get the var-name prefix.
 function qsReadFinding(it){
   const d=it.data||it; const src=it.source||it.src||'';
@@ -2299,13 +2304,15 @@ function qsScaffold(){
   const reads=qs.findings.map(qsReadFinding);
   // Kept compact: the Methods-note store caps the saved plan at 800 chars.
   const lines=[QS_MARK,'',
-    'Sample purposively across the contrasting groups below; aim for ~3-5 per group until themes saturate.'];
+    'Purposive, maximum-variation sampling; ~3-5 per contrasting group (≈12-15 total), until themes saturate.'];
   if(reads.length){
     lines.push('');
     reads.forEach((r,i)=>{
       lines.push(`${i+1}. ${r.plain}`);
+      if(r.grouping)lines.push(`   Who: contrasting groups of ${r.grouping} (include the highest- and lowest-scoring).`);
       if(r.fq)lines.push(`   Ask: ${r.fq}`);
     });
+    lines.push('','Specify exact counts per group above and note any group to oversample for breadth.');
   } else {
     lines.push('','(Stage results in "Identify Results to Explain" first, then scaffold.)');
   }
@@ -2337,7 +2344,7 @@ function renderQualSampling(s){
       qs.busy=false;qs.loaded=true;
       const ex=a[0],rp=a[1];
       qs.findings=(ex&&ex.ok)?(ex.items||[]):[];
-      qs.groupings=((BOOT.ttvars&&BOOT.ttvars.groupings)||[]);
+      qs.groupings=((BOOT.ttvars&&BOOT.ttvars.groupings)||[]).filter(g=>!qsIsCodingVar(g.name));
       if(rp&&rp.ok){
         qs.hasTable=rp.has_table!==false;
         const note=(rp.notes||[]).find(n=>String(n.body_text||'').trim().indexOf(QS_MARK)===0);
