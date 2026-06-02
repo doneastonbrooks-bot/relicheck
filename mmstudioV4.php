@@ -558,6 +558,8 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 </style>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-footer.js') ?>"></script>
+<script src="/apps/studio/type-taxonomy.js?v=<?= filemtime(__DIR__.'/apps/studio/type-taxonomy.js') ?>"></script>
+<script src="/apps/studio/data-map.js?v=<?= filemtime(__DIR__.'/apps/studio/data-map.js') ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -1777,28 +1779,70 @@ function dmTabBody(d){
   const flow=`<div class="dm-flow">`+fl.map((n,i)=>`${i?'<span class="dm-flow-arrow">→</span>':''}<span class="dm-flow-node${i===0?' quan':i===fl.length-1?' mm':''}">${esc(n)}</span>`).join('')+`</div>`;
   return dmPanel('Design fit','<tr><th class="l">Mixed Methods Design</th><th class="l">Fit</th><th class="l">Reason</th><th class="l">Recommended Use</th></tr>',rows)+`<div class="ov-sec" style="margin-top:4px">Your selected design</div>`+flow;
 }
+// ── Data Map RE infrastructure helpers ───────────────────────────────────────
+// Map MM display roles → canonical analysis_type (RE taxonomy).
+function mmRoleToAnalysisType(role){
+  var map={'Case identifier':'identifier','Demographic grouping variable':'demographic_nominal',
+    'Demographic / covariate':'demographic_numeric','Binary / Dichotomous':'binary',
+    'Quantitative outcome':'demographic_numeric','Likert item':'likert_item',
+    'Scale item':'likert_item','Qualitative response':'open_ended',
+    'Open-ended explanation':'open_ended','Exclude from analysis':'structural'};
+  return map[role]||'open_ended';
+}
+// Map canonical analysis_type back to MM internal type for column_meta bridge.
+function mmAnalysisTypeToMmType(at){
+  var map={likert_item:'likert',scale_score:'numeric',demographic_numeric:'numeric',
+    demographic_nominal:'demographic',demographic_ordinal:'demographic',
+    binary:'single',open_ended:'open',narrative:'open',identifier:'identifier',
+    computed_score:'numeric'};
+  return map[at]||'ignore';
+}
+// After DataMap confirms: write back to column_meta so MM's analysis pipeline
+// (t-test, ANOVA, etc.) keeps reading the right types. Bridge until unified upload.
+function mmBridgeSave(vars){
+  var save=vars.filter(function(v){return v._mm_idx!=null;}).map(function(v){
+    return {idx:v._mm_idx,type:mmAnalysisTypeToMmType(v.analysis_type),
+      construct:v._construct_name||'',points:null};
+  });
+  if(save.length) dmFetch({save:save}).then(function(j){if(j&&j.ok)toast('Variable map saved');}).catch(function(){});
+}
+// Tracks whether DataMap has been mounted for this page session.
+var _mmDmMounted=false;
+
 function renderDataMap(s){
   if(!(BOOT.projectId&&BOOT.rawinfo&&BOOT.rawinfo.linked)){
-    $("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')+`<p class="lede">Connect a project with uploaded data to map your variables into analysis roles.</p>`+dmNav();
+    $("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')
+      +`<p class="lede">Connect a project with uploaded data to map your variables into analysis roles.</p>`+dmNav();
     return;
   }
-  if(dm.err){dmMsg(s,dm.err);return;}
-  if(!dm.base){
-    if(!dm.busy){dm.busy=true;dmFetch({}).then(j=>{dm.busy=false;if(j&&j.ok){dm.base=j;}else{dm.err=(j&&(j.message||j.error))||'Could not build the data map.';}renderDataMap(activeStep());}).catch(()=>{dm.busy=false;dm.err='Could not load your data.';renderDataMap(activeStep());});}
-    dmMsg(s,'Reading your dataset and detecting variable roles…');return;
+  if(!window.DataMap){
+    dmMsg(s,'Loading Variable Map component…');return;
   }
-  const d=dm.base,su=d.summary;
-  const cards=[
-    ['Respondents',su.respondents,false],
-    ['ID Variable',su.id_variable,true],
-    ['Demographics',su.demographics,false],
-    ['Quantitative Variables',su.quantitative,false],
-    ['Likert Items',su.likert,false],
-    ['Open-Ended Responses',su.open_ended,false],
-  ].map(c=>`<div class="dm-card"><div class="dm-card-k">${esc(c[0])}</div><div class="dm-card-v ${c[2]?'sm':''}">${esc(String(c[1]))}</div></div>`).join('')
-   +`<div class="dm-card"><div class="dm-card-k">Integration Strength</div><div class="dm-card-v sm">${dmBadge(su.integration_strength)}</div></div>`;
-  const tabs=DM_TABS.map(t=>`<button class="dm-tab ${dm.tab===t[0]?'on':''}" onclick="dmTab('${t[0]}')">${t[1]}</button>`).join('');
-  $("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')+`<div class="dm-cards">${cards}</div><div class="dm-tabs">${tabs}</div>${dmTabBody(d)}`+dmNav();
+  // Build MM's chrome (header + nav) around the standard DataMap container.
+  $("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')
+    +`<div id="mmDmContainer"></div>`+dmNav();
+  var container=document.getElementById('mmDmContainer');
+  if(!container) return;
+  if(!_mmDmMounted){
+    _mmDmMounted=true;
+    // Fetch current column_meta from MM's own endpoint to get names + saved roles.
+    dmFetch({}).then(function(j){
+      if(!j||!j.ok||!j.columns){container.innerHTML='<div class="placeholder">Could not load variable data.</div>';return;}
+      var rawVars=(j.columns||[]).map(function(c,i){
+        return {variable_name:c.name,display_label:c.name,detected_type:c.detected_type||'',
+          source:'dataset_column',dataset_id:BOOT.rawinfo.dataset_id||null,
+          analysis_type:mmRoleToAnalysisType(c.assigned_role||''),
+          include_in_analysis:c.assigned_role!=='Exclude from analysis',
+          _mm_idx:c.idx,position:i};
+      });
+      DataMap.init({container:container,projectId:BOOT.projectId,projectType:'mm',
+        rawVars:rawVars,constructs:[],
+        onConfirmed:function(vars){mmBridgeSave(vars);}
+      });
+    }).catch(function(){container.innerHTML='<div class="placeholder">Could not load variable data.</div>';});
+  } else {
+    DataMap.mount(container);
+  }
 }
 /* ============ Trustworthiness (l_trust) — qualitative credibility ============
    Three real practices via /api/mm/trustworthiness.php, chosen from the palette:
