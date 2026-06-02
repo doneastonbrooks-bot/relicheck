@@ -465,53 +465,19 @@
     drawOut();
   }
 
-  // ---- Inferential helpers ----
-  function formatP(p){ if(p<0.0001) return '<.0001'; if(p<0.001) return '<.001'; return p.toFixed(3); }
-  function effLabel(label,val){
-    if(val==null||!isFinite(val)) return '';
-    var thresholds;
-    if(label==='cohens_d')   thresholds=[[0.8,'large'],[0.5,'medium'],[0.2,'small']];
-    else if(label==='eta_squared') thresholds=[[0.14,'large'],[0.06,'medium'],[0.01,'small']];
-    else if(label==='cramers_v')   thresholds=[[0.5,'large'],[0.3,'medium'],[0.1,'small']];
-    else if(label==='r_squared')   thresholds=[[0.25,'large'],[0.09,'medium'],[0.01,'small']];
-    else return '';
-    var a=Math.abs(val);
-    for(var i=0;i<thresholds.length;i++){ if(a>=thresholds[i][0]) return thresholds[i][1]; }
-    return 'negligible';
-  }
-  function inferFetch(tool,body,btn,btnLabel,out,onDone){
-    btn.disabled=true; btn.textContent='Running…';
-    fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
-      .then(function(r){return r.json();})
-      .then(function(d){
-        btn.disabled=false; btn.textContent='Re-run';
-        if(!d||!d.ok){ out.innerHTML='<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Server error — please try again.')+'</div>'; return; }
-        onDone(d);
-      })
-      .catch(function(){
-        btn.disabled=false; btn.textContent=btnLabel;
-        out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
-      });
-  }
-  function statTable(rows,maxW){
-    var body=rows.map(function(r){return '<tr><td class="dx-name">'+esc(r[0])+'</td><td>'+esc(String(r[1]))+'</td></tr>';}).join('');
-    return '<div class="dx-scroll" style="margin-bottom:12px"><table class="dx-table"'+(maxW?' style="max-width:'+maxW+'px"':'')+'>'+
-      '<thead><tr><th class="l">Statistic</th><th>Value</th></tr></thead><tbody>'+body+'</tbody></table></div>';
-  }
-
   // ---- Variables & Fit ----
   function renderVariablesFit(host,ds,ctx){
     var nv=numericVars(ds),cv=catVars(ds);
     var varBody=ds.variables.map(function(v){
       var kind=isNumericVar(v)?'Numeric':(isCategoricalVar(v)?'Categorical':'Other');
-      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td>'+esc((v.types||['—'])[0])+'</td><td>'+kind+'</td><td>'+nonMissing(v.values).length+'</td></tr>';
+      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td>'+esc((v.types||['-'])[0])+'</td><td>'+kind+'</td><td>'+nonMissing(v.values).length+'</td></tr>';
     }).join('');
     var pairs=[];
     nv.forEach(function(v1){
       nv.forEach(function(v2){ if(v1.name<v2.name) pairs.push({a:v1.name,b:v2.name,test:'Pearson correlation'}); });
       cv.forEach(function(c){
         var levels=new Set(nonMissing(c.values));
-        var test=levels.size===2?'Independent t-test':(levels.size>=3?'One-way ANOVA':'— (need 2+ levels)');
+        var test=levels.size===2?'Independent t-test':(levels.size>=3?'One-way ANOVA':'-- (need 2+ levels)');
         pairs.push({a:v1.name,b:c.name,test:test});
       });
     });
@@ -524,7 +490,7 @@
     var layerBlocks=[
       {k:'What this shows',t:'Variable types detected in your dataset and the statistical test that fits each pair.'},
       {k:'Why this matters',t:'Matching the right test to the measurement level of your variables is the first step in valid inference.'},
-      {k:'Caution',caution:true,t:'Type detection is heuristic. Review the list and continue to the correct test step — the test itself will flag problems (wrong group count, etc.).'}
+      {k:'Caution',caution:true,t:'Type detection is heuristic. Review the list and continue to the correct test step.'}
     ];
     host.innerHTML=header('Inferential Analysis','Variables & Fit','What types are your variables, and which tests fit each pair?','variables_fit')
       +'<div class="panel"><div class="panel-h"><h3>Variables in this dataset</h3></div><div class="panel-b">'
@@ -537,154 +503,324 @@
     if(ctx&&ctx.onResult) ctx.onResult();
   }
 
+  // ---- Shared: tabbed results ----
+  function ttTabs(tabs,cur,testKey){
+    var fnMap={t_test:'ttTab',anova:'anTab',chi_square:'csqTab',correlation:'corTab',regression:'regTab'};
+    var fn=fnMap[testKey]||'ttTab';
+    return '<div class="tt-tabs">'+tabs.map(function(t){
+      var on=t[0]===cur?' on':'';
+      return '<button class="tt-tab'+on+'" onclick="AnalysisStudio.'+fn+'(\''+esc(t[0])+'\')">'+esc(t[1])+'</button>';
+    }).join('')+'</div>';
+  }
+  function ttStatus(sig){
+    return '<span class="tt-status '+(sig?'ok':'rev')+'">'+(sig?'Significant':'Not significant')+'</span>';
+  }
+  function fmtN(v,d){ if(v==null||!isFinite(v)) return '—'; return Number(v).toFixed(d==null?2:d); }
+
+  // t-test state
+  var tt={grp:null,g1:'',g2:'',testType:'auto',conf:0.95,result:null,tab:'desc',busy:false};
+
   // ---- Independent t-test ----
   function renderTTest(host,ds,ctx){
-    var nv=numericVars(ds),cv=catVars(ds);
-    if(!nv.length||!cv.length){
+    var nv=numericVars(ds);
+    var gv=ds.variables.filter(function(v){
+      var nm=nonMissing(v.values); var d=new Set(nm).size; return d>=2&&d<=20;
+    });
+    if(!nv.length||!gv.length){
       host.innerHTML=header('Inferential Analysis','Independent t-test','','t_test')
-        +'<div class="as-empty-tool">Need at least one numeric outcome and one grouping variable.</div>'; return;
+        +'<div class="as-empty-tool">Need at least one numeric outcome and one grouping variable (2+ distinct values).</div>'; return;
     }
-    sel.tt_out=(sel.tt_out&&varByName(ds,sel.tt_out))?sel.tt_out:nv[0].name;
-    sel.tt_grp=(sel.tt_grp&&varByName(ds,sel.tt_grp))?sel.tt_grp:cv[0].name;
-    host.innerHTML=header('Inferential Analysis','Independent t-test','Compare the means of two groups on a numeric outcome.','t_test')
-      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
-      +selectField('ttOut','Outcome (numeric)','',nv,sel.tt_out)
-      +selectField('ttGrp','Group variable','2 levels',cv,sel.tt_grp)
-      +'</div><button class="btn primary" id="ttRun" style="margin-top:12px">Run t-test</button>'
-      +'</div></div><div id="ttResult"></div>';
-    var outEl=host.querySelector('#ttOut'),grpEl=host.querySelector('#ttGrp');
-    if(outEl) outEl.addEventListener('change',function(e){sel.tt_out=e.target.value;});
-    if(grpEl) grpEl.addEventListener('change',function(e){sel.tt_grp=e.target.value;});
-    var btn=host.querySelector('#ttRun');
-    if(btn) btn.addEventListener('click',function(){
-      var ov=varByName(ds,sel.tt_out),gv=varByName(ds,sel.tt_grp); if(!ov||!gv) return;
-      var n=Math.min(ov.values.length,gv.values.length),vals=[],grps=[];
-      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gv.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
-      var out=host.querySelector('#ttResult');
-      inferFetch('t_test',{tool:'t_test',values:vals,groups:grps},btn,'Run t-test',out,function(d){
-        var gkeys=d.details&&d.details.groups?Object.keys(d.details.groups):[];
-        var grpRows=gkeys.map(function(g){
-          var info=d.details.groups[g];
-          return '<tr><td class="dx-name">'+esc(g)+'</td><td>'+info.n+'</td><td>'+n2(info.mean)+'</td><td>'+n2(Math.sqrt(info.var||0))+'</td></tr>';
-        }).join('');
-        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
-        var sumRows=[['t',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],
-          ['Cohen\'s d',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—']];
-        var layerBlocks=[
-          {k:'What this shows',t:esc(d.summary||'')},
-          {k:'Why this matters',t:'A significant result (p < .05) means the group difference is unlikely to be sampling noise. Pair with Cohen\'s d for practical significance.'},
-          {k:'Caution',caution:true,t:'Welch\'s t-test does not assume equal variances, but assumes roughly normal distributions in each group — especially with small N.'}
-        ];
-        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
-          +statTable(sumRows,360)
-          +(grpRows?'<div class="dx-scroll" style="margin-bottom:8px"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th></tr></thead><tbody>'+grpRows+'</tbody></table></div>':'')
-          +layers(layerBlocks)+'</div></div>';
-        if(ctx&&ctx.onResult) ctx.onResult();
-      });
+    if(!tt.grp||!ds.variables.find(function(v){return v.name===tt.grp;})) tt.grp=gv[0].name;
+    if(!sel.tt_out||!varByName(ds,sel.tt_out)) sel.tt_out=nv[0].name;
+    var gvObj=varByName(ds,tt.grp);
+    var glevels=gvObj?Array.from(new Set(nonMissing(gvObj.values))).sort():[];
+    var gCounts={};
+    if(gvObj) gvObj.values.forEach(function(v){if(!isMissing(v))gCounts[v]=(gCounts[v]||0)+1;});
+    if(!tt.g1||glevels.indexOf(tt.g1)<0) tt.g1=glevels[0]||'';
+    if(!tt.g2||glevels.indexOf(tt.g2)<0||tt.g2===tt.g1) tt.g2=glevels[1]||'';
+    var outOpts=nv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.tt_out?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    var grpOpts=gv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===tt.grp?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    var g1Opts=glevels.map(function(g){return '<option value="'+esc(g)+'"'+(g===tt.g1?' selected':'')+'>'+esc(g)+' (n='+(gCounts[g]||0)+')</option>';}).join('');
+    var g2Opts=glevels.map(function(g){return '<option value="'+esc(g)+'"'+(g===tt.g2?' selected':'')+'>'+esc(g)+' (n='+(gCounts[g]||0)+')</option>';}).join('');
+    var seg=function(k,l){return '<button class="tt-seg'+(tt.testType===k?' on':'')+'" data-as-tt-type="'+k+'">'+l+'</button>';};
+    var setup='<div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome and the two groups to compare</div></div></div>'
+      +'<div class="panel-b"><div class="tt-grid">'
+      +'<div class="field"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="ttOut">'+outOpts+'</select></div>'
+      +'<div class="field"><label>Grouping variable <span class="tt-hint">categorical</span></label><select class="ed-in" id="ttGrp">'+grpOpts+'</select></div>'
+      +'<div class="field"><label>Group 1</label><select class="ed-in" id="ttG1">'+g1Opts+'</select></div>'
+      +'<div class="field"><label>Group 2</label><select class="ed-in" id="ttG2">'+g2Opts+'</select></div>'
+      +'<div class="field"><label>Test type</label><div class="tt-segs">'+seg('auto','Auto')+seg('welch','Welch')+seg('student','Student')+'</div><div class="tt-hint" style="margin-top:5px">Welch is the default — safer when group sizes or variances differ.</div></div>'
+      +'<div class="field"><label>Confidence</label><select class="ed-in" id="ttConf"><option value="0.90">90%</option><option value="0.95"'+(tt.conf===0.95?' selected':'')+'>95%</option><option value="0.99">99%</option></select></div>'
+      +'</div><div class="run-actions"><button class="btn primary" id="ttRun"'+(tt.busy?' disabled':'')+'>'+(tt.busy?'Running…':'▷ Run t-test')+'</button></div>'
+      +'</div></div>';
+    host.innerHTML=header('Inferential Analysis','Independent t-test','Compare the mean of one outcome across two groups.','t_test')
+      +setup+'<div id="ttResults">'+(tt.result?renderTTestResults(tt.result,ctx):'')+'</div>';
+    var elOut=host.querySelector('#ttOut'),elGrp=host.querySelector('#ttGrp');
+    var elG1=host.querySelector('#ttG1'),elG2=host.querySelector('#ttG2'),elConf=host.querySelector('#ttConf');
+    if(elOut) elOut.addEventListener('change',function(e){sel.tt_out=e.target.value;});
+    if(elGrp) elGrp.addEventListener('change',function(e){tt.grp=e.target.value;tt.g1='';tt.g2='';renderTTest(host,ds,ctx);});
+    if(elG1)  elG1.addEventListener('change',function(e){tt.g1=e.target.value;});
+    if(elG2)  elG2.addEventListener('change',function(e){tt.g2=e.target.value;});
+    if(elConf) elConf.addEventListener('change',function(e){tt.conf=parseFloat(e.target.value);});
+    host.querySelectorAll('[data-as-tt-type]').forEach(function(btn){
+      btn.addEventListener('click',function(){tt.testType=btn.getAttribute('data-as-tt-type');renderTTest(host,ds,ctx);});
+    });
+    var runBtn=host.querySelector('#ttRun');
+    if(runBtn) runBtn.addEventListener('click',function(){
+      if(tt.busy) return;
+      if(tt.g1===tt.g2) return;
+      var ov=varByName(ds,sel.tt_out),gvObj2=varByName(ds,tt.grp); if(!ov||!gvObj2) return;
+      var n=Math.min(ov.values.length,gvObj2.values.length),vals=[],grps=[];
+      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gvObj2.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
+      tt.busy=true; tt.result=null;
+      renderTTest(host,ds,ctx);
+      fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tool:'t_test',values:vals,groups:grps,group1:tt.g1,group2:tt.g2,
+          outcome_name:sel.tt_out,group_name:tt.grp,confidence:tt.conf})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          tt.busy=false; tt.result=d; tt.tab='desc';
+          var out=host.querySelector('#ttResults');
+          if(out) out.innerHTML=renderTTestResults(d,ctx);
+          if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
+        })
+        .catch(function(){
+          tt.busy=false;
+          var out=host.querySelector('#ttResults');
+          if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+        });
     });
   }
+  function renderTTestResults(d,ctx){
+    if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running t-test.')+'</div>';
+    var tabs=ttTabs([['desc','Descriptives'],['result','Test result'],['effect','Effect size'],['report','Reporting language']],tt.tab,'t_test');
+    var body='';
+    if(tt.tab==='desc'){
+      var rows=(d.descriptives||[]).map(function(g){
+        return '<tr><td class="dx-name">'+esc(g.group)+'</td><td>'+g.n+'</td><td>'+fmtN(g.mean)+'</td><td>'+fmtN(g.sd)+'</td><td>'+fmtN(g.se)+'</td><td>'+fmtN(g.min)+'</td><td>'+fmtN(g.max)+'</td></tr>';
+      }).join('');
+      var D=d.difference||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th><th>SE</th><th>Min</th><th>Max</th></tr></thead><tbody>'+rows+'</tbody></table></div>'
+        +'<div class="ov-sec" style="margin-top:18px">Mean difference</div>'
+        +'<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th>Group 1 mean</th><th>Group 2 mean</th><th>Difference</th><th class="l">Direction</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td>'+fmtN(D.mean1)+'</td><td>'+fmtN(D.mean2)+'</td>'
+        +'<td class="'+(D.diff<0?'dx-neg':'dx-pos')+'">'+(D.diff>0?'+':'')+fmtN(D.diff)+'</td>'
+        +'<td class="dx-interp">'+esc(D.direction||'')+'</td></tr></tbody></table></div>';
+    } else if(tt.tab==='result'){
+      var R=d.result||{}; var pct=Math.round((R.conf_level||0.95)*100);
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Test used</th><th>t</th><th>df</th><th>p</th><th>Mean diff</th><th>'+pct+'% CI low</th><th>'+pct+'% CI high</th><th class="l">Result</th></tr></thead><tbody>'
+        +'<tr><td class="dx-interp">'+esc(R.test_used||'')+'</td><td>'+fmtN(R.t)+'</td><td>'+fmtN(R.df,1)+'</td>'
+        +'<td>'+esc(R.p_str||'')+'</td><td>'+fmtN(R.diff)+'</td><td>'+fmtN(R.ci_lo)+'</td><td>'+fmtN(R.ci_hi)+'</td>'
+        +'<td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else if(tt.tab==='effect'){
+      var E=d.effect||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td class="dx-interp">'+esc(E.type||'')+'</td>'
+        +'<td>'+fmtN(E.value,3)+'</td><td class="dx-interp">'+esc(E.interpretation||'')+'</td><td class="dx-interp">'+esc(E.meaning||'')+'</td></tr></tbody></table></div>';
+    } else {
+      var L=d.reporting||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">Plain-language summary</td><td class="dx-interp">'+esc(L.plain||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Researcher summary</td><td class="dx-interp">'+esc(L.researcher||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Caution</td><td class="dx-interp">'+esc(L.caution||'')+'</td></tr>'
+        +'</tbody></table></div>';
+    }
+    var rpt=d.reporting||{};
+    return tabs+'<div class="panel"><div class="panel-b">'+body+'</div></div>'
+      +'<div class="dx-layers">'
+      +'<div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">'+esc(rpt.plain||'')+'</div></div>'
+      +'<div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">'+esc(rpt.caution||'')+'</div></div>'
+      +'</div>';
+  }
+  AS.ttTab=function(tab){tt.tab=tab;var out=document.getElementById('ttResults');if(out&&tt.result)out.innerHTML=renderTTestResults(tt.result,null);};
+
+  // ANOVA state
+  var an={result:null,tab:'desc',busy:false};
 
   // ---- One-way ANOVA ----
   function renderAnova(host,ds,ctx){
-    var nv=numericVars(ds),cv=catVars(ds);
-    if(!nv.length||!cv.length){
+    var nv=numericVars(ds);
+    var gv=ds.variables.filter(function(v){var nm=nonMissing(v.values);var d=new Set(nm).size;return d>=3&&d<=20;});
+    if(!nv.length||!gv.length){
       host.innerHTML=header('Inferential Analysis','One-way ANOVA','','anova')
-        +'<div class="as-empty-tool">Need at least one numeric outcome and one grouping variable (3+ levels).</div>'; return;
+        +'<div class="as-empty-tool">ANOVA needs a numeric outcome and a grouping with 3 or more categories. For exactly 2 groups, use the t-test.</div>'; return;
     }
-    sel.an_out=(sel.an_out&&varByName(ds,sel.an_out))?sel.an_out:nv[0].name;
-    sel.an_grp=(sel.an_grp&&varByName(ds,sel.an_grp))?sel.an_grp:cv[0].name;
-    host.innerHTML=header('Inferential Analysis','One-way ANOVA','Test whether a numeric outcome differs across 3 or more groups.','anova')
-      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
-      +selectField('anOut','Outcome (numeric)','',nv,sel.an_out)
-      +selectField('anGrp','Group variable','3+ levels',cv,sel.an_grp)
-      +'</div><button class="btn primary" id="anRun" style="margin-top:12px">Run ANOVA</button>'
-      +'</div></div><div id="anResult"></div>';
-    var outEl=host.querySelector('#anOut'),grpEl=host.querySelector('#anGrp');
-    if(outEl) outEl.addEventListener('change',function(e){sel.an_out=e.target.value;});
-    if(grpEl) grpEl.addEventListener('change',function(e){sel.an_grp=e.target.value;});
-    var btn=host.querySelector('#anRun');
-    if(btn) btn.addEventListener('click',function(){
-      var ov=varByName(ds,sel.an_out),gv=varByName(ds,sel.an_grp); if(!ov||!gv) return;
-      var n=Math.min(ov.values.length,gv.values.length),vals=[],grps=[];
-      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gv.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
-      var out=host.querySelector('#anResult');
-      inferFetch('anova',{tool:'anova',values:vals,groups:grps},btn,'Run ANOVA',out,function(d){
-        var gkeys=d.details&&d.details.groups?Object.keys(d.details.groups):[];
-        var grandMean=d.details&&d.details.grand_mean!=null?d.details.grand_mean:null;
-        var grpRows=gkeys.map(function(g){
-          var info=d.details.groups[g]; var delta=grandMean!=null?info.mean-grandMean:null;
-          return '<tr><td class="dx-name">'+esc(g)+'</td><td>'+info.n+'</td><td>'+n2(info.mean)+'</td>'
-            +(delta!=null?'<td class="'+(delta<0?'dx-neg':'dx-pos')+'">'+(delta>0?'+':'')+n2(delta)+'</td>':'<td>—</td>')+'</tr>';
-        }).join('');
-        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
-        var sumRows=[['F',n2(d.statistic)+' (df₁='+n2(d.df1)+', df₂='+n2(d.df2)+')'],
-          ['p',pStr+(sig?' *':' n.s.')],
-          ['η²',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—'],['N',String(d.n_total)]];
-        var layerBlocks=[
-          {k:'What this shows',t:esc(d.summary||'')},
-          {k:'Why this matters',t:'A significant F means at least one group mean differs. Pair η² with this result for effect size; a post-hoc test (e.g., Tukey) identifies which groups.'},
-          {k:'Caution',caution:true,t:'ANOVA tests the omnibus null only. A significant result does not identify which groups differ — only that at least one does.'}
-        ];
-        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
-          +statTable(sumRows,420)
-          +(grpRows?'<div class="dx-scroll" style="margin-bottom:8px"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>Δ from grand mean</th></tr></thead><tbody>'+grpRows+'</tbody></table></div>':'')
-          +layers(layerBlocks)+'</div></div>';
-        if(ctx&&ctx.onResult) ctx.onResult();
-      });
+    if(!sel.an_out||!varByName(ds,sel.an_out)) sel.an_out=nv[0].name;
+    if(!sel.an_grp||!varByName(ds,sel.an_grp)) sel.an_grp=gv[0].name;
+    var outOpts=nv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.an_out?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    var grpOpts=gv.map(function(v){var cnt=new Set(nonMissing(v.values)).size;return '<option value="'+esc(v.name)+'"'+(v.name===sel.an_grp?' selected':'')+'>'+esc(v.name)+' ('+cnt+' groups)</option>';}).join('');
+    var setup='<div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome and a grouping with 3 or more categories</div></div></div>'
+      +'<div class="panel-b"><div class="tt-grid">'
+      +'<div class="field"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="anOut">'+outOpts+'</select></div>'
+      +'<div class="field"><label>Grouping variable <span class="tt-hint">3+ categories</span></label><select class="ed-in" id="anGrp">'+grpOpts+'</select></div>'
+      +'</div><div class="run-actions"><button class="btn primary" id="anRun"'+(an.busy?' disabled':'')+'>'+(an.busy?'Running…':'▷ Run ANOVA')+'</button></div>'
+      +'</div></div>';
+    host.innerHTML=header('Inferential Analysis','One-way ANOVA','Compare the mean of one outcome across three or more groups.','anova')
+      +setup+'<div id="anResults">'+(an.result?renderAnovaResults(an.result,ctx):'')+'</div>';
+    var elOut=host.querySelector('#anOut'),elGrp=host.querySelector('#anGrp');
+    if(elOut) elOut.addEventListener('change',function(e){sel.an_out=e.target.value;});
+    if(elGrp) elGrp.addEventListener('change',function(e){sel.an_grp=e.target.value;});
+    var runBtn=host.querySelector('#anRun');
+    if(runBtn) runBtn.addEventListener('click',function(){
+      if(an.busy) return;
+      var ov=varByName(ds,sel.an_out),gvObj=varByName(ds,sel.an_grp); if(!ov||!gvObj) return;
+      var n=Math.min(ov.values.length,gvObj.values.length),vals=[],grps=[];
+      for(var i=0;i<n;i++){var v=num(ov.values[i]),g=gvObj.values[i];if(v!==null&&!isMissing(g)){vals.push(v);grps.push(String(g));}}
+      an.busy=true; an.result=null;
+      renderAnova(host,ds,ctx);
+      fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tool:'anova',values:vals,groups:grps,outcome_name:sel.an_out,group_name:sel.an_grp})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          an.busy=false; an.result=d; an.tab='desc';
+          var out=host.querySelector('#anResults');
+          if(out) out.innerHTML=renderAnovaResults(d,ctx);
+          if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
+        })
+        .catch(function(){
+          an.busy=false;
+          var out=host.querySelector('#anResults');
+          if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+        });
     });
   }
+  function renderAnovaResults(d,ctx){
+    if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running ANOVA.')+'</div>';
+    var tabs=ttTabs([['desc','Descriptives'],['result','Test result'],['effect','Effect size'],['report','Reporting language']],an.tab,'anova');
+    var body='';
+    if(an.tab==='desc'){
+      var grandM=d.grouping&&d.grouping.grand_mean!=null?d.grouping.grand_mean:null;
+      var rows=(d.descriptives||[]).map(function(g){
+        var delta=grandM!=null?g.mean-grandM:null;
+        return '<tr><td class="dx-name">'+esc(g.group)+'</td><td>'+g.n+'</td><td>'+fmtN(g.mean)+'</td><td>'+fmtN(g.sd)+'</td><td>'+fmtN(g.se)+'</td><td>'+fmtN(g.min)+'</td><td>'+fmtN(g.max)+'</td>'
+          +(delta!=null?'<td class="'+(delta<0?'dx-neg':'dx-pos')+'">'+(delta>0?'+':'')+fmtN(delta)+'</td>':'<td>—</td>')+'</tr>';
+      }).join('');
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th><th>SE</th><th>Min</th><th>Max</th><th>Δ from grand mean</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    } else if(an.tab==='result'){
+      var R=d.result||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th class="l">Test</th><th>F</th><th>df1</th><th>df2</th><th>p</th><th>η²</th><th class="l">Result</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td class="dx-interp">'+esc(R.test_used||'')+'</td>'
+        +'<td>'+fmtN(R.F)+'</td><td>'+fmtN(R.df1,0)+'</td><td>'+fmtN(R.df2,0)+'</td>'
+        +'<td>'+esc(R.p_str||'')+'</td><td>'+fmtN(R.eta_sq,3)+'</td>'
+        +'<td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else if(an.tab==='effect'){
+      var E=d.effect||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td class="dx-interp">'+esc(E.type||'')+'</td>'
+        +'<td>'+fmtN(E.value,3)+'</td><td class="dx-interp">'+esc(E.interpretation||'')+'</td><td class="dx-interp">'+esc(E.meaning||'')+'</td></tr></tbody></table></div>';
+    } else {
+      var L=d.reporting||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">Plain-language summary</td><td class="dx-interp">'+esc(L.plain||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Researcher summary</td><td class="dx-interp">'+esc(L.researcher||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Caution</td><td class="dx-interp">'+esc(L.caution||'')+'</td></tr>'
+        +'</tbody></table></div>';
+    }
+    var rpt=d.reporting||{};
+    return tabs+'<div class="panel"><div class="panel-b">'+body+'</div></div>'
+      +'<div class="dx-layers">'
+      +'<div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">'+esc(rpt.plain||'')+'</div></div>'
+      +'<div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">'+esc(rpt.caution||'')+'</div></div>'
+      +'</div>';
+  }
+  AS.anTab=function(tab){an.tab=tab;var out=document.getElementById('anResults');if(out&&an.result)out.innerHTML=renderAnovaResults(an.result,null);};
+
+  // Chi-square state
+  var csq={result:null,tab:'table',busy:false};
 
   // ---- Chi-square ----
   function renderChiSquare(host,ds,ctx){
-    var cv=catVars(ds);
+    var cv=ds.variables.filter(function(v){var nm=nonMissing(v.values);var d=new Set(nm).size;return d>=2&&d<=20;});
     if(cv.length<2){
       host.innerHTML=header('Inferential Analysis','Chi-square','','chi_square')
-        +'<div class="as-empty-tool">Need at least two categorical variables.</div>'; return;
+        +'<div class="as-empty-tool">Chi-square needs at least two categorical variables (each with 2–20 distinct values).</div>'; return;
     }
-    sel.cs_a=(sel.cs_a&&varByName(ds,sel.cs_a))?sel.cs_a:cv[0].name;
-    sel.cs_b=(sel.cs_b&&varByName(ds,sel.cs_b))?sel.cs_b:cv[1].name;
-    host.innerHTML=header('Inferential Analysis','Chi-square','Test whether two categorical variables are independent.','chi_square')
-      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
-      +selectField('csA','Variable A','categorical',cv,sel.cs_a)
-      +selectField('csB','Variable B','categorical',cv,sel.cs_b)
-      +'</div><button class="btn primary" id="csRun" style="margin-top:12px">Run chi-square</button>'
-      +'</div></div><div id="csResult"></div>';
-    var elA=host.querySelector('#csA'),elB=host.querySelector('#csB');
+    if(!sel.cs_a||!varByName(ds,sel.cs_a)) sel.cs_a=cv[0].name;
+    if(!sel.cs_b||!varByName(ds,sel.cs_b)||sel.cs_b===sel.cs_a) sel.cs_b=cv[1]?cv[1].name:cv[0].name;
+    var opt=function(cur){return cv.map(function(v){
+      var cnt=new Set(nonMissing(v.values)).size;
+      return '<option value="'+esc(v.name)+'"'+(v.name===cur?' selected':'')+'>'+esc(v.name)+' ('+cnt+' categories)</option>';
+    }).join('');};
+    var setup='<div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the two category variables to compare</div></div></div>'
+      +'<div class="panel-b"><div class="tt-grid">'
+      +'<div class="field"><label>Rows variable <span class="tt-hint">categorical</span></label><select class="ed-in" id="csRow">'+opt(sel.cs_a)+'</select></div>'
+      +'<div class="field"><label>Columns variable <span class="tt-hint">categorical</span></label><select class="ed-in" id="csCol">'+opt(sel.cs_b)+'</select></div>'
+      +'</div><div class="run-actions"><button class="btn primary" id="csRun"'+(csq.busy?' disabled':'')+'>'+(csq.busy?'Running…':'▷ Run chi-square')+'</button></div>'
+      +'</div></div>';
+    host.innerHTML=header('Inferential Analysis','Chi-square','Test whether two category variables are related.','chi_square')
+      +setup+'<div id="csResults">'+(csq.result?renderChiSqResults(csq.result,ctx):'')+'</div>';
+    var elA=host.querySelector('#csRow'),elB=host.querySelector('#csCol');
     if(elA) elA.addEventListener('change',function(e){sel.cs_a=e.target.value;});
     if(elB) elB.addEventListener('change',function(e){sel.cs_b=e.target.value;});
-    var btn=host.querySelector('#csRun');
-    if(btn) btn.addEventListener('click',function(){
+    var runBtn=host.querySelector('#csRun');
+    if(runBtn) runBtn.addEventListener('click',function(){
+      if(csq.busy||sel.cs_a===sel.cs_b) return;
       var va=varByName(ds,sel.cs_a),vb=varByName(ds,sel.cs_b); if(!va||!vb) return;
       var n=Math.min(va.values.length,vb.values.length),a=[],b=[];
       for(var i=0;i<n;i++){if(!isMissing(va.values[i])&&!isMissing(vb.values[i])){a.push(String(va.values[i]));b.push(String(vb.values[i]));}}
-      var out=host.querySelector('#csResult');
-      inferFetch('chi_square',{tool:'chi_square',values:a,groups:b},btn,'Run chi-square',out,function(d){
-        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel(d.effect_label,d.effect_size);
-        var sumRows=[['\u03c7\u00b2',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],
-          ['Cram\u00e9r\'s V',d.effect_size!=null?n2(d.effect_size)+(eff?' ('+eff+')':''):'—'],['N',String(d.n_total)]];
-        var ctHtml='';
-        if(d.details&&d.details.rows&&d.details.cols&&d.details.contingency){
-          var rkeys=Object.keys(d.details.rows),ckeys=Object.keys(d.details.cols);
-          var ctRows=rkeys.map(function(rk){
-            var cells=d.details.contingency[rk]||{},rtot=d.details.rows[rk];
-            var tds=ckeys.map(function(ck){var v=cells[ck]||0;return '<td>'+v+'</td><td>'+pc(rtot?100*v/rtot:0)+'</td>';}).join('');
-            return '<tr><td class="dx-name">'+esc(rk)+'</td>'+tds+'<td>'+rtot+'</td></tr>';
-          }).join('');
-          var colHdrs=ckeys.map(function(c){return '<th>'+esc(c)+' n</th><th>'+esc(c)+' %</th>';}).join('');
-          ctHtml='<div class="dx-scroll" style="margin-top:10px;margin-bottom:8px"><table class="dx-table"><thead><tr>'
-            +'<th class="l">'+esc(sel.cs_a)+'</th>'+colHdrs+'<th>Total</th></tr></thead><tbody>'+ctRows+'</tbody></table></div>';
-        }
-        var layerBlocks=[
-          {k:'What this shows',t:esc(d.summary||'')},
-          {k:'Why this matters',t:'A significant result means the two variables are not distributed independently. Cramér\'s V quantifies the strength of the association.'},
-          {k:'Caution',caution:true,t:'Chi-square is unreliable when expected cell counts fall below 5. Check that your sample is large enough for the number of categories.'}
-        ];
-        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Test statistics</h3></div><div class="panel-b">'
-          +statTable(sumRows,360)+ctHtml+layers(layerBlocks)+'</div></div>';
-        if(ctx&&ctx.onResult) ctx.onResult();
-      });
+      csq.busy=true; csq.result=null;
+      renderChiSquare(host,ds,ctx);
+      fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tool:'chi_square',values:a,groups:b,row_name:sel.cs_a,col_name:sel.cs_b})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          csq.busy=false; csq.result=d; csq.tab='table';
+          var out=host.querySelector('#csResults');
+          if(out) out.innerHTML=renderChiSqResults(d,ctx);
+          if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
+        })
+        .catch(function(){
+          csq.busy=false;
+          var out=host.querySelector('#csResults');
+          if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+        });
     });
   }
+  function renderChiSqResults(d,ctx){
+    if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running chi-square.')+'</div>';
+    var tabs=ttTabs([['table','Contingency'],['result','Test result'],['effect','Effect size'],['report','Reporting language']],csq.tab,'chi_square');
+    var body='';
+    if(csq.tab==='table'){
+      var ct=d.table||{}; var rkeys=ct.row_labels||[]; var ckeys=ct.col_labels||[];
+      var th=ckeys.map(function(c){return '<th>'+esc(c)+' n</th><th>'+esc(c)+' %</th>';}).join('');
+      var rows=(ct.matrix||[]).map(function(row){
+        var cells=(row.cells||[]).map(function(c){return '<td>'+c.count+'</td><td>'+fmtN(c.row_pct,1)+'%</td>';}).join('');
+        return '<tr><td class="dx-name">'+esc(row.label)+'</td>'+cells+'<td>'+row.total+'</td></tr>';
+      }).join('');
+      var tot=(ct.col_totals||[]).map(function(t){return '<td>'+t+'</td><td>'+fmtN(ct.grand?100*t/ct.grand:0,1)+'%</td>';}).join('');
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">'+esc(ct.row_var||'')+'</th>'+th+'<th>Total</th></tr></thead>'
+        +'<tbody>'+rows+'<tr class="dx-total"><td class="dx-name">Total</td>'+tot+'<td>'+(ct.grand||0)+'</td></tr></tbody></table></div>'
+        +'<div style="font-size:12px;opacity:.7;margin-top:8px">Percentages are within each row. Columns: '+esc(ct.col_var||'')+'.</div>';
+    } else if(csq.tab==='result'){
+      var R=d.result||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Test</th><th>χ²</th><th>df</th><th>N</th><th>p</th><th class="l">Result</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.row&&d.row.name||'')+' × '+esc(d.col&&d.col.name||'')+'</td><td class="dx-interp">'+esc(R.test_used||'')+'</td>'
+        +'<td>'+fmtN(R.chi2)+'</td><td>'+fmtN(R.df,0)+'</td><td>'+(R.n_total||0)+'</td><td>'+esc(R.p_str||'')+'</td>'
+        +'<td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else if(csq.tab==='effect'){
+      var E=d.effect||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.row&&d.row.name||'')+' × '+esc(d.col&&d.col.name||'')+'</td><td class="dx-interp">'+esc(E.type||'')+'</td>'
+        +'<td>'+fmtN(E.value,3)+'</td><td class="dx-interp">'+esc(E.interpretation||'')+'</td><td class="dx-interp">'+esc(E.meaning||'')+'</td></tr></tbody></table></div>';
+    } else {
+      var L=d.reporting||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">Plain-language summary</td><td class="dx-interp">'+esc(L.plain||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Researcher summary</td><td class="dx-interp">'+esc(L.researcher||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Caution</td><td class="dx-interp">'+esc(L.caution||'')+'</td></tr>'
+        +'</tbody></table></div>';
+    }
+    var rpt=d.reporting||{};
+    return tabs+'<div class="panel"><div class="panel-b">'+body+'</div></div>'
+      +'<div class="dx-layers">'
+      +'<div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">'+esc(rpt.plain||'')+'</div></div>'
+      +'<div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">'+esc(rpt.caution||'')+'</div></div>'
+      +'</div>';
+  }
+  AS.csqTab=function(tab){csq.tab=tab;var out=document.getElementById('csResults');if(out&&csq.result)out.innerHTML=renderChiSqResults(csq.result,null);};
+
+  // Correlation state
+  var cor={result:null,tab:'desc',busy:false};
 
   // ---- Correlation ----
   function renderCorrelation(host,ds,ctx){
@@ -693,88 +829,182 @@
       host.innerHTML=header('Inferential Analysis','Correlation','','correlation')
         +'<div class="as-empty-tool">Need at least two numeric variables.</div>'; return;
     }
-    sel.cor_x=(sel.cor_x&&varByName(ds,sel.cor_x))?sel.cor_x:nv[0].name;
-    sel.cor_y=(sel.cor_y&&varByName(ds,sel.cor_y))?sel.cor_y:nv[1].name;
-    host.innerHTML=header('Inferential Analysis','Correlation','Measure the linear relationship between two numeric variables.','correlation')
-      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
-      +selectField('corX','Variable X','numeric',nv,sel.cor_x)
-      +selectField('corY','Variable Y','numeric',nv,sel.cor_y)
-      +'</div><button class="btn primary" id="corRun" style="margin-top:12px">Run correlation</button>'
-      +'</div></div><div id="corResult"></div>';
+    if(!sel.cor_x||!varByName(ds,sel.cor_x)) sel.cor_x=nv[0].name;
+    if(!sel.cor_y||!varByName(ds,sel.cor_y)||sel.cor_y===sel.cor_x) sel.cor_y=nv[1]?nv[1].name:nv[0].name;
+    var opt=function(cur){return nv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===cur?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');};
+    var setup='<div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the two numeric variables to relate</div></div></div>'
+      +'<div class="panel-b"><div class="tt-grid">'
+      +'<div class="field"><label>Variable 1 <span class="tt-hint">numeric</span></label><select class="ed-in" id="corX">'+opt(sel.cor_x)+'</select></div>'
+      +'<div class="field"><label>Variable 2 <span class="tt-hint">numeric</span></label><select class="ed-in" id="corY">'+opt(sel.cor_y)+'</select></div>'
+      +'</div><div class="run-actions"><button class="btn primary" id="corRun"'+(cor.busy?' disabled':'')+'>'+(cor.busy?'Running…':'▷ Run correlation')+'</button></div>'
+      +'</div></div>';
+    host.innerHTML=header('Inferential Analysis','Correlation','See whether two numbers move together, and how strongly.','correlation')
+      +setup+'<div id="corResults">'+(cor.result?renderCorResults(cor.result,ctx):'')+'</div>';
     var elX=host.querySelector('#corX'),elY=host.querySelector('#corY');
     if(elX) elX.addEventListener('change',function(e){sel.cor_x=e.target.value;});
     if(elY) elY.addEventListener('change',function(e){sel.cor_y=e.target.value;});
-    var btn=host.querySelector('#corRun');
-    if(btn) btn.addEventListener('click',function(){
+    var runBtn=host.querySelector('#corRun');
+    if(runBtn) runBtn.addEventListener('click',function(){
+      if(cor.busy||sel.cor_x===sel.cor_y) return;
       var vx=varByName(ds,sel.cor_x),vy=varByName(ds,sel.cor_y); if(!vx||!vy) return;
       var n=Math.min(vx.values.length,vy.values.length),xs=[],ys=[];
       for(var i=0;i<n;i++){var xi=num(vx.values[i]),yi=num(vy.values[i]);if(xi!==null&&yi!==null){xs.push(xi);ys.push(yi);}}
-      var out=host.querySelector('#corResult');
-      inferFetch('correlation',{tool:'correlation',x:xs,y:ys},btn,'Run correlation',out,function(d){
-        var pStr=formatP(d.p_value),sig=d.p_value<0.05;
-        var rabs=Math.abs(d.statistic);
-        var rStrength=rabs>=0.7?'strong':(rabs>=0.4?'moderate':(rabs>=0.2?'weak':'negligible'));
-        var rDir=d.statistic>=0?'positive':'negative';
-        var sumRows=[['r',n2(d.statistic)],['r\u00b2',d.effect_size!=null?n2(d.effect_size):'—'],
-          ['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],['N',String(d.n_total)]];
-        var layerBlocks=[
-          {k:'What this shows',t:esc(d.summary||'')},
-          {k:'Why this matters',t:'r describes direction and strength. r\u00b2 = '+n2(d.effect_size||0)+' means '+n2((d.effect_size||0)*100)+'% of variance in one variable is explained by the other.'},
-          {k:'Caution',caution:true,t:'Pearson r measures linear association only. Non-linear relationships and outliers can distort or hide a real association.'}
-        ];
-        out.innerHTML='<div class="panel"><div class="panel-h"><h3>Pearson r: '+esc(sel.cor_x)+' \u00d7 '+esc(sel.cor_y)+'</h3></div><div class="panel-b">'
-          +'<p style="color:var(--ink-2);font-size:13px;margin:0 0 10px">'+rStrength.charAt(0).toUpperCase()+rStrength.slice(1)+' '+rDir+' '+(sig?'significant':'non-significant')+' correlation</p>'
-          +statTable(sumRows,360)+layers(layerBlocks)+'</div></div>';
-        if(ctx&&ctx.onResult) ctx.onResult();
-      });
+      cor.busy=true; cor.result=null;
+      renderCorrelation(host,ds,ctx);
+      fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tool:'correlation',x:xs,y:ys,x_name:sel.cor_x,y_name:sel.cor_y})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          cor.busy=false; cor.result=d; cor.tab='desc';
+          var out=host.querySelector('#corResults');
+          if(out) out.innerHTML=renderCorResults(d,ctx);
+          if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
+        })
+        .catch(function(){
+          cor.busy=false;
+          var out=host.querySelector('#corResults');
+          if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+        });
     });
   }
+  function renderCorResults(d,ctx){
+    if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running correlation.')+'</div>';
+    var tabs=ttTabs([['desc','Descriptives'],['result','Test result'],['effect','Effect size'],['report','Reporting language']],cor.tab,'correlation');
+    var body='';
+    if(cor.tab==='desc'){
+      var rows=(d.descriptives||[]).map(function(v){
+        return '<tr><td class="dx-name">'+esc(v.name)+'</td><td>'+v.n+'</td><td>'+fmtN(v.mean)+'</td><td>'+fmtN(v.sd)+'</td><td>'+fmtN(v.min)+'</td><td>'+fmtN(v.max)+'</td></tr>';
+      }).join('');
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variable</th><th>N</th><th>Mean</th><th>SD</th><th>Min</th><th>Max</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    } else if(cor.tab==='result'){
+      var R=d.result||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Test</th><th>r</th><th>r²</th><th>df</th><th>p</th><th class="l">Direction</th><th class="l">Result</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.x&&d.x.name||'')+' &amp; '+esc(d.y&&d.y.name||'')+'</td><td class="dx-interp">'+esc(R.test_used||'')+'</td>'
+        +'<td>'+fmtN(R.r,3)+'</td><td>'+fmtN(R.r2,3)+'</td><td>'+fmtN(R.df,0)+'</td><td>'+esc(R.p_str||'')+'</td>'
+        +'<td class="dx-interp">'+esc(R.direction||'')+'</td><td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else if(cor.tab==='effect'){
+      var E=d.effect||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.x&&d.x.name||'')+' &amp; '+esc(d.y&&d.y.name||'')+'</td><td class="dx-interp">'+esc(E.type||'')+'</td>'
+        +'<td>'+fmtN(E.value,3)+'</td><td class="dx-interp">'+esc(E.interpretation||'')+'</td><td class="dx-interp">'+esc(E.meaning||'')+'</td></tr></tbody></table></div>';
+    } else {
+      var L=d.reporting||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">Plain-language summary</td><td class="dx-interp">'+esc(L.plain||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Researcher summary</td><td class="dx-interp">'+esc(L.researcher||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Caution</td><td class="dx-interp">'+esc(L.caution||'')+'</td></tr>'
+        +'</tbody></table></div>';
+    }
+    var rpt=d.reporting||{};
+    return tabs+'<div class="panel"><div class="panel-b">'+body+'</div></div>'
+      +'<div class="dx-layers">'
+      +'<div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">'+esc(rpt.plain||'')+'</div></div>'
+      +'<div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">'+esc(rpt.caution||'')+'</div></div>'
+      +'</div>';
+  }
+  AS.corTab=function(tab){cor.tab=tab;var out=document.getElementById('corResults');if(out&&cor.result)out.innerHTML=renderCorResults(cor.result,null);};
 
-  // ---- Regression (simple OLS via server) ----
+  // Regression state
+  var reg={preds:{},result:null,tab:'coef',busy:false};
+
+  // ---- Regression ----
   function renderRegression(host,ds,ctx){
     var nv=numericVars(ds);
     if(nv.length<2){
       host.innerHTML=header('Inferential Analysis','Regression','','regression')
-        +'<div class="as-empty-tool">Need at least two numeric variables.</div>'; return;
+        +'<div class="as-empty-tool">Regression needs a numeric outcome and at least one numeric predictor.</div>'; return;
     }
-    sel.reg_y=(sel.reg_y&&varByName(ds,sel.reg_y))?sel.reg_y:nv[0].name;
-    sel.reg_x=(sel.reg_x&&varByName(ds,sel.reg_x))?sel.reg_x:nv[1].name;
-    host.innerHTML=header('Inferential Analysis','Regression','Predict a numeric outcome from a numeric predictor (simple OLS).','regression')
-      +'<div class="panel"><div class="panel-b"><div class="as-pickgrid">'
-      +selectField('regY','Outcome (Y)','numeric',nv,sel.reg_y)
-      +selectField('regX','Predictor (X)','numeric',nv,sel.reg_x)
-      +'</div><button class="btn primary" id="regRun" style="margin-top:12px">Run regression</button>'
-      +'</div></div><div id="regResult"></div>';
-    var elY=host.querySelector('#regY'),elX=host.querySelector('#regX');
-    if(elY) elY.addEventListener('change',function(e){sel.reg_y=e.target.value;});
-    if(elX) elX.addEventListener('change',function(e){sel.reg_x=e.target.value;});
-    var btn=host.querySelector('#regRun');
-    if(btn) btn.addEventListener('click',function(){
-      var vy=varByName(ds,sel.reg_y),vx=varByName(ds,sel.reg_x); if(!vy||!vx) return;
-      var n=Math.min(vy.values.length,vx.values.length),xs=[],ys=[];
-      for(var i=0;i<n;i++){var xi=num(vx.values[i]),yi=num(vy.values[i]);if(xi!==null&&yi!==null){xs.push(xi);ys.push(yi);}}
-      var out=host.querySelector('#regResult');
-      inferFetch('regression',{tool:'regression',x:xs,y:ys},btn,'Run regression',out,function(d){
-        var det=d.details||{};
-        var slope=det.slope||0,intercept=det.intercept||0,r2=det.r_squared||0;
-        var pStr=formatP(d.p_value),sig=d.p_value<0.05,eff=effLabel('r_squared',r2);
-        var eqn='Ŷ = '+n2(intercept)+(slope>=0?' + ':' − ')+n2(Math.abs(slope))+' \u00d7 '+esc(sel.reg_x);
-        var sumRows=[['Intercept (a)',n2(intercept)],['Slope (b)',n2(slope)],['R\u00b2',n2(r2)+(eff?' ('+eff+')':'')],
-          ['t (slope)',n2(d.statistic)],['df',n2(d.df1)],['p',pStr+(sig?' *':' n.s.')],['N',String(d.n_total)]];
-        var layerBlocks=[
-          {k:'What this shows',t:'Simple OLS regression of '+esc(sel.reg_y)+' on '+esc(sel.reg_x)+'. Equation: '+eqn
-            +'. R\u00b2 = '+n2(r2)+' ('+n2(r2*100)+'% of variance in Y explained by X).'},
-          {k:'Why this matters',t:'The slope tells you how much Y changes per 1-unit increase in X. '
-            +(slope>=0?'Positive slope: Y rises as X increases.':'Negative slope: Y falls as X increases.')},
-          {k:'Caution',caution:true,t:'This is a simple bivariate OLS model with no controls. Results may reflect confounds. Verify linearity before reporting.'}
-        ];
-        out.innerHTML='<div class="panel"><div class="panel-h"><h3>'+esc(sel.reg_y)+' ~ '+esc(sel.reg_x)+'</h3></div><div class="panel-b">'
-          +'<p style="font-size:13px;color:var(--ink-2);margin:0 0 10px;font-style:italic">'+eqn+'</p>'
-          +statTable(sumRows,380)+layers(layerBlocks)+'</div></div>';
-        if(ctx&&ctx.onResult) ctx.onResult();
+    if(!sel.reg_y||!varByName(ds,sel.reg_y)) sel.reg_y=nv[0].name;
+    var avail=nv.filter(function(v){return v.name!==sel.reg_y;});
+    if(!Object.keys(reg.preds).some(function(k){return reg.preds[k]&&avail.find(function(v){return v.name===k;});})){
+      if(avail[0]) reg.preds[avail[0].name]=true;
+    }
+    var outOpts=nv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.reg_y?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    var chks=avail.map(function(v){
+      return '<label class="rg-chk"><input type="checkbox"'+(reg.preds[v.name]?' checked':'')+' data-as-pred="'+esc(v.name)+'"> '+esc(v.name)+'</label>';
+    }).join('');
+    var setup='<div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome, then check one or more predictors</div></div></div>'
+      +'<div class="panel-b">'
+      +'<div class="field" style="max-width:340px"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="regOut">'+outOpts+'</select></div>'
+      +'<div class="field" style="margin-top:12px"><label>Predictors <span class="tt-hint">numeric</span></label><div class="rg-preds">'+(chks||'<span class="tt-hint">No other numeric variables available.</span>')+'</div></div>'
+      +'<div class="run-actions"><button class="btn primary" id="regRun"'+(reg.busy?' disabled':'')+'>'+(reg.busy?'Running…':'▷ Run regression')+'</button></div>'
+      +'</div></div>';
+    host.innerHTML=header('Inferential Analysis','Regression','Predict a numeric outcome from one or more numeric predictors.','regression')
+      +setup+'<div id="regResults">'+(reg.result?renderRegResults(reg.result,ctx):'')+'</div>';
+    var elOut=host.querySelector('#regOut');
+    if(elOut) elOut.addEventListener('change',function(e){sel.reg_y=e.target.value;reg.preds={};renderRegression(host,ds,ctx);});
+    host.querySelectorAll('[data-as-pred]').forEach(function(cb){
+      cb.addEventListener('change',function(){
+        var nm=cb.getAttribute('data-as-pred');
+        if(cb.checked) reg.preds[nm]=true; else delete reg.preds[nm];
       });
     });
+    var runBtn=host.querySelector('#regRun');
+    if(runBtn) runBtn.addEventListener('click',function(){
+      if(reg.busy) return;
+      var vy=varByName(ds,sel.reg_y); if(!vy) return;
+      var predNames=Object.keys(reg.preds).filter(function(k){return reg.preds[k]&&varByName(ds,k)&&k!==sel.reg_y;});
+      if(!predNames.length) return;
+      var n=vy.values.length;
+      predNames.forEach(function(nm){n=Math.min(n,varByName(ds,nm).values.length);});
+      var ys=[],xList=predNames.map(function(){return [];});
+      for(var i=0;i<n;i++){
+        var yi=num(vy.values[i]); if(yi===null) continue;
+        var ok=true; var xrow=[];
+        for(var j=0;j<predNames.length;j++){var xi=num(varByName(ds,predNames[j]).values[i]);if(xi===null){ok=false;break;}xrow.push(xi);}
+        if(ok){ys.push(yi);xrow.forEach(function(x,j){xList[j].push(x);});}
+      }
+      reg.busy=true; reg.result=null;
+      renderRegression(host,ds,ctx);
+      fetch('/api/analysis/infer.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({tool:'regression',y:ys,x_list:xList,y_name:sel.reg_y,x_names:predNames})})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          reg.busy=false; reg.result=d; reg.tab='coef';
+          var out=host.querySelector('#regResults');
+          if(out) out.innerHTML=renderRegResults(d,ctx);
+          if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
+        })
+        .catch(function(){
+          reg.busy=false;
+          var out=host.querySelector('#regResults');
+          if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
+        });
+    });
   }
+  function renderRegResults(d,ctx){
+    if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running regression.')+'</div>';
+    var tabs=ttTabs([['coef','Coefficients'],['fit','Model fit'],['report','Reporting language']],reg.tab,'regression');
+    var body='';
+    if(reg.tab==='coef'){
+      var rows=(d.coefficients||[]).map(function(c){
+        return '<tr><td class="dx-name">'+esc(c.term)+'</td><td>'+fmtN(c.b,3)+'</td><td>'+fmtN(c.se,3)+'</td>'
+          +'<td>'+fmtN(c.t,3)+'</td><td>'+esc(c.p_str||'')+'</td>'
+          +'<td class="dx-interp">'+(c.is_intercept?'—':'<span class="tt-status '+(c.sig?'ok':'rev')+'">'+(c.sig?'Significant':'n.s.')+'</span>')+'</td></tr>';
+      }).join('');
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th class="l">Result</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+    } else if(reg.tab==='fit'){
+      var R=d.result||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th>R²</th><th>Adj. R²</th><th>F</th><th>df1</th><th>df2</th><th>N</th><th>p</th><th class="l">Model</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td>'+fmtN(R.r2,3)+'</td><td>'+fmtN(R.adj_r2,3)+'</td>'
+        +'<td>'+fmtN(R.F,3)+'</td><td>'+fmtN(R.df1,0)+'</td><td>'+fmtN(R.df2,0)+'</td><td>'+(R.n_total||0)+'</td><td>'+esc(R.p_str||'')+'</td>'
+        +'<td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else {
+      var L=d.reporting||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">Plain-language summary</td><td class="dx-interp">'+esc(L.plain||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Researcher summary</td><td class="dx-interp">'+esc(L.researcher||'')+'</td></tr>'
+        +'<tr><td class="dx-name">Caution</td><td class="dx-interp">'+esc(L.caution||'')+'</td></tr>'
+        +'</tbody></table></div>';
+    }
+    var rpt=d.reporting||{};
+    return tabs+'<div class="panel"><div class="panel-b">'+body+'</div></div>'
+      +'<div class="dx-layers">'
+      +'<div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">'+esc(rpt.plain||'')+'</div></div>'
+      +'<div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">'+esc(rpt.caution||'')+'</div></div>'
+      +'</div>';
+  }
+  AS.regTab=function(tab){reg.tab=tab;var out=document.getElementById('regResults');if(out&&reg.result)out.innerHTML=renderRegResults(reg.result,null);};
 
   // ---- Effect Sizes (client-side) ----
   function renderEffectSizes(host,ds,ctx){
@@ -792,7 +1022,7 @@
           var a=groups[gkeys[0]],b=groups[gkeys[1]];
           var sp=Math.sqrt((((a.length-1)*variance(a))+((b.length-1)*variance(b)))/Math.max(a.length+b.length-2,1));
           var d=sp>0?Math.abs(mean(a)-mean(b))/sp:0;
-          rows.push({outcome:ov.name,group:gv.name,test:'t-test',effect:'Cohen\'s d',value:d,label:effLabel('cohens_d',d)});
+          rows.push({outcome:ov.name,group:gv.name,test:'t-test',effect:"Cohen's d",value:d,label:effLabel('cohens_d',d)});
         } else {
           var ssBetween=0;
           gkeys.forEach(function(g){var a2=groups[g];ssBetween+=a2.length*Math.pow(mean(a2)-grandMean,2);});
@@ -821,7 +1051,7 @@
         +'<td>'+esc(r.test)+'</td><td>'+esc(r.effect)+'</td><td>'+n2(r.value)+' '+badge+'</td></tr>';
     }).join(''):'<tr><td colspan="5">No effect sizes computed — need numeric outcomes paired with grouping or numeric variables.</td></tr>';
     var layerBlocks=[
-      {k:'What this shows',t:'Effect sizes for all variable pairs — Cohen\'s d (2-group), \u03b7\u00b2 (3+ groups), r\u00b2 (numeric pairs). Sorted largest to smallest.'},
+      {k:'What this shows',t:'Effect sizes for all variable pairs. Sorted largest to smallest.'},
       {k:'Why this matters',t:'Effect sizes describe practical importance independently of sample size. Use them to prioritize which relationships to investigate.'},
       {k:'Caution',caution:true,t:'These are descriptive and not adjusted for multiple comparisons. Treat as a screening tool, not final inference.'}
     ];
@@ -831,6 +1061,7 @@
       +body+'</tbody></table></div>'+layers(layerBlocks)+'</div></div>';
     if(ctx&&ctx.onResult) ctx.onResult();
   }
+
 
   // Delegated: any "How to use this" button (in a work step or the Overview)
   // opens its help modal.
