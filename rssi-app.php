@@ -13,6 +13,21 @@ start_session_secure();
 $uid = current_user_id();
 if (!$uid) { header('Location: /login.html?return=' . urlencode('/rssi-app.php')); exit; }
 $user = current_user();
+
+// RE Item 5: accept ?survey_project_id=N — resolve to dataset_id and redirect.
+// Lets SIRI (develop.php) hand off directly without knowing the dataset_id.
+$_spid = isset($_GET['survey_project_id']) ? (int)$_GET['survey_project_id'] : 0;
+if ($_spid > 0 && !isset($_GET['dataset_id'])) {
+    require_once __DIR__ . '/api/dev/_dev_common.php';
+    sds_ensure_schema(db());
+    $s = db()->prepare('SELECT dataset_id FROM survey_projects WHERE id = :id AND user_id = :uid LIMIT 1');
+    $s->execute([':id' => $_spid, ':uid' => $uid]);
+    $sprow = $s->fetch(PDO::FETCH_ASSOC);
+    if ($sprow && !empty($sprow['dataset_id'])) {
+        header('Location: /rssi-app.php?dataset_id=' . (int)$sprow['dataset_id']);
+        exit;
+    }
+}
 if (!$user) { $_SESSION = []; session_destroy(); header('Location: /login.html'); exit; }
 $initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user['name'] ?? $user['email'] ?? 'U') ?: 'U', 0, 2));
 
@@ -813,6 +828,17 @@ $ITEMS = [
 
   <div class="jr-actions"><a class="jr-btn" id="rptGenerate"><?= jr_icon('doc') ?> Generate selected report</a><a class="jr-btn ghost" id="rptAll">Combined report (all sections)</a><a class="jr-btn ghost" data-go="orientation">Back to start</a></div>
   <div class="rel-save-status" id="rptStatus" style="display:none;margin-top:14px"></div>
+
+  <!-- RE Item 5: hand off to a Studio for deeper analysis. Shown only when a dataset is loaded. -->
+  <div id="rptStudioHandoff" style="display:none;margin-top:28px;padding-top:22px;border-top:1px solid var(--line)">
+    <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-5);margin-bottom:12px">Take it further</p>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button type="button" class="jr-btn ghost" id="rptOpenDA"><?= jr_icon('layers') ?> Descriptive Analysis</button>
+      <button type="button" class="jr-btn ghost" id="rptOpenIS"><?= jr_icon('arrow') ?> Inferential Statistics</button>
+      <button type="button" class="jr-btn ghost" id="rptOpenMM"><?= jr_icon('flask') ?> Mixed Methods</button>
+    </div>
+    <p style="font-size:12.5px;color:var(--ink-5);margin-top:10px" id="rptStudioMsg"></p>
+  </div>
 </section>
 
 <?php

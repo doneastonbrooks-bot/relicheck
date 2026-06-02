@@ -132,9 +132,71 @@
         initDataQuality(dataset);
         initScenarioBuilder();
         initReport();
+        wireStudioHandoff();
         if (window.JOURNEY_GO) window.JOURNEY_GO('score');   // land on the wired Strength Score
       })
       .catch(function (e) { showLoadError('Network error: ' + (e && e.message ? e.message : e)); });
+  }
+
+  /* ───────────── RE Item 5: Studio handoff from the Report step ─────────────
+     When a dataset is loaded, show the "Take it further" section and wire the
+     three studio buttons. Each creates an analysis project (or MM project) from
+     the current dataset_id, then navigates to that studio's workspace.          */
+  function wireStudioHandoff() {
+    var wrap = document.getElementById('rptStudioHandoff');
+    if (!wrap || !dsId) return;
+    wrap.style.display = '';
+
+    function openStudio(kind) {
+      var msg = document.getElementById('rptStudioMsg');
+      if (msg) msg.textContent = 'Opening ' + kind + ' studio…';
+
+      if (kind === 'mm') {
+        // MM Studio: create an MM project linked to the dataset, then redirect.
+        fetch('/api/mm/projects.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: 'RSSI dataset analysis', pathway: 'comments_only' }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d || !d.ok || !d.project) throw new Error('Could not create MM project.');
+            return fetch('/api/mm/link-dataset.php', {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ project_id: d.project.id, dataset_id: parseInt(dsId, 10) }),
+            }).then(function (r2) { return r2.json(); }).then(function (d2) {
+              if (!d2 || !d2.ok) throw new Error('Link failed.');
+              window.location.href = '/mmstudioV4.php?project_id=' + encodeURIComponent(d.project.id);
+            });
+          })
+          .catch(function (e) { if (msg) msg.textContent = 'Could not open MM Studio: ' + (e && e.message ? e.message : 'try again.'); });
+        return;
+      }
+
+      // Descriptive or Inferential: create analysis project, then redirect.
+      fetch('/api/analysis/projects.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: kind, dataset_id: parseInt(dsId, 10), title: 'RSSI dataset analysis' }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.project) throw new Error('Could not create project.');
+          var route = kind === 'descriptive'
+            ? '/descriptive-analysis-workspace.php'
+            : '/inferential-statistics-workspace.php';
+          window.location.href = route + '?project_id=' + encodeURIComponent(d.project.id);
+        })
+        .catch(function (e) { if (msg) msg.textContent = 'Could not open studio: ' + (e && e.message ? e.message : 'try again.'); });
+    }
+
+    var da = document.getElementById('rptOpenDA');
+    var is = document.getElementById('rptOpenIS');
+    var mm = document.getElementById('rptOpenMM');
+    if (da) da.addEventListener('click', function () { openStudio('descriptive'); });
+    if (is) is.addEventListener('click', function () { openStudio('inferential'); });
+    if (mm) mm.addEventListener('click', function () { openStudio('mm'); });
   }
 
   /* ───────────── Upload entry — delegates to the unified DatasetUpload widget ── */

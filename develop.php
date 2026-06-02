@@ -3069,11 +3069,17 @@ const Screens = {
       rssiPanel=Screens.rssiReport(rr, saved);
     }
 
+    // RE Item 5: link to the full RSSI journey app for this project.
+    const rssiAppLink=state.projectId
+      ?`<div style="margin:6px 0 18px"><a class="btn" href="/rssi-app.php?survey_project_id=${encodeURIComponent(state.projectId)}" target="_blank">Explore in RSSI App ↗</a></div>`
+      :'';
+
     return `<div class="screen">${header}
       ${fence}
       ${stats}
       <h2 class="sec" style="margin:18px 0 10px">RSSI report</h2>
       ${rssiPanel}
+      ${rssiAppLink}
       <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 10px">
         <h2 class="sec" style="margin:0">Construct groups</h2></div>
       ${(d.constructs&&d.constructs.length)?constructCards:`<div class="card pad" style="color:var(--muted)">No constructs defined. RSSI will fall back to whole-survey evidence.</div>`}
