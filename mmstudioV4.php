@@ -201,6 +201,22 @@ $projLabel = $projectTitle !== '' ? $projectTitle : 'Demo walkthrough (no projec
 $needsDesign = $projectId > 0 && $storedCore === '';
 
 // Expose boot config to JS safely.
+// Value labels (raw code -> human label) per grouping variable, so the studio
+// shows "No Training" instead of "SELTraining=0" everywhere. Degrades to empty
+// if the mm_value_labels migration has not been run yet.
+$valueLabels = new stdClass();
+if ($projectId > 0) {
+  try {
+    $vlStmt = db()->prepare('SELECT var_name, value_key, label FROM mm_value_labels WHERE project_id = :p');
+    $vlStmt->execute([':p' => $projectId]);
+    $vlMap = [];
+    foreach ($vlStmt->fetchAll(PDO::FETCH_ASSOC) as $vlr) {
+      $vlMap[(string)$vlr['var_name']][(string)$vlr['value_key']] = (string)$vlr['label'];
+    }
+    if ($vlMap) $valueLabels = $vlMap;
+  } catch (Throwable $e) { /* table not migrated yet -> labels stay empty */ }
+}
+
 $BOOT = [
   'projectId'    => $projectId,
   'projectLabel' => $projLabel,
@@ -214,6 +230,7 @@ $BOOT = [
   'scores'       => $scores,
   'ttvars'       => $ttVars,
   'rawinfo'      => $rawInfo,
+  'valueLabels'  => $valueLabels,
 ];
 ?><!DOCTYPE html>
 <html lang="en">
@@ -855,7 +872,7 @@ function renderCrossTabs(s){
 /* ===== Independent Samples t-Test (real data via /api/mm/ttest.php) ===== */
 const tt={grouping:null,testType:'auto',conf:0.95,result:null,tab:'desc',busy:false,added:false};
 function fmt(n,d){return (n==null||isNaN(n))?'—':Number(n).toFixed(d==null?2:d);}
-function ttGroupOpts(g){return (g?g.groups:[]).map(o=>`<option value="${esc(o.value)}">${esc(o.value)} (n=${o.n})</option>`).join('');}
+function ttGroupOpts(g){return (g?g.groups:[]).map(o=>{const lab=g&&g.name?vlabel(g.name,o.value):null;return `<option value="${esc(o.value)}">${esc(lab||o.value)} (n=${o.n})</option>`;}).join('');}
 function renderTTest(s){
   const V=BOOT.ttvars||{datasetReady:false,outcomes:[],groupings:[]};
   const _ttGroupings=cleanGroupings();
@@ -869,6 +886,8 @@ function renderTTest(s){
   if(tt.grouping==null||!_ttGroupings.find(g=>g.id===tt.grouping)) tt.grouping=_ttGroupings[0].id;
   const grp=_ttGroupings.find(g=>g.id===tt.grouping)||_ttGroupings[0];
   const seg=(k,l)=>`<button class="tt-seg ${tt.testType===k?'on':''}" onclick="tt.testType='${k}';renderTTest(activeStep())">${l}</button>`;
+  const vlRows=(grp.groups||[]).map(o=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="min-width:90px;font-size:12.5px;color:var(--ink-3)">${esc(o.value)}</span><input class="ed-in vlab-in" data-var="${esc(grp.name)}" data-val="${esc(o.value)}" style="max-width:260px" value="${esc(vlabel(grp.name,o.value)||'')}" placeholder="label for ${esc(o.value)}"></div>`).join('');
+  const vlEditor=`<details style="margin:8px 0 0;grid-column:1/-1"><summary style="cursor:pointer;font-weight:600;font-size:12.5px;color:var(--btn)">▸ Label the values of "${esc(grp.name)}" — shown everywhere instead of codes</summary><div style="margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:10px">${vlRows}<div class="dm-note" style="margin:6px 0">Leave blank to keep the raw code. Applies across the whole studio, including saved results.</div><button class="btn" onclick="vlabSave()">Save value labels</button></div></details>`;
   const setup=`
     <div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome and the two groups to compare</div></div></div>
       <div class="panel-b">
@@ -880,6 +899,7 @@ function renderTTest(s){
           <div id="ttSameWarn" style="display:none;color:#8a6418;font-size:12.5px;font-weight:600;margin-top:-8px">Group 1 and Group 2 are the same — pick two different groups before running.</div>
           <div class="field"><label>Test type</label><div class="tt-segs">${seg('auto','Auto')}${seg('welch','Welch')}${seg('student','Student')}</div><div class="tt-hint">Welch is the default — safer when sizes or variances differ.</div></div>
           <div class="field"><label>Confidence</label><select class="ed-in" id="ttConf"><option value="0.90">90%</option><option value="0.95" selected>95%</option><option value="0.99">99%</option></select></div>
+          ${vlEditor}
         </div>
         <div class="run-actions"><button class="btn primary" onclick="runTTest()" ${tt.busy?'disabled':''}>${tt.busy?'Running…':'▷ Run t-test'}</button></div>
       </div></div>`;
@@ -1154,12 +1174,26 @@ function renderTTestResults(r){
     <div class="dx-next"><div class="dx-next-k">↳ Explanatory next step</div><div class="dx-next-t">Stage this difference for the qualitative phase to explain.</div>
       <button class="btn primary" style="margin-left:auto;padding:7px 14px;font-size:12.5px" onclick="addToExplain()" ${tt.added?'disabled':''}>${tt.added?'Added ✓':'Add to Results to Explain'}</button></div>`;
 }
+function vlabSave(){
+  const ins=Array.from(document.querySelectorAll('.vlab-in'));
+  if(!ins.length)return;
+  const items=ins.map(el=>({var_name:el.getAttribute('data-var'),value:el.getAttribute('data-val'),label:(el.value||'').trim()}));
+  fetch('/api/mm/value-labels.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,items:items})})
+    .then(r=>r.json()).then(j=>{
+      if(j&&j.ok){
+        if(!BOOT.valueLabels)BOOT.valueLabels={};
+        items.forEach(it=>{if(!BOOT.valueLabels[it.var_name])BOOT.valueLabels[it.var_name]={};if(it.label)BOOT.valueLabels[it.var_name][it.value]=it.label;else if(BOOT.valueLabels[it.var_name])delete BOOT.valueLabels[it.var_name][it.value];});
+        toast('Value labels saved — applied across the studio');
+        renderTTest(activeStep());
+      }else{toast((j&&(j.message||j.error))||'Could not save value labels.');}
+    }).catch(()=>toast('Save failed.'));
+}
 function addToExplain(){
   const r=tt.result; if(!r) return;
   const g=r.grouping; const g1=String(g.group1), g2=String(g.group2);
   const numGroups=/^\d+$/.test(g1)&&/^\d+$/.test(g2);
-  const g1l=numGroups?`${g.name}=${g1}`:g1;
-  const g2l=numGroups?`${g.name}=${g2}`:g2;
+  const g1l=numGroups?vlabFmt(g.name,g1):(vlabel(g.name,g1)||g1);
+  const g2l=numGroups?vlabFmt(g.name,g2):(vlabel(g.name,g2)||g2);
   const dir=r.difference.diff<0?'lower':'higher';
   const plain=numGroups
     ?`${g1l} reported ${dir} ${r.outcome.name} than ${g2l}. The difference was ${r.result.significant?'statistically reliable':'not statistically reliable'}.`
@@ -2317,7 +2351,7 @@ function renderExplain(s){
       const src=esc(explSrcLabel(src_raw));
       let plainText=d.plain||'', fqText=d.follow_up_question||'';
       if(src_raw==='t_test'&&d.grouping&&/^\d+$/.test(String(d.group1||''))&&/^\d+$/.test(String(d.group2||''))){
-        const g1l=`${d.grouping}=${d.group1}`, g2l=`${d.grouping}=${d.group2}`;
+        const g1l=vlabFmt(d.grouping,d.group1), g2l=vlabFmt(d.grouping,d.group2);
         const dir=d.diff!=null&&d.diff<0?'lower':'higher';
         const sig=d.p!=null&&d.p<0.05;
         plainText=`${g1l} reported ${dir} ${d.outcome||''} than ${g2l}. The difference was ${sig?'statistically reliable':'not statistically reliable'}.`;
@@ -2361,12 +2395,17 @@ const QS_MARK='Qualitative sampling plan';
 // participants by their own theme code is circular in a study where themes are
 // derived from the same responses. Excluded by the coder/theme naming convention.
 function qsIsCodingVar(name){return /coder|theme|_code\b|coding/i.test(String(name||''));}
-// Mirror Step 7's label fix: integer-coded groups get the var-name prefix.
+// Value labels: BOOT.valueLabels = { varName: { rawValue: humanLabel } }.
+// vlabel returns the human label if one was defined, else null.
+function vlabel(varName,raw){const m=(BOOT.valueLabels||{})[varName];if(m&&Object.prototype.hasOwnProperty.call(m,String(raw)))return m[String(raw)];return null;}
+// vlabFmt formats a value for display: the human label if set, else "Var=value".
+function vlabFmt(varName,raw){return vlabel(varName,raw)||(varName+'='+raw);}
+// Mirror Step 7's label fix: integer-coded groups get a human label or var-name prefix.
 function qsReadFinding(it){
   const d=it.data||it; const src=it.source||it.src||'';
   let plain=d.plain||'', fq=d.follow_up_question||'';
   if(src==='t_test'&&d.grouping&&/^\d+$/.test(String(d.group1||''))&&/^\d+$/.test(String(d.group2||''))){
-    const g1l=`${d.grouping}=${d.group1}`,g2l=`${d.grouping}=${d.group2}`;
+    const g1l=vlabFmt(d.grouping,d.group1),g2l=vlabFmt(d.grouping,d.group2);
     const dir=d.diff!=null&&d.diff<0?'lower':'higher';
     plain=`${g1l} reported ${dir} ${d.outcome||''} than ${g2l}.`;
     fq=`What experiences help explain why ${g1l} reported ${dir} ${d.outcome||''} than ${g2l}?`;
