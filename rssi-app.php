@@ -94,7 +94,7 @@ include __DIR__ . '/apps/journey/_journey_head.php';
     <h2 class="jr-h2" style="margin-top:0;margin-bottom:6px">Start with your data</h2>
     <p style="font-size:14px;color:var(--ink-3);margin-bottom:16px">Upload a CSV or Excel file of survey responses to score it in the four-domain RSSI. Your data is saved to your account and opens straight into this app, with no separate uploader.</p>
     <label id="rsDrop" class="rs-drop">
-      <input type="file" id="rsFile" accept=".csv,.tsv,.txt,.xls,.xlsx,text/csv" hidden>
+      <input type="file" id="rsFile" accept=".csv,.tsv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
       <span class="rs-drop-ic"><?= jr_icon('doc') ?></span>
       <span class="rs-drop-t">Drag &amp; drop a CSV or Excel file, or click to choose</span>
       <span class="rs-drop-s">CSV or Excel (.xlsx) &middot; up to 50,000 rows</span>
