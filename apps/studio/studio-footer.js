@@ -103,16 +103,16 @@
     var body;
     if (!d || !d.has_rssi) {
       body = '<p class="sfp-empty">No RSSI score yet. Run RSSI after collecting responses.</p>'
-        + '<a class="sfp-link" href="/rssi.php">Go to RSSI &#8594;</a>';
+        + '<a class="sfp-link" href="/rssi-app.php">Go to RSSI &#8594;</a>';
     } else if (d.withheld) {
       body = '<p class="sfp-empty">Insufficient data to score.</p>'
         + (d.band ? '<div class="sfp-band">' + esc(d.band) + '</div>' : '')
-        + '<a class="sfp-link" href="' + esc(d.link || '/rssi.php') + '" target="_blank">View in RSSI &#8594;</a>';
+        + '<a class="sfp-link" href="' + esc(d.link || '/rssi-app.php') + '" target="_blank">View in RSSI &#8594;</a>';
     } else {
       body = '<div><span class="sfp-score">' + (d.pct != null ? d.pct : '—') + '</span>'
         + '<span class="sfp-max">/ 100</span></div>'
         + (d.band ? '<div class="sfp-band">' + esc(d.band) + '</div>' : '<div style="margin-bottom:10px"></div>')
-        + '<a class="sfp-link" href="' + esc(d.link || '/rssi.php') + '" target="_blank">View in RSSI &#8594;</a>';
+        + '<a class="sfp-link" href="' + esc(d.link || '/rssi-app.php') + '" target="_blank">View in RSSI &#8594;</a>';
     }
     return '<div class="sfp-head"><span class="sfp-title">Survey Strength &middot; RSSI</span>'
       + '<button class="sfp-x" data-pop="sfRssiPop">&#215;</button></div>'
