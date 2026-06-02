@@ -214,3 +214,42 @@ CREATE TABLE IF NOT EXISTS survey_dev_answers (
   CONSTRAINT fk_devans_session FOREIGN KEY (session_id) REFERENCES survey_dev_response_sessions(id) ON DELETE CASCADE,
   CONSTRAINT fk_devans_project FOREIGN KEY (project_id) REFERENCES survey_projects(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ── Variable metadata: the data dictionary for every variable in a project. ──
+-- Stores the analysis role of each variable independently of its database
+-- storage type. One row per variable per project. Covers both SIRI-native items
+-- (source='siri_item', survey_item_id set) and uploaded dataset columns
+-- (source='dataset_column', dataset_id set). Computed variables (scale scores,
+-- SIRI/RSSI output) use source='computed'.
+--
+-- project_type disambiguates the project_id FK: 'survey'=survey_projects,
+-- 'analysis'=analysis_projects, 'mm'=mm_projects. FK-by-convention (no
+-- constraint) matches the existing pattern in analysis_projects.dataset_id.
+CREATE TABLE IF NOT EXISTS variable_metadata (
+  id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  project_id          BIGINT UNSIGNED  NOT NULL,            -- FK-by-convention; see project_type
+  project_type        VARCHAR(24)      NOT NULL DEFAULT 'survey', -- 'survey'|'analysis'|'mm'
+  variable_name       VARCHAR(128)     NOT NULL,            -- column name or item slug; unique per project
+  display_label       VARCHAR(255)     NULL,                -- human-readable name shown in data map
+  source              VARCHAR(24)      NOT NULL DEFAULT 'siri_item', -- 'siri_item'|'dataset_column'|'computed'
+  survey_item_id      BIGINT UNSIGNED  NULL,                -- FK to survey_items.id when source='siri_item'
+  dataset_id          BIGINT UNSIGNED  NULL,                -- FK-by-convention to datasets.id when source='dataset_column'
+  storage_type        VARCHAR(24)      NULL,                -- INT|VARCHAR|TEXT|DECIMAL|BOOLEAN|DATETIME
+  analysis_type       VARCHAR(32)      NOT NULL,            -- controlled vocab: RC_ANALYSIS_TYPES
+  measurement_level   VARCHAR(24)      NULL,                -- nominal|ordinal|interval|ratio|text|dichotomous|temporal|none
+  role                VARCHAR(24)      NULL,                -- controlled vocab: RC_ROLES (item|outcome|predictor|grouping|linking|contextual)
+  construct_id        BIGINT UNSIGNED  NULL,                -- FK to survey_constructs.id; set when likert_item belongs to a scale
+  allowed_values      JSON             NULL,                -- valid response options (for validation and display)
+  reverse_scored      TINYINT(1)       NOT NULL DEFAULT 0,  -- 1 = reverse-score before aggregating into scale
+  include_in_analysis TINYINT(1)       NOT NULL DEFAULT 1,  -- 0 = excluded from all analysis pipeline steps
+  position            INT UNSIGNED     NOT NULL DEFAULT 0,  -- display order in data map UI
+  created_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_varmet_project_var (project_id, project_type, variable_name),
+  KEY idx_varmet_project (project_id, project_type, position),
+  KEY idx_varmet_item (survey_item_id),
+  KEY idx_varmet_construct (construct_id),
+  KEY idx_varmet_analysis_type (project_id, analysis_type),
+  CONSTRAINT fk_varmet_item    FOREIGN KEY (survey_item_id) REFERENCES survey_items(id)       ON DELETE SET NULL,
+  CONSTRAINT fk_varmet_con     FOREIGN KEY (construct_id)   REFERENCES survey_constructs(id)  ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

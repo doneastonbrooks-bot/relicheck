@@ -212,6 +212,39 @@ function sds_ensure_schema(PDO $pdo): void
             CONSTRAINT fk_devans_session FOREIGN KEY (session_id) REFERENCES survey_dev_response_sessions(id) ON DELETE CASCADE,
             CONSTRAINT fk_devans_project FOREIGN KEY (project_id) REFERENCES survey_projects(id) ON DELETE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
+
+        // Variable metadata: the data dictionary for every variable in a project.
+        // project_type disambiguates project_id: 'survey'|'analysis'|'mm'.
+        // FK-by-convention on project_id (no constraint) matches the existing
+        // analysis_projects.dataset_id pattern.
+        "CREATE TABLE IF NOT EXISTS variable_metadata (
+            id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            project_id          BIGINT UNSIGNED  NOT NULL,
+            project_type        VARCHAR(24)      NOT NULL DEFAULT 'survey',
+            variable_name       VARCHAR(128)     NOT NULL,
+            display_label       VARCHAR(255)     NULL,
+            source              VARCHAR(24)      NOT NULL DEFAULT 'siri_item',
+            survey_item_id      BIGINT UNSIGNED  NULL,
+            dataset_id          BIGINT UNSIGNED  NULL,
+            storage_type        VARCHAR(24)      NULL,
+            analysis_type       VARCHAR(32)      NOT NULL,
+            measurement_level   VARCHAR(24)      NULL,
+            role                VARCHAR(24)      NULL,
+            construct_id        BIGINT UNSIGNED  NULL,
+            allowed_values      JSON             NULL,
+            reverse_scored      TINYINT(1)       NOT NULL DEFAULT 0,
+            include_in_analysis TINYINT(1)       NOT NULL DEFAULT 1,
+            position            INT UNSIGNED     NOT NULL DEFAULT 0,
+            created_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at          DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_varmet_project_var (project_id, project_type, variable_name),
+            KEY idx_varmet_project (project_id, project_type, position),
+            KEY idx_varmet_item (survey_item_id),
+            KEY idx_varmet_construct (construct_id),
+            KEY idx_varmet_analysis_type (project_id, analysis_type),
+            CONSTRAINT fk_varmet_item FOREIGN KEY (survey_item_id) REFERENCES survey_items(id)      ON DELETE SET NULL,
+            CONSTRAINT fk_varmet_con  FOREIGN KEY (construct_id)   REFERENCES survey_constructs(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
     ];
 
     foreach ($stmts as $sql) {
