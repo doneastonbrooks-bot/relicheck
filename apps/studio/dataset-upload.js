@@ -319,6 +319,26 @@
     if (ctx.projectType === 'rssi') {
       return Promise.resolve(datasetId);
     }
+    // MM with no pre-existing project — create the project then link.
+    if (ctx.projectType === 'mm') {
+      return fetch('/api/mm/projects.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title, pathway: 'comments_only', notes: ctx.description || '' }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.project) throw new Error('Could not create MM project.');
+          const pid = d.project.id;
+          return fetch('/api/mm/link-dataset.php', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ project_id: pid, dataset_id: datasetId }),
+          })
+            .then(function (r2) { return r2.json(); })
+            .then(function (d2) { if (!d2 || !d2.ok) throw new Error('Link failed.'); return pid; });
+        });
+    }
     return fetch('/api/analysis/projects.php', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },

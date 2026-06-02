@@ -127,7 +127,7 @@ include __DIR__ . '/_platform_shell_header.php';
 </section>
 
 <div class="meth-cta">
-  <a class="btn-dark" href="/mm-wizard.php?step=1">Start a new MM project →</a>
+  <a class="btn-dark" href="/mmstudioV4.php">Start a new MM project →</a>
   <a class="btn-line" href="/studio-mm-projects.php">See all MM projects</a>
 </div>
 

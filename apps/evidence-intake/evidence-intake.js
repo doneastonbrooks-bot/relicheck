@@ -420,7 +420,7 @@
   // (?wizard=1 in the URL, set when entering from /<studio>-wizard.php),
   // return to that wizard's next step. Otherwise land on the studio picker.
   const WIZARD_RETURN = {
-    mm:     '/mm-wizard.php?step=3',
+    mm:     '/mmstudioV4.php',
     survey: '/survey-wizard.php?step=3',
     tia:    '/tia-wizard.php?step=3',
     '360':  '/360-wizard.php?step=3',

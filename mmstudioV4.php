@@ -573,6 +573,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 @media(max-width:1280px){.body{grid-template-columns:var(--rail) minmax(0,1fr)} .companion{display:none}}
 @media(max-width:1040px){.palette{display:none}}
 </style>
+<script src="/apps/studio/dataset-upload.js?v=<?= filemtime(__DIR__.'/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-footer.js') ?>"></script>
 <script src="/apps/studio/type-taxonomy.js?v=<?= filemtime(__DIR__.'/apps/studio/type-taxonomy.js') ?>"></script>
@@ -634,6 +635,10 @@ function buildSteps(){
 }
 const state={design:BOOT.design,stepId:null,completedThrough:0,toolSel:null,compTab:"explain",notes:{}};
 const $=s=>document.querySelector(s);
+function mmStartUpload(){
+  if(!window.DatasetUpload)return;
+  DatasetUpload.open({projectType:'mm',onLoaded:function(_ds,pid){go('?project_id='+encodeURIComponent(pid));}});
+}
 function steps(){return buildSteps();}
 function activeStep(){return steps().find(s=>s.id===state.stepId)||steps()[0];}
 function firstLeadStep(){const s=steps();return (s.find(x=>x.strand!=="neutral")||s[0]).id;}
@@ -668,7 +673,7 @@ function renderStart(s){
         ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
       </select>
       <button class="btn primary" style="margin-left:auto" onclick="stepBy(1)">Continue to analysis →</button></div>`:''}
-    <button class="begin-feature" onclick="go('/mm-wizard.php?return=mmstudioV4')">
+    <button class="begin-feature" onclick="mmStartUpload()">
       <span class="bc-ico">⤓</span>
       <div><h4>Bring in your data</h4>
         <p>Already have a survey plus interviews or open-ended responses? Upload a CSV or Excel file to create a project and build its dataset, then come back to analyze.</p>

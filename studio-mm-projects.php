@@ -125,7 +125,7 @@ include __DIR__ . '/_landing_head.php';
   };
   function pathwayLabel(p){ return PATHWAY_LABELS[p] || p || 'MM'; }
 
-  var newCard = '<a class="mp-card mp-card-new" href="/mm-wizard.php?step=1">'
+  var newCard = '<a class="mp-card mp-card-new" href="/mmstudioV4.php">'
     + '<span class="mp-new-icon">⤓</span>'
     + '<span class="mp-new-label">Upload data</span>'
     + '<span class="mp-new-sub">Start a new MM project</span>'
