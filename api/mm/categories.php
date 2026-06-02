@@ -94,6 +94,8 @@ if ($action === 'delete') {
 if ($action === 'merge') {
     $sourceIds = $body['source_ids'] ?? [];
     $newName   = clean_string((string)($body['target_name'] ?? ''), 200);
+    // Optional: preserve a description on the merged theme (otherwise blank).
+    $newDesc   = clean_string((string)($body['target_description'] ?? ''), 600);
     if (!is_array($sourceIds) || count($sourceIds) < 2 || $newName === '') {
         fail('bad_input', 'merge needs source_ids (>= 2) and target_name.');
     }
@@ -111,9 +113,9 @@ if ($action === 'merge') {
         $maxPos = (int)$pdo->query("SELECT IFNULL(MAX(position), 0) FROM mm_theme_categories WHERE project_id = " . $projectId)->fetchColumn();
         $ins = $pdo->prepare(
             'INSERT INTO mm_theme_categories (project_id, name, description, source_mode, confidence, position)
-             VALUES (:p, :n, "", "user", "moderate", :pos)'
+             VALUES (:p, :n, :d, "user", "moderate", :pos)'
         );
-        $ins->execute([':p' => $projectId, ':n' => $newName, ':pos' => $maxPos + 1]);
+        $ins->execute([':p' => $projectId, ':n' => $newName, ':d' => $newDesc, ':pos' => $maxPos + 1]);
         $newId = (int)$pdo->lastInsertId();
 
         $placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
