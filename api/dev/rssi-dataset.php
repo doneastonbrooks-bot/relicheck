@@ -15,6 +15,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_dev_common.php';
+require_once __DIR__ . '/_type_taxonomy.php';
 
 require_method('GET');
 $user = require_auth();
@@ -36,35 +37,77 @@ $RSSI_MIN_N = 30;
 // claims are meaningful. Phase 4A only flags it.
 $RSSI_MIN_ITEMS_PER_CONSTRUCT = 3;
 
-// ── Field-type classification ───────────────────────────────────────────────
-// Map each builder item type to an RSSI field type. Anything not listed falls
-// back to open_text so an unknown type is never silently treated as scorable.
+// ── Field-type classification — two-tier resolution ─────────────────────────
+// Tier 1 (preferred): if the project has been through the Data Map step and
+//   variable_metadata rows exist, derive fieldType from the canonical
+//   analysis_type stored there. Also reads construct_id, reverse_scored, and
+//   include_in_analysis directly from the metadata row.
+// Tier 2 (legacy fallback): projects with no saved metadata use the display-type
+//   map below. Nothing breaks for existing projects; new projects get richer data.
+
+// Legacy display-type → RSSI fieldType (unchanged from Phase 4A — fallback only).
 $FIELD_TYPES = [
-    // numeric scale: ordered/interval responses usable for internal consistency
     'Likert (5-pt)' => 'numeric_scale', 'Likert (7-pt)' => 'numeric_scale',
     'Likert Scale'  => 'numeric_scale', 'Rating' => 'numeric_scale',
     'Rating Scale'  => 'numeric_scale', 'NPS' => 'numeric_scale',
     'Slider'        => 'numeric_scale', 'Numeric' => 'numeric_scale',
     'Number'        => 'numeric_scale',
-    // binary: two-level responses (stored as a 0/1 index for the choice ones)
     'Yes/No'    => 'binary', 'True/False' => 'binary', 'Consent' => 'binary',
-    // categorical: nominal choices, not usable for internal consistency
     'Single Choice'   => 'categorical', 'Multiple Choice' => 'categorical',
     'Dropdown'        => 'categorical', 'Demographic' => 'categorical',
     'Checkboxes'      => 'categorical', 'Ranking' => 'categorical',
     'Matrix/Grid'     => 'categorical', 'Matrix' => 'categorical',
     'Open-Ended'      => 'open_text',
-    // open text
     'Short Answer' => 'open_text', 'Long Answer' => 'open_text',
     'Comment Box'  => 'open_text', 'Email' => 'open_text',
     'Phone'        => 'open_text', 'Date' => 'open_text',
-    // structural / non-scored
     'Section Text' => 'structural', 'Instructions' => 'structural',
     'Page Break'   => 'structural', 'Thank-you Message' => 'structural',
 ];
 $fieldTypeOf = function (string $type) use ($FIELD_TYPES): string {
     return $FIELD_TYPES[$type] ?? 'open_text';
 };
+
+// Canonical resolution: analysis_type → RSSI fieldType.
+// likert_item is only numeric_scale (scorable) when construct-assigned;
+// without a construct it is treated as categorical so it can't accidentally
+// inflate a reliability score.
+function rssi_field_type_from_analysis(string $analysisType, ?int $constructId): string
+{
+    switch ($analysisType) {
+        case 'likert_item':
+            return $constructId !== null ? 'numeric_scale' : 'categorical';
+        case 'scale_score':
+        case 'computed_score':
+        case 'demographic_numeric':
+            return 'numeric_scale';
+        case 'binary':
+            return 'binary';
+        case 'demographic_nominal':
+        case 'demographic_ordinal':
+            return 'categorical';
+        case 'open_ended':
+        case 'narrative':
+        case 'qualitative_code':
+        case 'theme':
+            return 'open_text';
+        default:  // identifier, structural, metadata, date_time, file_reference
+            return 'structural';
+    }
+}
+
+// Load variable_metadata for this project (survey type, item-linked rows only).
+$vmStmt = $pdo->prepare(
+    'SELECT survey_item_id, analysis_type, construct_id, reverse_scored, include_in_analysis
+       FROM variable_metadata
+      WHERE project_id = :pid AND project_type = :ptype AND survey_item_id IS NOT NULL'
+);
+$vmStmt->execute([':pid' => $projectId, ':ptype' => 'survey']);
+$vmByItemId = [];
+foreach ($vmStmt->fetchAll(PDO::FETCH_ASSOC) as $vmr) {
+    $vmByItemId[(int)$vmr['survey_item_id']] = $vmr;
+}
+$hasVarMeta = count($vmByItemId) > 0;
 
 // ── Load items (carry the item -> construct mapping out of settings JSON) ────
 // survey_items has no construct column; the mapping rides inside settings JSON as
@@ -84,7 +127,25 @@ foreach ($itStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
     $opts     = is_array($opts) ? array_values($opts) : [];
     $settings = ($it['settings'] !== null) ? json_decode((string)$it['settings'], true) : null;
     $settings = is_array($settings) ? $settings : [];
-    $fieldType = $fieldTypeOf($type);
+    // Tier-1: use variable_metadata when the project has been through the Data Map.
+    // Tier-2: fall back to the legacy display-type map.
+    $reverseScored      = false;
+    $includeInAnalysis  = true;
+    $analysisType       = null;
+    if ($hasVarMeta && isset($vmByItemId[$id])) {
+        $vm             = $vmByItemId[$id];
+        $vmConstructId  = $vm['construct_id'] !== null ? (int)$vm['construct_id'] : null;
+        $analysisType   = (string)($vm['analysis_type'] ?? 'open_ended');
+        $fieldType      = rssi_field_type_from_analysis($analysisType, $vmConstructId);
+        $reverseScored  = (bool)$vm['reverse_scored'];
+        $includeInAnalysis = (bool)$vm['include_in_analysis'];
+        // Prefer variable_metadata construct; fall back to settings JSON.
+        $constructId    = $vmConstructId ?? (isset($settings['constructId']) && $settings['constructId'] !== '' ? (int)$settings['constructId'] : null);
+    } else {
+        $fieldType   = $fieldTypeOf($type);
+        $constructId = isset($settings['constructId']) && $settings['constructId'] !== '' ? (int)$settings['constructId'] : null;
+    }
+    $constructName = isset($settings['construct']) ? (string)$settings['construct'] : '';
 
     // Scale metadata preserved for the scorer (points/min/max where defined).
     $scale = null;
@@ -96,24 +157,24 @@ foreach ($itStmt->fetchAll(PDO::FETCH_ASSOC) as $it) {
         ];
     }
 
-    $constructId   = isset($settings['constructId']) && $settings['constructId'] !== '' ? (int)$settings['constructId'] : null;
-    $constructName = isset($settings['construct']) ? (string)$settings['construct'] : '';
-
     $items[$id] = [
-        'id'          => $id,
-        'label'       => trim(preg_replace('/\s+/', ' ', (string)$it['prompt'])),
-        'type'        => $type,
-        'fieldType'   => $fieldType,
-        'structural'  => $fieldType === 'structural',
-        // scorable for internal-consistency = ordered numeric or binary input
-        'scorable'    => in_array($fieldType, ['numeric_scale', 'binary'], true),
-        'constructId' => $constructId,
-        'construct'   => $constructName,
-        'options'     => $opts,
-        'scale'       => $scale,
-        'answered'    => 0,
-        'missing'     => 0,
-        'values'      => [],   // {sessionId, raw, resolved}, filled below
+        'id'               => $id,
+        'label'            => trim(preg_replace('/\s+/', ' ', (string)$it['prompt'])),
+        'type'             => $type,
+        'analysisType'     => $analysisType,   // canonical RE type (null when legacy fallback)
+        'fieldType'        => $fieldType,
+        'structural'       => $fieldType === 'structural',
+        // scorable = ordered numeric or binary, AND not excluded by the Data Map
+        'scorable'         => in_array($fieldType, ['numeric_scale', 'binary'], true) && $includeInAnalysis,
+        'reverseScored'    => $reverseScored,
+        'includeInAnalysis'=> $includeInAnalysis,
+        'constructId'      => $constructId,
+        'construct'        => $constructName,
+        'options'          => $opts,
+        'scale'            => $scale,
+        'answered'         => 0,
+        'missing'          => 0,
+        'values'           => [],   // {sessionId, raw, resolved}, filled below
     ];
     $itemMeta[$id] = ['type' => $type, 'options' => $opts, 'fieldType' => $fieldType];
 }
@@ -257,10 +318,11 @@ $inputItems = array_values(array_filter($items, fn($r) => !$r['structural']));
 
 // ── Emit the normalized dataset (no mock; live data only) ───────────────────
 json_out([
-    'ok'        => true,
-    'phase'     => '4A',
-    'note'      => 'RSSI Dataset Loader. Normalized analysis-ready dataset only. No RSSI score, no Cronbach alpha, no reliability statistic is computed here.',
-    'projectId' => $projectId,
+    'ok'           => true,
+    'phase'        => '4A',
+    'note'         => 'RSSI Dataset Loader. Normalized analysis-ready dataset only. No RSSI score, no Cronbach alpha, no reliability statistic is computed here.',
+    'projectId'    => $projectId,
+    'hasVarMeta'   => $hasVarMeta,   // true = canonical RE types used; false = legacy display-type fallback
     'projectName' => (string)($project['title'] ?? ''),
     'responses' => [
         'total_n'           => $totalN,
