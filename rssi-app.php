@@ -92,12 +92,12 @@ include __DIR__ . '/apps/journey/_journey_head.php';
   <!-- Upload entry (shown when there is no ?dataset_id; hidden once a dataset loads) -->
   <div class="jr-card" id="rsUploadCard" style="margin-bottom:26px">
     <h2 class="jr-h2" style="margin-top:0;margin-bottom:6px">Start with your data</h2>
-    <p style="font-size:14px;color:var(--ink-3);margin-bottom:16px">Upload a CSV of survey responses to score it in the four-domain RSSI. Your data is saved to your account and opens straight into this app, with no separate uploader.</p>
+    <p style="font-size:14px;color:var(--ink-3);margin-bottom:16px">Upload a CSV or Excel file of survey responses to score it in the four-domain RSSI. Your data is saved to your account and opens straight into this app, with no separate uploader.</p>
     <label id="rsDrop" class="rs-drop">
-      <input type="file" id="rsFile" accept=".csv,text/csv" hidden>
+      <input type="file" id="rsFile" accept=".csv,.tsv,.txt,.xls,.xlsx,text/csv" hidden>
       <span class="rs-drop-ic"><?= jr_icon('doc') ?></span>
-      <span class="rs-drop-t">Drag &amp; drop a CSV, or click to choose</span>
-      <span class="rs-drop-s">CSV &middot; up to 50,000 rows &middot; XLSX coming soon</span>
+      <span class="rs-drop-t">Drag &amp; drop a CSV or Excel file, or click to choose</span>
+      <span class="rs-drop-s">CSV or Excel (.xlsx) &middot; up to 50,000 rows</span>
     </label>
     <div id="rsUploadStatus" class="rs-status" style="display:none"></div>
     <div style="margin-top:14px;font-size:13px"><a href="#" id="rsViewSample" style="color:var(--teal-deep);font-weight:600;text-decoration:none">View sample data instead &rarr;</a></div>

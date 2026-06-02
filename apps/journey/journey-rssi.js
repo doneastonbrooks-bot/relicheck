@@ -156,17 +156,63 @@
     s.style.display = 'block'; s.className = 'rs-status ' + (kind || 'info'); s.innerHTML = msg;
   }
 
+  // Lazy-load SheetJS (Excel parser) only when an .xlsx/.xls is chosen — same
+  // CDN the standalone RSSI uploader uses. CSV uploads never fetch it.
+  var _xlsxPromise = null;
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (_xlsxPromise) return _xlsxPromise;
+    _xlsxPromise = new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+      s.onload  = function () { resolve(window.XLSX); };
+      s.onerror = function () { reject(new Error('Could not load the Excel parser.')); };
+      document.head.appendChild(s);
+    });
+    return _xlsxPromise;
+  }
+
+  // Parse an .xlsx/.xls into the SAME { headers, rows } shape parseCSV returns
+  // (rows = array of objects keyed by header), so saveDataset is unchanged.
+  function parseXlsx(file) {
+    return loadXlsx().then(function (XLSX) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+          try {
+            var wb = XLSX.read(ev.target.result, { type: 'array' });
+            var sheet = wb.Sheets[wb.SheetNames[0]];
+            var aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+            if (!aoa.length) { resolve({ headers: [], rows: [] }); return; }
+            var headers = aoa[0].map(function (h, idx) { var s = String(h).trim(); return s === '' ? ('Column ' + (idx + 1)) : s; });
+            var out = [];
+            for (var r = 1; r < aoa.length; r++) {
+              var arr = aoa[r], obj = {};
+              for (var k = 0; k < headers.length; k++) obj[headers[k]] = (arr[k] != null ? String(arr[k]) : '');
+              if (headers.some(function (h) { return String(obj[h]).trim() !== ''; })) out.push(obj);
+            }
+            resolve({ headers: headers, rows: out });
+          } catch (err) { reject(err); }
+        };
+        reader.onerror = function () { reject(new Error('Could not read the file.')); };
+        reader.readAsArrayBuffer(file);
+      });
+    });
+  }
+
   function handleFile(f) {
-    if (!/\.csv$/i.test(f.name) && f.type !== 'text/csv') { status('Please choose a CSV file. XLSX support is coming.', 'err'); return; }
+    var isXlsx = /\.xlsx?$/i.test(f.name);
+    var isCsv  = /\.(csv|tsv|txt)$/i.test(f.name) || f.type === 'text/csv';
+    if (!isXlsx && !isCsv) { status('Please choose a CSV or Excel (.xlsx) file.', 'err'); return; }
     status('Reading <b>' + esc(f.name) + '</b> &hellip; ' + Math.round(f.size / 1024) + ' KB', 'info');
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      try {
-        var parsed = parseCSV(String(ev.target.result));
-        if (!parsed.headers.length || !parsed.rows.length) { status('That file has no rows to score.', 'err'); return; }
-        saveDataset(parsed, f.name);
-      } catch (err) { status('Could not parse the file: ' + esc(err && err.message ? err.message : String(err)), 'err'); }
+    var done = function (parsed) {
+      if (!parsed.headers.length || !parsed.rows.length) { status('That file has no rows to score.', 'err'); return; }
+      saveDataset(parsed, f.name);
     };
+    var fail = function (err) { status('Could not parse the file: ' + esc(err && err.message ? err.message : String(err)), 'err'); };
+    if (isXlsx) { parseXlsx(f).then(done).catch(fail); return; }
+    var reader = new FileReader();
+    reader.onload = function (ev) { try { done(parseCSV(String(ev.target.result))); } catch (err) { fail(err); } };
     reader.onerror = function () { status('Could not read the file.', 'err'); };
     reader.readAsText(f);
   }
