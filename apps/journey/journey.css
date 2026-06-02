@@ -24,6 +24,7 @@
   /* ── Accent: themeable. Default = SIRI teal. RSSI overrides to blue below. ── */
   --accent:#0F9E7B; --accent-deep:#0a7a5f; --accent-soft:#e7f4ef;
   --teal:var(--accent); --teal-deep:var(--accent-deep); --teal-soft:var(--accent-soft);
+  --acc:#0F9E7B; --acc-soft:#e7f4ef;
 
   --terra:#e85d3a;          /* brand accent (sparing) */
   --terra-deep:#c2451f;
@@ -60,6 +61,7 @@
 body[data-accent="blue"]{
   --accent:#2D8DFF; --accent-deep:#0A6FE8; --accent-soft:#EAF2FE;
   --teal:#2D8DFF; --teal-deep:#0A6FE8; --teal-soft:#EAF2FE;
+  --acc:#2D8DFF; --acc-soft:#EAF2FE;
 }
 
 html,body{height:100%}

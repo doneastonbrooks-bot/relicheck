@@ -245,7 +245,7 @@ $BOOT = [
   --bg:#f5f6f8; --panel:#ffffff; --line:#e6e8ec; --line-2:#eef0f3;
   /* chrome is neutral gray; purple is reserved for action buttons only */
   --accent:#6b7280; --accent-hover:#565b63; --accent-soft:#eef0f3; --accent-ink:#2a2f3a;
-  --btn:#6d4ad8; --btn-hover:#5a37c0;
+  --btn:#6d4ad8; --btn-hover:#5a37c0; --acc:#6d4ad8; --acc-soft:#ede9fb;
   --green:#1f9e44; --green-soft:#e9f7ee;
   --quan:#0A6FE8; --quan-soft:#EEF3FA; --quan-ink:#085fcc;
   --qual:#8A4FD0; --qual-soft:#F2EAFB; --qual-ink:#6d36b0;
