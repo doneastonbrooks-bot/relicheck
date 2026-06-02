@@ -18,6 +18,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_tiers.php';
+require_once __DIR__ . '/../dev/_type_taxonomy.php';
 
 require_method('POST');
 check_origin();
@@ -67,6 +68,12 @@ foreach ($columnMeta as $c) {
     // engine's §4A/§4B/§4E activation gates fire on re-load.
     if (!empty($c['construct'])) {
         $entry['construct'] = clean_string((string)$c['construct'], 200);
+    }
+    // Canonical analysis_type from the unified upload widget — stored
+    // alongside the legacy type so rc_seed_var_meta_from_dataset() can
+    // use it directly without a lossy re-mapping.
+    if (isset($c['analysis_type']) && rc_valid_analysis_type((string)$c['analysis_type'])) {
+        $entry['analysis_type'] = (string)$c['analysis_type'];
     }
     $cleanCols[] = $entry;
 }

@@ -7,6 +7,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../_helpers.php';
+require_once __DIR__ . '/../_dataset_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_analysis_studio.php';
 
@@ -69,5 +70,9 @@ $id = (int)$pdo->lastInsertId();
 $row = $pdo->prepare('SELECT * FROM analysis_projects WHERE id = :id');
 $row->execute([':id' => $id]);
 $project = $row->fetch(PDO::FETCH_ASSOC);
+
+if ($datasetId > 0) {
+    rc_seed_var_meta_from_dataset($pdo, $id, 'analysis', $datasetId);
+}
 
 json_out(['ok' => true, 'project' => analysis_project_out($project ?: [])]);

@@ -206,7 +206,33 @@ const RC_DISPLAY_TYPE_MAP = [
 // demographic_numeric when standalone.
 const RC_AMBIGUOUS_TYPES = ['Rating Scale', 'Rating', 'NPS', 'Slider'];
 
+// ── Map: datasets.column_meta legacy type → analysis_type ───────────────────
+// Used when seeding variable_metadata from an uploaded dataset at link time.
+// These are initial guesses; the DataMap lets users confirm or correct them.
+const RC_DATASET_TYPE_MAP = [
+    'likert'      => 'likert_item',
+    'single'      => 'demographic_nominal',
+    'multi'       => 'demographic_nominal',
+    'open'        => 'open_ended',
+    'numeric'     => 'demographic_numeric',
+    'criterion'   => 'scale_score',
+    'demographic' => 'demographic_nominal',
+    'identifier'  => 'identifier',
+    'ignore'      => 'structural',
+    'free_text'   => 'open_ended',
+    'date'        => 'date_time',
+];
+
 // ── Functions ────────────────────────────────────────────────────────────────
+
+/**
+ * Map a datasets.column_meta legacy type string to canonical analysis_type.
+ * Falls back to 'open_ended' for unknown values.
+ */
+function rc_analysis_type_from_dataset_type(string $datasetType): string
+{
+    return RC_DATASET_TYPE_MAP[$datasetType] ?? 'open_ended';
+}
 
 /**
  * Resolve a SIRI builder display type to its canonical analysis_type.

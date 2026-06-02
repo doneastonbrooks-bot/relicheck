@@ -106,7 +106,7 @@ $initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U
 // Cache-bust the work-step presentation module by file mtime.
 $_as_css = '/apps/analysis-studio/analysis-studio.css';
 $_as_js  = '/apps/analysis-studio/analysis-studio.js';
-$_au_js  = '/apps/analysis-studio/analysis-upload.js';
+$_au_js  = '/apps/studio/dataset-upload.js';
 $_sh_js  = '/apps/studio/studio-header.js';
 $_sf_js  = '/apps/studio/studio-footer.js';
 $_tx_js  = '/apps/studio/type-taxonomy.js';
@@ -647,16 +647,15 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   // ---- Data dock ----
   const WORKSPACE_ROUTE = BOOT.slug==='descriptive' ? '/descriptive-analysis-workspace.php' : '/inferential-statistics-workspace.php';
   function openUpload(){
-    if (!window.AnalysisUpload) return;
-    window.AnalysisUpload.open({
-      kind: BOOT.slug,
-      projectId: BOOT.projectId,
-      onLoaded: openProject
+    if (!window.DatasetUpload) return;
+    window.DatasetUpload.open({
+      kind: BOOT.slug, projectType: 'analysis',
+      projectId: BOOT.projectId, onLoaded: openProject
     });
   }
   function openSaved(){
-    if (!window.AnalysisUpload) return;
-    window.AnalysisUpload.openSaved({ kind: BOOT.slug, projectId: BOOT.projectId, onLoaded: openProject });
+    if (!window.DatasetUpload) return;
+    window.DatasetUpload.openSaved({ kind: BOOT.slug, projectType: 'analysis', projectId: BOOT.projectId, onLoaded: openProject });
   }
   // Data was saved/linked to project `pid` → open it project-scoped so the
   // workspace loads it from the server (and it persists on reopen).

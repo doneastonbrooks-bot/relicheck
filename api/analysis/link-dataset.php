@@ -10,6 +10,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_analysis_studio.php';
+require_once __DIR__ . '/../_dataset_helpers.php';
 
 require_method('POST');
 check_origin();
@@ -32,6 +33,8 @@ if (!$drow) fail('dataset_not_found', 'Dataset not found or not owned.', 404);
 
 $stmt = $pdo->prepare('UPDATE analysis_projects SET dataset_id = :d WHERE id = :id AND user_id = :uid');
 $stmt->execute([':d' => $datasetId, ':id' => $projectId, ':uid' => $uid]);
+
+rc_seed_var_meta_from_dataset($pdo, $projectId, 'analysis', $datasetId);
 
 json_out([
     'ok'           => true,

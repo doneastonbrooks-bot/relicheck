@@ -19,6 +19,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_mm.php';
+require_once __DIR__ . '/../_dataset_helpers.php';
 
 require_method('POST');
 check_origin();
@@ -209,6 +210,8 @@ try {
 } catch (Throwable $e) {
     error_log('mm/link-dataset: text materialization failed: ' . $e->getMessage());
 }
+
+rc_seed_var_meta_from_dataset($pdo, $projectId, 'mm', $datasetId);
 
 json_out([
     'ok'             => true,
