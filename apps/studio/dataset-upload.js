@@ -20,6 +20,52 @@
 (function () {
   'use strict';
 
+  // ── Inject widget CSS once ───────────────────────────────────────────────────
+  if (!document.getElementById('du-styles')) {
+    const s = document.createElement('style');
+    s.id = 'du-styles';
+    s.textContent = [
+      /* Modal panel overrides */
+      '.du-panel{max-width:720px!important;padding:0!important;display:flex;flex-direction:column;max-height:92vh}',
+      /* Header */
+      '.du-header{display:flex;align-items:center;gap:14px;padding:20px 24px 16px;border-bottom:1px solid #e5e8ef;flex-shrink:0}',
+      '.du-header-icon{flex-shrink:0;width:40px;height:40px}',
+      '.du-header-title{font-size:18px;font-weight:700;color:#1c2238;line-height:1.2}',
+      '.du-header-sub{font-size:13px;color:#7b8fad;margin-top:3px}',
+      '.du-header .au-close{margin-left:auto;flex-shrink:0}',
+      /* Body */
+      '.du-body{padding:20px 24px;overflow-y:auto;flex:1}',
+      /* Title + Description fields side by side */
+      '.du-fields{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}',
+      '.du-label{display:block;font-size:13px;font-weight:600;color:#3a4460;margin-bottom:5px}',
+      '.du-req{color:#c2492f}',
+      '.du-opt{font-weight:400;color:#9ba8be;font-size:12px;margin-left:4px}',
+      '.du-input{width:100%;padding:8px 10px;border:1px solid #d4d9e4;border-radius:8px;font-size:14px;box-sizing:border-box;font-family:inherit}',
+      '.du-input:focus{outline:none;border-color:#5b6fad;box-shadow:0 0 0 3px rgba(91,111,173,.12)}',
+      '.du-textarea{resize:vertical;min-height:74px}',
+      '.du-hint{font-size:12px;color:#9ba8be;margin-top:4px}',
+      '.du-section-label{font-size:13px;font-weight:600;color:#3a4460;margin-bottom:10px}',
+      /* Drop zone */
+      '.du-dropzone{border:2px dashed #c8d0df;border-radius:12px;padding:28px 20px;text-align:center;transition:border-color .15s,background .15s;cursor:default}',
+      '.du-dropzone.over{border-color:#5b6fad;background:#f0f2ff}',
+      '.du-drop-icon{width:36px;height:36px;color:#7b8fad;margin:0 auto 10px;display:block}',
+      '.du-drop-h{font-weight:600;font-size:15px;color:#1c2238;margin-bottom:4px}',
+      '.du-drop-or{color:#9ba8be;font-size:13px;margin-bottom:10px}',
+      '.du-file-types{color:#9ba8be;font-size:12px;margin-top:10px;line-height:1.5}',
+      /* Chosen file row */
+      '.du-chosen{margin-top:10px;font-size:13px;color:#3a4460;display:flex;align-items:center;gap:6px}',
+      '.du-change{background:none;border:none;color:#5b6fad;cursor:pointer;font-size:13px;text-decoration:underline;padding:0;margin-left:4px}',
+      /* Security note */
+      '.du-security{color:#9ba8be;font-size:12px;margin-top:14px;display:flex;align-items:center;gap:5px}',
+      /* Footer */
+      '.du-footer{padding:14px 24px;border-top:1px solid #e5e8ef;display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-shrink:0}',
+      /* Embed (inline, no modal) */
+      '.du-embed-actions{margin-top:16px}',
+      '.du-embed-submit{width:100%}',
+    ].join('');
+    document.head.appendChild(s);
+  }
+
   // ── Canonical type definitions ──────────────────────────────────────────────
   const ANALYSIS_TYPES = [
     { v: 'likert_item',         label: 'Likert / Scale item',    group: 'Quantitative' },
@@ -369,27 +415,25 @@
     let chosenFile = null;
     let chosenFormat = 'csv';
 
-    renderDropZone(dropWrap, {
-      onFile: function (f) {
-        chosenFile   = f;
-        chosenFormat = formatLabel(f.name);
-        // Auto-fill title from filename if blank
-        if (!titleEl.value.trim()) {
-          titleEl.value = f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
-        }
-        chosenEl.hidden = false;
-        chosenEl.innerHTML =
-          '<svg viewBox="0 0 16 16" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="2 8 6 12 14 4"/></svg>'
-          + ' <strong>' + esc(f.name) + '</strong>'
-          + ' <button type="button" class="du-change" id="duChange">Change</button>';
-        overlay.querySelector('#duChange').addEventListener('click', function () {
-          chosenFile = null; chosenEl.hidden = true; uploadBtn.disabled = true;
-          dropWrap.innerHTML = '';
-          renderDropZone(dropWrap, arguments.callee);
-        });
-        uploadBtn.disabled = false;
-      },
-    });
+    function onFile(f) {
+      chosenFile   = f;
+      chosenFormat = formatLabel(f.name);
+      if (!titleEl.value.trim()) {
+        titleEl.value = f.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' ');
+      }
+      chosenEl.hidden = false;
+      chosenEl.innerHTML =
+        '<svg viewBox="0 0 16 16" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" width="14" height="14"><polyline points="2 8 6 12 14 4"/></svg>'
+        + ' <strong>' + esc(f.name) + '</strong>'
+        + ' <button type="button" class="du-change" id="duChange">Change</button>';
+      overlay.querySelector('#duChange').addEventListener('click', function () {
+        chosenFile = null; chosenEl.hidden = true; uploadBtn.disabled = true;
+        dropWrap.innerHTML = '';
+        renderDropZone(dropWrap, { onFile: onFile });
+      });
+      uploadBtn.disabled = false;
+    }
+    renderDropZone(dropWrap, { onFile: onFile });
 
     uploadBtn.addEventListener('click', function () {
       const title = titleEl.value.trim();
