@@ -928,6 +928,12 @@ const AHELP={
     use:`Use it last in the analysis, after convergence and divergence: step back from the individual themes and name what the whole study concludes.`,
     steps:[`<b>Review</b> your convergence readings.`,`<b>Ask what the combined evidence shows</b> that the numbers or the narratives alone could not.`,`<b>Write each meta-inference</b> in plain language.`,`<b>Save;</b> these flow into the Report Builder.`],
     example:`<p><b>Reading it:</b> that equity concern is frequent in comments and that scores are lower for under-resourced groups combine into the meta-inference that access gaps are both felt and measured — a stronger claim than either alone.</p>`},
+  'qual_sampling':{title:`Qualitative Sampling Plan`,
+    what:`The sampling plan decides who you follow up with qualitatively, and what you ask them, so the qualitative phase is aimed squarely at explaining the quantitative results you selected.`,
+    measures:`It pulls the findings you staged in "Identify Results to Explain" and your grouping variables, then gives you a space to write who to sample, how many, and what to ask. The plan saves into the report's Methods section.`,
+    use:`Use it right after you pick your results to explain: name the groups whose differences you want to understand, decide how many people to talk to, and draft the questions that target those differences.`,
+    steps:[`<b>Review</b> the staged results and the groups in your data.`,`<b>Scaffold</b> a draft plan from your findings, or write your own.`,`<b>Name who to sample</b> — purposively include the contrasting groups.`,`<b>Draft what to ask</b>, then save; the plan flows into the Report Builder's Methods.`],
+    example:`<p><b>Reading it:</b> if SEL-trained staff scored higher, your plan might sample a few trained and a few untrained participants and ask each what their training did or did not change in practice.</p>`},
   'converge':{title:`Convergence & Divergence`,
     what:`This step puts each theme's quantitative and qualitative evidence side by side so you can name where the two strands agree (converge), add to each other (nuanced), or contradict (diverge).`,
     measures:`For each theme it shows the quantitative picture (how often it appears and any statistical result) next to the qualitative picture (sentiment and a quote), and lets you record your reading of how they align.`,
@@ -2259,6 +2265,100 @@ function renderExplain(s){
   $("#centerInner").innerHTML=hd+helpBar('explain')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>
     <div class="panel"><div class="panel-h"><div><h3>${esc(s.title)}</h3><div class="ph-sub">Workstation · Pivot</div></div></div>${panelBody}</div>`+explNav();
 }
+/* ===== Qualitative Sampling Plan (qual_sampling) — Step 8 ============
+   Decide who to follow up with qualitatively and what to ask, driven by the
+   findings staged in Step 7 (results-to-explain GET) and the project's grouping
+   variables (BOOT.ttvars). The plan is a living document persisted as a note on
+   the report's Methods section (report.php add_note/update_note), so it carries
+   straight into the Report Builder. Manual-first; a scaffold button drafts it
+   from the staged findings. No new server endpoints. */
+const qs={loaded:false,busy:false,err:'',saving:false,findings:[],groupings:[],noteId:null,plan:'',hasTable:true};
+const QS_MARK='Qualitative sampling plan';
+// Mirror Step 7's label fix: integer-coded groups get the var-name prefix.
+function qsReadFinding(it){
+  const d=it.data||it; const src=it.source||it.src||'';
+  let plain=d.plain||'', fq=d.follow_up_question||'';
+  if(src==='t_test'&&d.grouping&&/^\d+$/.test(String(d.group1||''))&&/^\d+$/.test(String(d.group2||''))){
+    const g1l=`${d.grouping}=${d.group1}`,g2l=`${d.grouping}=${d.group2}`;
+    const dir=d.diff!=null&&d.diff<0?'lower':'higher';
+    plain=`${g1l} reported ${dir} ${d.outcome||''} than ${g2l}.`;
+    fq=`What experiences help explain why ${g1l} reported ${dir} ${d.outcome||''} than ${g2l}?`;
+  }
+  return {src:explSrcLabel(src),plain,fq,grouping:d.grouping||d.row||'',outcome:d.outcome||''};
+}
+function qsFetch(){return Promise.all([
+  fetch('/api/mm/results-to-explain.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null),
+  fetch('/api/mm/report.php?project_id='+BOOT.projectId+'&action=list_notes&section_key=methods',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)
+]);}
+function qsHead(s){return `<div class="ws-header"><div class="eyebrow">Qualitative sampling plan · who to follow up with <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function qsNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function qsMsg(s,msg){$("#centerInner").innerHTML=qsHead(s)+helpBar('qual_sampling')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+qsNav();}
+function qsCapture(){const el=document.getElementById('qsText');if(el)qs.plan=el.value;}
+function qsScaffold(){
+  const el=document.getElementById('qsText');if(!el)return;
+  const reads=qs.findings.map(qsReadFinding);
+  // Kept compact: the Methods-note store caps the saved plan at 800 chars.
+  const lines=[QS_MARK,'',
+    'Sample purposively across the contrasting groups below; aim for ~3-5 per group until themes saturate.'];
+  if(reads.length){
+    lines.push('');
+    reads.forEach((r,i)=>{
+      lines.push(`${i+1}. ${r.plain}`);
+      if(r.fq)lines.push(`   Ask: ${r.fq}`);
+    });
+  } else {
+    lines.push('','(Stage results in "Identify Results to Explain" first, then scaffold.)');
+  }
+  let txt=lines.join('\n');
+  if(txt.length>800)txt=txt.slice(0,797)+'...';
+  el.value=txt;qs.plan=txt;el.focus();
+}
+function qsSave(){
+  qsCapture();const text=qs.plan||'';
+  if(!text.trim()){toast('Write or scaffold a plan first');return;}
+  // Keep the marker heading so the note can be re-found on reload.
+  const body=text.trim().indexOf(QS_MARK)===0?text:(QS_MARK+'\n\n'+text);
+  // The Methods-note store caps body_text at 800 chars; block rather than let
+  // the server silently truncate the plan.
+  if(body.length>800){toast(`Plan is ${body.length} characters; the limit is 800. Please shorten it before saving.`);return;}
+  qs.saving=true;renderQualSampling(activeStep());
+  const payload=qs.noteId
+    ?{project_id:BOOT.projectId,action:'update_note',note_id:qs.noteId,body_text:body}
+    :{project_id:BOOT.projectId,action:'add_note',section_key:'methods',body_text:body};
+  fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(j=>{qs.saving=false;if(j&&j.ok){if(j.id)qs.noteId=j.id;qs.plan=body;toast('Sampling plan saved to Methods');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderQualSampling(activeStep());})
+    .catch(()=>{qs.saving=false;toast('Save failed.');renderQualSampling(activeStep());});
+}
+function renderQualSampling(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=qsHead(s)+helpBar('qual_sampling')+`<p class="lede">Connect a project to plan the qualitative follow-up.</p>`+qsNav();return;}
+  if(qs.err){qsMsg(s,qs.err);return;}
+  if(!qs.loaded){
+    if(!qs.busy){qs.busy=true;qsFetch().then(a=>{
+      qs.busy=false;qs.loaded=true;
+      const ex=a[0],rp=a[1];
+      qs.findings=(ex&&ex.ok)?(ex.items||[]):[];
+      qs.groupings=((BOOT.ttvars&&BOOT.ttvars.groupings)||[]);
+      if(rp&&rp.ok){
+        qs.hasTable=rp.has_table!==false;
+        const note=(rp.notes||[]).find(n=>String(n.body_text||'').trim().indexOf(QS_MARK)===0);
+        if(note){qs.noteId=note.id;qs.plan=note.body_text||'';}
+      }
+      renderQualSampling(activeStep());
+    }).catch(()=>{qs.busy=false;qs.err='Could not load your data.';renderQualSampling(activeStep());});}
+    qsMsg(s,'Gathering your staged findings…');return;
+  }
+  const reads=qs.findings.map(qsReadFinding);
+  const findPanel=reads.length
+    ?`<div class="panel"><div class="panel-h"><div><h3>Results you chose to explain</h3><div class="ph-sub">Staged in the previous step — these shape who you follow up with</div></div></div><div class="panel-b">${reads.map(r=>`<div class="ov-row" style="padding:8px 0"><div class="ov-k" style="width:120px">${esc(r.src)}</div><div class="ov-v">${esc(r.plain)}${r.fq?`<div style="margin-top:4px;font-size:12.5px;color:var(--ink-3)">↳ ${esc(r.fq)}</div>`:''}</div></div>`).join('')}</div></div>`
+    :`<div class="dm-note" style="margin-bottom:12px">No findings staged yet. On "Identify Results to Explain", click <b>Add to Results to Explain</b> for the results you want to follow up on, then return here.</div>`;
+  const grpRef=qs.groupings.length
+    ?`<div class="panel"><div class="panel-h"><div><h3>Groups you can sample from</h3><div class="ph-sub">From your data — purposively sample across the contrasting groups</div></div></div><div class="panel-b">${qs.groupings.map(g=>`<div class="ov-row" style="padding:6px 0"><div class="ov-k" style="width:160px">${esc(g.name)}</div><div class="ov-v">${(g.groups||[]).map(o=>`${esc(o.value)} (n=${o.n})`).join(' · ')}</div></div>`).join('')}</div></div>`
+    :'';
+  const tableNote=qs.hasTable?'':`<div class="dm-note" style="margin-bottom:12px">Saving needs a one-time database migration before it can persist; you can still draft the plan here.</div>`;
+  const composer=`<div class="panel"><div class="panel-h"><div><h3>Your sampling plan</h3><div class="ph-sub">Who to interview, how many, and what to ask</div></div></div><div class="panel-b"><textarea id="qsText" class="ed-in" rows="10" placeholder="Who will you follow up with, how many, and what will you ask them to explain the results above?">${esc(qs.plan||'')}</textarea><div class="dm-save"><button class="btn primary" ${qs.saving||!qs.hasTable?'disabled':''} onclick="qsSave()">${qs.saving?'Saving…':'Save sampling plan'}</button><button class="btn" onclick="qsScaffold()">Scaffold from my findings</button><span class="dm-note">Saved to the report's Methods section and carried into the Report Builder. Keep it under 800 characters.</span></div></div></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">In an explanatory sequential design the qualitative phase exists to explain the quantitative results. A good sampling plan deliberately includes the groups whose differences you are trying to understand, and asks questions aimed squarely at those differences.</div></div></div>`;
+  $("#centerInner").innerHTML=qsHead(s)+helpBar('qual_sampling')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`+findPanel+grpRef+tableNote+composer+layers+qsNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -2271,6 +2371,7 @@ function renderCenter(){
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderMeasureTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='explain'){ return renderExplain(s); }
+  if(s.id==='qual_sampling'){ return renderQualSampling(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='meta'){ return renderMeta(s); }
