@@ -75,7 +75,7 @@ if ($projectId > 0) {
 $framing = ['data_kinds' => [], 'intent_purposes' => [], 'chosen_design' => ''];
 if ($projectId > 0) {
   try {
-    $fst = $pdo->prepare('SELECT data_kinds, intent_purposes, chosen_design FROM mm_project_framing WHERE project_id = :p LIMIT 1');
+    $fst = $pdo->prepare('SELECT data_kinds, purposes AS intent_purposes, design_choice AS chosen_design FROM mm_projects WHERE id = :p LIMIT 1');
     $fst->execute([':p' => $projectId]);
     $fr = $fst->fetch(PDO::FETCH_ASSOC);
     if ($fr) {
@@ -2639,7 +2639,7 @@ const sd={
   tab:'data_kind',
   dataKinds:[...(BOOT.framing.data_kinds||[])],
   purposes:[...(BOOT.framing.intent_purposes||[])],
-  design:BOOT.framing.chosen_design||'',
+  design:(MM.ae_to_core||{})[BOOT.framing.chosen_design||'']||BOOT.framing.chosen_design||'',
   saving:false,
 };
 const DK_OPTS=[
@@ -2660,20 +2660,20 @@ const INTENT_OPTS=[
   ['pre_survey_exploration',   'Explore patterns before building a survey','Use qualitative data to find the constructs worth measuring next.'],
 ];
 const DESIGN_OPTS=[
-  ['A_explain_numbers',       'Explanatory Sequential','Quant first, then qual. Run the numbers, then use comments to explain why they came out the way they did.'],
-  ['B_comments_to_themes',    'Exploratory Sequential','Qual first, then quant. Find themes in open-ended data, then turn them into variables or test them with numbers.'],
-  ['C_compare_themes_groups', 'Convergent Parallel',   'Both at once. Analyze quant and qual independently and compare them side by side in a joint display.'],
+  ['explanatory', 'Explanatory Sequential','Quant first, then qual. Run the numbers, then use comments to explain why they came out the way they did.'],
+  ['exploratory', 'Exploratory Sequential','Qual first, then quant. Find themes in open-ended data, then turn them into variables or test them with numbers.'],
+  ['convergent',  'Convergent Parallel',   'Both at once. Analyze quant and qual independently and compare them side by side in a joint display.'],
 ];
 function sdDesignRec(){
   const dks=new Set(sd.dataKinds),ps=new Set(sd.purposes);
   return {
-    A_explain_numbers:     dks.has('survey_plus_open')||ps.has('explain_survey_results'),
-    B_comments_to_themes:  dks.has('open_ended_only')||ps.has('find_themes')||ps.has('build_variables_from_text'),
-    C_compare_themes_groups:ps.has('compare_groups')||ps.has('mixed_methods_section')||ps.has('evaluation_accreditation')||ps.has('strengthen_report'),
+    explanatory: dks.has('survey_plus_open')||ps.has('explain_survey_results'),
+    exploratory: dks.has('open_ended_only')||ps.has('find_themes')||ps.has('build_variables_from_text'),
+    convergent:  ps.has('compare_groups')||ps.has('mixed_methods_section')||ps.has('evaluation_accreditation')||ps.has('strengthen_report'),
   };
 }
 function renderStudyDesign(s){
-  const c=$$('.center'); if(!c) return;
+  const c=$('.center'); if(!c) return;
   const rec=sdDesignRec();
   const tabs=[
     {key:'data_kind',label:'Data Kind'},
@@ -2765,9 +2765,12 @@ function renderStudyDesign(s){
     const postWiz=body=>fetch('/api/mm/wizard.php',{method:'POST',credentials:'same-origin',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(Object.assign({project_id:BOOT.projectId},body))}).then(r=>r.json());
-    postWiz({step:'data_kind',values:sd.dataKinds})
-      .then(()=>postWiz({step:'purpose',values:sd.purposes}))
-      .then(()=>sd.design?postWiz({step:'design_choice',value:sd.design}):Promise.resolve({ok:true}))
+    // Build only the posts that have data; wizard rejects empty arrays.
+    const jobs=[];
+    if(sd.dataKinds.length) jobs.push({step:'data_kind',values:sd.dataKinds});
+    if(sd.purposes.length) jobs.push({step:'purpose',values:sd.purposes});
+    if(sd.design) jobs.push({step:'design_choice',value:(MM.core_to_ae||{})[sd.design]||sd.design});
+    jobs.reduce((p,b)=>p.then(()=>postWiz(b)),Promise.resolve({ok:true}))
       .then(()=>{
         sd.saving=false;
         if(sd.design){state.design=sd.design;persistDesign(sd.design);}
