@@ -1,949 +1,817 @@
 /* Qualitative Analysis Studio — workspace controller
- * Modules: Setup, Import, Familiarize, Coding, Codebook
+ * Follows the studio template contract:
+ *   StudioHeader → rail (numbered steps, data-done/data-active) →
+ *   renderStart / renderOverview / renderDataMap / renderWork / renderReport
+ *   → StudioFooter
  */
 'use strict';
 
-// ─── App ────────────────────────────────────────────────────────────────────
-const App = (() => {
-  const state = {
-    module:   '',
-    project:  BOOT.project,
-    segments: null,
-    codes:    null,
-    stats:    null,
-    docs:     null,
+(function () {
+
+  var CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  var state = {
+    stepId:            'start',
+    compTab:           'guidance',
+    project:           BOOT.project,
+    projectData:       null,   // { seg_count, doc_count, total_words, avg_words, code_count, docs[] }
+    datamapConfirmed:  false,
+    _datamapMounted:   false,
+    codes:             null,
+    segments:          null,
   };
 
-  function go(moduleId) {
-    // If no project yet, only allow setup
-    if (!BOOT.projectId && moduleId !== 'setup') {
-      return;
-    }
-    state.module = moduleId;
-    _setActive(moduleId);
-    _show('loading');
-    const fn = Screens[moduleId];
-    if (fn) {
-      fn().catch(err => {
-        console.error(moduleId, err);
-        _setContent('<div class="qs-notice err">Failed to load module. ' + (err.message || '') + '</div>');
-      });
-    } else {
-      _setContent('<div class="qs-notice warn">Module not yet built.</div>');
-    }
+  // ── Pipeline helpers ───────────────────────────────────────────────────────
+  function steps()      { return BOOT.pipeline; }
+  function activeStep() { return steps().find(function(s){ return s.id === state.stepId; }) || steps()[0]; }
+  function stepIndex()  { return steps().findIndex(function(s){ return s.id === state.stepId; }); }
+
+  function hasData() {
+    return state.projectData && (state.projectData.seg_count > 0);
   }
 
-  function _setActive(moduleId) {
-    document.querySelectorAll('.qs-step').forEach(el => {
-      el.classList.toggle('active', el.dataset.module === moduleId);
+  // Steps before the first work step that are considered "infrastructure" gates
+  var GATE_STEPS = ['start', 'overview', 'datamap'];
+
+  function isWorkUnlocked() {
+    return state.datamapConfirmed && hasData();
+  }
+
+  // ── API ────────────────────────────────────────────────────────────────────
+  function api(path, opts) {
+    opts = opts || {};
+    return fetch(path, Object.assign({ headers: { 'Content-Type': 'application/json' } }, opts))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d.ok) throw new Error(d.message || d.error || 'API error');
+        return d;
+      });
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  function render() {
+    renderRail();
+    renderCenter();
+    renderCompanion();
+  }
+
+  function renderRail() {
+    var rail = document.getElementById('rail');
+    if (!rail) return;
+    var idx = stepIndex();
+    rail.innerHTML = '<div class="rail-h">Qualitative Analysis</div>'
+      + steps().map(function (s, i) {
+        var active = s.id === state.stepId ? '1' : '0';
+        // Done: all steps before current gate steps are done if data loaded;
+        // work steps done if unlocked and before current index
+        var done = '0';
+        if (i < idx) {
+          if (GATE_STEPS.indexOf(s.id) !== -1) {
+            done = (s.id === 'start' || (s.id === 'overview' && hasData()) || (s.id === 'datamap' && state.datamapConfirmed)) ? '1' : '0';
+          } else {
+            done = isWorkUnlocked() ? '1' : '0';
+          }
+        }
+        var soon = s.soon ? '<span class="step-soon">Soon</span>' : '';
+        var disabled = (s.soon || (GATE_STEPS.indexOf(s.id) === -1 && !isWorkUnlocked() && s.id !== 'start'))
+          ? ' disabled' : '';
+        return '<button class="step" data-active="' + active + '" data-done="' + done + '" data-step="' + esc(s.id) + '"' + disabled + '>'
+          + '<span class="num">' + (done === '1' ? CHECK : (i + 1)) + '</span>'
+          + '<span class="lbl">' + esc(s.label) + '</span>'
+          + soon
+          + '<span class="tick">' + CHECK + '</span>'
+          + '</button>';
+      }).join('');
+
+    rail.querySelectorAll('.step:not([disabled])').forEach(function (b) {
+      b.addEventListener('click', function () {
+        state.stepId = b.getAttribute('data-step');
+        render();
+      });
     });
   }
 
-  function _show(which) {
-    document.getElementById('qsLoading').style.display  = (which === 'loading') ? 'flex'  : 'none';
-    document.getElementById('qsContent').style.display  = (which === 'content') ? 'block' : 'none';
+  function renderCenter() {
+    var host = document.getElementById('centerInner');
+    if (!host) return;
+    var s = activeStep();
+    if (s.mode === 'start')    return renderStart(host);
+    if (s.mode === 'overview') return renderOverview(host);
+    if (s.mode === 'datamap')  return renderDataMap(host);
+    if (s.mode === 'report')   return renderReport(host);
+    return renderWork(host, s);
   }
 
-  function _setContent(html) {
-    document.getElementById('qsContent').innerHTML = html;
-    _show('content');
-  }
-
-  function _setGuide(html) {
-    document.getElementById('qsGuideBody').innerHTML = html;
-  }
-
-  async function api(path, opts = {}) {
-    const r = await fetch(path, {
-      headers: { 'Content-Type': 'application/json' },
-      ...opts,
-    });
-    const data = await r.json();
-    if (!data.ok) throw new Error(data.message || data.error || 'API error');
-    return data;
-  }
-
-  // Initialize
-  function init() {
-    if (BOOT.projectId) {
-      go('setup');
-    } else {
-      Screens.start().catch(err => {
-        _setContent('<div class="qs-notice err">Could not load projects: ' + (err.message || '') + '</div>');
-        _show('content');
+  function renderCompanion() {
+    var body = document.getElementById('compBody');
+    if (!body) return;
+    var s = activeStep();
+    var guidance = GUIDANCE[s.id] || '<p>Select a step from the left rail.</p>';
+    body.innerHTML = guidance;
+    document.querySelectorAll('.comp-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        state.compTab = t.getAttribute('data-tab');
+        document.querySelectorAll('.comp-tab').forEach(function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+        var content = state.compTab === 'guidance' ? guidance
+          : state.compTab === 'notes' ? '<p style="color:var(--ink-3)">Notes coming soon.</p>'
+          : '<p style="color:var(--ink-3)">ReliCheck Intelligence suggestions appear here as you work.</p>';
+        body.innerHTML = content;
       });
-    }
+    });
   }
 
-  return { go, api, state, _setContent, _setGuide, _show, init };
-})();
+  // ── Start ──────────────────────────────────────────────────────────────────
+  function renderStart(host) {
+    var hasProject = !!BOOT.projectId;
+    var segCount   = state.projectData ? state.projectData.seg_count : 0;
 
+    var html = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="start-hero">Turn words into <span class="accent">evidence.</span></h1>'
+      + '<p class="lede">Bring in your qualitative data, confirm what was loaded, and map your variables before coding begins.</p>'
+      + '</div>';
 
-// ─── Render helpers ──────────────────────────────────────────────────────────
-const Render = {
-  noProject() {
-    return `<div class="qs-empty">
-      <div class="qs-empty-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-          <polyline points="14 2 14 8 20 8"/>
-        </svg>
-      </div>
-      <div class="qs-empty-h">No project selected</div>
-      <div class="qs-empty-body">Go back to the Qualitative Studio and open or create a project.</div>
-      <a href="/qual-studio.php" class="qs-btn qs-btn-primary">Back to Qual Studio</a>
-    </div>`;
-  },
+    if (hasProject && segCount > 0) {
+      html += '<div class="begin-loaded"><span class="dot"></span>'
+        + '<span style="font-weight:700;color:var(--ink-2)">Data loaded</span>'
+        + '<span>' + esc(BOOT.projectLabel) + ' &middot; ' + segCount + ' segments</span>'
+        + '<button class="btn primary" style="margin-left:auto" id="stOverview">Go to Overview &rarr;</button>'
+        + '</div>';
+    }
 
-  approachLabel(slug) {
-    return {
-      thematic:          'Thematic Analysis',
-      content:           'Content Analysis',
-      framework:         'Framework Analysis',
-      open_ended_survey: 'Open-Ended Survey Analysis',
-      document:          'Document Analysis',
-    }[slug] || slug;
-  },
-};
+    if (!hasProject) {
+      // No project yet — show creation form
+      html += '<div class="panel"><div class="panel-h"><h3>New project</h3></div><div class="panel-b">'
+        + '<div class="field"><label>Project title <span style="color:#c0392b">*</span></label>'
+        + '<input id="st-title" placeholder="e.g. Staff Experience Open-Ends 2026"></div>'
+        + '<div class="grid2">'
+        + '<div class="field"><label>Analysis approach</label><select id="st-approach">'
+        + '<option value="thematic">Thematic Analysis</option>'
+        + '<option value="content">Content Analysis</option>'
+        + '<option value="framework">Framework Analysis</option>'
+        + '<option value="open_ended_survey">Open-Ended Survey Analysis</option>'
+        + '<option value="document">Document Analysis</option>'
+        + '</select></div>'
+        + '<div class="field"><label>Research question <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>'
+        + '<input id="st-rq" placeholder="What are participants saying about..."></div>'
+        + '</div>'
+        + '<div id="st-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;"></div>'
+        + '<div class="btn-row"><button class="btn primary" id="st-create">Create project</button>'
+        + '<a href="/qual-studio.php" class="btn">All projects</a></div>'
+        + '</div></div>';
+    } else {
+      // Project exists — show upload card
+      html += '<button class="begin-feature" id="stUpload">'
+        + '<span class="bc-ico">&#8681;</span>'
+        + '<div><h4>Upload qualitative data</h4>'
+        + '<p>CSV or XLSX with open-ended responses. The studio detects text columns and loads each response as a codeable segment with participant context.</p>'
+        + '<span class="bc-go">Upload data &rarr;</span></div></button>'
+        + '<div class="begin-sec">Or</div>'
+        + '<div class="begin-grid2">'
+        + '<button class="begin-card2" id="stProjects"><span class="bc-ico" style="font-size:18px">&#9638;</span><h4>Open a different project</h4><p>Return to the project list.</p></button>'
+        + '</div>';
+    }
 
+    host.innerHTML = html;
 
-// ─── Screens ─────────────────────────────────────────────────────────────────
-const Screens = {
+    var ov = document.getElementById('stOverview');
+    if (ov) ov.addEventListener('click', function () { state.stepId = 'overview'; render(); });
 
-  // ── Start (no project loaded) ─────────────────────────────────────────────
-  async start() {
-    App._show('loading');
-    let recent = [];
-    try {
-      const d = await App.api('/api/qual/list-projects.php');
-      recent = d.projects || [];
-    } catch(e) { /* show empty state */ }
-
-    const approachLabel = slug => ({
-      thematic:'Thematic', content:'Content', framework:'Framework',
-      open_ended_survey:'Survey Analysis', document:'Document',
-    }[slug] || slug);
-
-    const recentHtml = recent.length ? `
-      <div style="margin-top:32px;">
-        <div class="qs-rail-h" style="padding:0 0 10px;">Recent projects</div>
-        <div class="qs-seg-list">
-          ${recent.map(p => `
-            <a href="/qual-studio-workspace.php?project_id=${p.id}"
-               style="display:flex;align-items:center;gap:14px;padding:14px 18px;
-                      background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
-                      text-decoration:none;color:inherit;transition:border-color .15s;"
-               onmouseover="this.style.borderColor='var(--qs-accent)'"
-               onmouseout="this.style.borderColor='var(--line)'">
-              <span style="width:9px;height:9px;border-radius:50%;background:var(--qs-accent);flex:none;"></span>
-              <span style="flex:1;font-size:15px;font-weight:700;color:var(--ink);">${_esc(p.title)}</span>
-              <span style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
-                           padding:3px 10px;border-radius:999px;background:var(--qs-accent-soft);
-                           color:var(--qs-accent-ink);">${approachLabel(p.analysis_approach)}</span>
-              <span style="font-size:13px;color:var(--ink-3);white-space:nowrap;">
-                ${p.seg_count} segs &middot; ${p.code_count} codes
-              </span>
-            </a>
-          `).join('')}
-        </div>
-      </div>` : '';
-
-    App._setContent(`
-      <div style="max-width:600px;margin:48px auto 0;">
-        <h1 class="qs-module-h">Qualitative Analysis Studio</h1>
-        <p class="qs-module-sub">Start a new project or continue one you have already begun.</p>
-
-        <div class="qs-card">
-          <div class="qs-card-h">New project</div>
-          <div class="qs-form-row">
-            <label>Project title <span style="color:#c0392b">*</span></label>
-            <input class="qs-input" id="start-title" placeholder="e.g. Staff Experience Open-Ends 2026">
-          </div>
-          <div class="qs-form-grid-2">
-            <div class="qs-form-row">
-              <label>Analysis approach</label>
-              <select class="qs-select" id="start-approach">
-                <option value="thematic">Thematic Analysis</option>
-                <option value="content">Content Analysis</option>
-                <option value="framework">Framework Analysis</option>
-                <option value="open_ended_survey">Open-Ended Survey Analysis</option>
-                <option value="document">Document Analysis</option>
-              </select>
-            </div>
-            <div class="qs-form-row">
-              <label>Research question <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>
-              <input class="qs-input" id="start-rq" placeholder="What are participants saying about...">
-            </div>
-          </div>
-          <div id="start-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;"></div>
-          <div class="qs-btn-row" style="margin-top:8px;">
-            <button class="qs-btn qs-btn-primary" id="start-btn" onclick="Screens._createAndGo()">
-              Create project
-            </button>
-          </div>
-        </div>
-
-        ${recentHtml}
-      </div>
-    `);
-    App._show('content');
-
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Approach guide</div>
-        <p><strong>Thematic Analysis</strong> — flexible, suitable for most survey and interview data.</p>
-        <p><strong>Content Analysis</strong> — structured, often with predetermined categories.</p>
-        <p><strong>Framework Analysis</strong> — applies a pre-existing analytic framework.</p>
-        <p><strong>Open-Ended Survey Analysis</strong> — purpose-built for mixed-method survey open-ends.</p>
-        <p><strong>Document Analysis</strong> — for documents, field notes, and written materials.</p>
-      </div>
-    `);
-  },
-
-  async _createAndGo() {
-    const title = (document.getElementById('start-title')?.value || '').trim();
-    const err   = document.getElementById('start-err');
-    if (!title) { err.textContent = 'A project title is required.'; err.style.display = 'block'; return; }
-    err.style.display = 'none';
-    const btn = document.getElementById('start-btn');
-    btn.disabled = true; btn.textContent = 'Creating...';
-    try {
-      const r = await App.api('/api/qual/create-project.php', {
+    var create = document.getElementById('st-create');
+    if (create) create.addEventListener('click', function () {
+      var title = (document.getElementById('st-title').value || '').trim();
+      var err   = document.getElementById('st-err');
+      if (!title) { err.textContent = 'A project title is required.'; err.style.display = 'block'; return; }
+      err.style.display = 'none';
+      create.disabled = true; create.textContent = 'Creating...';
+      api('/api/qual/create-project.php', {
         method: 'POST',
         body: JSON.stringify({
-          title,
-          analysis_approach: document.getElementById('start-approach')?.value || 'thematic',
-          research_question: document.getElementById('start-rq')?.value.trim() || '',
+          title: title,
+          analysis_approach: (document.getElementById('st-approach') || {}).value || 'thematic',
+          research_question: (document.getElementById('st-rq') || {}).value.trim(),
         }),
+      }).then(function (r) {
+        window.location.href = '/qual-studio-workspace.php?project_id=' + r.project_id;
+      }).catch(function (e) {
+        err.textContent = 'Error: ' + e.message; err.style.display = 'block';
+        create.disabled = false; create.textContent = 'Create project';
       });
-      window.location.href = '/qual-studio-workspace.php?project_id=' + r.project_id;
-    } catch(e) {
-      err.textContent = 'Error: ' + e.message; err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Create project';
-    }
-  },
+    });
 
-  // ── Setup ─────────────────────────────────────────────────────────────────
-  async setup() {
-    const p = App.state.project || {};
-    App._setContent(`
-      <h1 class="qs-module-h">Project Setup</h1>
-      <p class="qs-module-sub">Define your research question, approach, and researcher stance before coding begins.</p>
+    var upload = document.getElementById('stUpload');
+    if (upload) upload.addEventListener('click', openUpload);
 
-      <div class="qs-card">
-        <div class="qs-card-h">Project information</div>
-        <div class="qs-form-row">
-          <label>Project title <span style="color:#c0392b">*</span></label>
-          <input class="qs-input" id="setup-title" value="${_esc(p.title || '')}" placeholder="e.g. Staff Experience Open-Ends 2026">
-        </div>
-        <div class="qs-form-grid-2">
-          <div class="qs-form-row">
-            <label>Analysis approach</label>
-            <select class="qs-select" id="setup-approach">
-              ${['thematic','content','framework','open_ended_survey','document'].map(v =>
-                `<option value="${v}"${(p.analysis_approach||'thematic')===v?' selected':''}>${Render.approachLabel(v)}</option>`
-              ).join('')}
-            </select>
-          </div>
-          <div class="qs-form-row">
-            <label>Data type</label>
-            <select class="qs-select" id="setup-datatype">
-              ${[['open_ended_survey','Open-Ended Survey'],['interview','Interview Transcript'],
-                 ['focus_group','Focus Group Transcript'],['document','Document / Field Notes']].map(([v,l]) =>
-                `<option value="${v}"${(p.data_type||'open_ended_survey')===v?' selected':''}>${l}</option>`
-              ).join('')}
-            </select>
-          </div>
-        </div>
-        <div class="qs-form-row">
-          <label>Research question
-            <span class="hint">What are you trying to understand or explain through this analysis?</span>
-          </label>
-          <input class="qs-input" id="setup-rq" value="${_esc(p.research_question || '')}" placeholder="What are participants saying about...">
-        </div>
-        <div class="qs-form-row">
-          <label>Purpose of analysis
-            <span class="hint">Who will use these findings, and for what decision?</span>
-          </label>
-          <input class="qs-input" id="setup-purpose" value="${_esc(p.purpose || '')}" placeholder="To inform the 2026 program redesign...">
-        </div>
-        <div class="qs-form-row">
-          <label>Participant / context description</label>
-          <input class="qs-input" id="setup-participants" value="${_esc(p.participant_description || '')}" placeholder="e.g. 412 K-12 educators across 3 districts">
-        </div>
-      </div>
+    var projects = document.getElementById('stProjects');
+    if (projects) projects.addEventListener('click', function () { window.location.href = '/qual-studio.php'; });
+  }
 
-      <div class="qs-card">
-        <div class="qs-card-h">Researcher stance memo
-          <span style="font-size:12px;font-weight:400;color:var(--ink-3);margin-left:8px;">saved to audit trail</span>
-        </div>
-        <div class="qs-form-row">
-          <label>
-            <span class="hint">What assumptions, roles, experiences, or expectations might shape how you interpret this data? Being transparent about this is part of what makes qualitative findings defensible.</span>
-          </label>
-          <textarea class="qs-textarea" id="setup-stance" style="min-height:110px;" placeholder="I am an external evaluator with no prior relationship to this program...">${_esc(p.researcher_stance_memo || '')}</textarea>
-        </div>
-      </div>
-
-      <div class="qs-card">
-        <div class="qs-card-h">Notes</div>
-        <div class="qs-form-row">
-          <textarea class="qs-textarea" id="setup-notes" placeholder="Any additional context, data limitations, or assumptions...">${_esc(p.notes || '')}</textarea>
-        </div>
-      </div>
-
-      <div id="setup-msg" style="display:none;margin-top:4px;font-size:13px;"></div>
-      <div class="qs-btn-row">
-        <button class="qs-btn qs-btn-primary" onclick="Screens.saveSetup()">Save setup</button>
-        <button class="qs-btn qs-btn-secondary" onclick="App.go('import')">Next: Import data</button>
-      </div>
-    `);
-
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Why this matters</div>
-        <p>The research question and researcher stance become part of the audit trail. Reviewers and trustworthiness checks reference them to assess whether the analysis is grounded and transparent.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Approach guide</div>
-        <p><strong>Thematic Analysis</strong> — flexible, suitable for most survey and interview data. Find patterns of meaning across responses.</p>
-        <p><strong>Content Analysis</strong> — more structured, often with predetermined categories. Good for document and media analysis.</p>
-        <p><strong>Framework Analysis</strong> — applies a pre-existing analytic framework. Common in policy and evaluation work.</p>
-        <p><strong>Open-Ended Survey Analysis</strong> — purpose-built for mixed-method survey open-ends where participants are also part of a quantitative dataset.</p>
-      </div>
-    `);
-  },
-
-  async saveSetup() {
-    const msg = document.getElementById('setup-msg');
-    const body = {
-      project_id:             BOOT.projectId,
-      title:                  document.getElementById('setup-title').value.trim(),
-      analysis_approach:      document.getElementById('setup-approach').value,
-      data_type:              document.getElementById('setup-datatype').value,
-      research_question:      document.getElementById('setup-rq').value.trim(),
-      purpose:                document.getElementById('setup-purpose').value.trim(),
-      participant_description:document.getElementById('setup-participants').value.trim(),
-      researcher_stance_memo: document.getElementById('setup-stance').value.trim(),
-      notes:                  document.getElementById('setup-notes').value.trim(),
-    };
-    if (!body.title) { msg.textContent='Title is required.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
-    msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
-    try {
-      await App.api('/api/qual/save-project.php', { method:'POST', body:JSON.stringify(body) });
-      // Update local state
-      Object.assign(App.state.project || (App.state.project = {}), body);
-      BOOT.project = App.state.project;
-      document.getElementById('projectContext').innerHTML =
-        `<span class="qs-proj-ctx">${_esc(body.title)}</span>`;
-      msg.textContent='Saved.'; msg.style.cssText='display:block;color:var(--qs-accent);';
-      setTimeout(() => { msg.style.display='none'; }, 2000);
-    } catch(e) {
-      msg.textContent='Error: ' + e.message; msg.style.cssText='display:block;color:#c0392b;';
-    }
-  },
-
-  // ── Import ────────────────────────────────────────────────────────────────
-  async import() {
-    // Load current project stats to show existing docs
-    let docs = [], segCount = 0;
-    try {
-      const d = await App.api(`/api/qual/get-project.php?project_id=${BOOT.projectId}`);
-      docs     = d.documents || [];
-      segCount = d.stats?.seg_count || 0;
-      App.state.docs  = docs;
-      App.state.stats = d.stats;
-    } catch(e) { /* show empty state */ }
-
-    const docsHtml = docs.length ? `
-      <hr class="qs-module-divider">
-      <div class="qs-card-h" style="margin-bottom:12px;">Imported data sources</div>
-      ${docs.map(d => `
-        <div style="display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line);">
-          <span style="font-size:22px;">📄</span>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:700;color:var(--ink);">${_esc(d.title)}</div>
-            <div style="font-size:12px;color:var(--ink-3);">${_esc(d.source_type)} &middot; imported ${_ago(d.created_at)}</div>
-          </div>
-          <span class="qs-status-chip approved">Linked</span>
-        </div>
-      `).join('')}
-      <div style="margin-top:12px;">
-        <strong style="color:var(--qs-accent);">${segCount}</strong>
-        <span style="font-size:13px;color:var(--ink-3);"> codeable segments loaded</span>
-      </div>
-    ` : '';
-
-    App._setContent(`
-      <h1 class="qs-module-h">Data Import</h1>
-      <p class="qs-module-sub">Upload your qualitative data. Open-ended text columns are detected and loaded as codeable segments with participant context.</p>
-
-      <div class="qs-import-options">
-        <div class="qs-import-card" id="uploadCard" onclick="Screens._openUpload()">
-          <div class="qs-import-card-icon">📂</div>
-          <h3>Upload a file</h3>
-          <p>CSV or XLSX with open-ended responses. Participant metadata columns travel with each segment.</p>
-        </div>
-        <div class="qs-import-card" onclick="alert('Survey import coming soon.')">
-          <div class="qs-import-card-icon">🔗</div>
-          <h3>From ReliCheck survey</h3>
-          <p>Connect an existing survey project and pull open-ended responses with full participant context.</p>
-        </div>
-      </div>
-
-      <div id="import-status"></div>
-      ${docsHtml}
-
-      ${segCount > 0 ? `
-        <div class="qs-btn-row" style="margin-top:24px;">
-          <button class="qs-btn qs-btn-primary" onclick="App.go('familiarize')">Next: Familiarization</button>
-        </div>
-      ` : ''}
-    `);
-
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">What gets imported</div>
-        <p>The studio looks for columns classified as <strong>open-ended text</strong> in your dataset's data map. Each response becomes one codeable segment.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Participant context</div>
-        <p>Non-text columns (group, role, score, demographics) are attached to each segment as metadata. Coders see this context alongside the text.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Data types accepted</div>
-        <p>CSV, XLSX, or TSV. The upload widget handles detection automatically. Column types can be adjusted in the dataset's data map.</p>
-      </div>
-    `);
-  },
-
-  _openUpload() {
-    if (typeof DatasetUpload === 'undefined') {
-      alert('Upload widget not loaded. Please refresh.');
-      return;
-    }
+  function openUpload() {
+    if (typeof DatasetUpload === 'undefined') { alert('Upload widget not loaded.'); return; }
     DatasetUpload.open({
-      // projectType:'rssi' tells the widget to return the datasetId directly
-      // without trying to link it — we call our own link-dataset.php in onLoaded.
-      projectType: 'rssi',
-      onLoaded: async (_err, datasetId) => {
-        const statusEl = document.getElementById('import-status');
-        if (statusEl) statusEl.innerHTML = '<div class="qs-notice info">Linking dataset and loading segments...</div>';
-        try {
-          const r = await App.api('/api/qual/link-dataset.php', {
-            method: 'POST',
-            body: JSON.stringify({ project_id: BOOT.projectId, dataset_id: datasetId }),
-          });
-          // Reload import screen to show the linked doc
-          App.state.segments = null;
-          App.state.codes    = null;
-          App.go('import');
-        } catch(e) {
-          if (statusEl) statusEl.innerHTML = `<div class="qs-notice err">Could not link dataset: ${_esc(e.message)}</div>`;
-        }
+      projectType: 'rssi',  // returns datasetId directly; we link via qual/link-dataset.php
+      onLoaded: function (_err, datasetId) {
+        var notice = document.getElementById('centerInner');
+        if (notice) notice.innerHTML = '<div class="notice info">Linking dataset and loading segments...</div>';
+        api('/api/qual/link-dataset.php', {
+          method: 'POST',
+          body: JSON.stringify({ project_id: BOOT.projectId, dataset_id: datasetId }),
+        }).then(function (r) {
+          StudioFooter.setDataInfo(r.seg_count, 1);
+          loadProjectData().then(function () { state.stepId = 'overview'; render(); });
+        }).catch(function (e) {
+          if (notice) notice.innerHTML = '<div class="notice err">Could not link dataset: ' + esc(e.message) + '</div>';
+        });
       },
     });
-  },
+  }
 
-  // ── Familiarize ───────────────────────────────────────────────────────────
-  async familiarize() {
-    const d = await App.api(`/api/qual/get-project.php?project_id=${BOOT.projectId}`);
-    const s = d.stats;
-    App.state.stats = s;
-    App.state.docs  = d.documents;
-    const p = d.project || App.state.project || {};
-
-    App._setContent(`
-      <h1 class="qs-module-h">Familiarization</h1>
-      <p class="qs-module-sub">Explore the corpus before formal coding. What do you notice before applying any framework?</p>
-
-      <div class="qs-stats-grid">
-        ${_stat(s.seg_count,   'Segments')}
-        ${_stat(s.doc_count,   'Data sources')}
-        ${_stat(s.total_words, 'Total words')}
-        ${_stat(s.avg_words,   'Avg words / segment')}
-        ${_stat(s.code_count,  'Codes in codebook')}
-        ${_stat(s.application_count, 'Code applications')}
-      </div>
-
-      ${s.seg_count === 0 ? `
-        <div class="qs-notice warn">No segments loaded yet. Go to <button class="qs-btn-ghost qs-btn" onclick="App.go('import')" style="display:inline;padding:0;">Data Import</button> to upload your data first.</div>
-      ` : ''}
-
-      ${d.documents.length > 0 ? `
-        <div class="qs-card">
-          <div class="qs-card-h">Data sources</div>
-          ${d.documents.map(doc => `
-            <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:13.5px;">
-              <span style="color:var(--qs-accent);font-size:20px;">📄</span>
-              <div style="flex:1;font-weight:600;color:var(--ink);">${_esc(doc.title)}</div>
-              <span style="color:var(--ink-3);">${_esc(doc.source_type)}</span>
-            </div>
-          `).join('')}
-        </div>
-      ` : ''}
-
-      <div class="qs-card">
-        <div class="qs-card-h">First Impressions Memo
-          <span style="font-size:12px;font-weight:400;color:var(--ink-3);margin-left:8px;">analytic memo — saved to audit trail</span>
-        </div>
-        <p style="font-size:13.5px;color:var(--ink-3);line-height:1.6;margin-bottom:14px;">
-          Before coding, what stands out to you? What surprises you? What patterns, tensions, or questions do you notice in the data?
-        </p>
-        <textarea class="qs-textarea" id="fam-memo" style="min-height:130px;"
-          placeholder="I noticed several responses mentioned..."></textarea>
-        <div id="fam-memo-msg" style="display:none;margin-top:6px;font-size:13px;"></div>
-        <div class="qs-btn-row" style="margin-top:12px;">
-          <button class="qs-btn qs-btn-primary" onclick="Screens._saveFamMemo()">Save memo</button>
-          ${s.seg_count > 0 ? `<button class="qs-btn qs-btn-secondary" onclick="App.go('coding')">Start coding</button>` : ''}
-        </div>
-      </div>
-    `);
-
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Why familiarize first</div>
-        <p>Reading through all data before applying codes reduces bias from premature categorization. The First Impressions Memo becomes part of your reflexivity record.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">What to look for</div>
-        <p>Recurring language. Surprising answers. Emotional intensity. Responses that stand out as outliers. Questions the data raises but does not yet answer.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Trustworthiness link</div>
-        <p>This memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work. The Trustworthiness Review will check that it exists.</p>
-      </div>
-    `);
-  },
-
-  async _saveFamMemo() {
-    const body = document.getElementById('fam-memo').value.trim();
-    const msg  = document.getElementById('fam-memo-msg');
-    if (!body) { msg.textContent='Write something before saving.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
-    msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
-    try {
-      await App.api('/api/qual/save-memo.php', {
-        method:'POST',
-        body:JSON.stringify({ project_id:BOOT.projectId, object_type:'project',
-                              memo_type:'first_impressions', title:'First Impressions', body }),
-      });
-      msg.textContent='Memo saved.'; msg.style.cssText='display:block;color:var(--qs-accent);';
-      setTimeout(() => { msg.style.display='none'; }, 2500);
-    } catch(e) {
-      msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;';
+  // ── Overview ───────────────────────────────────────────────────────────────
+  function renderOverview(host) {
+    if (!hasData()) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+        + '<h1 class="title">Overview</h1></div>'
+        + '<div class="placeholder">No data yet. Go to <strong>Start</strong> to upload a file.</div>';
+      return;
     }
-  },
-
-  // ── Coding workspace ──────────────────────────────────────────────────────
-  async coding() {
-    // Load codes first so the picker is ready
-    const codesData = await App.api(`/api/qual/get-codes.php?project_id=${BOOT.projectId}`);
-    App.state.codes = codesData.codes || [];
-
-    let uncodedOnly = false;
-    let searchQuery = '';
-    let segments    = [];
-
-    async function loadSegments() {
-      const qs = `project_id=${BOOT.projectId}&limit=200${uncodedOnly ? '&uncoded=1' : ''}`;
-      const d  = await App.api(`/api/qual/get-segments.php?${qs}`);
-      segments = d.segments || [];
-      App.state.segments = segments;
-      renderList();
-    }
-
-    function renderList() {
-      const list  = document.getElementById('seg-list');
-      if (!list) return;
-
-      const filtered = searchQuery
-        ? segments.filter(s => s.raw_text.toLowerCase().includes(searchQuery.toLowerCase()))
-        : segments;
-
-      const coded   = filtered.filter(s => s.code_count > 0).length;
-      const uncoded = filtered.filter(s => s.code_count === 0).length;
-
-      document.getElementById('seg-counts').textContent =
-        `${filtered.length} segments · ${coded} coded · ${uncoded} uncoded`;
-
-      if (!filtered.length) {
-        list.innerHTML = `<div class="qs-empty">
-          <div class="qs-empty-h">No segments ${uncodedOnly ? 'left to code' : 'found'}</div>
-          <div class="qs-empty-body">${uncodedOnly ? 'All segments have at least one code applied.' : 'No segments match your search.'}</div>
-        </div>`;
-        return;
-      }
-
-      list.innerHTML = filtered.map(seg => renderSegCard(seg)).join('');
-    }
-
-    function renderSegCard(seg) {
-      const meta = seg.metadata_json || {};
-      const metaItems = Object.entries(meta).slice(0, 4)
-        .map(([k,v]) => `<span class="qs-seg-pid">${_esc(k)}: ${_esc(String(v))}</span>`).join('');
-      const pid = seg.participant_id ? `<span class="qs-seg-pid">ID: ${_esc(seg.participant_id)}</span>` : '';
-      const q   = seg.question_ref   ? `<span class="qs-seg-q">${_esc(seg.question_ref)}</span>` : '';
-
-      const chips = (seg.codes || []).map(c => `
-        <span class="qs-chip">
-          ${_esc(c.name)}
-          <button class="qs-chip-remove" title="Remove code"
-            onclick="Screens._removeCode(${seg.id},${c.id},this)">&times;</button>
-        </span>
-      `).join('');
-
-      const overCoded = seg.code_count >= 4;
-      const flag = seg.code_count === 0
-        ? '<span class="qs-flag uncoded">Uncoded</span>'
-        : overCoded ? '<span class="qs-flag overcoded">Over-coded (4+)</span>' : '';
-
-      return `
-        <div class="qs-seg-card ${seg.code_count > 0 ? 'coded' : 'uncoded'}${overCoded ? ' overcoded' : ''}"
-             id="seg-${seg.id}">
-          <div class="qs-seg-meta">${pid}${q}${metaItems}</div>
-          <div class="qs-seg-text">${_esc(seg.raw_text)}</div>
-          <div class="qs-code-chips" id="chips-${seg.id}">${chips}</div>
-          <div class="qs-seg-actions">
-            <div class="qs-picker-wrap" id="picker-wrap-${seg.id}">
-              <button class="qs-add-code-btn" onclick="Screens._togglePicker(${seg.id})">+ Add code</button>
-              <div class="qs-picker" id="picker-${seg.id}" style="display:none;">
-                ${App.state.codes.length ? App.state.codes.map(c =>
-                  `<button class="qs-picker-item" onclick="Screens._applyCode(${seg.id},${c.id},'${_esc(c.name)}',this.closest('.qs-picker'))">${_esc(c.name)}</button>`
-                ).join('') : '<div class="qs-picker-empty">No codes yet.</div>'}
-                <div class="qs-picker-new">
-                  <button class="qs-picker-new-btn" onclick="Screens._quickNewCode(${seg.id})">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                    New code
-                  </button>
-                </div>
-              </div>
-            </div>
-            ${flag}
-          </div>
-        </div>`;
-    }
-
-    App._setContent(`
-      <h1 class="qs-module-h">Coding Workspace</h1>
-      <p class="qs-module-sub">Code each response. Participant context appears above each segment. Use the codebook to maintain consistency.</p>
-
-      <div class="qs-filters">
-        <input class="qs-search-input" id="seg-search" placeholder="Search segments..." oninput="Screens._codingSearch(this.value)">
-        <button class="qs-filter-btn" id="filter-all" onclick="Screens._codingFilter(false)" style="border-color:var(--qs-accent);background:var(--qs-accent-soft);color:var(--qs-accent-ink);">All</button>
-        <button class="qs-filter-btn" id="filter-uncoded" onclick="Screens._codingFilter(true)">Uncoded only</button>
-        <button class="qs-btn qs-btn-secondary" onclick="App.go('codebook')" style="margin-left:auto;">Manage codebook</button>
-      </div>
-
-      <div id="seg-counts" style="font-size:13px;color:var(--ink-3);margin-bottom:14px;">Loading...</div>
-      <div class="qs-seg-list" id="seg-list">
-        <div class="qs-loading"><div class="qs-spinner"></div><span>Loading segments...</span></div>
-      </div>
-    `);
-
-    // Expose filter/search handlers
-    Screens._codingFilter = async (uOnly) => {
-      uncodedOnly = uOnly;
-      document.getElementById('filter-all').className    = 'qs-filter-btn' + (!uOnly ? ' active' : '');
-      document.getElementById('filter-uncoded').className = 'qs-filter-btn' + (uOnly ? ' active' : '');
-      await loadSegments();
+    var d = state.projectData;
+    var p = state.project || {};
+    var approachLabels = {
+      thematic:'Thematic Analysis', content:'Content Analysis',
+      framework:'Framework Analysis', open_ended_survey:'Open-Ended Survey Analysis',
+      document:'Document Analysis',
     };
-    Screens._codingSearch = (q) => {
-      searchQuery = q;
-      renderList();
-    };
+    var approach = approachLabels[p.analysis_approach] || (p.analysis_approach || '');
 
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Coding principles</div>
-        <p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Flags</div>
-        <p><strong>Uncoded</strong> — segment has no code yet.<br>
-           <strong>Over-coded (4+)</strong> — may indicate an overly broad code or a complex response that deserves splitting.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Multi-code support</div>
-        <p>One segment can hold multiple codes. This is expected — a response can speak to more than one concept.</p>
-      </div>
-    `);
+    var docsHtml = (d.documents || []).map(function (doc) {
+      return '<tr><td style="font-weight:600">' + esc(doc.title) + '</td>'
+        + '<td>' + esc(doc.source_type) + '</td></tr>';
+    }).join('');
 
-    await loadSegments();
-  },
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="title">Overview</h1>'
+      + '<p class="lede">Confirm what was loaded before mapping variables and beginning analysis.</p></div>'
+      + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
+      + '<div class="stat-row">'
+      + _stat(d.seg_count,   'Segments') + _stat(d.doc_count, 'Sources')
+      + _stat(d.total_words, 'Words')    + _stat(d.avg_words,  'Avg words / segment')
+      + '</div>'
+      + '<p style="margin:14px 0 0;color:var(--ink-3);font-size:13px">Project: ' + esc(BOOT.projectLabel)
+      + (approach ? ' &middot; ' + esc(approach) : '') + '</p>'
+      + '</div></div>'
+      + (docsHtml ? '<div class="panel"><div class="panel-h"><h3>Data sources</h3></div><div class="panel-b">'
+        + '<table style="width:100%;font-size:13.5px;border-collapse:collapse">'
+        + '<thead><tr style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)">'
+        + '<th style="text-align:left;padding:0 0 8px">Source</th><th style="text-align:left;padding:0 0 8px">Type</th></tr></thead>'
+        + '<tbody>' + docsHtml + '</tbody></table></div></div>' : '')
+      + '<div style="margin-top:6px"><button class="btn primary" id="ovGo">Map variables &rarr;</button></div>';
 
-  _togglePicker(segId) {
-    // Close all other pickers first
-    document.querySelectorAll('.qs-picker').forEach(p => {
-      if (p.id !== `picker-${segId}`) p.style.display = 'none';
-    });
-    const picker = document.getElementById(`picker-${segId}`);
-    if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-    // Close on outside click
-    setTimeout(() => {
-      document.addEventListener('click', function handler(e) {
-        if (!e.target.closest(`#picker-wrap-${segId}`)) {
-          const p = document.getElementById(`picker-${segId}`);
-          if (p) p.style.display = 'none';
-          document.removeEventListener('click', handler);
-        }
-      });
-    }, 10);
-  },
+    var go = document.getElementById('ovGo');
+    if (go) go.addEventListener('click', function () { state.stepId = 'datamap'; render(); });
+  }
 
-  async _applyCode(segId, codeId, codeName, pickerEl) {
-    if (pickerEl) pickerEl.style.display = 'none';
-    try {
-      await App.api('/api/qual/apply-code.php', {
-        method: 'POST',
-        body: JSON.stringify({ project_id: BOOT.projectId, segment_id: segId, code_id: codeId }),
-      });
-      // Optimistic update
-      const seg = App.state.segments?.find(s => s.id === segId);
-      if (seg) {
-        if (!seg.codes.find(c => c.id === codeId)) {
-          seg.codes.push({ id: codeId, name: codeName });
-          seg.code_count = seg.codes.length;
-        }
-        const chipsEl = document.getElementById(`chips-${segId}`);
-        const card    = document.getElementById(`seg-${segId}`);
-        if (chipsEl && seg) {
-          chipsEl.innerHTML = seg.codes.map(c => `
-            <span class="qs-chip">${_esc(c.name)}
-              <button class="qs-chip-remove" onclick="Screens._removeCode(${segId},${c.id},this)">&times;</button>
-            </span>`).join('');
-        }
-        if (card) {
-          card.classList.remove('uncoded');
-          card.classList.add('coded');
-        }
-      }
-    } catch(e) {
-      alert('Could not apply code: ' + e.message);
+  // ── Variable Map ───────────────────────────────────────────────────────────
+  function renderDataMap(host) {
+    if (!hasData()) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+        + '<h1 class="title">Variable Map</h1></div>'
+        + '<div class="placeholder">No data yet. Go to <strong>Start</strong> to upload a file.</div>';
+      return;
     }
-  },
+    if (!window.DataMap) {
+      host.innerHTML = '<div class="notice warn">DataMap component not loaded. Please refresh.</div>';
+      return;
+    }
+    // Build the rawVars array from what we know about the linked dataset
+    // DataMap mounts into a container div; we load variable_metadata via the shared component.
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="title">Variable Map</h1>'
+      + '<p class="lede">Confirm which columns are open-ended text, which are group variables, and which are participant metadata. Coding is only available after you confirm this map.</p></div>'
+      + '<div id="dmContainer"></div>'
+      + '<div style="margin-top:20px" id="dmConfirmBar"></div>';
 
-  async _removeCode(segId, codeId, btnEl) {
-    try {
-      await App.api('/api/qual/remove-code.php', {
-        method: 'POST',
-        body: JSON.stringify({ project_id: BOOT.projectId, segment_id: segId, code_id: codeId }),
-      });
-      const seg = App.state.segments?.find(s => s.id === segId);
-      if (seg) {
-        seg.codes = seg.codes.filter(c => c.id !== codeId);
-        seg.code_count = seg.codes.length;
-        const chip = btnEl?.closest('.qs-chip');
-        if (chip) chip.remove();
-        if (seg.code_count === 0) {
-          const card = document.getElementById(`seg-${segId}`);
-          if (card) { card.classList.remove('coded'); card.classList.add('uncoded'); }
-        }
-      }
-    } catch(e) { alert('Could not remove code: ' + e.message); }
-  },
+    var container = document.getElementById('dmContainer');
+    var confirmBar = document.getElementById('dmConfirmBar');
 
-  async _quickNewCode(segId) {
-    const name = prompt('New code name:');
-    if (!name || !name.trim()) return;
-    try {
-      const r = await App.api('/api/qual/save-code.php', {
-        method: 'POST',
-        body: JSON.stringify({ project_id: BOOT.projectId, name: name.trim() }),
-      });
-      const newCode = { id: r.code_id, name: name.trim() };
-      App.state.codes.push(newCode);
-      // Apply immediately
-      await Screens._applyCode(segId, newCode.id, newCode.name, document.getElementById(`picker-${segId}`));
-    } catch(e) { alert('Could not create code: ' + e.message); }
-  },
-
-  // ── Codebook ──────────────────────────────────────────────────────────────
-  async codebook() {
-    const d = await App.api(`/api/qual/get-codes.php?project_id=${BOOT.projectId}`);
-    App.state.codes = d.codes || [];
-    let editingId = null;
-
-    function renderTable() {
-      const codes = App.state.codes;
-      if (!codes.length) {
-        return `<div class="qs-empty">
-          <div class="qs-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-          <div class="qs-empty-h">No codes yet</div>
-          <div class="qs-empty-body">Create your first code below, or apply codes from the Coding Workspace to add them here.</div>
-        </div>`;
-      }
-      return `
-        <div class="qs-table-wrap">
-          <table class="qs-table">
-            <thead><tr>
-              <th>Code</th><th>Definition</th><th>Applications</th><th>Status</th><th></th>
-            </tr></thead>
-            <tbody>
-              ${codes.map(c => `
-                <tr>
-                  <td style="font-weight:700;color:var(--ink);">${_esc(c.name)}</td>
-                  <td style="color:var(--ink-2);max-width:260px;">${c.definition ? _esc(c.definition) : '<span style="color:var(--ink-3);font-style:italic;">No definition</span>'}</td>
-                  <td style="text-align:center;color:var(--ink-3);">${c.application_count || 0}</td>
-                  <td><span class="qs-status-chip ${c.status}">${_esc(c.status)}</span></td>
-                  <td>
-                    <button class="qs-btn qs-btn-secondary" style="padding:5px 12px;font-size:12px;"
-                      onclick="Screens._editCode(${c.id})">Edit</button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>`;
+    if (state._datamapMounted && DataMap.mount) {
+      DataMap.mount(container);
+    } else {
+      // Load variable_metadata for this project via the analysis endpoint
+      // For qual projects, the dataset columns come from the linked dataset.
+      // We use a lightweight variable list from the project data.
+      var d = state.projectData;
+      // DataMap needs rawVars: [{name, values}]. We proxy through the dataset's column_meta.
+      fetch('/api/qual/get-variable-meta.php?project_id=' + BOOT.projectId)
+        .then(function (r) { return r.json(); })
+        .then(function (resp) {
+          if (!resp.ok || !resp.variables || !resp.variables.length) {
+            container.innerHTML = '<div class="notice warn">No variable metadata found. Re-upload your data to regenerate it.</div>';
+            showConfirmBar(confirmBar, true);
+            return;
+          }
+          DataMap.init({
+            projectId:   BOOT.projectId,
+            projectType: 'qual',
+            rcProjectId: resp.rc_project_id || null,
+            rawVars:     resp.variables,
+            datasetId:   resp.dataset_id,
+            onSaved: function () { showConfirmBar(confirmBar, false); },
+          });
+          DataMap.mount(container);
+          state._datamapMounted = true;
+          showConfirmBar(confirmBar, false);
+        })
+        .catch(function (e) {
+          container.innerHTML = '<div class="notice err">Could not load variable map: ' + esc(e.message) + '</div>';
+          showConfirmBar(confirmBar, true);
+        });
     }
 
-    App._setContent(`
-      <h1 class="qs-module-h">Codebook Builder</h1>
-      <p class="qs-module-sub">Define, refine, and manage the codes used in your analysis. A well-defined codebook is the backbone of credible qualitative findings.</p>
+    function showConfirmBar(el, skipMap) {
+      el.innerHTML = skipMap
+        ? '<button class="btn primary" id="dmConfirm">Confirm and continue &rarr;</button>'
+        : '<button class="btn primary" id="dmConfirm">Confirm variable map &rarr;</button>';
+      var btn = document.getElementById('dmConfirm');
+      if (btn) btn.addEventListener('click', function () {
+        state.datamapConfirmed = true;
+        state.stepId = 'setup';
+        render();
+      });
+    }
+  }
 
-      <div id="cb-table">${renderTable()}</div>
+  // ── Work steps ─────────────────────────────────────────────────────────────
+  function renderWork(host, step) {
+    if (!isWorkUnlocked()) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+        + '<h1 class="title">' + esc(step.label) + '</h1></div>'
+        + '<div class="placeholder">Complete <strong>Start</strong>, <strong>Overview</strong>, and <strong>Variable Map</strong> before proceeding to analysis steps.</div>';
+      return;
+    }
+    var tool = step.tool || step.id;
+    var fn = WorkModules[tool];
+    if (fn) return fn(host, step);
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="title">' + esc(step.label) + '</h1></div>'
+      + '<div class="placeholder">This step is coming in a future phase.</div>';
+  }
 
-      <hr class="qs-module-divider">
+  // ── Report ─────────────────────────────────────────────────────────────────
+  function renderReport(host) {
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="title">Report Builder</h1>'
+      + '<p class="lede">Report generation is coming in a future phase. Your codes, themes, and quotes will appear here.</p></div>'
+      + '<div class="placeholder">Not yet built.</div>';
+  }
 
-      <div class="qs-card" id="code-form-card">
-        <div class="qs-code-panel-h" id="code-form-title">Add a new code</div>
-        <div class="qs-form-row">
-          <label>Code name <span style="color:#c0392b">*</span></label>
-          <input class="qs-input" id="cb-name" placeholder="e.g. Lack of Communication">
-        </div>
-        <div class="qs-form-row">
-          <label>Definition
-            <span class="hint">What does this code capture? Be specific enough that two coders would agree.</span>
-          </label>
-          <textarea class="qs-textarea" id="cb-def" placeholder="Apply when a respondent describes..."></textarea>
-        </div>
-        <div class="qs-form-grid-2">
-          <div class="qs-form-row">
-            <label>Include when</label>
-            <textarea class="qs-textarea" id="cb-include" style="min-height:70px;" placeholder="The response describes a gap or absence of..."></textarea>
-          </div>
-          <div class="qs-form-row">
-            <label>Exclude when</label>
-            <textarea class="qs-textarea" id="cb-exclude" style="min-height:70px;" placeholder="The response is about a different construct..."></textarea>
-          </div>
-        </div>
-        <div class="qs-form-row">
-          <label>Example quote</label>
-          <input class="qs-input" id="cb-quote" placeholder='"I never know who to go to..."'>
-        </div>
-        <input type="hidden" id="cb-editing-id" value="">
-        <div id="cb-msg" style="display:none;font-size:13px;margin-top:6px;"></div>
-        <div class="qs-btn-row">
-          <button class="qs-btn qs-btn-primary" id="cb-save-btn" onclick="Screens._saveCode()">Add code</button>
-          <button class="qs-btn qs-btn-secondary" id="cb-cancel-btn" style="display:none;" onclick="Screens._cancelCodeEdit()">Cancel</button>
-        </div>
-      </div>
-    `);
+  // ── Work modules ───────────────────────────────────────────────────────────
+  var WorkModules = {
 
-    Screens._editCode = (codeId) => {
-      const code = App.state.codes.find(c => c.id === codeId);
-      if (!code) return;
-      document.getElementById('cb-editing-id').value  = codeId;
-      document.getElementById('cb-name').value        = code.name || '';
-      document.getElementById('cb-def').value         = code.definition || '';
-      document.getElementById('cb-include').value     = code.include_when || '';
-      document.getElementById('cb-exclude').value     = code.exclude_when || '';
-      document.getElementById('cb-quote').value       = code.example_quote || '';
-      document.getElementById('code-form-title').textContent = 'Edit code: ' + code.name;
-      document.getElementById('cb-save-btn').textContent     = 'Save changes';
-      document.getElementById('cb-cancel-btn').style.display = 'inline-flex';
-      document.getElementById('code-form-card').scrollIntoView({ behavior:'smooth' });
-    };
+    setup: function (host) {
+      var p = state.project || {};
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 4</div>'
+        + '<h1 class="title">Project Setup</h1>'
+        + '<p class="lede">Define your research question, approach, and researcher stance before coding begins.</p></div>'
+        + '<div class="panel"><div class="panel-h"><h3>Project information</h3></div><div class="panel-b">'
+        + '<div class="field"><label>Project title <span style="color:#c0392b">*</span></label>'
+        + '<input id="su-title" value="' + esc(p.title || '') + '" placeholder="e.g. Staff Experience Open-Ends 2026"></div>'
+        + '<div class="grid2">'
+        + '<div class="field"><label>Analysis approach</label><select id="su-approach">'
+        + ['thematic','content','framework','open_ended_survey','document'].map(function (v) {
+            var labels = {thematic:'Thematic Analysis',content:'Content Analysis',framework:'Framework Analysis',open_ended_survey:'Open-Ended Survey Analysis',document:'Document Analysis'};
+            return '<option value="' + v + '"' + ((p.analysis_approach||'thematic')===v?' selected':'') + '>' + labels[v] + '</option>';
+          }).join('')
+        + '</select></div>'
+        + '<div class="field"><label>Data type</label><select id="su-datatype">'
+        + [['open_ended_survey','Open-Ended Survey'],['interview','Interview Transcript'],['focus_group','Focus Group Transcript'],['document','Document / Field Notes']].map(function (x) {
+            return '<option value="' + x[0] + '"' + ((p.data_type||'open_ended_survey')===x[0]?' selected':'') + '>' + x[1] + '</option>';
+          }).join('')
+        + '</select></div></div>'
+        + '<div class="field"><label>Research question<span class="hint">What are you trying to understand through this analysis?</span></label>'
+        + '<input id="su-rq" value="' + esc(p.research_question || '') + '" placeholder="What are participants saying about..."></div>'
+        + '<div class="field"><label>Purpose<span class="hint">Who will use these findings, and for what decision?</span></label>'
+        + '<input id="su-purpose" value="' + esc(p.purpose || '') + '" placeholder="To inform the 2026 program redesign..."></div>'
+        + '<div class="field"><label>Participant description</label>'
+        + '<input id="su-participants" value="' + esc(p.participant_description || '') + '" placeholder="e.g. 412 K-12 educators across 3 districts"></div>'
+        + '</div></div>'
+        + '<div class="panel"><div class="panel-h"><h3>Researcher stance memo <span style="font-size:12px;font-weight:400;color:var(--ink-3)">saved to audit trail</span></h3></div><div class="panel-b">'
+        + '<div class="field"><label><span class="hint">What assumptions, roles, or experiences might shape how you interpret this data? Being transparent about this is part of what makes qualitative findings defensible.</span></label>'
+        + '<textarea id="su-stance" style="min-height:110px;" placeholder="I am an external evaluator...">' + esc(p.researcher_stance_memo || '') + '</textarea></div>'
+        + '</div></div>'
+        + '<div id="su-msg" style="display:none;font-size:13px;margin-top:4px;"></div>'
+        + '<div class="btn-row"><button class="btn primary" id="su-save">Save setup</button>'
+        + '<button class="btn" id="su-next">Next: Familiarization</button></div>';
 
-    Screens._cancelCodeEdit = () => {
-      document.getElementById('cb-editing-id').value  = '';
-      document.getElementById('cb-name').value        = '';
-      document.getElementById('cb-def').value         = '';
-      document.getElementById('cb-include').value     = '';
-      document.getElementById('cb-exclude').value     = '';
-      document.getElementById('cb-quote').value       = '';
-      document.getElementById('code-form-title').textContent  = 'Add a new code';
-      document.getElementById('cb-save-btn').textContent      = 'Add code';
-      document.getElementById('cb-cancel-btn').style.display  = 'none';
-    };
-
-    Screens._saveCode = async () => {
-      const msg     = document.getElementById('cb-msg');
-      const name    = document.getElementById('cb-name').value.trim();
-      const editId  = parseInt(document.getElementById('cb-editing-id').value) || 0;
-      if (!name) { msg.textContent='Code name is required.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
-      msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
-      try {
-        const body = {
-          project_id:    BOOT.projectId,
-          name,
-          definition:    document.getElementById('cb-def').value.trim(),
-          include_when:  document.getElementById('cb-include').value.trim(),
-          exclude_when:  document.getElementById('cb-exclude').value.trim(),
-          example_quote: document.getElementById('cb-quote').value.trim(),
+      document.getElementById('su-save').addEventListener('click', function () {
+        var msg  = document.getElementById('su-msg');
+        var body = {
+          project_id:             BOOT.projectId,
+          title:                  document.getElementById('su-title').value.trim(),
+          analysis_approach:      document.getElementById('su-approach').value,
+          data_type:              document.getElementById('su-datatype').value,
+          research_question:      document.getElementById('su-rq').value.trim(),
+          purpose:                document.getElementById('su-purpose').value.trim(),
+          participant_description:document.getElementById('su-participants').value.trim(),
+          researcher_stance_memo: document.getElementById('su-stance').value.trim(),
         };
-        if (editId) body.id = editId;
-        const r = await App.api('/api/qual/save-code.php', { method:'POST', body:JSON.stringify(body) });
-        // Refresh codebook
-        const fresh = await App.api(`/api/qual/get-codes.php?project_id=${BOOT.projectId}`);
-        App.state.codes = fresh.codes || [];
-        document.getElementById('cb-table').innerHTML = renderTable();
-        Screens._cancelCodeEdit();
-        msg.textContent = editId ? 'Code updated.' : 'Code added.';
-        msg.style.cssText='display:block;color:var(--qs-accent);';
-        setTimeout(() => { msg.style.display='none'; }, 2500);
-      } catch(e) {
-        msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;';
-      }
-    };
+        if (!body.title) { msg.textContent='Title is required.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
+        msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
+        api('/api/qual/save-project.php', { method:'POST', body:JSON.stringify(body) })
+          .then(function () {
+            Object.assign(state.project || (state.project = {}), body);
+            BOOT.project = state.project;
+            StudioHeader.setProject(body.title, true);
+            msg.textContent='Saved.'; msg.style.cssText='display:block;color:var(--acc);';
+            setTimeout(function () { msg.style.display='none'; }, 2000);
+          })
+          .catch(function (e) { msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;'; });
+      });
+      document.getElementById('su-next').addEventListener('click', function () { state.stepId='familiarize'; render(); });
+    },
 
-    App._setGuide(`
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">What makes a good code</div>
-        <p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is a better code than <strong>"support"</strong>.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Definitions matter</div>
-        <p>Write a definition specific enough that a second coder reading it independently would apply the code to the same responses. This is what makes dual-coder kappa meaningful.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Include / Exclude rules</div>
-        <p>Boundary cases are where coders diverge most. The include/exclude rules are the most important fields for reliability.</p>
-      </div>
-      <div class="qs-guide-section">
-        <div class="qs-guide-section-h">Code statuses</div>
-        <p><strong>Draft</strong> — working code, may change.<br>
-           <strong>Reviewed</strong> — reviewed by the team.<br>
-           <strong>Approved</strong> — finalized, safe for reporting.</p>
-      </div>
-    `);
-  },
-};
+    familiarize: function (host) {
+      var d = state.projectData;
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 5</div>'
+        + '<h1 class="title">Familiarization</h1>'
+        + '<p class="lede">Explore the corpus before formal coding. Read through responses and record your first impressions.</p></div>'
+        + '<div class="stats-grid">'
+        + _statCard(d.seg_count, 'Segments')
+        + _statCard(d.doc_count, 'Data sources')
+        + _statCard(d.total_words, 'Total words')
+        + _statCard(d.avg_words, 'Avg words / segment')
+        + _statCard(d.code_count, 'Codes in codebook')
+        + '</div>'
+        + '<div class="panel"><div class="panel-h"><h3>First Impressions Memo '
+        + '<span style="font-size:12px;font-weight:400;color:var(--ink-3)">saved to audit trail</span></h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-3);margin:0 0 14px;">Before coding, what stands out? What surprises you? What patterns, tensions, or questions do you notice?</p>'
+        + '<textarea id="fam-memo" style="min-height:130px;" placeholder="I noticed several responses mentioned..."></textarea>'
+        + '<div id="fam-msg" style="display:none;font-size:13px;margin-top:6px;"></div>'
+        + '<div class="btn-row"><button class="btn primary" id="fam-save">Save memo</button>'
+        + '<button class="btn" id="fam-next">Start coding</button></div>'
+        + '</div></div>';
 
+      document.getElementById('fam-save').addEventListener('click', function () {
+        var body = (document.getElementById('fam-memo').value || '').trim();
+        var msg  = document.getElementById('fam-msg');
+        if (!body) { msg.textContent='Write something before saving.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
+        msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
+        api('/api/qual/save-memo.php', { method:'POST', body:JSON.stringify({
+          project_id: BOOT.projectId, object_type:'project',
+          memo_type:'first_impressions', title:'First Impressions', body: body
+        })}).then(function () {
+          msg.textContent='Memo saved.'; msg.style.cssText='display:block;color:var(--acc);';
+          setTimeout(function () { msg.style.display='none'; }, 2500);
+        }).catch(function (e) { msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;'; });
+      });
+      document.getElementById('fam-next').addEventListener('click', function () { state.stepId='coding'; render(); });
+    },
 
-// ─── Utilities ───────────────────────────────────────────────────────────────
-function _esc(str) {
-  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+    coding: function (host) {
+      loadCodesIfNeeded().then(function () {
+        var uncodedOnly = false;
+        var searchQuery = '';
+        var segments    = [];
 
-function _stat(val, label) {
-  return `<div class="qs-stat-card">
-    <div class="qs-stat-num">${Number(val || 0).toLocaleString()}</div>
-    <div class="qs-stat-label">${label}</div>
-  </div>`;
-}
+        function load() {
+          var qs = 'project_id=' + BOOT.projectId + '&limit=200' + (uncodedOnly ? '&uncoded=1' : '');
+          return api('/api/qual/get-segments.php?' + qs).then(function (d) {
+            segments = d.segments || [];
+            state.segments = segments;
+            renderList();
+          });
+        }
 
-function _ago(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  const mins = Math.floor((Date.now() - d) / 60000);
-  if (mins < 60)  return mins + 'm ago';
-  if (mins < 1440) return Math.floor(mins/60) + 'h ago';
-  return Math.floor(mins/1440) + 'd ago';
-}
+        function renderList() {
+          var list = document.getElementById('seg-list');
+          if (!list) return;
+          var filtered = searchQuery
+            ? segments.filter(function (s) { return s.raw_text.toLowerCase().indexOf(searchQuery.toLowerCase()) !== -1; })
+            : segments;
+          var coded   = filtered.filter(function (s) { return s.code_count > 0; }).length;
+          var uncoded = filtered.filter(function (s) { return s.code_count === 0; }).length;
+          var countEl = document.getElementById('seg-counts');
+          if (countEl) countEl.textContent = filtered.length + ' segments · ' + coded + ' coded · ' + uncoded + ' uncoded';
 
+          if (!filtered.length) {
+            list.innerHTML = '<div class="placeholder">No segments ' + (uncodedOnly ? 'left to code.' : 'found.') + '</div>';
+            return;
+          }
+          list.innerHTML = filtered.map(renderSegCard).join('');
+        }
 
-// ─── Boot ────────────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  App.init();
-});
+        function renderSegCard(seg) {
+          var meta = seg.metadata_json || {};
+          var metaItems = Object.keys(meta).slice(0, 4).map(function (k) {
+            return '<span class="seg-pid">' + esc(k) + ': ' + esc(String(meta[k])) + '</span>';
+          }).join('');
+          var pid = seg.participant_id ? '<span class="seg-pid">ID: ' + esc(seg.participant_id) + '</span>' : '';
+          var q   = seg.question_ref   ? '<span class="seg-q">' + esc(seg.question_ref) + '</span>' : '';
+          var chips = (seg.codes || []).map(function (c) {
+            return '<span class="chip">' + esc(c.name)
+              + '<button class="chip-x" data-seg="' + seg.id + '" data-code="' + c.id + '">&times;</button></span>';
+          }).join('');
+          var over = seg.code_count >= 4;
+          var flag = seg.code_count === 0
+            ? '<span class="flag uncoded">Uncoded</span>'
+            : over ? '<span class="flag overcoded">Over-coded (4+)</span>' : '';
+          var pickerItems = state.codes.length
+            ? state.codes.map(function (c) {
+                return '<button class="picker-item" data-seg="' + seg.id + '" data-code="' + c.id + '" data-name="' + esc(c.name) + '">' + esc(c.name) + '</button>';
+              }).join('')
+            : '<div class="picker-empty">No codes yet.</div>';
+
+          return '<div class="seg-card ' + (seg.code_count > 0 ? 'coded' : '') + (over ? ' overcoded' : '') + '" id="seg-' + seg.id + '">'
+            + '<div class="seg-meta">' + pid + q + metaItems + '</div>'
+            + '<div class="seg-text">' + esc(seg.raw_text) + '</div>'
+            + '<div class="code-chips" id="chips-' + seg.id + '">' + chips + '</div>'
+            + '<div class="seg-actions">'
+            + '<div class="picker-wrap" id="pw-' + seg.id + '">'
+            + '<button class="add-code-btn" data-seg="' + seg.id + '">+ Add code</button>'
+            + '<div class="picker" id="picker-' + seg.id + '" style="display:none;">'
+            + pickerItems
+            + '<div class="picker-new"><button class="picker-new-btn" data-seg="' + seg.id + '">'
+            + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New code</button></div>'
+            + '</div></div>'
+            + flag + '</div></div>';
+        }
+
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 6</div>'
+          + '<h1 class="title">Coding Workspace</h1>'
+          + '<p class="lede">Apply codes to each segment. Participant context appears above every response.</p></div>'
+          + '<div class="filters">'
+          + '<input class="search-input" id="seg-search" placeholder="Search segments...">'
+          + '<button class="filter-btn active" id="filter-all">All</button>'
+          + '<button class="filter-btn" id="filter-uncoded">Uncoded only</button>'
+          + '<button class="btn" style="margin-left:auto" onclick="state.stepId=\'codebook\';render()">Manage codebook</button>'
+          + '</div>'
+          + '<div id="seg-counts" style="font-size:13px;color:var(--ink-3);margin-bottom:14px;">Loading...</div>'
+          + '<div class="seg-list" id="seg-list"><div class="placeholder">Loading segments...</div></div>';
+
+        document.getElementById('seg-search').addEventListener('input', function () {
+          searchQuery = this.value; renderList();
+        });
+        document.getElementById('filter-all').addEventListener('click', function () {
+          uncodedOnly = false;
+          this.classList.add('active');
+          document.getElementById('filter-uncoded').classList.remove('active');
+          load();
+        });
+        document.getElementById('filter-uncoded').addEventListener('click', function () {
+          uncodedOnly = true;
+          this.classList.add('active');
+          document.getElementById('filter-all').classList.remove('active');
+          load();
+        });
+
+        // Event delegation for picker, apply, remove, new-code
+        document.getElementById('seg-list').addEventListener('click', function (e) {
+          var addBtn   = e.target.closest('.add-code-btn');
+          var item     = e.target.closest('.picker-item');
+          var newBtn   = e.target.closest('.picker-new-btn');
+          var removeBtn= e.target.closest('.chip-x');
+
+          if (addBtn) {
+            var sid = addBtn.dataset.seg;
+            document.querySelectorAll('.picker').forEach(function (p) {
+              if (p.id !== 'picker-' + sid) p.style.display = 'none';
+            });
+            var picker = document.getElementById('picker-' + sid);
+            if (picker) picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+            setTimeout(function () {
+              document.addEventListener('click', function close(ev) {
+                if (!ev.target.closest('#pw-' + sid)) {
+                  var p = document.getElementById('picker-' + sid);
+                  if (p) p.style.display = 'none';
+                  document.removeEventListener('click', close);
+                }
+              });
+            }, 10);
+          }
+          if (item) {
+            var sid = item.dataset.seg, cid = item.dataset.code, cname = item.dataset.name;
+            var picker = document.getElementById('picker-' + sid);
+            if (picker) picker.style.display = 'none';
+            applyCode(+sid, +cid, cname);
+          }
+          if (newBtn) {
+            var sid = newBtn.dataset.seg;
+            var name = prompt('New code name:');
+            if (!name || !name.trim()) return;
+            api('/api/qual/save-code.php', { method:'POST', body:JSON.stringify({ project_id:BOOT.projectId, name:name.trim() }) })
+              .then(function (r) {
+                state.codes.push({ id: r.code_id, name: name.trim() });
+                applyCode(+sid, r.code_id, name.trim());
+              }).catch(function (e) { alert('Error: ' + e.message); });
+          }
+          if (removeBtn) {
+            var sid = +removeBtn.dataset.seg, cid = +removeBtn.dataset.code;
+            api('/api/qual/remove-code.php', { method:'POST', body:JSON.stringify({ project_id:BOOT.projectId, segment_id:sid, code_id:cid }) })
+              .then(function () {
+                var chip = removeBtn.closest('.chip'); if (chip) chip.remove();
+                var seg = segments.find(function (s) { return s.id === sid; });
+                if (seg) { seg.codes = seg.codes.filter(function (c) { return c.id !== cid; }); seg.code_count = seg.codes.length; }
+                if (seg && seg.code_count === 0) { var card = document.getElementById('seg-' + sid); if (card) { card.classList.remove('coded'); } }
+              }).catch(function (e) { alert('Error: ' + e.message); });
+          }
+        });
+
+        function applyCode(sid, cid, cname) {
+          api('/api/qual/apply-code.php', { method:'POST', body:JSON.stringify({ project_id:BOOT.projectId, segment_id:sid, code_id:cid }) })
+            .then(function () {
+              var seg = segments.find(function (s) { return s.id === sid; });
+              if (seg && !seg.codes.find(function (c) { return c.id === cid; })) {
+                seg.codes.push({ id: cid, name: cname }); seg.code_count = seg.codes.length;
+              }
+              var chipsEl = document.getElementById('chips-' + sid);
+              if (chipsEl && seg) {
+                chipsEl.innerHTML = seg.codes.map(function (c) {
+                  return '<span class="chip">' + esc(c.name)
+                    + '<button class="chip-x" data-seg="' + sid + '" data-code="' + c.id + '">&times;</button></span>';
+                }).join('');
+              }
+              var card = document.getElementById('seg-' + sid);
+              if (card && seg && seg.code_count > 0) card.classList.add('coded');
+            }).catch(function (e) { alert('Could not apply code: ' + e.message); });
+        }
+
+        load();
+      });
+    },
+
+    codebook: function (host) {
+      loadCodesIfNeeded().then(function () {
+        function renderTable() {
+          if (!state.codes.length) {
+            return '<div class="placeholder">No codes yet. Add your first code below or create one from the Coding Workspace.</div>';
+          }
+          return '<div class="cb-table-wrap"><table class="cb-table">'
+            + '<thead><tr><th>Code</th><th>Definition</th><th>Applications</th><th>Status</th><th></th></tr></thead><tbody>'
+            + state.codes.map(function (c) {
+                return '<tr>'
+                  + '<td style="font-weight:700">' + esc(c.name) + '</td>'
+                  + '<td style="color:var(--ink-2);max-width:260px">' + (c.definition ? esc(c.definition) : '<span style="color:var(--ink-3);font-style:italic">No definition</span>') + '</td>'
+                  + '<td style="text-align:center;color:var(--ink-3)">' + (c.application_count || 0) + '</td>'
+                  + '<td><span class="status-chip ' + esc(c.status) + '">' + esc(c.status) + '</span></td>'
+                  + '<td><button class="btn" style="padding:5px 12px;font-size:12px" data-edit="' + c.id + '">Edit</button></td>'
+                  + '</tr>';
+              }).join('')
+            + '</tbody></table></div>';
+        }
+
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 7</div>'
+          + '<h1 class="title">Codebook Builder</h1>'
+          + '<p class="lede">Define, refine, and manage the codes used in your analysis. A well-defined codebook is the backbone of credible qualitative findings.</p></div>'
+          + '<div id="cb-table">' + renderTable() + '</div>'
+          + '<hr style="border:none;border-top:1px solid var(--line);margin:28px 0">'
+          + '<div class="panel" id="code-form-panel"><div class="panel-h"><h3 id="cb-form-title">Add a new code</h3></div><div class="panel-b">'
+          + '<div class="field"><label>Code name <span style="color:#c0392b">*</span></label><input id="cb-name" placeholder="e.g. Lack of Communication"></div>'
+          + '<div class="field"><label>Definition<span class="hint">What does this code capture? Be specific enough that two coders would agree.</span></label><textarea id="cb-def" placeholder="Apply when a respondent describes..."></textarea></div>'
+          + '<div class="grid2">'
+          + '<div class="field"><label>Include when</label><textarea id="cb-include" style="min-height:70px;" placeholder="The response describes a gap or absence of..."></textarea></div>'
+          + '<div class="field"><label>Exclude when</label><textarea id="cb-exclude" style="min-height:70px;" placeholder="The response is about a different construct..."></textarea></div>'
+          + '</div>'
+          + '<div class="field"><label>Example quote</label><input id="cb-quote" placeholder="&quot;I never know who to go to...&quot;"></div>'
+          + '<input type="hidden" id="cb-editing-id">'
+          + '<div id="cb-msg" style="display:none;font-size:13px;margin-top:6px;"></div>'
+          + '<div class="btn-row">'
+          + '<button class="btn primary" id="cb-save">Add code</button>'
+          + '<button class="btn" id="cb-cancel" style="display:none">Cancel</button>'
+          + '</div></div></div>';
+
+        function clearForm() {
+          ['cb-name','cb-def','cb-include','cb-exclude','cb-quote'].forEach(function (id) { document.getElementById(id).value = ''; });
+          document.getElementById('cb-editing-id').value = '';
+          document.getElementById('cb-form-title').textContent = 'Add a new code';
+          document.getElementById('cb-save').textContent = 'Add code';
+          document.getElementById('cb-cancel').style.display = 'none';
+        }
+
+        document.getElementById('cb-table').addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-edit]');
+          if (!btn) return;
+          var code = state.codes.find(function (c) { return c.id === +btn.dataset.edit; });
+          if (!code) return;
+          document.getElementById('cb-editing-id').value = code.id;
+          document.getElementById('cb-name').value    = code.name || '';
+          document.getElementById('cb-def').value     = code.definition || '';
+          document.getElementById('cb-include').value = code.include_when || '';
+          document.getElementById('cb-exclude').value = code.exclude_when || '';
+          document.getElementById('cb-quote').value   = code.example_quote || '';
+          document.getElementById('cb-form-title').textContent = 'Edit code: ' + code.name;
+          document.getElementById('cb-save').textContent = 'Save changes';
+          document.getElementById('cb-cancel').style.display = 'inline-flex';
+          document.getElementById('code-form-panel').scrollIntoView({ behavior: 'smooth' });
+        });
+        document.getElementById('cb-cancel').addEventListener('click', clearForm);
+        document.getElementById('cb-save').addEventListener('click', function () {
+          var msg    = document.getElementById('cb-msg');
+          var name   = document.getElementById('cb-name').value.trim();
+          var editId = +document.getElementById('cb-editing-id').value || 0;
+          if (!name) { msg.textContent='Code name is required.'; msg.style.cssText='display:block;color:#c0392b;'; return; }
+          msg.textContent='Saving...'; msg.style.cssText='display:block;color:var(--ink-3);';
+          var body = { project_id:BOOT.projectId, name:name,
+            definition:   document.getElementById('cb-def').value.trim(),
+            include_when: document.getElementById('cb-include').value.trim(),
+            exclude_when: document.getElementById('cb-exclude').value.trim(),
+            example_quote:document.getElementById('cb-quote').value.trim() };
+          if (editId) body.id = editId;
+          api('/api/qual/save-code.php', { method:'POST', body:JSON.stringify(body) })
+            .then(function () { return api('/api/qual/get-codes.php?project_id=' + BOOT.projectId); })
+            .then(function (r) {
+              state.codes = r.codes || [];
+              document.getElementById('cb-table').innerHTML = renderTable();
+              clearForm();
+              msg.textContent = editId ? 'Code updated.' : 'Code added.';
+              msg.style.cssText='display:block;color:var(--acc);';
+              setTimeout(function () { msg.style.display='none'; }, 2500);
+            })
+            .catch(function (e) { msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;'; });
+        });
+      });
+    },
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function loadCodesIfNeeded() {
+    if (state.codes) return Promise.resolve();
+    return api('/api/qual/get-codes.php?project_id=' + BOOT.projectId)
+      .then(function (d) { state.codes = d.codes || []; });
+  }
+
+  function loadProjectData() {
+    if (!BOOT.projectId) return Promise.resolve();
+    return api('/api/qual/get-project.php?project_id=' + BOOT.projectId)
+      .then(function (d) {
+        state.projectData = d.stats || {};
+        state.projectData.documents = d.documents || [];
+        state.project = d.project || state.project;
+        if (d.stats) StudioFooter.setDataInfo(d.stats.seg_count, d.stats.doc_count);
+      });
+  }
+
+  function _stat(val, label) {
+    return '<div><div class="stat-num">' + Number(val || 0).toLocaleString() + '</div>'
+      + '<div class="stat-lbl">' + label + '</div></div>';
+  }
+  function _statCard(val, label) {
+    return '<div class="stat-card"><div class="num">' + Number(val || 0).toLocaleString() + '</div>'
+      + '<div class="lbl">' + label + '</div></div>';
+  }
+
+  // ── Guidance copy ──────────────────────────────────────────────────────────
+  var GUIDANCE = {
+    start:       '<p>Bring in your qualitative data here. Upload a CSV or XLSX file with open-ended text columns. Participant metadata columns will travel with each segment.</p><p>If you already have data loaded, proceed to <strong>Overview</strong> to review what was imported.</p>',
+    overview:    '<p>Review what was loaded before mapping variables. Check the segment count and data sources look correct. If something is wrong, go back to <strong>Start</strong> and re-upload.</p>',
+    datamap:     '<p>Confirm which columns are <strong>open-ended text</strong> (these become codeable segments), which are <strong>group variables</strong>, and which are <strong>participant metadata</strong>.</p><p>Coding is only available after you confirm this map.</p>',
+    setup:       '<p>The research question and researcher stance become part of the audit trail. Reviewers and trustworthiness checks will reference them to assess whether the analysis is grounded and transparent.</p>',
+    familiarize: '<p>Read through the data before coding. The First Impressions Memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work. The Trustworthiness Review will check that it exists.</p>',
+    coding:      '<p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p><p><strong>Uncoded</strong> segments have no code yet. <strong>Over-coded (4+)</strong> may indicate an overly broad code.</p>',
+    codebook:    '<p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is better than <strong>"support."</strong></p><p>Write definitions specific enough that a second coder would apply the code to the same responses.</p>',
+    report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
+  };
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function () {
+    StudioHeader.init({
+      logoSrc:      '/Qual-Studio-long.png',
+      logoAlt:      'Qualitative Analysis Studio',
+      logoHeight:   70,
+      projectLabel: BOOT.projectLabel || 'New project',
+      projectLive:  BOOT.projectLive,
+      projectsUrl:  BOOT.projectsUrl,
+      initials:     BOOT.initials,
+    });
+    StudioFooter.init();
+
+    // Companion tab wiring
+    document.querySelectorAll('.comp-tab').forEach(function (t) {
+      t.addEventListener('click', function () {
+        document.querySelectorAll('.comp-tab').forEach(function (x) { x.classList.remove('on'); });
+        t.classList.add('on');
+        state.compTab = t.getAttribute('data-tab');
+        renderCompanion();
+      });
+    });
+
+    if (BOOT.projectId) {
+      loadProjectData().then(function () {
+        state.project = BOOT.project;
+        // If data is already loaded, auto-advance past start
+        if (hasData()) {
+          state.datamapConfirmed = true; // assume map was confirmed on prior session
+          state.stepId = 'setup';
+        }
+        render();
+      });
+    } else {
+      render();
+    }
+  });
+
+})();
