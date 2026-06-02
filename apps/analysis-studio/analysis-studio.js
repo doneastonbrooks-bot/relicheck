@@ -1154,7 +1154,7 @@
   }
   function renderRegResults(d,ctx){
     if(!d||!d.ok) return '<div class="as-empty-tool">'+esc(d&&d.error?d.error:'Error running regression.')+'</div>';
-    var tabs=ttTabs([['coef','Coefficients'],['fit','Model fit'],['report','Reporting language']],reg.tab,'regression');
+    var tabs=ttTabs([['coef','Coefficients'],['fit','Model fit'],['effect','Effect size'],['report','Reporting language']],reg.tab,'regression');
     var body='';
     if(reg.tab==='coef'){
       var rows=(d.coefficients||[]).map(function(c){
@@ -1169,6 +1169,11 @@
         +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td>'+fmtN(R.r2,3)+'</td><td>'+fmtN(R.adj_r2,3)+'</td>'
         +'<td>'+fmtN(R.F,3)+'</td><td>'+fmtN(R.df1,0)+'</td><td>'+fmtN(R.df2,0)+'</td><td>'+(R.n_total||0)+'</td><td>'+esc(R.p_str||'')+'</td>'
         +'<td class="dx-interp">'+ttStatus(R.significant)+'</td></tr></tbody></table></div>';
+    } else if(reg.tab==='effect'){
+      var E=d.effect||{};
+      body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead><tbody>'
+        +'<tr><td class="dx-name">'+esc(d.outcome&&d.outcome.name||'')+'</td><td class="dx-interp">'+esc(E.type||'')+'</td>'
+        +'<td>'+fmtN(E.value,3)+'</td><td class="dx-interp">'+esc(E.interpretation||'')+'</td><td class="dx-interp">'+esc(E.meaning||'')+'</td></tr></tbody></table></div>';
     } else {
       var L=d.reporting||{};
       body='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>'
