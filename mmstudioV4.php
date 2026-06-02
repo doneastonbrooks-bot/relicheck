@@ -1839,7 +1839,7 @@ function renderTrust(s){
 const th={base:null,busy:false,err:'',building:false,coding:false,codingAi:false,clearing:false,sel:null,quotes:null,qbusy:false,menu:null,acting:0};
 function thFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function thQuotesFetch(cid){return fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+cid+'&limit=8',{credentials:'same-origin'}).then(r=>r.json());}
-function thBuildReq(){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto'})}).then(r=>r.json());}
+function thBuildReq(force){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto',force:!!force})}).then(r=>r.json());}
 function thCodeReq(){return fetch('/api/mm/code-existing.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
 function thCodeAiReq(){return fetch('/api/mm/code-existing-semantic.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
 function thClearReq(){return fetch('/api/mm/clear-tags.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
@@ -1852,7 +1852,12 @@ function thMsg(s,msg){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+
 function thConf(c){return `<span class="tt-status ${c==='high'?'ok':'rev'}">${esc(c||'—')}</span>`;}
 function thSent(mix){mix=mix||{};const p=mix.positive||0,g=mix.negative||0,n=(mix.neutral||0)+(mix.mixed||0);const parts=[];if(p)parts.push('<b class="pos">'+p+' +</b>');if(g)parts.push('<b class="neg">'+g+' −</b>');if(n)parts.push('<b class="neu">'+n+' ·</b>');return parts.length?parts.join(' '):'—';}
 function thSelect(cid){if(th.sel===cid){th.sel=null;th.quotes=null;renderThemes(activeStep());return;}th.sel=cid;th.quotes=null;th.qbusy=true;renderThemes(activeStep());thQuotesFetch(cid).then(j=>{th.qbusy=false;th.quotes=(j&&j.ok)?j:null;renderThemes(activeStep());}).catch(()=>{th.qbusy=false;th.quotes=null;renderThemes(activeStep());});}
-function thBuild(){if(th.building)return;toast('Working with ReliCheck Intelligence…');th.building=true;renderThemes(activeStep());thBuildReq().then(j=>{th.building=false;if(j&&j.ok){th.base=null;toast('Themes discovered');renderThemes(activeStep());}else{toast((j&&(j.message||j.error))||'Could not discover themes.');renderThemes(activeStep());}}).catch(()=>{th.building=false;toast('Discovery failed or timed out.');renderThemes(activeStep());});}
+function thBuild(force){if(th.building)return;toast('Working with ReliCheck Intelligence…');th.building=true;renderThemes(activeStep());thBuildReq(force).then(j=>{th.building=false;
+  if(j&&j.ok){th.base=null;toast('Themes discovered');renderThemes(activeStep());return;}
+  // Guard: project already has themes — confirm before adding a second set.
+  if(j&&j.error==='mm_themes_exist'){renderThemes(activeStep());if(window.confirm((j.message||'This project already has themes.')+'\n\nClick OK to discover and ADD a new set anyway (this creates duplicates you would need to reconcile), or Cancel to keep your current themes.')){thBuild(true);}return;}
+  toast((j&&(j.message||j.error))||'Could not discover themes.');renderThemes(activeStep());
+}).catch(()=>{th.building=false;toast('Discovery failed or timed out.');renderThemes(activeStep());});}
 function thAddReq(name){return fetch('/api/mm/categories.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'add',project_id:BOOT.projectId,name:name})}).then(r=>r.json());}
 function thCatReq(payload){return fetch('/api/mm/categories.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},payload))}).then(r=>r.json());}
 function thRowMenu(id){th.menu=(th.menu===id?null:id);renderThemes(activeStep());}

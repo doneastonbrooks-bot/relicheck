@@ -68,6 +68,24 @@ if ($mode === 'guided' && count($userCategories) < 2) {
 }
 
 mm_require_project($pdo, $uid, $projectId);
+
+// Guard against silently creating a SECOND theme set on top of an existing one.
+// Whole-project discovery (auto/hybrid, no question scope) on a project that
+// already has themes would add duplicates (a manual codebook + a discovered
+// set side by side). Refuse unless the caller explicitly confirms with force.
+// Per-question discovery (question_id set) and guided mode are exempt — they
+// are intentionally scoped/category-driven. Fresh projects (0 themes) proceed.
+if ($questionId === null && in_array($mode, ['auto', 'hybrid'], true) && empty($body['force'])) {
+    $cntStmt = $pdo->prepare('SELECT COUNT(*) FROM mm_theme_categories WHERE project_id = :p');
+    $cntStmt->execute([':p' => $projectId]);
+    $existingThemes = (int)$cntStmt->fetchColumn();
+    if ($existingThemes > 0) {
+        fail('mm_themes_exist',
+            'This project already has ' . $existingThemes . ' theme(s). Discovering a new set will ADD to them, creating duplicates. Remove the existing themes first, or confirm to add anyway.',
+            409, ['existing_count' => $existingThemes]);
+    }
+}
+
 $responses  = mm_load_responses($pdo, $projectId, 3000);
 // If a question_id was supplied, scope the response set to just that
 // question. Responses are stored with question_id_raw per row when the
