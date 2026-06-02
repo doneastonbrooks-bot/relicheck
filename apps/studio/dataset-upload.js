@@ -315,6 +315,10 @@
         .then(function (r) { return r.json(); })
         .then(function (d) { if (!d || !d.ok) throw new Error('Link failed.'); return ctx.projectId; });
     }
+    // Standalone apps (e.g. rssi) that have no project to link — return the dataset id directly.
+    if (ctx.projectType === 'rssi') {
+      return Promise.resolve(datasetId);
+    }
     return fetch('/api/analysis/projects.php', {
       method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },

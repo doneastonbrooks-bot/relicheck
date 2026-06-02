@@ -50,6 +50,7 @@ $jr_steps = [
 // RSSI_TAG_CORE.materializeDataset — byte-for-byte the same score rssi-upload.php
 // produces. No formula change; this is a UI re-skin of the existing score.
 $journey_scripts = [
+  '/apps/studio/dataset-upload.js?v=' . (@filemtime(__DIR__ . '/apps/studio/dataset-upload.js') ?: time()),
   '/apps/strength-index/strength-index.js?v=' . (@filemtime(__DIR__ . '/apps/strength-index/strength-index.js') ?: time()),
   '/apps/rssi/rssi-tag-core.js?v='   . (@filemtime(__DIR__ . '/apps/rssi/rssi-tag-core.js')   ?: time()),
   '/apps/journey/journey-rssi.js?v=' . (@filemtime(__DIR__ . '/apps/journey/journey-rssi.js') ?: time()),
@@ -92,14 +93,11 @@ include __DIR__ . '/apps/journey/_journey_head.php';
   <!-- Upload entry (shown when there is no ?dataset_id; hidden once a dataset loads) -->
   <div class="jr-card" id="rsUploadCard" style="margin-bottom:26px">
     <h2 class="jr-h2" style="margin-top:0;margin-bottom:6px">Start with your data</h2>
-    <p style="font-size:14px;color:var(--ink-3);margin-bottom:16px">Upload a CSV or Excel file of survey responses to score it in the four-domain RSSI. Your data is saved to your account and opens straight into this app, with no separate uploader.</p>
-    <label id="rsDrop" class="rs-drop">
-      <input type="file" id="rsFile" accept=".csv,.tsv,.txt,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
-      <span class="rs-drop-ic"><?= jr_icon('doc') ?></span>
-      <span class="rs-drop-t">Drag &amp; drop a CSV or Excel file, or click to choose</span>
-      <span class="rs-drop-s">CSV or Excel (.xlsx) &middot; up to 50,000 rows</span>
-    </label>
-    <div id="rsUploadStatus" class="rs-status" style="display:none"></div>
+    <p style="font-size:14px;color:var(--ink-3);margin-bottom:16px">Upload a CSV or Excel file of survey responses to score it in the four-domain RSSI. Your data is saved to your account and opens straight into this app.</p>
+    <button type="button" id="rsUploadBtn" style="display:inline-flex;align-items:center;gap:8px;padding:10px 20px;background:var(--teal-deep,#0a7a5f);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+      Upload your data
+    </button>
     <div style="margin-top:14px;font-size:13px"><a href="#" id="rsViewSample" style="color:var(--teal-deep);font-weight:600;text-decoration:none">View sample data instead &rarr;</a></div>
   </div>
 

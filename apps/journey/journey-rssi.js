@@ -137,152 +137,21 @@
       .catch(function (e) { showLoadError('Network error: ' + (e && e.message ? e.message : e)); });
   }
 
-  /* ───────────── Upload entry (CSV → save → ?dataset_id=NEW_ID) ───────────── */
+  /* ───────────── Upload entry — delegates to the unified DatasetUpload widget ── */
   function wireUpload() {
-    var drop = document.getElementById('rsDrop');
-    var file = document.getElementById('rsFile');
+    var btn    = document.getElementById('rsUploadBtn');
     var sample = document.getElementById('rsViewSample');
     if (sample) sample.addEventListener('click', function (e) { e.preventDefault(); hideUpload(); });
-    if (!drop || !file) return;
-    drop.addEventListener('click', function () { file.click(); });
-    file.addEventListener('change', function () { if (file.files && file.files[0]) handleFile(file.files[0]); });
-    ['dragenter', 'dragover'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.add('drag'); }); });
-    ['dragleave', 'drop'].forEach(function (ev) { drop.addEventListener(ev, function (e) { e.preventDefault(); drop.classList.remove('drag'); }); });
-    drop.addEventListener('drop', function (e) { var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if (f) handleFile(f); });
-  }
-
-  function status(msg, kind) {
-    var s = document.getElementById('rsUploadStatus'); if (!s) return;
-    s.style.display = 'block'; s.className = 'rs-status ' + (kind || 'info'); s.innerHTML = msg;
-  }
-
-  // Lazy-load SheetJS (Excel parser) only when an .xlsx/.xls is chosen — same
-  // CDN the standalone RSSI uploader uses. CSV uploads never fetch it.
-  var _xlsxPromise = null;
-  function loadXlsx() {
-    if (window.XLSX) return Promise.resolve(window.XLSX);
-    if (_xlsxPromise) return _xlsxPromise;
-    _xlsxPromise = new Promise(function (resolve, reject) {
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
-      s.onload  = function () { resolve(window.XLSX); };
-      s.onerror = function () { reject(new Error('Could not load the Excel parser.')); };
-      document.head.appendChild(s);
-    });
-    return _xlsxPromise;
-  }
-
-  // Parse an .xlsx/.xls into the SAME { headers, rows } shape parseCSV returns
-  // (rows = array of objects keyed by header), so saveDataset is unchanged.
-  function parseXlsx(file) {
-    return loadXlsx().then(function (XLSX) {
-      return new Promise(function (resolve, reject) {
-        var reader = new FileReader();
-        reader.onload = function (ev) {
-          try {
-            var wb = XLSX.read(ev.target.result, { type: 'array' });
-            var sheet = wb.Sheets[wb.SheetNames[0]];
-            var aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-            if (!aoa.length) { resolve({ headers: [], rows: [] }); return; }
-            var headers = aoa[0].map(function (h, idx) { var s = String(h).trim(); return s === '' ? ('Column ' + (idx + 1)) : s; });
-            var out = [];
-            for (var r = 1; r < aoa.length; r++) {
-              var arr = aoa[r], obj = {};
-              for (var k = 0; k < headers.length; k++) obj[headers[k]] = (arr[k] != null ? String(arr[k]) : '');
-              if (headers.some(function (h) { return String(obj[h]).trim() !== ''; })) out.push(obj);
-            }
-            resolve({ headers: headers, rows: out });
-          } catch (err) { reject(err); }
-        };
-        reader.onerror = function () { reject(new Error('Could not read the file.')); };
-        reader.readAsArrayBuffer(file);
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (!window.DatasetUpload) return;
+      DatasetUpload.open({
+        projectType: 'rssi',
+        onLoaded: function (_ds, datasetId) {
+          window.location.href = '/rssi-app.php?dataset_id=' + encodeURIComponent(datasetId);
+        },
       });
     });
-  }
-
-  function handleFile(f) {
-    var isXlsx = /\.xlsx?$/i.test(f.name);
-    var isCsv  = /\.(csv|tsv|txt)$/i.test(f.name) || f.type === 'text/csv';
-    if (!isXlsx && !isCsv) { status('Please choose a CSV or Excel (.xlsx) file.', 'err'); return; }
-    status('Reading <b>' + esc(f.name) + '</b> &hellip; ' + Math.round(f.size / 1024) + ' KB', 'info');
-    var done = function (parsed) {
-      if (!parsed.headers.length || !parsed.rows.length) { status('That file has no rows to score.', 'err'); return; }
-      saveDataset(parsed, f.name);
-    };
-    var fail = function (err) { status('Could not parse the file: ' + esc(err && err.message ? err.message : String(err)), 'err'); };
-    if (isXlsx) { parseXlsx(f).then(done).catch(fail); return; }
-    var reader = new FileReader();
-    reader.onload = function (ev) { try { done(parseCSV(String(ev.target.result))); } catch (err) { fail(err); } };
-    reader.onerror = function () { status('Could not read the file.', 'err'); };
-    reader.readAsText(f);
-  }
-
-  function saveDataset(parsed, fileName) {
-    status('Detecting columns and saving&hellip;', 'info');
-    var roles = (window.RSSI_TAG_CORE && RSSI_TAG_CORE.inferColumnRoles) ? RSSI_TAG_CORE.inferColumnRoles(parsed) : null;
-    // auto-detect role -> create.php type (only likert/numeric/binary are scorable).
-    var typeMap = { likert: 'likert', numeric: 'numeric', demographic: 'demographic', free_text: 'open', identifier: 'identifier', categorical: 'single' };
-    var column_meta = [];
-    var maxAnchor = 5;
-    parsed.headers.forEach(function (h, i) {
-      var ar = (roles && roles[i]) ? roles[i].autoRole : 'open';
-      if (roles && roles[i] && roles[i].autoAnchorCount) maxAnchor = Math.max(maxAnchor, roles[i].autoAnchorCount);
-      column_meta.push({ name: h, type: (typeMap[ar] || 'open'), reverse: false });
-    });
-    var data = parsed.rows.map(function (r) {
-      return parsed.headers.map(function (h) {
-        var v = r[h];
-        if (v === '' || v == null) return '';
-        var n = Number(v);
-        return (v !== '' && !isNaN(n) && isFinite(n)) ? n : v;   // keep numbers numeric
-      });
-    });
-    var settings = { likertPoints: maxAnchor, likertLow: 'Strongly disagree', likertHigh: 'Strongly agree', reverse_coded_confirmed: false };
-    var title = fileName.replace(/\.(csv|tsv|txt)$/i, '') || 'Uploaded dataset';
-
-    fetch('/api/datasets/create.php', {
-      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: title, source_filename: fileName, source_format: 'csv', column_meta: column_meta, settings: settings, data: data })
-    })
-      .then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
-      .then(function (out) {
-        if (!out.ok || !out.body || !out.body.dataset || !out.body.dataset.id) {
-          status('Save failed: ' + esc((out.body && (out.body.error_message || out.body.message)) || 'unknown error'), 'err');
-          return;
-        }
-        status('Saved. Opening your RSSI&hellip;', 'info');
-        window.location.href = '/rssi-app.php?dataset_id=' + encodeURIComponent(out.body.dataset.id);
-      })
-      .catch(function (e) { status('Save failed: ' + esc(e && e.message ? e.message : String(e)), 'err'); });
-  }
-
-  /* Minimal RFC-4180-ish CSV parser (quoted fields, embedded commas/newlines). */
-  function parseCSV(text) {
-    text = text.replace(/^﻿/, '');
-    var rows = [], cur = [], val = '', i = 0, inQ = false, c;
-    while (i < text.length) {
-      c = text[i];
-      if (inQ) {
-        if (c === '"') { if (text[i + 1] === '"') { val += '"'; i += 2; continue; } inQ = false; i++; continue; }
-        val += c; i++; continue;
-      }
-      if (c === '"') { inQ = true; i++; continue; }
-      if (c === ',') { cur.push(val); val = ''; i++; continue; }
-      if (c === '\r') { i++; continue; }
-      if (c === '\n') { cur.push(val); rows.push(cur); cur = []; val = ''; i++; continue; }
-      val += c; i++;
-    }
-    if (val !== '' || cur.length) { cur.push(val); rows.push(cur); }
-    rows = rows.filter(function (r) { return r.length > 1 || (r.length === 1 && String(r[0]).trim() !== ''); });
-    if (!rows.length) return { headers: [], rows: [] };
-    var headers = rows[0].map(function (h, idx) { var s = String(h).trim(); return s === '' ? ('Column ' + (idx + 1)) : s; });
-    var out = [];
-    for (var r = 1; r < rows.length; r++) {
-      var row = rows[r], obj = {};
-      for (var k = 0; k < headers.length; k++) obj[headers[k]] = (k < row.length ? String(row[k]) : '');
-      out.push(obj);
-    }
-    return { headers: headers, rows: out };
   }
 
   /* ───────────── Render the Strength Score from an engine result ───────────── */
