@@ -549,7 +549,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   // workspace loads it from the server (and it persists on reopen).
   function openProject(_dataset, pid){
     if (!pid) return;
-    window.location.href = WORKSPACE_ROUTE + '?v4=1&project_id=' + encodeURIComponent(pid);
+    window.location.href = WORKSPACE_ROUTE + '?project_id=' + encodeURIComponent(pid);
   }
   function openSiri(){ alert('SIRI source picker — wired in the data-intake chunk.'); }
 
