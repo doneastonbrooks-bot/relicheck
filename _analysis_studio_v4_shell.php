@@ -107,9 +107,13 @@ $initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U
 $_as_css = '/apps/analysis-studio/analysis-studio.css';
 $_as_js  = '/apps/analysis-studio/analysis-studio.js';
 $_au_js  = '/apps/analysis-studio/analysis-upload.js';
+$_sh_js  = '/apps/studio/studio-header.js';
+$_sf_js  = '/apps/studio/studio-footer.js';
 $_as_css_v = is_file(__DIR__ . $_as_css) ? filemtime(__DIR__ . $_as_css) : time();
 $_as_js_v  = is_file(__DIR__ . $_as_js)  ? filemtime(__DIR__ . $_as_js)  : time();
 $_au_js_v  = is_file(__DIR__ . $_au_js)  ? filemtime(__DIR__ . $_au_js)  : time();
+$_sh_js_v  = is_file(__DIR__ . $_sh_js)  ? filemtime(__DIR__ . $_sh_js)  : time();
+$_sf_js_v  = is_file(__DIR__ . $_sf_js)  ? filemtime(__DIR__ . $_sf_js)  : time();
 
 // Always serve fresh HTML so the cache-busted ?v= on the script tags reflects
 // the current files. Without this the browser can cache the page and keep
@@ -276,24 +280,14 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 }
 </style>
 <link rel="stylesheet" href="<?= htmlspecialchars($_as_css . '?v=' . $_as_css_v) ?>">
+<script src="<?= htmlspecialchars($_sh_js . '?v=' . $_sh_js_v) ?>"></script>
+<script src="<?= htmlspecialchars($_sf_js . '?v=' . $_sf_js_v) ?>"></script>
 <script src="<?= htmlspecialchars($_as_js . '?v=' . $_as_js_v) ?>"></script>
 <script src="<?= htmlspecialchars($_au_js . '?v=' . $_au_js_v) ?>"></script>
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <a class="tb-logo" href="/app-2026v4.php">
-      <img src="<?= htmlspecialchars($sd_longlogo) ?>" alt="<?= htmlspecialchars($sd_name) ?>">
-    </a>
-    <div class="tb-ctx<?= $projectId ? ' is-live' : '' ?>">
-      <span class="dot"></span>
-      <span id="ctxLabel"><?= htmlspecialchars($projectTitle !== '' ? $projectTitle : 'No project') ?></span>
-    </div>
-    <div class="tb-spacer"></div>
-    <a class="dock-btn" href="<?= htmlspecialchars($BOOT['projectsUrl']) ?>">All projects</a>
-    <div class="tb-rssi" id="tbRssi" hidden></div>
-    <div class="tb-avatar"><?= htmlspecialchars($initials) ?></div>
-  </header>
+  <div id="studioHeader"></div>
 
   <div class="body">
     <nav class="rail" id="rail"><div class="rail-h"><?= htmlspecialchars($sd_name) ?></div></nav>
@@ -309,22 +303,27 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
     </aside>
   </div>
 
-  <footer class="studio-dock">
-    <a class="studio-dock-logo" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/logo-brand.svg" alt="ReliCheck"></a>
-    <div class="studio-dock-inner">
-      <span class="dock-lbl">Data</span>
-      <button class="dock-btn" id="dkSiri">&#9889; Open from SIRI responses</button>
-      <button class="dock-btn" id="dkUpload">&#8681; Upload data</button>
-      <button class="dock-btn" id="dkSaved">&#9638; Open saved project</button>
-    </div>
-    <span class="dock-chip" id="dkChip" hidden><span class="gdot"></span><span id="dkChipText"></span></span>
-  </footer>
+  <div id="studioFooter"></div>
 </div>
 
 <script>
 const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
 (function(){
   'use strict';
+  StudioHeader.init({
+    logoSrc:      '<?= htmlspecialchars($sd_longlogo) ?>',
+    logoAlt:      '<?= htmlspecialchars($sd_name) ?>',
+    projectLabel: BOOT.projectLabel,
+    projectLive:  BOOT.projectId > 0,
+    projectsUrl:  BOOT.projectsUrl,
+    initials:     '<?= htmlspecialchars($initials) ?>'
+  });
+  StudioFooter.init({
+    onSiri:   openSiri,
+    onUpload: openUpload,
+    onSaved:  openSaved
+  });
+
   const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table', rssiProjectId: null };
   const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
@@ -627,7 +626,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     showChip((ds.rowCount||0) + ' rows · ' + ((ds.variables||[]).length) + ' variables');
     if (opts && opts.surveyProjectId) {
       state.rssiProjectId = opts.surveyProjectId;
-      loadRssiStub(opts.surveyProjectId);
+      StudioHeader.loadRssiStub(opts.surveyProjectId);
     }
     // Once data is loaded, Overview becomes the landing view (Start stays the
     // data hub you can return to). Don't yank the user off a step they chose.
@@ -635,28 +634,6 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     render();
   }
 
-  // Fetch RSSI summary for a survey project and populate the topbar badge.
-  // Called after applyDataset when data source is a SIRI project.
-  function loadRssiStub(surveyProjectId){
-    const wrap = document.getElementById('tbRssi');
-    if (!wrap) return;
-    fetch('/api/dev/rssi-check.php?project_id=' + encodeURIComponent(surveyProjectId), {
-      credentials: 'same-origin', headers: { Accept: 'application/json' }
-    })
-    .then(function(r){ return r.ok ? r.json() : null; })
-    .then(function(d){
-      if (!d || !d.ok || !d.has_rssi) { wrap.hidden = true; return; }
-      const tier = d.withheld ? 'withheld' : (d.tier || 'withheld');
-      const score = (!d.withheld && d.pct != null)
-        ? '<span class="rssi-score">' + d.pct + '</span>'
-        : '';
-      wrap.innerHTML = '<a class="rssi-badge rssi-' + tier + '" href="' + esc(d.link)
-        + '" title="' + esc(d.band || 'RSSI result') + '" target="_blank">'
-        + score + '<span class="rssi-lbl">RSSI</span></a>';
-      wrap.hidden = false;
-    })
-    .catch(function(){ wrap.hidden = true; });
-  }
   let _loaded=false;
   function loadDataset(){
     if (_loaded) return; _loaded=true;
@@ -670,12 +647,9 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       })
       .catch(fallback);
   }
-  function showChip(text){ const c=document.getElementById('dkChip'); const t=document.getElementById('dkChipText'); if(c&&t){c.hidden=false;t.textContent=text;} }
+  function showChip(text){ StudioFooter.showChip(text); }
 
   // ---- Wiring ----
-  document.getElementById('dkUpload').addEventListener('click', openUpload);
-  document.getElementById('dkSiri').addEventListener('click', openSiri);
-  document.getElementById('dkSaved').addEventListener('click', openSaved);
   document.querySelectorAll('.comp-tab').forEach(function(b){
     b.addEventListener('click', function(){ state.compTab=b.getAttribute('data-tab'); document.querySelectorAll('.comp-tab').forEach(function(x){x.classList.toggle('on', x===b);}); renderCompanion(); });
   });

@@ -556,21 +556,12 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 @media(max-width:1280px){.body{grid-template-columns:var(--rail) minmax(0,1fr)} .companion{display:none}}
 @media(max-width:1040px){.palette{display:none}}
 </style>
+<script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
+<script src="/apps/studio/studio-footer.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-footer.js') ?>"></script>
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <a class="brand" href="/app-2026v4.php" aria-label="Mixed Methods Studio">
-      <img src="/MM-Studio-long.png" alt="Mixed Methods Studio">
-    </a>
-    <div class="design-switch" id="designSwitch"></div>
-    <div class="topbar-right">
-      <button class="help-btn" onclick="openHelp()">✦ Help me choose</button>
-      <div class="ctx"><span class="dot"></span><?= htmlspecialchars($projLabel) ?></div>
-      <div class="tb-rssi" id="tbRssi" hidden></div>
-      <div class="avatar"><?= htmlspecialchars($initials) ?></div>
-    </div>
-  </header>
+  <div id="studioHeader"></div>
 
   <div class="body">
     <nav class="rail">
@@ -602,21 +593,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
     </aside>
   </div>
 
-  <footer class="studio-dock" role="region" aria-label="Data and apps">
-    <a class="studio-dock-logo" href="/app-2026v4.php" aria-label="ReliCheck home">
-      <img src="/logo-brand.svg" alt="ReliCheck">
-    </a>
-    <div class="studio-dock-inner">
-      <span class="lbl">Apps</span>
-      <a class="as-intake-btn" href="/develop.php?db=1&amp;start=choose" title="Build and strengthen a survey in SIRI">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-        SIRI
-      </a>
-      <a class="dk-rssi" id="dockRssi" href="/rssi.php" title="Check survey strength &amp; reliability in RSSI">
-        <span class="dot"></span>RSSI <small id="dockRssiState">strength</small>
-      </a>
-    </div>
-  </footer>
+  <div id="studioFooter"></div>
 </div>
 
 <div class="modal-scrim" id="modalScrim"><div class="modal" id="modal"></div></div>
@@ -2767,26 +2744,51 @@ function closeModal(){$("#modalScrim").classList.remove('open');}
 $("#modalScrim").addEventListener('click',e=>{if(e.target.id==='modalScrim')closeModal();});
 let tT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1800);}
 
+// ---- Uniform studio header + footer (plug-ins) ----
+StudioHeader.init({
+  logoSrc:      '/MM-Studio-long.png',
+  logoAlt:      'Mixed Methods Studio',
+  projectLabel: BOOT.projectLabel,
+  projectLive:  BOOT.projectId > 0,
+  projectsUrl:  '/studio-mm-projects.php',
+  initials:     '<?= htmlspecialchars($initials) ?>'
+});
+// MM-specific: insert the design-switch pill into the header bar between
+// the project context and the spacer, then renderSwitch() populates it.
+(function(){
+  const bar=document.querySelector('#studioHeader .sh-bar');
+  const spacer=bar&&bar.querySelector('.sh-spacer');
+  if(!bar||!spacer) return;
+  const ds=document.createElement('div');
+  ds.id='designSwitch';
+  bar.insertBefore(ds,spacer);
+})();
+// MM footer: uniform data dock with MM-appropriate handlers.
+StudioFooter.init({
+  onSiri:   function(){ go('/develop.php?db=1&start=choose'); },
+  onUpload: function(){ toast('Upload — open a saved project or bring data in via SIRI.'); },
+  onSaved:  function(){ go('/studio-mm-projects.php'); }
+});
+// Show RSSI badge from server-resolved scores (no extra fetch needed).
+(function(){
+  const sc=BOOT.scores||{};
+  if(sc.rssi==null&&!sc.rssiWithheld) return;
+  const pct=sc.rssi!=null?Math.round(sc.rssi):null;
+  StudioHeader.setRssiStub({
+    has_rssi: true,
+    score:    sc.rssi,
+    pct:      pct,
+    band:     sc.rssiBand||'',
+    withheld: !!sc.rssiWithheld,
+    tier:     sc.rssiWithheld?'withheld':(pct>=85?'confident':'developing'),
+    link:     BOOT.surveyId>0?'/rssi-app.php?project_id='+BOOT.surveyId:'/rssi.php'
+  });
+})();
+
 state.stepId='start';   // users come straight in to the Start overview (like SIRI)
 render();
 // First open of a project with no design yet → guide the choice.
 if(BOOT.needsDesign){ openHelp(); }
-
-// Populate topbar RSSI stub from server-resolved scores (no extra fetch needed).
-(function(){
-  const sc=BOOT.scores||{};
-  const hasRssi=sc.rssi!=null||sc.rssiWithheld;
-  if(!hasRssi) return;
-  const wrap=document.getElementById('tbRssi'); if(!wrap) return;
-  const withheld=!!sc.rssiWithheld;
-  const pct=sc.rssi!=null?Math.round(sc.rssi):null;
-  const tier=withheld?'withheld':(pct>=85?'confident':'developing');
-  const score=(!withheld&&pct!=null)?'<span class="rssi-score">'+pct+'</span>':'';
-  const band=sc.rssiBand||'RSSI result';
-  const link=(BOOT.surveyId>0)?'/rssi-app.php?project_id='+BOOT.surveyId:'/rssi.php';
-  wrap.innerHTML='<a class="rssi-badge rssi-'+tier+'" href="'+link+'" title="'+band+'" target="_blank">'+score+'<span class="rssi-lbl">RSSI</span></a>';
-  wrap.hidden=false;
-})();
 
 // ----- Bridge: persist a browser-only upload to the server, then link it -----
 // The Evidence Intake step (apps/evidence-intake/evidence-intake.js) saves the
