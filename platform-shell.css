@@ -183,6 +183,23 @@ button{ font: inherit; cursor: pointer; }
   box-shadow: var(--shadow-1);
 }
 
+/* RSSI topbar stub — shown when a studio loads a project with RSSI results */
+.tb-rssi{ display: flex; align-items: center; }
+.rssi-badge{
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 6px 13px; border-radius: 10px;
+  font-size: 12px; font-weight: 700; text-decoration: none;
+  border: 1.5px solid transparent; line-height: 1;
+}
+.rssi-badge .rssi-score{ font-size: 17px; font-weight: 800; }
+.rssi-badge .rssi-lbl{
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .05em; opacity: .72; white-space: nowrap;
+}
+.rssi-confident{ background: #e9f7ee; color: #1f9e44; }
+.rssi-developing{ background: #fff8ee; color: #b45309; }
+.rssi-withheld{ background: var(--bg-wash, #f5f6f8); color: var(--ink-3, #8a8f98); border-color: var(--line, #e6e8ec); }
+
 /* ====== APP SHELL + PAGE FRAME ======
    Full viewport width with controlled gutters. No fixed max-width cap.
    app-shell is the outermost wrapper. page-frame holds every section

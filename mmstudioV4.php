@@ -228,6 +228,7 @@ $BOOT = [
   'responses'    => $respCount,
   'projDesc'     => $projectDesc,
   'scores'       => $scores,
+  'surveyId'     => $surveyId,
   'ttvars'       => $ttVars,
   'rawinfo'      => $rawInfo,
   'valueLabels'  => $valueLabels,
@@ -274,6 +275,14 @@ button{font-family:inherit;cursor:pointer}
 .dk-rssi .dot{width:8px;height:8px;border-radius:50%;background:#cdd6e4}
 .dk-rssi.is-available .dot{background:var(--mm)}
 .dk-rssi small{font-weight:600;color:var(--ink-3)}
+/* Topbar RSSI stub — shared studio contract */
+.tb-rssi{display:flex;align-items:center}
+.rssi-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;border:1.5px solid transparent;line-height:1}
+.rssi-badge .rssi-score{font-size:17px;font-weight:800}
+.rssi-badge .rssi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.72;white-space:nowrap}
+.rssi-confident{background:var(--green-soft);color:var(--green)}
+.rssi-developing{background:#fff8ee;color:#b45309}
+.rssi-withheld{background:var(--bg);color:var(--ink-3);border-color:var(--line)}
 @media(max-width:760px){.studio-dock-logo{display:none}}
 .topbar{display:flex;align-items:center;gap:14px;height:90px;padding:0 22px;background:var(--panel);border-bottom:1px solid var(--line)}
 .brand{display:flex;align-items:center;text-decoration:none}
@@ -558,6 +567,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
     <div class="topbar-right">
       <button class="help-btn" onclick="openHelp()">✦ Help me choose</button>
       <div class="ctx"><span class="dot"></span><?= htmlspecialchars($projLabel) ?></div>
+      <div class="tb-rssi" id="tbRssi" hidden></div>
       <div class="avatar"><?= htmlspecialchars($initials) ?></div>
     </div>
   </header>
@@ -2761,6 +2771,22 @@ state.stepId='start';   // users come straight in to the Start overview (like SI
 render();
 // First open of a project with no design yet → guide the choice.
 if(BOOT.needsDesign){ openHelp(); }
+
+// Populate topbar RSSI stub from server-resolved scores (no extra fetch needed).
+(function(){
+  const sc=BOOT.scores||{};
+  const hasRssi=sc.rssi!=null||sc.rssiWithheld;
+  if(!hasRssi) return;
+  const wrap=document.getElementById('tbRssi'); if(!wrap) return;
+  const withheld=!!sc.rssiWithheld;
+  const pct=sc.rssi!=null?Math.round(sc.rssi):null;
+  const tier=withheld?'withheld':(pct>=85?'confident':'developing');
+  const score=(!withheld&&pct!=null)?'<span class="rssi-score">'+pct+'</span>':'';
+  const band=sc.rssiBand||'RSSI result';
+  const link=(BOOT.surveyId>0)?'/rssi-app.php?project_id='+BOOT.surveyId:'/rssi.php';
+  wrap.innerHTML='<a class="rssi-badge rssi-'+tier+'" href="'+link+'" title="'+band+'" target="_blank">'+score+'<span class="rssi-lbl">RSSI</span></a>';
+  wrap.hidden=false;
+})();
 
 // ----- Bridge: persist a browser-only upload to the server, then link it -----
 // The Evidence Intake step (apps/evidence-intake/evidence-intake.js) saves the

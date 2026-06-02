@@ -110,9 +110,33 @@ if ($shell_project_id === null) {
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 4 2c-1 .7-1.5 1.3-1.5 2.5"/><circle cx="12" cy="17" r=".6" fill="currentColor"/></svg>
     </button>
 
+    <div class="tb-rssi" id="tbRssi" hidden></div>
     <span class="avatar" aria-label="<?= htmlspecialchars($shell_user_full) ?>"><?= htmlspecialchars($shell_user_initials) ?></span>
   </div>
 </header>
+<script>
+// Shared RSSI topbar stub — call loadRssiStub(surveyProjectId) from any studio
+// page to fetch and display the RSSI badge for that survey project.
+window.loadRssiStub = function(pid){
+  var wrap = document.getElementById('tbRssi');
+  if (!wrap || !pid) return;
+  fetch('/api/dev/rssi-check.php?project_id=' + encodeURIComponent(pid), {
+    credentials: 'same-origin', headers: { Accept: 'application/json' }
+  })
+  .then(function(r){ return r.ok ? r.json() : null; })
+  .then(function(d){
+    if (!d || !d.ok || !d.has_rssi) { wrap.hidden = true; return; }
+    var tier = d.withheld ? 'withheld' : (d.tier || 'withheld');
+    var score = (!d.withheld && d.pct != null)
+      ? '<span class="rssi-score">' + d.pct + '</span>' : '';
+    wrap.innerHTML = '<a class="rssi-badge rssi-' + tier + '" href="' + d.link
+      + '" title="' + (d.band || 'RSSI result') + '" target="_blank">'
+      + score + '<span class="rssi-lbl">RSSI</span></a>';
+    wrap.hidden = false;
+  })
+  .catch(function(){ wrap.hidden = true; });
+};
+</script>
 
 <main class="relicheck-app-shell">
   <div class="hero-blob" aria-hidden="true"></div>
