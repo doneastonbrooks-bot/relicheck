@@ -12,6 +12,7 @@ return [
   'descriptive' => [
     ['id' => 'start',            'label' => 'Start',                'dot' => 'quan', 'mode' => 'start'],
     ['id' => 'overview',         'label' => 'Overview',             'dot' => 'quan', 'mode' => 'overview'],
+    ['id' => 'datamap',          'label' => 'Variable Map',         'dot' => 'quan', 'mode' => 'datamap'],
     ['id' => 'frequencies',      'label' => 'Frequencies',          'dot' => 'quan', 'mode' => 'work', 'tool' => 'frequencies'],
     ['id' => 'distributions',    'label' => 'Means & Distributions','dot' => 'quan', 'mode' => 'work', 'tool' => 'distributions'],
     ['id' => 'cross_tabs',       'label' => 'Cross-Tabs',           'dot' => 'quan', 'mode' => 'work', 'tool' => 'cross_tabs'],
@@ -23,6 +24,7 @@ return [
   'inferential' => [
     ['id' => 'start',            'label' => 'Start',                'dot' => 'quan', 'mode' => 'start'],
     ['id' => 'overview',         'label' => 'Overview',             'dot' => 'quan', 'mode' => 'overview'],
+    ['id' => 'datamap',          'label' => 'Variable Map',         'dot' => 'quan', 'mode' => 'datamap'],
     ['id' => 'variables_fit',    'label' => 'Variables & Fit',      'dot' => 'quan', 'mode' => 'work', 'tool' => 'variables_fit'],
     ['id' => 'descriptive',      'label' => 'Descriptive',          'dot' => 'quan', 'mode' => 'work', 'tool' => 'descriptive'],
     ['id' => 't_test',           'label' => 't-Test',               'dot' => 'quan', 'mode' => 'work', 'tool' => 't_test'],

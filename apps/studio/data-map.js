@@ -540,6 +540,15 @@
 
     getVariables: function () { return _vars.slice(); },
 
+    // Remount into a new container element without resetting state.
+    // Use when the step re-renders and creates a fresh host div but the
+    // map is already loaded (avoids a re-fetch and losing unsaved edits).
+    mount: function (container) {
+      if (!container) return;
+      _container = container;
+      render();
+    },
+
     // Internal handlers — exposed for inline onclick
     _setFilter:       _setFilter,
     _retry:           _retry,

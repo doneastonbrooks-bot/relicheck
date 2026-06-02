@@ -109,11 +109,15 @@ $_as_js  = '/apps/analysis-studio/analysis-studio.js';
 $_au_js  = '/apps/analysis-studio/analysis-upload.js';
 $_sh_js  = '/apps/studio/studio-header.js';
 $_sf_js  = '/apps/studio/studio-footer.js';
+$_tx_js  = '/apps/studio/type-taxonomy.js';
+$_dm_js  = '/apps/studio/data-map.js';
 $_as_css_v = is_file(__DIR__ . $_as_css) ? filemtime(__DIR__ . $_as_css) : time();
 $_as_js_v  = is_file(__DIR__ . $_as_js)  ? filemtime(__DIR__ . $_as_js)  : time();
 $_au_js_v  = is_file(__DIR__ . $_au_js)  ? filemtime(__DIR__ . $_au_js)  : time();
 $_sh_js_v  = is_file(__DIR__ . $_sh_js)  ? filemtime(__DIR__ . $_sh_js)  : time();
 $_sf_js_v  = is_file(__DIR__ . $_sf_js)  ? filemtime(__DIR__ . $_sf_js)  : time();
+$_tx_js_v  = is_file(__DIR__ . $_tx_js)  ? filemtime(__DIR__ . $_tx_js)  : time();
+$_dm_js_v  = is_file(__DIR__ . $_dm_js)  ? filemtime(__DIR__ . $_dm_js)  : time();
 
 // Always serve fresh HTML so the cache-busted ?v= on the script tags reflects
 // the current files. Without this the browser can cache the page and keep
@@ -282,6 +286,8 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 <link rel="stylesheet" href="<?= htmlspecialchars($_as_css . '?v=' . $_as_css_v) ?>">
 <script src="<?= htmlspecialchars($_sh_js . '?v=' . $_sh_js_v) ?>"></script>
 <script src="<?= htmlspecialchars($_sf_js . '?v=' . $_sf_js_v) ?>"></script>
+<script src="<?= htmlspecialchars($_tx_js . '?v=' . $_tx_js_v) ?>"></script>
+<script src="<?= htmlspecialchars($_dm_js . '?v=' . $_dm_js_v) ?>"></script>
 <script src="<?= htmlspecialchars($_as_js . '?v=' . $_as_js_v) ?>"></script>
 <script src="<?= htmlspecialchars($_au_js . '?v=' . $_au_js_v) ?>"></script>
 </head>
@@ -320,7 +326,8 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   });
   StudioFooter.init();
 
-  const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table', rssiProjectId: null };
+  const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table', rssiProjectId: null,
+                  datamapConfirmed: false, _datamapMounted: false };
   const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function steps(){ return BOOT.pipeline; }
@@ -348,9 +355,10 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   function renderCenter(){
     const host = document.getElementById('centerInner');
     const s = activeStep();
-    if (s.mode==='start') return renderStart(host);
+    if (s.mode==='start')   return renderStart(host);
     if (s.mode==='overview') return renderOverview(host);
-    if (s.mode==='report') return renderReport(host, s);
+    if (s.mode==='datamap') return renderDataMap(host);
+    if (s.mode==='report')  return renderReport(host, s);
     return renderWork(host, s);
   }
 
@@ -409,8 +417,58 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       + '<p style="margin:14px 0 0;color:var(--ink-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'
       + '<div class="panel"><div class="panel-h"><h3>Variables</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
       + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>'
-      + '<div style="margin-top:6px"><button class="btn primary" id="ovGo">Continue to analysis &rarr;</button></div>';
-    const go = document.getElementById('ovGo'); if (go) go.addEventListener('click', function(){ const nx=steps()[2]; if(nx){ state.stepId=nx.id; render(); } });
+      + '<div style="margin-top:6px"><button class="btn primary" id="ovGo">Map variables &rarr;</button></div>';
+    const go = document.getElementById('ovGo'); if (go) go.addEventListener('click', function(){ state.stepId='datamap'; render(); });
+  }
+
+  // Data Map step — variable classification between Overview and the analysis pipeline.
+  // Uses the shared DataMap component (apps/studio/data-map.js + type-taxonomy.js).
+  // First visit: full init with rawVars derived from the loaded dataset.
+  // Subsequent visits: remount into the new container (preserves edits and saved state).
+  function renderDataMap(host){
+    if (!state.dataset) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div>'
+        + '<h1 class="title">Variable Map</h1></div>'
+        + '<div class="placeholder">Load data first. Go to <strong>Start</strong> to upload a file.</div>';
+      return;
+    }
+    if (!window.DataMap) {
+      host.innerHTML = '<div class="placeholder">Variable Map is loading&hellip;</div>';
+      return;
+    }
+    // Build a fresh container inside the host on every render pass so the
+    // component always has a live DOM node, then either init or remount.
+    host.innerHTML = '';
+    const container = document.createElement('div');
+    host.appendChild(container);
+
+    if (!state._datamapMounted) {
+      state._datamapMounted = true;
+      const rawVars = (state.dataset.variables || []).map(function(v, i){
+        return {
+          variable_name:       v.name,
+          display_label:       v.name,
+          detected_type:       (v.types || [])[0] || '',
+          source:              'dataset_column',
+          include_in_analysis: true,
+          position:            i,
+        };
+      });
+      DataMap.init({
+        container:   container,
+        projectId:   BOOT.projectId || 0,
+        projectType: 'analysis',
+        rawVars:     rawVars,
+        constructs:  [],
+        onConfirmed: function(){
+          state.datamapConfirmed = true;
+          const nx = steps().find(function(s){ return s.mode === 'work'; });
+          if (nx){ state.stepId = nx.id; render(); }
+        },
+      });
+    } else {
+      DataMap.mount(container);
+    }
   }
 
   function renderWork(host, s){
@@ -418,6 +476,15 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+' <span class="strand-chip">QUAN</span></div>'
         + '<h1 class="title">'+esc(s.label)+'</h1></div>'
         + '<div class="placeholder">Load data to run <strong>'+esc(s.label)+'</strong>. Use the Data bar below.</div>';
+      return;
+    }
+    if (!state.datamapConfirmed) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+' <span class="strand-chip">QUAN</span></div>'
+        + '<h1 class="title">'+esc(s.label)+'</h1></div>'
+        + '<div class="placeholder">Map your variables before running analysis. '
+        + '<button class="btn primary" style="margin-left:8px" id="dmGate">Go to Variable Map &rarr;</button></div>';
+      const gateBtn = document.getElementById('dmGate');
+      if (gateBtn) gateBtn.addEventListener('click', function(){ state.stepId='datamap'; render(); });
       return;
     }
     // Descriptive tools render through the shared presentation module
