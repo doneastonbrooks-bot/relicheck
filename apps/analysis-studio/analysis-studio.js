@@ -1141,12 +1141,14 @@
         .then(function(r){return r.json();})
         .then(function(d){
           reg.busy=false; reg.result=d; reg.tab='coef';
+          var rb=host.querySelector('#regRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run regression';}
           var out=host.querySelector('#regResults');
           if(out) out.innerHTML=renderRegResults(d,ctx);
           if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
         })
         .catch(function(){
           reg.busy=false;
+          var rb=host.querySelector('#regRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run regression';}
           var out=host.querySelector('#regResults');
           if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
         });

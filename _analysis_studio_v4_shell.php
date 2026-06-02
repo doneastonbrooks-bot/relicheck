@@ -69,6 +69,14 @@ $_as_css_v = is_file(__DIR__ . $_as_css) ? filemtime(__DIR__ . $_as_css) : time(
 $_as_js_v  = is_file(__DIR__ . $_as_js)  ? filemtime(__DIR__ . $_as_js)  : time();
 $_au_js_v  = is_file(__DIR__ . $_au_js)  ? filemtime(__DIR__ . $_au_js)  : time();
 
+// Always serve fresh HTML so the cache-busted ?v= on the script tags reflects
+// the current files. Without this the browser can cache the page and keep
+// loading the old script version, so edits appear not to take effect.
+if (!headers_sent()) {
+    header('Cache-Control: no-store, must-revalidate');
+    header('Pragma: no-cache');
+}
+
 $BOOT = [
   'slug'         => $sd_slug,
   'name'         => $sd_name,
