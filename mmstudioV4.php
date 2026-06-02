@@ -2158,6 +2158,75 @@ function renderReport(s){
   const exportBar=`<div class="panel"><div class="panel-h"><div><h3>Download your report</h3><div class="ph-sub">Includes your edits; build or save the sections first</div></div></div><div class="panel-b"><div class="dm-save" style="margin:0"><a class="btn primary" href="/api/mm/report-docx.php?project_id=${BOOT.projectId}">⬇ Download Word (.docx)</a><a class="btn" href="/api/mm/report-export.php?project_id=${BOOT.projectId}&format=md">⬇ Download Markdown</a></div></div></div>`;
   $("#centerInner").innerHTML=rpHead(s)+helpBar('report')+note+bulkBar+cards+exportBar+rpNav();
 }
+/* ===== Identify Results to Explain — Step 7 pivot engine ===== */
+const expl={items:[],loaded:false,busy:false,sel:{}};
+function explSrcLabel(src){return {t_test:'t-test',anova:'ANOVA',chi_square:'Chi-square',correlation:'Correlation',regression:'Regression'}[src]||src||'Analysis';}
+function explLoad(){
+  if(!BOOT.projectId||expl.busy)return;
+  expl.busy=true;
+  fetch('/api/mm/results-to-explain.php?project_id='+BOOT.projectId,{credentials:'same-origin'})
+    .then(r=>r.json()).then(j=>{
+      expl.items=j.ok?(j.items||[]):[];
+      // Default: carry all staged findings forward
+      expl.items.forEach(it=>{ if(!(it.id in expl.sel)) expl.sel[it.id]=true; });
+      expl.loaded=true; expl.busy=false; renderCenter();
+    }).catch(()=>{ expl.loaded=true; expl.busy=false; renderCenter(); });
+}
+function explToggle(id){ expl.sel[id]=!expl.sel[id]; renderCenter(); }
+function explNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function renderExplain(s){
+  const modeChip=`<span class="mode-chip work">Workstation</span>`;
+  const chip=`<span class="strand-chip both">MIXED</span>`;
+  const hd=`<div class="ws-header"><div class="eyebrow">Step ${s.n} · ${esc(s.title)} ${modeChip} ${chip}</div>
+    <h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;
+  if(!BOOT.projectId){
+    $("#centerInner").innerHTML=hd+helpBar('explain')+`<div class="work-surface" style="border-radius:16px">Connect a project to use this step.</div>`+explNav();
+    return;
+  }
+  if(!expl.loaded){
+    explLoad();
+    $("#centerInner").innerHTML=hd+helpBar('explain')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>
+      <div class="panel"><div class="panel-h"><div><h3>${esc(s.title)}</h3><div class="ph-sub">Workstation · Pivot</div></div></div>
+        <div class="panel-b"><div class="work-surface" style="color:var(--ink-3)">Loading staged findings…</div></div></div>`+explNav();
+    return;
+  }
+  const items=expl.items;
+  const nSel=items.filter(it=>expl.sel[it.id]).length;
+  let panelBody;
+  if(!items.length){
+    panelBody=`<div class="panel-b"><div class="work-surface">
+      <p style="margin:0 0 8px;font-weight:650">No findings staged yet.</p>
+      <p style="margin:0;color:var(--ink-2)">After running a significant result in any analysis step — t-test, ANOVA, Chi-square, or Correlation — click <b>Add to Results to Explain</b>. Those findings will appear here for you to prioritize.</p>
+    </div></div>`;
+  } else {
+    const cards=items.map(it=>{
+      const on=expl.sel[it.id];
+      const d=it.data||it; // payload is nested under .data by the GET endpoint
+      const src=esc(explSrcLabel(it.source||it.src));
+      const plain=esc(d.plain||'');
+      const fq=d.follow_up_question?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-3)">↳ ${esc(d.follow_up_question)}</div>`:'';
+      const pVal=d.p!=null?d.p:null;
+      const pStr=pVal!=null?` <span style="font-size:12px;color:var(--ink-3)">p ${pVal<.001?'< .001':'= '+Number(pVal).toFixed(3)}</span>`:'';
+      return `<div class="dx-layers" style="border:2px solid ${on?'var(--btn)':'var(--line)'};margin-bottom:12px;transition:border-color .15s">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="margin-bottom:7px"><span class="strand-chip quan" style="font-size:11px">${src}</span>${pStr}</div>
+            <div style="font-size:14px;line-height:1.55">${plain}</div>
+            ${fq}
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap;padding-top:2px;flex-shrink:0">
+            <input type="checkbox" ${on?'checked':''} onchange="explToggle(${it.id})"> Carry forward
+          </label>
+        </div>
+      </div>`;
+    }).join('');
+    const summary=`<div style="margin-bottom:14px;font-size:13.5px;color:var(--ink-2)">${nSel} of ${items.length} finding${items.length===1?'':'s'} selected to carry into the qualitative phase.</div>`;
+    panelBody=`<div class="panel-b">${summary}${cards}
+      <div style="margin-top:4px"><button class="btn" onclick="expl.loaded=false;renderCenter()">↺ Refresh findings</button></div></div>`;
+  }
+  $("#centerInner").innerHTML=hd+helpBar('explain')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>
+    <div class="panel"><div class="panel-h"><div><h3>${esc(s.title)}</h3><div class="ph-sub">Workstation · Pivot</div></div></div>${panelBody}</div>`+explNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -2169,6 +2238,7 @@ function renderCenter(){
   if(s.id==='l_book'){ return renderBook(s); }
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderMeasureTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
+  if(s.id==='explain'){ return renderExplain(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='meta'){ return renderMeta(s); }
