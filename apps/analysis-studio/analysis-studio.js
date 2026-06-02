@@ -106,6 +106,9 @@
     scale_scores: { title:'Scale Scores', what:'Combine several numeric items into one composite (the average of the chosen items per respondent). Descriptive only — no reliability.',
       steps:['<b>Tick the items</b> that belong to the scale \u2014 pick at least two.','<b>Read the composite N, mean, and SD</b> in the output table.','<b>Note the complete-case N</b> \u2014 any respondent missing one item is dropped.','<b>Toggle to Graph</b> to see the distribution as a histogram.','<b>For reliability (Cronbach\u2019s \u03b1),</b> take this scale to RSSI \u2014 not here.','<b>Click Save to report</b> when done.'],
       example:'<strong>Reading it:</strong> a 4-item composite with mean 3.8 / SD 0.7 summarizes the scale; whether the items hang together is an RSSI question.' },
+    descriptive: { title:'Descriptive Analysis', what:'Summarize frequencies, distributions, and cross-tabulations for your variables before running inferential tests.',
+      steps:['<b>Choose a sub-view</b> using the Frequencies / Means & Distributions / Cross-Tabs tabs at the top.','<b>Pick a variable</b> from the dropdown for the selected view.','<b>Read the table</b> and the interpretation layers below it.','<b>Click Save to report</b> to keep a snapshot.'],
+      example:'<strong>Reading it:</strong> in Means & Distributions, the group with the highest average shows what the inferential tests should focus on.' },
     variables_fit: { title:'Variables \u0026 Fit', what:'Detects each variable\'s measurement type (numeric or categorical) and suggests the right statistical test for each pair.',
       steps:['<b>Read the Variables table</b> \u2014 check that each variable\u2019s detected role (Numeric / Categorical) is correct.','<b>Find your variable pair</b> in the Suggested tests table to see which test fits.','<b>Go to the suggested test step</b> in the left rail to run that analysis.','<b>If a variable is misclassified,</b> the test itself will flag the problem when you run it.'],
       example:'<strong>Reading it:</strong> a numeric outcome paired with a 2-level categorical predictor suggests a t-test; 3+ levels suggests ANOVA.' },
@@ -158,6 +161,7 @@
     group_summaries:{ measures:'Each group’s mean, SD, and gap from the overall mean on a numeric outcome.', use:'To compare a numeric outcome across groups, descriptively.' },
     top_bottom_items:{ measures:'Every numeric item’s mean and SD, ranked, with ceiling / floor / low-variance flags.', use:'To spot the strongest and weakest items, and items that may not discriminate.' },
     scale_scores:{ measures:'A composite (average of chosen items per respondent) with its N, mean, SD, and range.', use:'To summarize a set of items as one score. Whether the set is reliable lives in RSSI.' },
+    descriptive:{ measures:'Frequencies (count/percent/valid%), summary statistics (N, mean, SD, min, max), and cross-tabulations with row percentages.', use:'Before inferential tests, to confirm the shape of the data and spot patterns worth testing.' },
     variables_fit:{ measures:'Variable types (numeric vs categorical) and a test-suggestion table for each variable pair.', use:'At the start of the Inferential Studio, to confirm variable types and choose the right test.' },
     t_test:{ measures:'Welch\'s t statistic, degrees of freedom, two-tailed p-value, and Cohen\'s d.', use:'To test whether two group means on a numeric outcome differ beyond sampling noise.' },
     anova:{ measures:'F statistic, between/within df, p-value, and eta-squared (\u03b7\u00b2), with group means.', use:'To test whether a numeric outcome differs across three or more groups.' },
@@ -175,6 +179,7 @@
     group_summaries:'Group means were compared descriptively across the grouping variable, with each group’s gap from the overall mean noted.',
     top_bottom_items:'Items were ranked by mean to identify the highest- and lowest-scoring items, flagging ceiling and low-variance items.',
     scale_scores:'A composite scale score was computed as the mean of the selected items for each respondent.',
+    descriptive:'Descriptive statistics were examined prior to inferential testing, including frequency distributions, summary statistics, and cross-tabulations.',
     variables_fit:'Variable types were reviewed and test-variable pairs were identified to guide subsequent inferential analyses.',
     t_test:'An independent-samples t-test was conducted to compare the means of the two groups on the outcome variable.',
     anova:'A one-way ANOVA was conducted to examine differences in the outcome variable across groups.',
@@ -228,13 +233,13 @@
       return;
     }
     const fns = { frequencies:renderFreq, distributions:renderMeans, cross_tabs:renderCross, group_summaries:renderGroups, top_bottom_items:renderTopBottom, scale_scores:renderScale,
-      variables_fit:renderVariablesFit, t_test:renderTTest, anova:renderAnova,
+      variables_fit:renderVariablesFit, descriptive:renderDescriptive, t_test:renderTTest, anova:renderAnova,
       chi_square:renderChiSquare, correlation:renderCorrelation, regression:renderRegression, effect_sizes:renderEffectSizes };
     const fn = fns[tool];
     if (!fn){ host.innerHTML = header(eyebrow, titleFor(tool), '') + '<div class="as-empty-tool">This analysis is being built.</div>'; return; }
     fn(host, ds, ctx);
   };
-  function titleFor(t){ return ({frequencies:'Frequencies',distributions:'Means & Distributions',cross_tabs:'Cross-Tabs',group_summaries:'Group Summaries',top_bottom_items:'Top & Bottom Items',scale_scores:'Scale Scores',variables_fit:'Variables & Fit',t_test:'Independent t-test',anova:'One-way ANOVA',chi_square:'Chi-square',correlation:'Correlation',regression:'Regression',effect_sizes:'Effect Sizes'})[t]||'Analysis'; }
+  function titleFor(t){ return ({frequencies:'Frequencies',distributions:'Means & Distributions',cross_tabs:'Cross-Tabs',group_summaries:'Group Summaries',top_bottom_items:'Top & Bottom Items',scale_scores:'Scale Scores',variables_fit:'Variables & Fit',descriptive:'Descriptive Analysis',t_test:'Independent t-test',anova:'One-way ANOVA',chi_square:'Chi-square',correlation:'Correlation',regression:'Regression',effect_sizes:'Effect Sizes'})[t]||'Analysis'; }
 
   // ---- Frequencies ----
   function renderFreq(host, ds){
@@ -465,6 +470,181 @@
     drawOut();
   }
 
+  // Descriptive state (sub-tab + stored refs for tab-switching)
+  var desc = {tab:'freq', host:null, ds:null, ctx:null};
+
+  // ---- Descriptive Analysis (Frequencies | Means & Distributions | Cross-Tabs) ----
+  function renderDescriptive(host, ds, ctx) {
+    desc.host = host; desc.ds = ds; desc.ctx = ctx;
+    var subtabs = ttTabs(
+      [['freq','Frequencies'],['means','Means & Distributions'],['cross','Cross-Tabs']],
+      desc.tab, 'descriptive'
+    );
+    host.innerHTML = header('Inferential Analysis','Descriptive Analysis',
+      'Summarize the quantitative pattern before running inferential tests.','descriptive')
+      + subtabs
+      + '<div id="descContent"></div>';
+    var cont = host.querySelector('#descContent');
+    if (desc.tab === 'freq')  renderDescFreq(cont, ds);
+    else if (desc.tab === 'means') renderDescMeans(cont, ds);
+    else renderDescCross(cont, ds);
+    if (ctx && ctx.onResult) ctx.onResult();
+  }
+  AS.descTab = function(tab) {
+    desc.tab = tab;
+    if (desc.host && desc.ds) renderDescriptive(desc.host, desc.ds, desc.ctx);
+  };
+
+  // ---- Descriptive sub-views ----
+  function renderDescFreq(cont, ds) {
+    var cands = discreteVars(ds).length ? discreteVars(ds) : (catVars(ds).length ? catVars(ds) : ds.variables);
+    if (!cands.length) {
+      cont.innerHTML = '<div class="as-empty-tool">No categorical or Likert variables found to tabulate.</div>'; return;
+    }
+    if (!sel.dFreq || !varByName(ds, sel.dFreq)) sel.dFreq = cands[0].name;
+    var vOpts = cands.map(function(v){
+      return '<option value="'+esc(v.name)+'"'+(v.name===sel.dFreq?' selected':'')+'>'+esc(v.name)+'</option>';
+    }).join('');
+    function drawFreq() {
+      var v = varByName(ds, sel.dFreq); if (!v) return;
+      var nm = nonMissing(v.values); var total = v.values.length; var miss = total - nm.length;
+      var counts = {}; nm.forEach(function(x){counts[x]=(counts[x]||0)+1;});
+      var rows = Object.keys(counts).map(function(k){return {value:k,count:counts[k]};}).sort(function(a,b){return b.count-a.count;});
+      var maxc = rows.length ? rows[0].count : 1; var cum = 0;
+      var body = rows.map(function(r){
+        var valid = 100*r.count/nm.length; cum += valid; var all = 100*r.count/total;
+        return '<tr><td class="dx-name">'+esc(r.value)+'</td><td>'+r.count+'</td>'
+          +'<td>'+pc(all)+'</td><td>'+pc(valid)+'</td><td>'+pc(cum)+'</td></tr>';
+      }).join('');
+      var missRow = miss>0 ? '<tr><td class="dx-name">Missing</td><td>'+miss+'</td><td>'+pc(100*miss/total)+'</td><td>—</td><td>—</td></tr>' : '';
+      var top = rows[0];
+      var layerBlocks = [
+        {k:'What this shows', t: top ? 'The most common value of <strong>'+esc(v.name)+'</strong> was "'+esc(top.value)+'" — '+pc(100*top.count/nm.length)+' of '+nm.length+' valid responses.' : 'No non-missing responses.'},
+        {k:'Why this matters', t:'How the sample distributes across '+esc(v.name)+' shapes how every other result should be read.'},
+        {k:'Caution', caution:true, t:'Counts describe who is in the data; on their own they do not explain differences between groups.'}
+      ];
+      cont.querySelector('#dFreqOut').innerHTML =
+        '<div style="margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +'<label class="ed-l" style="margin:0">Variable</label>'
+        +'<select class="ed-in" style="max-width:280px" id="dFreqSel">'+vOpts+'</select></div>'
+        +'<div class="panel"><div class="panel-h"><div><h3>Frequency distribution for '+esc(v.name)+'</h3></div></div>'
+        +'<div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
+        +'<thead><tr><th class="l">'+esc(v.name)+'</th><th>Frequency</th><th>Percent</th><th>Valid %</th><th>Cumulative %</th></tr></thead>'
+        +'<tbody>'+body+missRow
+        +'<tr class="dx-total"><td class="dx-name">Total</td><td>'+total+'</td><td>100.0%</td><td>100.0%</td><td>—</td></tr>'
+        +'</tbody></table></div>'
+        +layers(layerBlocks)+'</div></div>';
+      var sel2 = cont.querySelector('#dFreqSel');
+      if (sel2) sel2.addEventListener('change', function(e){sel.dFreq=e.target.value; drawFreq();});
+    }
+    cont.innerHTML = '<div id="dFreqOut"></div>';
+    drawFreq();
+  }
+
+  function renderDescMeans(cont, ds) {
+    var nv = numericVars(ds); var cv = catVars(ds);
+    if (!nv.length) {
+      cont.innerHTML = '<div class="as-empty-tool">No numeric variables found.</div>'; return;
+    }
+    var rows = nv.map(function(v){
+      var a = nums(v.values); var total = v.values.length;
+      return {name:v.name, n:a.length, mean:mean(a), sd:sd(a),
+              min:a.length?Math.min.apply(null,a):null, max:a.length?Math.max.apply(null,a):null,
+              missing:total-nonMissing(v.values).length};
+    });
+    var t1body = rows.map(function(r){
+      return '<tr><td class="dx-name">'+esc(r.name)+'</td><td>'+r.n+'</td><td>'+n2(r.mean)+'</td><td>'+n2(r.sd)+'</td><td>'+n2(r.min)+'</td><td>'+n2(r.max)+'</td><td>'+r.missing+'</td></tr>';
+    }).join('');
+    var hi = rows.reduce(function(a,b){return b.mean>a.mean?b:a;}, rows[0]);
+    var lo = rows.reduce(function(a,b){return b.mean<a.mean?b:a;}, rows[0]);
+    var t1layers = [
+      {k:'What this shows', t: rows.length>1
+        ? 'Across '+rows.length+' numeric variables, "'+esc(hi.name)+'" had the highest average (M = '+n2(hi.mean)+') and "'+esc(lo.name)+'" the lowest (M = '+n2(lo.mean)+').'
+        : '"'+esc(hi.name)+'" had a mean of '+n2(hi.mean)+'.'},
+      {k:'Why this matters', t:'These averages set up the comparisons the inferential tests will evaluate.'},
+      {k:'Caution', caution:true, t:'Averages do not test whether differences are statistically significant — take promising gaps to t-test or ANOVA.'}
+    ];
+    var t1html = '<div class="panel"><div class="panel-h"><div><h3>Table 1 · Summary statistics for numeric variables</h3></div></div>'
+      +'<div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
+      +'<thead><tr><th class="l">Variable</th><th>N</th><th>Mean</th><th>SD</th><th>Min</th><th>Max</th><th>Missing</th></tr></thead>'
+      +'<tbody>'+t1body+'</tbody></table></div>'+layers(t1layers)+'</div></div>';
+    // Table 2 — means by group
+    var t2html = '';
+    if (nv.length && cv.length) {
+      if (!sel.dMNum || !varByName(ds,sel.dMNum)) sel.dMNum = nv[0].name;
+      if (!sel.dMGrp || !varByName(ds,sel.dMGrp)) sel.dMGrp = cv[0].name;
+      var numOpts = nv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.dMNum?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+      var grpOpts = cv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.dMGrp?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+      t2html = '<div class="panel"><div class="panel-h"><div><h3 id="dMT2title">Table 2 · Mean by group</h3></div>'
+        +'<div style="margin:4px 0 0;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        +'<select class="ed-in" style="max-width:200px" id="dMNum">'+numOpts+'</select>'
+        +'<span class="ed-l" style="margin:0">by</span>'
+        +'<select class="ed-in" style="max-width:200px" id="dMGrp">'+grpOpts+'</select>'
+        +'</div></div><div class="panel-b"><div id="dMT2out"></div></div></div>';
+    }
+    cont.innerHTML = t1html + t2html;
+    if (nv.length && cv.length) {
+      function drawT2(){
+        var ov = varByName(ds,sel.dMNum), gv = varByName(ds,sel.dMGrp);
+        var out = cont.querySelector('#dMT2out'); if(!ov||!gv||!out) return;
+        var ti = cont.querySelector('#dMT2title'); if(ti) ti.textContent = 'Table 2 · Mean of '+ov.name+' by '+gv.name;
+        var n = Math.min(ov.values.length,gv.values.length); var groups = {};
+        for(var i=0;i<n;i++){var g=gv.values[i],y=num(ov.values[i]);if(!isMissing(g)&&y!==null)(groups[g]=groups[g]||[]).push(y);}
+        var all=[].concat.apply([],Object.keys(groups).map(function(k){return groups[k];})); var grand=mean(all);
+        var grows=Object.keys(groups).map(function(g){var a=groups[g];var m=mean(a);return {group:g,n:a.length,mean:m,sd:sd(a),delta:m-grand};}).sort(function(a,b){return b.mean-a.mean;});
+        var gbody=grows.map(function(r){return '<tr><td class="dx-name">'+esc(r.group)+'</td><td>'+r.n+'</td><td>'+n2(r.mean)+'</td><td>'+n2(r.sd)+'</td><td class="'+(r.delta<0?'dx-neg':'dx-pos')+'">'+(r.delta>0?'+':'')+n2(r.delta)+'</td></tr>';}).join('');
+        out.innerHTML='<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Group</th><th>N</th><th>Mean</th><th>SD</th><th>Δ from overall</th></tr></thead><tbody>'
+          +gbody+'<tr class="dx-total"><td class="dx-name">Overall</td><td>'+all.length+'</td><td>'+n2(grand)+'</td><td>'+n2(sd(all))+'</td><td>—</td></tr></tbody></table></div>';
+      }
+      var elN=cont.querySelector('#dMNum'),elG=cont.querySelector('#dMGrp');
+      if(elN) elN.addEventListener('change',function(e){sel.dMNum=e.target.value;drawT2();});
+      if(elG) elG.addEventListener('change',function(e){sel.dMGrp=e.target.value;drawT2();});
+      drawT2();
+    }
+  }
+
+  function renderDescCross(cont, ds) {
+    var cv = catVars(ds).length >= 2 ? catVars(ds) : ds.variables;
+    if (!cv || cv.length < 2) {
+      cont.innerHTML = '<div class="as-empty-tool">Cross-tabs need at least two categorical variables.</div>'; return;
+    }
+    if (!sel.dCRow || !varByName(ds,sel.dCRow)) sel.dCRow = cv[0].name;
+    if (!sel.dCCol || !varByName(ds,sel.dCCol) || sel.dCCol===sel.dCRow) sel.dCCol = cv[1].name;
+    var rowOpts = cv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.dCRow?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    var colOpts = cv.map(function(v){return '<option value="'+esc(v.name)+'"'+(v.name===sel.dCCol?' selected':'')+'>'+esc(v.name)+'</option>';}).join('');
+    cont.innerHTML = '<div style="margin:0 0 12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      +'<label class="ed-l" style="margin:0">Rows</label><select class="ed-in" style="max-width:220px" id="dCRow">'+rowOpts+'</select>'
+      +'<label class="ed-l" style="margin:0 0 0 12px">Columns</label><select class="ed-in" style="max-width:220px" id="dCCol">'+colOpts+'</select>'
+      +'</div><div id="dCOut"></div>';
+    function drawCross(){
+      var rv = varByName(ds,sel.dCRow), cvv = varByName(ds,sel.dCCol);
+      var out = cont.querySelector('#dCOut'); if(!rv||!cvv||!out) return;
+      var n = Math.min(rv.values.length,cvv.values.length);
+      var colVals=[]; for(var i=0;i<n;i++){var c=cvv.values[i];if(!isMissing(c)&&colVals.indexOf(c)<0)colVals.push(c);}
+      var rowMap={};
+      for(var i=0;i<n;i++){var r=rv.values[i],c=cvv.values[i];if(!isMissing(r)&&!isMissing(c)){rowMap[r]=rowMap[r]||{};rowMap[r][c]=(rowMap[r][c]||0)+1;}}
+      var rowKeys=Object.keys(rowMap); var colTotals={}; var grand=0;
+      var trs=rowKeys.map(function(rk){var cells=rowMap[rk];var rt=colVals.reduce(function(s,c){return s+(cells[c]||0);},0);grand+=rt;
+        var tds=colVals.map(function(c){var v=cells[c]||0;colTotals[c]=(colTotals[c]||0)+v;return '<td>'+v+'</td><td>'+pc(rt?100*v/rt:0)+'</td>';}).join('');
+        return '<tr><td class="dx-name">'+esc(rk)+'</td>'+tds+'<td>'+rt+'</td></tr>';}).join('');
+      var totTds=colVals.map(function(c){return '<td>'+(colTotals[c]||0)+'</td><td>'+pc(grand?100*(colTotals[c]||0)/grand:0)+'</td>';}).join('');
+      var layerBlocks=[
+        {k:'What this shows', t:'How '+esc(rv.name)+' breaks down across '+esc(cvv.name)+'. Row % reads each row as 100%.'},
+        {k:'Caution', caution:true, t:'This table shows a pattern; whether it is statistically significant requires a chi-square test.'}
+      ];
+      out.innerHTML='<div class="panel"><div class="panel-h"><div><h3>'+esc(rv.name)+' × '+esc(cvv.name)+'</h3></div></div>'
+        +'<div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">'+esc(rv.name)+'</th>'
+        +colVals.map(function(c){return '<th>'+esc(c)+' n</th><th>'+esc(c)+' %</th>';}).join('')+'<th>Total</th></tr></thead><tbody>'
+        +trs+'<tr class="dx-total"><td class="dx-name">Total</td>'+totTds+'<td>'+grand+'</td></tr>'
+        +'</tbody></table></div>'+layers(layerBlocks)+'</div></div>';
+    }
+    var elR=cont.querySelector('#dCRow'),elC=cont.querySelector('#dCCol');
+    if(elR) elR.addEventListener('change',function(e){sel.dCRow=e.target.value;drawCross();});
+    if(elC) elC.addEventListener('change',function(e){sel.dCCol=e.target.value;drawCross();});
+    drawCross();
+  }
+
+
   // ---- Variables & Fit ----
   function renderVariablesFit(host,ds,ctx){
     var nv=numericVars(ds),cv=catVars(ds);
@@ -505,7 +685,7 @@
 
   // ---- Shared: tabbed results ----
   function ttTabs(tabs,cur,testKey){
-    var fnMap={t_test:'ttTab',anova:'anTab',chi_square:'csqTab',correlation:'corTab',regression:'regTab'};
+    var fnMap={t_test:'ttTab',anova:'anTab',chi_square:'csqTab',correlation:'corTab',regression:'regTab',descriptive:'descTab'};
     var fn=fnMap[testKey]||'ttTab';
     return '<div class="tt-tabs">'+tabs.map(function(t){
       var on=t[0]===cur?' on':'';

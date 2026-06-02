@@ -24,6 +24,7 @@ return [
     ['id' => 'start',            'label' => 'Start',                'dot' => 'quan', 'mode' => 'start'],
     ['id' => 'overview',         'label' => 'Overview',             'dot' => 'quan', 'mode' => 'overview'],
     ['id' => 'variables_fit',    'label' => 'Variables & Fit',      'dot' => 'quan', 'mode' => 'work', 'tool' => 'variables_fit'],
+    ['id' => 'descriptive',      'label' => 'Descriptive',          'dot' => 'quan', 'mode' => 'work', 'tool' => 'descriptive'],
     ['id' => 't_test',           'label' => 't-Test',               'dot' => 'quan', 'mode' => 'work', 'tool' => 't_test'],
     ['id' => 'anova',            'label' => 'ANOVA',                'dot' => 'quan', 'mode' => 'work', 'tool' => 'anova'],
     ['id' => 'chi_square',       'label' => 'Chi-Square',           'dot' => 'quan', 'mode' => 'work', 'tool' => 'chi_square'],
