@@ -242,7 +242,6 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 <script src="/apps/studio/type-taxonomy.js?v=<?= _qsv('/apps/studio/type-taxonomy.js') ?>"></script>
 <script src="/apps/studio/data-map.js?v=<?= _qsv('/apps/studio/data-map.js') ?>"></script>
 <script src="/apps/studio/dataset-upload.js?v=<?= _qsv('/apps/studio/dataset-upload.js') ?>"></script>
-<script src="/apps/qual/qual-studio.js?v=<?= _qsv('/apps/qual/qual-studio.js') ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -280,5 +279,6 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 <script>
 const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
 </script>
+<script src="/apps/qual/qual-studio.js?v=<?= _qsv('/apps/qual/qual-studio.js') ?>"></script>
 </body>
 </html>

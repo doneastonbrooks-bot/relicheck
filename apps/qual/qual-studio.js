@@ -548,7 +548,7 @@
           + '<input class="search-input" id="seg-search" placeholder="Search segments...">'
           + '<button class="filter-btn active" id="filter-all">All</button>'
           + '<button class="filter-btn" id="filter-uncoded">Uncoded only</button>'
-          + '<button class="btn" style="margin-left:auto" onclick="state.stepId=\'codebook\';render()">Manage codebook</button>'
+          + '<button class="btn" style="margin-left:auto" onclick="QS.go(\'codebook\')">Manage codebook</button>'
           + '</div>'
           + '<div id="seg-counts" style="font-size:13px;color:var(--ink-3);margin-bottom:14px;">Loading...</div>'
           + '<div class="seg-list" id="seg-list"><div class="placeholder">Loading segments...</div></div>';
@@ -813,5 +813,8 @@
       render();
     }
   });
+
+  // Expose minimal global so inline event handlers inside rendered HTML can navigate steps.
+  window.QS = { go: function (stepId) { state.stepId = stepId; render(); } };
 
 })();
