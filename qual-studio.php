@@ -98,70 +98,7 @@ include __DIR__ . '/_landing_head.php';
     font-size:16px; font-style:italic; color:#374151; line-height:1.7;
   }
   .qs-philosophy strong { font-style:normal; color:var(--accent); }
-  .qs-modal-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
-    z-index:200; align-items:center; justify-content:center;
-  }
-  .qs-modal-overlay.open { display:flex; }
-  .qs-modal {
-    background:#fff; border-radius:20px; padding:36px 32px; width:100%; max-width:560px;
-    box-shadow:0 20px 60px rgba(0,0,0,.18); position:relative;
-  }
-  .qs-modal h2 { font-size:22px; font-weight:800; margin:0 0 20px; color:#1d1d1f; }
-  .qs-field { margin-bottom:16px; }
-  .qs-field label { display:block; font-size:13px; font-weight:700; color:#374151; margin-bottom:6px; }
-  .qs-field input, .qs-field textarea, .qs-field select {
-    width:100%; box-sizing:border-box; padding:10px 14px; font-size:15px;
-    border:1.5px solid #d1d5db; border-radius:10px; outline:none; font-family:inherit;
-    transition:border-color .15s;
-  }
-  .qs-field input:focus, .qs-field textarea:focus, .qs-field select:focus { border-color:var(--accent); }
-  .qs-field textarea { resize:vertical; min-height:80px; }
-  .qs-modal-close {
-    position:absolute; top:16px; right:18px; background:none; border:none;
-    font-size:22px; color:#9ca3af; cursor:pointer; line-height:1;
-  }
-  .qs-modal-close:hover { color:#374151; }
-  .qs-modal-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
-  .qs-modal-actions .cancel { background:#f3f4f6; color:#374151; border:none; }
 </style>
-
-<!-- New Project Modal -->
-<div class="qs-modal-overlay" id="newProjectModal">
-  <div class="qs-modal">
-    <button class="qs-modal-close" onclick="document.getElementById('newProjectModal').classList.remove('open')">&times;</button>
-    <h2>New Qualitative Project</h2>
-    <div class="qs-field">
-      <label>Project title <span style="color:#c0392b">*</span></label>
-      <input type="text" id="np-title" placeholder="e.g. Staff Experience Open-Ends 2026">
-    </div>
-    <div class="qs-field">
-      <label>Research question</label>
-      <input type="text" id="np-rq" placeholder="What are participants saying about...">
-    </div>
-    <div class="qs-field">
-      <label>Analysis approach</label>
-      <select id="np-approach">
-        <option value="thematic">Thematic Analysis</option>
-        <option value="content">Content Analysis</option>
-        <option value="framework">Framework Analysis</option>
-        <option value="open_ended_survey">Open-Ended Survey Analysis</option>
-        <option value="document">Document Analysis</option>
-        <option value="grounded_theory" disabled>Grounded Theory (coming soon)</option>
-        <option value="narrative" disabled>Narrative Analysis (coming soon)</option>
-      </select>
-    </div>
-    <div class="qs-field">
-      <label>Researcher stance memo <span style="color:#9ca3af;font-weight:400">(optional)</span></label>
-      <textarea id="np-stance" placeholder="What assumptions, roles, or experiences might shape how you interpret this data?"></textarea>
-    </div>
-    <div id="np-error" style="color:#c0392b;font-size:14px;display:none;margin-top:8px;"></div>
-    <div class="qs-modal-actions">
-      <button class="qs-card-btn cancel" onclick="document.getElementById('newProjectModal').classList.remove('open')">Cancel</button>
-      <button class="qs-card-btn" id="np-submit" onclick="submitNewProject()">Create project</button>
-    </div>
-  </div>
-</div>
 
 <section class="sl-hero" style="min-height:70vh;">
   <h1 class="sl-h1 rv rv-d1" style="max-width:22ch;">
@@ -171,8 +108,10 @@ include __DIR__ . '/_landing_head.php';
     Qualitative analysis is not about finding frequent words. ReliCheck helps you examine language patterns, concepts, speaker intent, and evidence strength so your findings can be explained and defended.
   </p>
   <div class="sl-actions rv rv-d3">
-    <button class="sl-btn-a" onclick="document.getElementById('newProjectModal').classList.add('open')">New project</button>
-    <a href="#open-saved" class="sl-btn-b">Open saved project</a>
+    <a href="/qual-studio-workspace.php" class="sl-btn-a">Open Qualitative Studio</a>
+    <?php if (count($recentProjects) > 0): ?>
+      <a href="#recent" class="sl-btn-b">Recent projects</a>
+    <?php endif; ?>
   </div>
 </section>
 
@@ -191,34 +130,30 @@ include __DIR__ . '/_landing_head.php';
         </div>
         <h3>Upload qualitative data</h3>
         <p>CSV, XLSX, or a ReliCheck survey project. The studio detects open-ended columns and brings each response in as a codeable unit.</p>
-        <button class="qs-card-btn" onclick="document.getElementById('newProjectModal').classList.add('open')">New project</button>
+        <a href="/qual-studio-workspace.php" class="qs-card-btn">Open studio</a>
       </div>
 
-      <div class="qs-card rv rv-d2" id="open-saved">
+      <div class="qs-card rv rv-d2">
         <div class="qs-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
         </div>
-        <h3>Open saved project</h3>
-        <p>Continue coding, reviewing, or building themes in a project you have already started.</p>
-        <?php if (count($recentProjects) > 0): ?>
-          <a href="/qual-studio-workspace.php?project_id=<?= $recentProjects[0]['id'] ?>" class="qs-card-btn outline">Continue last project</a>
-        <?php else: ?>
-          <span style="font-size:14px;color:#9ca3af;">No saved projects yet.</span>
-        <?php endif; ?>
+        <h3>Build a codebook</h3>
+        <p>Define codes with clear inclusion and exclusion rules. A well-defined codebook is what separates credible qualitative analysis from impressionistic interpretation.</p>
+        <a href="/qual-studio-workspace.php" class="qs-card-btn outline">Open studio</a>
       </div>
 
       <div class="qs-card rv rv-d3">
         <div class="qs-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         </div>
-        <h3>Start from a ReliCheck survey</h3>
-        <p>Pull open-ended responses directly from an existing survey project. Participant metadata travels with every response.</p>
-        <button class="qs-card-btn outline" onclick="document.getElementById('newProjectModal').classList.add('open')">Choose survey</button>
+        <h3>Review trustworthiness</h3>
+        <p>Check credibility, dependability, confirmability, and reflexivity before any finding goes into a report. Not a score — a structured review.</p>
+        <a href="/qual-studio-workspace.php" class="qs-card-btn outline">Open studio</a>
       </div>
     </div>
 
     <?php if (count($recentProjects) > 0): ?>
-    <div class="qs-recent rv" style="margin-top:56px;">
+    <div class="qs-recent rv" id="recent" style="margin-top:56px;">
       <div class="qs-recent-h">Recent projects</div>
       <div class="qs-proj-list">
         <?php foreach ($recentProjects as $p):
@@ -281,38 +216,6 @@ include __DIR__ . '/_landing_foot.php';
 ?>
 
 <script>
-async function submitNewProject() {
-  const title = document.getElementById('np-title').value.trim();
-  const err   = document.getElementById('np-error');
-  if (!title) { err.textContent = 'A project title is required.'; err.style.display = 'block'; return; }
-  err.style.display = 'none';
-  const btn = document.getElementById('np-submit');
-  btn.disabled = true; btn.textContent = 'Creating...';
-  try {
-    const res = await fetch('/api/qual/create-project.php', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        title,
-        research_question:     document.getElementById('np-rq').value.trim(),
-        analysis_approach:     document.getElementById('np-approach').value,
-        researcher_stance_memo:document.getElementById('np-stance').value.trim(),
-      })
-    });
-    const data = await res.json();
-    if (data.ok) {
-      window.location.href = '/qual-studio-workspace.php?project_id=' + data.project_id;
-    } else {
-      err.textContent = data.message || 'Could not create project.';
-      err.style.display = 'block';
-      btn.disabled = false; btn.textContent = 'Create project';
-    }
-  } catch(e) {
-    err.textContent = 'Network error. Please try again.';
-    err.style.display = 'block';
-    btn.disabled = false; btn.textContent = 'Create project';
-  }
-}
-
 // Scroll reveal
 const rv = document.querySelectorAll('.rv');
 const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting) e.target.classList.add('in'); }), {threshold:.08});

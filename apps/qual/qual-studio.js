@@ -68,8 +68,10 @@ const App = (() => {
     if (BOOT.projectId) {
       go('setup');
     } else {
-      _setContent(Render.noProject());
-      _show('content');
+      Screens.start().catch(err => {
+        _setContent('<div class="qs-notice err">Could not load projects: ' + (err.message || '') + '</div>');
+        _show('content');
+      });
     }
   }
 
@@ -108,6 +110,119 @@ const Render = {
 
 // ─── Screens ─────────────────────────────────────────────────────────────────
 const Screens = {
+
+  // ── Start (no project loaded) ─────────────────────────────────────────────
+  async start() {
+    App._show('loading');
+    let recent = [];
+    try {
+      const d = await App.api('/api/qual/list-projects.php');
+      recent = d.projects || [];
+    } catch(e) { /* show empty state */ }
+
+    const approachLabel = slug => ({
+      thematic:'Thematic', content:'Content', framework:'Framework',
+      open_ended_survey:'Survey Analysis', document:'Document',
+    }[slug] || slug);
+
+    const recentHtml = recent.length ? `
+      <div style="margin-top:32px;">
+        <div class="qs-rail-h" style="padding:0 0 10px;">Recent projects</div>
+        <div class="qs-seg-list">
+          ${recent.map(p => `
+            <a href="/qual-studio-workspace.php?project_id=${p.id}"
+               style="display:flex;align-items:center;gap:14px;padding:14px 18px;
+                      background:var(--panel);border:1.5px solid var(--line);border-radius:12px;
+                      text-decoration:none;color:inherit;transition:border-color .15s;"
+               onmouseover="this.style.borderColor='var(--qs-accent)'"
+               onmouseout="this.style.borderColor='var(--line)'">
+              <span style="width:9px;height:9px;border-radius:50%;background:var(--qs-accent);flex:none;"></span>
+              <span style="flex:1;font-size:15px;font-weight:700;color:var(--ink);">${_esc(p.title)}</span>
+              <span style="font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+                           padding:3px 10px;border-radius:999px;background:var(--qs-accent-soft);
+                           color:var(--qs-accent-ink);">${approachLabel(p.analysis_approach)}</span>
+              <span style="font-size:13px;color:var(--ink-3);white-space:nowrap;">
+                ${p.seg_count} segs &middot; ${p.code_count} codes
+              </span>
+            </a>
+          `).join('')}
+        </div>
+      </div>` : '';
+
+    App._setContent(`
+      <div style="max-width:600px;margin:48px auto 0;">
+        <h1 class="qs-module-h">Qualitative Analysis Studio</h1>
+        <p class="qs-module-sub">Start a new project or continue one you have already begun.</p>
+
+        <div class="qs-card">
+          <div class="qs-card-h">New project</div>
+          <div class="qs-form-row">
+            <label>Project title <span style="color:#c0392b">*</span></label>
+            <input class="qs-input" id="start-title" placeholder="e.g. Staff Experience Open-Ends 2026">
+          </div>
+          <div class="qs-form-grid-2">
+            <div class="qs-form-row">
+              <label>Analysis approach</label>
+              <select class="qs-select" id="start-approach">
+                <option value="thematic">Thematic Analysis</option>
+                <option value="content">Content Analysis</option>
+                <option value="framework">Framework Analysis</option>
+                <option value="open_ended_survey">Open-Ended Survey Analysis</option>
+                <option value="document">Document Analysis</option>
+              </select>
+            </div>
+            <div class="qs-form-row">
+              <label>Research question <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>
+              <input class="qs-input" id="start-rq" placeholder="What are participants saying about...">
+            </div>
+          </div>
+          <div id="start-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;"></div>
+          <div class="qs-btn-row" style="margin-top:8px;">
+            <button class="qs-btn qs-btn-primary" id="start-btn" onclick="Screens._createAndGo()">
+              Create project
+            </button>
+          </div>
+        </div>
+
+        ${recentHtml}
+      </div>
+    `);
+    App._show('content');
+
+    App._setGuide(`
+      <div class="qs-guide-section">
+        <div class="qs-guide-section-h">Approach guide</div>
+        <p><strong>Thematic Analysis</strong> — flexible, suitable for most survey and interview data.</p>
+        <p><strong>Content Analysis</strong> — structured, often with predetermined categories.</p>
+        <p><strong>Framework Analysis</strong> — applies a pre-existing analytic framework.</p>
+        <p><strong>Open-Ended Survey Analysis</strong> — purpose-built for mixed-method survey open-ends.</p>
+        <p><strong>Document Analysis</strong> — for documents, field notes, and written materials.</p>
+      </div>
+    `);
+  },
+
+  async _createAndGo() {
+    const title = (document.getElementById('start-title')?.value || '').trim();
+    const err   = document.getElementById('start-err');
+    if (!title) { err.textContent = 'A project title is required.'; err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    const btn = document.getElementById('start-btn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+    try {
+      const r = await App.api('/api/qual/create-project.php', {
+        method: 'POST',
+        body: JSON.stringify({
+          title,
+          analysis_approach: document.getElementById('start-approach')?.value || 'thematic',
+          research_question: document.getElementById('start-rq')?.value.trim() || '',
+        }),
+      });
+      window.location.href = '/qual-studio-workspace.php?project_id=' + r.project_id;
+    } catch(e) {
+      err.textContent = 'Error: ' + e.message; err.style.display = 'block';
+      btn.disabled = false; btn.textContent = 'Create project';
+    }
+  },
 
   // ── Setup ─────────────────────────────────────────────────────────────────
   async setup() {
