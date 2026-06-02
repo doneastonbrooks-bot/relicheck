@@ -305,6 +305,31 @@ if ($action === 'set_quote') {
     json_out(['ok' => true, 'theme_id' => $themeId, 'quote' => ['response_id' => $responseId, 'text' => (string)$row['text']]]);
 }
 
+// Manual free-text quote — the fallback when there are no coded responses to
+// pick from (incomplete tagging). The researcher types/pastes any quote and an
+// optional participant attribution; stored with quote_response_id = NULL. No AI,
+// no rate limit. Uses the existing quote_text column, so no schema change.
+if ($action === 'set_quote_manual') {
+    $themeId = (int)($body['theme_id'] ?? 0);
+    $quote   = clean_string((string)($body['quote_text'] ?? ''), 760);
+    $attrib  = clean_string((string)($body['attribution'] ?? ''), 120);
+    if ($themeId <= 0) fail('bad_input', 'theme_id is required.');
+    if ($quote === '') fail('bad_input', 'quote_text is required.');
+    $tk = $pdo->prepare('SELECT id FROM mm_theme_categories WHERE id = :t AND project_id = :p');
+    $tk->execute([':t' => $themeId, ':p' => $projectId]);
+    if (!$tk->fetch()) fail('mm_theme_not_found', 'Theme not found.', 404);
+    // No attribution column on mm_joint_display_rows; fold the optional
+    // attribution into the stored text so it survives without a migration.
+    $stored = $attrib !== '' ? mb_substr($quote . ' — ' . $attrib, 0, 800) : $quote;
+    $up = $pdo->prepare(
+        'INSERT INTO mm_joint_display_rows (project_id, theme_id, quote_response_id, quote_text)
+         VALUES (:p, :t, NULL, :txt)
+         ON DUPLICATE KEY UPDATE quote_response_id = NULL, quote_text = VALUES(quote_text)'
+    );
+    $up->execute([':p' => $projectId, ':t' => $themeId, ':txt' => $stored]);
+    json_out(['ok' => true, 'theme_id' => $themeId, 'quote' => ['response_id' => null, 'text' => $stored, 'manual' => true]]);
+}
+
 check_rate_limit('mm_joint_display:user:' . $uid, 60, 3600);
 
 if ($action === 'pick_quote') {
