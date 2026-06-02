@@ -2749,7 +2749,6 @@ if(typeof StudioHeader!=='undefined'){
   StudioHeader.init({
     logoSrc:      '/MM-Studio-long.png',
     logoAlt:      'Mixed Methods Studio',
-    logoHeight:   50,
     projectLabel: BOOT.projectLabel,
     projectLive:  BOOT.projectId > 0,
     projectsUrl:  '/studio-mm-projects.php',
@@ -2795,11 +2794,22 @@ if(typeof StudioHeader!=='undefined'){
   })();
 }
 if(typeof StudioFooter!=='undefined'){
-  StudioFooter.init({
-    onSiri:   function(){ go('/develop.php?db=1&start=choose'); },
-    onUpload: function(){ toast('Upload — open a saved project or bring data in via SIRI.'); },
-    onSaved:  function(){ go('/studio-mm-projects.php'); }
-  });
+  StudioFooter.init();
+  // Populate SIRI footer popup from server-resolved score.
+  var sc=BOOT.scores||{};
+  if(sc.siri!=null){
+    StudioFooter.setSiriInfo({
+      score: sc.siri,
+      band:  '',
+      link:  '/develop.php?db=1&start=choose'
+    });
+  }
+  // RSSI footer popup is populated via StudioHeader.setRssiStub below.
+  // Data info: show row/col count if dataset is linked.
+  var ri=BOOT.rawinfo||{};
+  if(ri.linked&&ri.rows>0){
+    StudioFooter.setDataInfo(ri.rows, ri.cols||0);
+  }
 }
 
 state.stepId='start';   // users come straight in to the Start overview (like SIRI)

@@ -115,6 +115,7 @@
     },
 
     // Fetch RSSI data from the server then show the badge.
+    // Also notifies StudioFooter so the RSSI popup has the same data.
     loadRssiStub: function (surveyPid) {
       var wrap = document.getElementById('tbRssi');
       if (!wrap || !surveyPid) return;
@@ -122,13 +123,18 @@
         credentials: 'same-origin', headers: { Accept: 'application/json' }
       })
       .then(function (r) { return r.ok ? r.json() : null; })
-      .then(populateBadge)
+      .then(function (d) {
+        populateBadge(d);
+        if (window.StudioFooter && d && d.ok) window.StudioFooter.setRssiInfo(d);
+      })
       .catch(function () { wrap.hidden = true; });
     },
 
     // Populate the badge from already-known data (e.g. MM Studio's BOOT.scores).
+    // Also notifies StudioFooter.
     setRssiStub: function (data) {
       populateBadge(data);
+      if (window.StudioFooter && data) window.StudioFooter.setRssiInfo(data);
     }
   };
 

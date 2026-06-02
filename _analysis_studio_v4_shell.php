@@ -19,10 +19,10 @@
 // Every studio built on this shell MUST follow this sequence:
 //
 //  1. UNIFORM HEADER (top bar)
-//     App font, logo left corner, project context, user avatar.
+//     App font, logo left corner (studio long wordmark, height 70px — same
+//     for every studio), project context, user avatar.
 //     RSSI stub: when the active project has RSSI results, display a score
-//     badge/link in the header. Hidden otherwise. Design is external to this
-//     template — include it as a shared component when ready.
+//     badge/link in the header. Hidden otherwise.
 //
 //  2. START  (mode='start')
 //     The entry section. User brings in their data here: upload a file, open
@@ -318,11 +318,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     projectsUrl:  BOOT.projectsUrl,
     initials:     '<?= htmlspecialchars($initials) ?>'
   });
-  StudioFooter.init({
-    onSiri:   openSiri,
-    onUpload: openUpload,
-    onSaved:  openSaved
-  });
+  StudioFooter.init();
 
   const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table', rssiProjectId: null };
   const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
