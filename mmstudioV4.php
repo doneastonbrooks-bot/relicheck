@@ -1144,9 +1144,20 @@ function renderTTestResults(r){
 }
 function addToExplain(){
   const r=tt.result; if(!r) return;
-  const obj={project_id:BOOT.projectId,source:'t_test',outcome:r.outcome.name,grouping:r.grouping.name,group1:r.grouping.group1,group2:r.grouping.group2,
+  const g=r.grouping; const g1=String(g.group1), g2=String(g.group2);
+  const numGroups=/^\d+$/.test(g1)&&/^\d+$/.test(g2);
+  const g1l=numGroups?`${g.name}=${g1}`:g1;
+  const g2l=numGroups?`${g.name}=${g2}`:g2;
+  const dir=r.difference.diff<0?'lower':'higher';
+  const plain=numGroups
+    ?`${g1l} reported ${dir} ${r.outcome.name} than ${g2l}. The difference was ${r.result.significant?'statistically reliable':'not statistically reliable'}.`
+    :r.reporting.plain;
+  const fq=numGroups
+    ?`What experiences help explain why ${g1l} reported ${dir} ${r.outcome.name} than ${g2l}?`
+    :(r.follow_up_question||'');
+  const obj={project_id:BOOT.projectId,source:'t_test',outcome:r.outcome.name,grouping:g.name,group1:g1,group2:g2,
     test_used:r.result.test_used,t:r.result.t,df:r.result.df,p:r.result.p,ci_lo:r.result.ci_lo,ci_hi:r.result.ci_hi,
-    effect_type:r.effect.type,effect_value:r.effect.value,diff:r.difference.diff,plain:r.reporting.plain,follow_up_question:r.follow_up_question};
+    effect_type:r.effect.type,effect_value:r.effect.value,diff:r.difference.diff,plain,follow_up_question:fq};
   fetch('/api/mm/results-to-explain.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)})
     .then(r=>r.json()).then(j=>{ if(j.ok){ tt.added=true; $("#ttResults").innerHTML=renderTTestResults(tt.result); toast('Added to Results to Explain'); } else toast(j.error||'Could not add.'); })
     .catch(()=>toast('Request failed.'));
@@ -1434,7 +1445,7 @@ function addCorToExplain(){
     .catch(()=>toast('Request failed.'));
 }
 /* ===== Linear Regression (real data via /api/mm/regression.php) — panel mirrors the t-test ===== */
-const reg={outcome:null,preds:{},result:null,tab:'coef',busy:false};
+const reg={outcome:null,preds:{},result:null,tab:'coef',busy:false,added:false};
 function renderRegression(s){
   const V=BOOT.ttvars||{datasetReady:false,outcomes:[],groupings:[]}; const O=V.outcomes||[];
   if(!BOOT.projectId||!V.datasetReady||O.length<2){
@@ -1507,7 +1518,19 @@ function renderRegressionResults(r){
     <div class="dx-layers">
       <div class="dx-l"><div class="dx-l-k">What this means</div><div class="dx-l-t">${esc(r.reporting.plain)}</div></div>
       <div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">${esc(r.reporting.caution)}</div></div>
-    </div>`;
+    </div>
+    <div class="dx-next"><div class="dx-next-k">↳ Explanatory next step</div><div class="dx-next-t">Stage this model for the qualitative phase to explain.</div>
+      <button class="btn primary" style="margin-left:auto;padding:7px 14px;font-size:12.5px" onclick="addRegToExplain()" ${reg.added?'disabled':''}>${reg.added?'Added ✓':'Add to Results to Explain'}</button></div>`;
+}
+function addRegToExplain(){
+  const r=reg.result; if(!r) return;
+  const sigPreds=r.coefficients.filter(c=>!c.is_intercept&&c.sig).map(c=>c.term);
+  const obj={project_id:BOOT.projectId,source:'regression',outcome:r.outcome.name,
+    r2:r.result.r2,F:r.result.F,df1:r.result.df1,df2:r.result.df2,p:r.result.p,n_total:r.result.n_total,
+    significant_predictors:sigPreds.join(', '),plain:r.reporting.plain,follow_up_question:r.follow_up_question||''};
+  fetch('/api/mm/results-to-explain.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(obj)})
+    .then(r=>r.json()).then(j=>{ if(j.ok){ reg.added=true; $("#regResults").innerHTML=renderRegressionResults(reg.result); toast('Added to Results to Explain'); } else toast(j.error||'Could not add.'); })
+    .catch(()=>toast('Request failed.'));
 }
 /* ===== Scale Reliability / Cronbach's alpha (real data via /api/mm/reliability.php) — panel mirrors the t-test ===== */
 const rel={items:{},result:null,tab:'rel',busy:false};
@@ -2202,9 +2225,18 @@ function renderExplain(s){
     const cards=items.map(it=>{
       const on=expl.sel[it.id];
       const d=it.data||it; // payload is nested under .data by the GET endpoint
-      const src=esc(explSrcLabel(it.source||it.src));
-      const plain=esc(d.plain||'');
-      const fq=d.follow_up_question?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-3)">↳ ${esc(d.follow_up_question)}</div>`:'';
+      const src_raw=it.source||it.src||'';
+      const src=esc(explSrcLabel(src_raw));
+      let plainText=d.plain||'', fqText=d.follow_up_question||'';
+      if(src_raw==='t_test'&&d.grouping&&/^\d+$/.test(String(d.group1||''))&&/^\d+$/.test(String(d.group2||''))){
+        const g1l=`${d.grouping}=${d.group1}`, g2l=`${d.grouping}=${d.group2}`;
+        const dir=d.diff!=null&&d.diff<0?'lower':'higher';
+        const sig=d.p!=null&&d.p<0.05;
+        plainText=`${g1l} reported ${dir} ${d.outcome||''} than ${g2l}. The difference was ${sig?'statistically reliable':'not statistically reliable'}.`;
+        fqText=`What experiences help explain why ${g1l} reported ${dir} ${d.outcome||''} than ${g2l}?`;
+      }
+      const plain=esc(plainText);
+      const fq=fqText?`<div style="margin-top:8px;font-size:12.5px;color:var(--ink-3)">↳ ${esc(fqText)}</div>`:'';
       const pVal=d.p!=null?d.p:null;
       const pStr=pVal!=null?` <span style="font-size:12px;color:var(--ink-3)">p ${pVal<.001?'< .001':'= '+Number(pVal).toFixed(3)}</span>`:'';
       return `<div class="dx-layers" style="border:2px solid ${on?'var(--btn)':'var(--line)'};margin-bottom:12px;transition:border-color .15s">
