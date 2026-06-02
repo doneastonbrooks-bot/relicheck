@@ -140,7 +140,9 @@ Rules:
     * "intensity"   ("low" = passing mention, "moderate" = clear mention, "high" = central focus of the response)
     * "relevance"   ("usable" = clearly about this category, "unclear" = possible but ambiguous, "off_topic" = does not really fit)
     * "quote_worthy" (true if the response would make a strong pull-quote for a report, false otherwise)
-- A response may match one OR many categories. If a response is off-topic to ALL categories, return an empty "categories" list for it — do NOT force a weak match.
+- Tag EVERY category a response addresses, including brief, secondary, or implied mentions — not only the single most central theme. Most substantive responses touch more than one category. Use "intensity":"low" for a passing mention, "moderate" for a clear one, "high" for the central focus.
+- Be inclusive, not strict: if a response relates to what a category is about — even partially, or in different words than the category name — TAG it (relevance "usable" if clear, "unclear" if ambiguous). For example, a response mentioning tight budgets, lacking materials, or paying out of pocket should be tagged to a resources/funding category even if it never says the word "resources".
+- Only return an empty "categories" list when a response is genuinely unrelated to ALL categories (blank, "n/a", or clearly off-topic). Do NOT leave an on-topic response untagged.
 - Sentiment is per response (not per category): positive, neutral, negative, or mixed.
 - Confidence is per response: high, moderate, or low.
 
