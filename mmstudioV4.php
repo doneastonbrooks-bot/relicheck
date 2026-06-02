@@ -934,6 +934,12 @@ const AHELP={
     use:`Use it right after you pick your results to explain: name the groups whose differences you want to understand, decide how many people to talk to, and draft the questions that target those differences.`,
     steps:[`<b>Review</b> the staged results and the groups in your data.`,`<b>Scaffold</b> a draft plan from your findings, or write your own.`,`<b>Name who to sample</b> — purposively include the contrasting groups.`,`<b>Draft what to ask</b>, then save; the plan flows into the Report Builder's Methods.`],
     example:`<p><b>Reading it:</b> if SEL-trained staff scored higher, your plan might sample a few trained and a few untrained participants and ask each what their training did or did not change in practice.</p>`},
+  'explain_map':{title:`Quant → Qual Explanation Map`,
+    what:`The explanation map links each quantitative result you chose to explain to the qualitative theme that accounts for it, with a sentence on how — the core move of an explanatory sequential design.`,
+    measures:`It lays out your staged results next to your themes and lets you record, per result, which theme explains it and why. The map saves into the report's Integration section.`,
+    use:`Use it after you have themes and have staged results to explain: for each result, pick the theme that explains it and write the connection. These links become your integration narrative.`,
+    steps:[`<b>Read each staged result.</b>`,`<b>Pick the theme</b> that best explains it.`,`<b>Write how</b> the theme accounts for the result.`,`<b>Save;</b> the map flows into the Report Builder's Integration section.`],
+    example:`<p><b>Reading it:</b> if SEL-trained staff scored higher, you might link that result to a "relationship as SEL foundation" theme and note that trained staff described building trust more deliberately.</p>`},
   'converge':{title:`Convergence & Divergence`,
     what:`This step puts each theme's quantitative and qualitative evidence side by side so you can name where the two strands agree (converge), add to each other (nuanced), or contradict (diverge).`,
     measures:`For each theme it shows the quantitative picture (how often it appears and any statistical result) next to the qualitative picture (sentiment and a quote), and lets you record your reading of how they align.`,
@@ -2390,6 +2396,81 @@ function renderQualSampling(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">In an explanatory sequential design the qualitative phase exists to explain the quantitative results. A good sampling plan deliberately includes the groups whose differences you are trying to understand, and asks questions aimed squarely at those differences.</div></div></div>`;
   $("#centerInner").innerHTML=qsHead(s)+helpBar('qual_sampling')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`+findPanel+grpRef+tableNote+composer+layers+qsNav();
 }
+/* ===== Quant → Qual Explanation Map (explain_map) — Step 11 ============
+   For each quantitative result staged in Step 7, the researcher names the
+   qualitative theme that explains it and writes why. Findings come from
+   results-to-explain.php GET (reusing qsReadFinding's label fix); themes from
+   categories.php GET. The composed map persists as a note on the report's
+   Integration section (report.php add_note/update_note), so it carries into the
+   Report Builder. Manual mapping; no new server endpoint. */
+const em={loaded:false,busy:false,err:'',findings:[],themes:[],noteId:null,savedText:'',hasTable:true,saving:false};
+const EM_MARK='Quant → Qual explanation map';
+function emFetch(){return Promise.all([
+  fetch('/api/mm/results-to-explain.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null),
+  fetch('/api/mm/categories.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null),
+  fetch('/api/mm/report.php?project_id='+BOOT.projectId+'&action=list_notes&section_key=integration',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)
+]);}
+function emHead(s){return `<div class="ws-header"><div class="eyebrow">Quant → Qual explanation map · link each result to the theme that explains it <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function emNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function emMsg(s,msg){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+emNav();}
+function emCompose(){
+  const lines=[EM_MARK,''];
+  em.findings.forEach((it,i)=>{
+    const r=qsReadFinding(it);
+    const tsel=document.getElementById('em_t_'+it.id);
+    const nin=document.getElementById('em_n_'+it.id);
+    const tid=tsel?+tsel.value:0;
+    const theme=em.themes.find(t=>t.id===tid);
+    const note=nin?nin.value.trim():'';
+    lines.push(`${i+1}. ${r.plain}`);
+    lines.push(theme?`   Explained by "${theme.name}"${note?': '+note:''}`:'   (not yet mapped to a theme)');
+  });
+  return lines.join('\n');
+}
+function emSave(){
+  if(!em.findings.length){toast('No staged findings to map');return;}
+  const text=emCompose();
+  if(text.length>800){toast(`Map is ${text.length} characters; the limit is 800. Shorten your notes.`);return;}
+  em.saving=true;renderExplainMap(activeStep());
+  const payload=em.noteId
+    ?{project_id:BOOT.projectId,action:'update_note',note_id:em.noteId,body_text:text}
+    :{project_id:BOOT.projectId,action:'add_note',section_key:'integration',body_text:text};
+  fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(r=>r.json()).then(j=>{em.saving=false;if(j&&j.ok){if(j.id)em.noteId=j.id;em.savedText=text;toast('Explanation map saved to Integration');renderExplainMap(activeStep());}else{toast((j&&(j.message||j.error))||'Could not save.');renderExplainMap(activeStep());}})
+    .catch(()=>{em.saving=false;toast('Save failed.');renderExplainMap(activeStep());});
+}
+function renderExplainMap(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<p class="lede">Connect a project to map results to themes.</p>`+emNav();return;}
+  if(em.err){emMsg(s,em.err);return;}
+  if(!em.loaded){
+    if(!em.busy){em.busy=true;emFetch().then(a=>{
+      em.busy=false;em.loaded=true;
+      const ex=a[0],cat=a[1],rp=a[2];
+      em.findings=(ex&&ex.ok)?(ex.items||[]):[];
+      em.themes=(cat&&cat.ok)?(cat.categories||[]):[];
+      if(rp&&rp.ok){em.hasTable=rp.has_table!==false;const note=(rp.notes||[]).find(n=>String(n.body_text||'').trim().indexOf(EM_MARK)===0);if(note){em.noteId=note.id;em.savedText=note.body_text||'';}}
+      renderExplainMap(activeStep());
+    }).catch(()=>{em.busy=false;em.err='Could not load your data.';renderExplainMap(activeStep());});}
+    emMsg(s,'Gathering your staged results and themes…');return;
+  }
+  if(!em.findings.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No results staged yet</h3><p>On "Identify Results to Explain", click <b>Add to Results to Explain</b> for the findings you want to explain, then return here to map each to the theme that explains it.</p></div>`+emNav();return;}
+  if(!em.themes.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No themes yet</h3><p>Build or discover your qualitative themes first, then return here to link each quantitative result to the theme that explains it.</p></div>`+emNav();return;}
+  const opts=em.themes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  const rows=em.findings.map((it,i)=>{const r=qsReadFinding(it);
+    return `<div class="panel"><div class="panel-b">
+      <div style="font-size:14px;line-height:1.5"><span class="strand-chip quan" style="font-size:11px">${esc(r.src)}</span> ${esc(r.plain)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px">
+        <label style="font-size:12.5px;color:var(--ink-2);font-weight:600">Explained by</label>
+        <select id="em_t_${it.id}" class="ed-in" style="max-width:280px"><option value="">— choose a theme —</option>${opts}</select>
+        <input id="em_n_${it.id}" class="ed-in" style="flex:1;min-width:200px" placeholder="How does this theme explain this result?">
+      </div>
+    </div></div>`;}).join('');
+  const tableNote=em.hasTable?'':`<div class="dm-note" style="margin-bottom:12px">Saving needs a one-time database migration before it can persist; you can still draft the map here.</div>`;
+  const saved=em.savedText?`<div class="panel"><div class="panel-h"><div><h3>Saved map</h3><div class="ph-sub">Carried into the report's Integration section</div></div></div><div class="panel-b"><pre style="white-space:pre-wrap;font:inherit;margin:0;color:var(--ink-2)">${esc(em.savedText)}</pre></div></div>`:'';
+  const saveBar=`<div class="dm-save"><button class="btn primary" ${em.saving||!em.hasTable?'disabled':''} onclick="emSave()">${em.saving?'Saving…':'Save explanation map'}</button><span class="dm-note">Saved to the report's Integration section and carried into the Report Builder. Keep it under 800 characters.</span></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">The explanation map is the heart of an explanatory sequential design: each quantitative result you chose to explain is linked to the qualitative theme that accounts for it, with a sentence on how. These links become your Integration narrative and feed the joint display.</div></div></div>`;
+  $("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`+rows+tableNote+saveBar+saved+layers+emNav();
+}
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
@@ -2403,6 +2484,7 @@ function renderCenter(){
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='explain'){ return renderExplain(s); }
   if(s.id==='qual_sampling'){ return renderQualSampling(s); }
+  if(s.id==='explain_map'){ return renderExplainMap(s); }
   if(s.id==='q2q'){ return renderQ2Q(s); }
   if(s.id==='converge'){ return renderConverge(s); }
   if(s.id==='meta'){ return renderMeta(s); }
