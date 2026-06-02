@@ -412,10 +412,13 @@ label .tt-hint{margin-left:6px}
 .dq-risk{font-size:13px;color:var(--ink-2);margin-top:2px}
 .dq-status{font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;flex:none}
 .sd-wrap{max-width:680px}
-.sd-h{font-family:'Fraunces','Georgia',serif;font-size:22px;font-weight:600;margin:0 0 6px;color:var(--ink)}
-.sd-sub{color:var(--ink-2);font-size:14px;margin:0 0 24px;line-height:1.6}
-.sd-section{margin-bottom:28px}
-.sd-section-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:10px}
+.sd-h{font-family:'Fraunces','Georgia',serif;font-size:22px;font-weight:600;margin:0 0 16px;color:var(--ink)}
+.sd-tabs{display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:0}
+.sd-tab{background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;padding:8px 20px;font-size:13.5px;font-weight:600;color:var(--ink-3);cursor:pointer;transition:color .15s,border-color .15s}
+.sd-tab:hover{color:var(--ink)}
+.sd-tab.is-active{color:var(--accent);border-bottom-color:var(--accent)}
+.sd-tab-body{padding:20px 0 0}
+.sd-tab-intro{font-size:14px;color:var(--ink-2);margin-bottom:16px;line-height:1.5}
 .sd-opt{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--panel);cursor:pointer;user-select:none}
 .sd-opt:hover{border-color:var(--accent)}
 .sd-opt.is-on{border-color:var(--accent);background:var(--accent-soft)}
@@ -423,7 +426,7 @@ label .tt-hint{margin-left:6px}
 .sd-opt strong{font-size:13.5px;color:var(--ink)}
 .sd-help{color:var(--ink-3);font-size:12.5px;margin-top:3px;line-height:1.4}
 .sd-rec{display:inline-block;margin-left:8px;background:#1f7a3a;color:#fff;font-size:10.5px;padding:2px 7px;border-radius:999px;font-weight:600}
-.sd-actions{margin-top:8px;display:flex;align-items:center;gap:14px}
+.sd-actions{margin-top:20px;display:flex;align-items:center;gap:14px}
 .sd-saved{font-size:13px;color:#1f7a3a;font-weight:600}
 /* Data Map — classification step: summary cards, tabs, integration flow */
 .dm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
@@ -2626,8 +2629,14 @@ function renderExplainMap(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">The explanation map is the heart of an explanatory sequential design: each quantitative result you chose to explain is linked to the qualitative theme that accounts for it, with a sentence on how. These links become your Integration narrative and feed the joint display.</div></div></div>`;
   $("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`+rows+tableNote+saveBar+saved+layers+emNav();
 }
-// ── Study Design step ────────────────────────────────────────────────────────
-const sd={dataKinds:[...(BOOT.framing.data_kinds||[])],purposes:[...(BOOT.framing.intent_purposes||[])],design:BOOT.framing.chosen_design||'',saving:false};
+// ── Study Setup step (3-tab panel) ───────────────────────────────────────────
+const sd={
+  tab:'data_kind',
+  dataKinds:[...(BOOT.framing.data_kinds||[])],
+  purposes:[...(BOOT.framing.intent_purposes||[])],
+  design:BOOT.framing.chosen_design||'',
+  saving:false,
+};
 const DK_OPTS=[
   ['open_ended_only',           'Open-ended responses only',                               'Comments, interview text, focus group notes, or any qualitative responses with no numeric scores attached.'],
   ['survey_plus_open',          'Survey data with open-ended responses',                   'Closed-ended survey items plus one or more comment columns.'],
@@ -2650,72 +2659,107 @@ const DESIGN_OPTS=[
   ['B_comments_to_themes',    'Exploratory Sequential','Qual first, then quant. Find themes in open-ended data, then turn them into variables or test them with numbers.'],
   ['C_compare_themes_groups', 'Convergent Parallel',   'Both at once. Analyze quant and qual independently and compare them side by side in a joint display.'],
 ];
-function sdOptHtml(val,label,help,checked,isRadio){
-  const t=isRadio?'radio':'checkbox';
-  return `<label class="sd-opt${checked?' is-on':''}" data-val="${esc(val)}" data-radio="${isRadio?'1':'0'}">
-    <input type="${t}" ${isRadio?'name="sdDesign"':''} ${checked?'checked':''}>
-    <div><strong>${esc(label)}</strong><div class="sd-help">${esc(help)}</div></div>
-  </label>`;
-}
 function sdDesignRec(){
   const dks=new Set(sd.dataKinds),ps=new Set(sd.purposes);
-  const r={A_explain_numbers:false,B_comments_to_themes:false,C_compare_themes_groups:false};
-  if(dks.has('survey_plus_open')||ps.has('explain_survey_results')) r.A_explain_numbers=true;
-  if(dks.has('open_ended_only')||ps.has('find_themes')||ps.has('build_variables_from_text')) r.B_comments_to_themes=true;
-  if(ps.has('compare_groups')||ps.has('mixed_methods_section')||ps.has('evaluation_accreditation')||ps.has('strengthen_report')) r.C_compare_themes_groups=true;
-  return r;
+  return {
+    A_explain_numbers:     dks.has('survey_plus_open')||ps.has('explain_survey_results'),
+    B_comments_to_themes:  dks.has('open_ended_only')||ps.has('find_themes')||ps.has('build_variables_from_text'),
+    C_compare_themes_groups:ps.has('compare_groups')||ps.has('mixed_methods_section')||ps.has('evaluation_accreditation')||ps.has('strengthen_report'),
+  };
 }
 function renderStudyDesign(s){
   const c=$$('.center'); if(!c) return;
   const rec=sdDesignRec();
-  c.innerHTML=`<div class="sd-wrap">
-    <h3 class="sd-h">Study Design</h3>
-    <p class="sd-sub">${esc(s.lede)}</p>
-    <div class="sd-section">
-      <div class="sd-section-label">What kind of data do you have?</div>
-      <div class="sd-opts" id="sdDk">${DK_OPTS.map(([v,l,h])=>sdOptHtml(v,l,h,sd.dataKinds.includes(v),false)).join('')}</div>
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-label">What are you trying to understand?</div>
-      <div class="sd-opts" id="sdIntent">${INTENT_OPTS.map(([v,l,h])=>sdOptHtml(v,l,h,sd.purposes.includes(v),false)).join('')}</div>
-    </div>
-    <div class="sd-section">
-      <div class="sd-section-label">Choose your mixed-methods design</div>
+  const tabs=[
+    {key:'data_kind',label:'Data Kind'},
+    {key:'intent',   label:'Intent'},
+    {key:'design',   label:'Design'},
+  ];
+
+  // Tab bar HTML
+  const tabBar=tabs.map(t=>`<button class="sd-tab${sd.tab===t.key?' is-active':''}" data-sdtab="${t.key}">${esc(t.label)}</button>`).join('');
+
+  // Tab body HTML
+  let body='';
+  if(sd.tab==='data_kind'){
+    body=`<div class="sd-tab-intro">What kind of data do you have? Select all that apply.</div>
+      <div class="sd-opts" id="sdDk">${DK_OPTS.map(([v,l,h])=>`
+        <label class="sd-opt${sd.dataKinds.includes(v)?' is-on':''}" data-val="${esc(v)}">
+          <input type="checkbox"${sd.dataKinds.includes(v)?' checked':''}><div><strong>${esc(l)}</strong><div class="sd-help">${esc(h)}</div></div>
+        </label>`).join('')}</div>`;
+  } else if(sd.tab==='intent'){
+    body=`<div class="sd-tab-intro">What are you trying to understand? Select all that apply.</div>
+      <div class="sd-opts" id="sdIntent">${INTENT_OPTS.map(([v,l,h])=>`
+        <label class="sd-opt${sd.purposes.includes(v)?' is-on':''}" data-val="${esc(v)}">
+          <input type="checkbox"${sd.purposes.includes(v)?' checked':''}><div><strong>${esc(l)}</strong><div class="sd-help">${esc(h)}</div></div>
+        </label>`).join('')}</div>`;
+  } else {
+    body=`<div class="sd-tab-intro">Choose your mixed-methods design. We highlight a recommendation based on your Data Kind and Intent answers. The final choice is yours.</div>
       <div class="sd-opts" id="sdDesign">${DESIGN_OPTS.map(([v,l,h])=>{
         const isOn=sd.design===v;
         const pill=rec[v]?'<span class="sd-rec">Recommended</span>':'';
-        return `<label class="sd-opt${isOn?' is-on':''}" data-val="${esc(v)}" data-radio="1"><input type="radio" name="sdDesign"${isOn?' checked':''}><div><strong>${esc(l)}</strong>${pill}<div class="sd-help">${esc(h)}</div></div></label>`;
-      }).join('')}</div>
-    </div>
+        return `<label class="sd-opt${isOn?' is-on':''}" data-val="${esc(v)}">
+          <input type="radio" name="sdDesign"${isOn?' checked':''}><div><strong>${esc(l)}</strong>${pill}<div class="sd-help">${esc(h)}</div></div>
+        </label>`;
+      }).join('')}</div>`;
+  }
+
+  c.innerHTML=`<div class="sd-wrap">
+    <h3 class="sd-h">Study Setup</h3>
+    <div class="sd-tabs">${tabBar}</div>
+    <div class="sd-tab-body">${body}</div>
     <div class="sd-actions">
       <button class="btn btn-primary" id="sdSaveBtn"${sd.saving?' disabled':''}>
-        ${sd.saving?'Saving…':'Save study design'}
+        ${sd.saving?'Saving…':'Save'}
       </button>
       <span class="sd-saved" id="sdSavedMsg" hidden>Saved</span>
     </div>
   </div>`;
 
-  c.querySelectorAll('#sdDk .sd-opt').forEach(o=>o.addEventListener('click',function(e){
-    e.preventDefault(); const v=o.getAttribute('data-val');
-    const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
-    if(cb.checked){if(!sd.dataKinds.includes(v))sd.dataKinds.push(v);}
-    else{sd.dataKinds=sd.dataKinds.filter(x=>x!==v);}
+  // Tab switching
+  c.querySelectorAll('[data-sdtab]').forEach(btn=>btn.addEventListener('click',function(){
+    sd.tab=btn.getAttribute('data-sdtab'); renderStudyDesign(activeStep());
   }));
-  c.querySelectorAll('#sdIntent .sd-opt').forEach(o=>o.addEventListener('click',function(e){
-    e.preventDefault(); const v=o.getAttribute('data-val');
-    const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
-    if(cb.checked){if(!sd.purposes.includes(v))sd.purposes.push(v);}
-    else{sd.purposes=sd.purposes.filter(x=>x!==v);}
-  }));
-  c.querySelectorAll('#sdDesign .sd-opt').forEach(o=>o.addEventListener('click',function(e){
-    e.preventDefault(); const v=o.getAttribute('data-val');
-    sd.design=v;
-    c.querySelectorAll('#sdDesign .sd-opt').forEach(x=>{const on=x.getAttribute('data-val')===v;x.classList.toggle('is-on',on);const r=x.querySelector('input');if(r)r.checked=on;});
-  }));
+
+  // Data Kind checkboxes
+  if(sd.tab==='data_kind'){
+    c.querySelectorAll('#sdDk .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+      e.preventDefault(); const v=o.getAttribute('data-val');
+      const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
+      if(cb.checked){if(!sd.dataKinds.includes(v))sd.dataKinds.push(v);}
+      else{sd.dataKinds=sd.dataKinds.filter(x=>x!==v);}
+    }));
+  }
+
+  // Intent checkboxes
+  if(sd.tab==='intent'){
+    c.querySelectorAll('#sdIntent .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+      e.preventDefault(); const v=o.getAttribute('data-val');
+      const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
+      if(cb.checked){if(!sd.purposes.includes(v))sd.purposes.push(v);}
+      else{sd.purposes=sd.purposes.filter(x=>x!==v);}
+    }));
+  }
+
+  // Design radio
+  if(sd.tab==='design'){
+    c.querySelectorAll('#sdDesign .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+      e.preventDefault(); const v=o.getAttribute('data-val');
+      sd.design=v;
+      c.querySelectorAll('#sdDesign .sd-opt').forEach(x=>{
+        const on=x.getAttribute('data-val')===v;
+        x.classList.toggle('is-on',on);
+        const r=x.querySelector('input'); if(r) r.checked=on;
+      });
+    }));
+  }
+
+  // Save
   c.querySelector('#sdSaveBtn').addEventListener('click',function(){
     sd.saving=true; renderStudyDesign(activeStep());
     const postWiz=body=>fetch('/api/mm/wizard.php',{method:'POST',credentials:'same-origin',
-      headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},body))}).then(r=>r.json());
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(Object.assign({project_id:BOOT.projectId},body))}).then(r=>r.json());
     postWiz({step:'data_kind',values:sd.dataKinds})
       .then(()=>postWiz({step:'purpose',values:sd.purposes}))
       .then(()=>sd.design?postWiz({step:'design_choice',value:sd.design}):Promise.resolve({ok:true}))
@@ -2723,9 +2767,10 @@ function renderStudyDesign(s){
         sd.saving=false;
         if(sd.design){state.design=sd.design;persistDesign(sd.design);}
         renderStudyDesign(activeStep());
-        const msg=document.getElementById('sdSavedMsg'); if(msg){msg.hidden=false;setTimeout(()=>{msg.hidden=true;},2500);}
+        const msg=document.getElementById('sdSavedMsg');
+        if(msg){msg.hidden=false;setTimeout(()=>{msg.hidden=true;},2500);}
       })
-      .catch(()=>{sd.saving=false;toast('Could not save study design.');renderStudyDesign(activeStep());});
+      .catch(()=>{sd.saving=false;toast('Could not save study setup.');renderStudyDesign(activeStep());});
   });
 }
 
