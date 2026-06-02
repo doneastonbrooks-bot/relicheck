@@ -773,7 +773,8 @@ const state = {
    app talks to /api/dev/* and falls back to mock (with a visible banner) on
    any failure: a missing session, a DB error, or an offline server.
    ════════════════════════════════════════════════════════════════════ */
-const PERSIST_REQUESTED = new URLSearchParams(location.search).has('db');
+// DB mode is now the default. Pass ?mock=1 to force mock mode (for testing only).
+const PERSIST_REQUESTED = !new URLSearchParams(location.search).has('mock');
 const PERSIST = { on:PERSIST_REQUESTED, degraded:false, reason:'' };
 const LS_KEY = 'sds_project_id';
 
@@ -892,11 +893,8 @@ function degrade(reason){
 
 function updateModeBadge(){
   const b = $('#modeBadge'); if(!b) return;
-  if(!PERSIST_REQUESTED){ b.style.display='none'; return; }
-  b.style.display='inline-flex';
-  if(PERSIST.degraded){ b.className='modebadge mock'; b.textContent='Mock mode'; b.title='Database unavailable: '+PERSIST.reason; }
-  else if(PERSIST.on){ b.className='modebadge db'; b.textContent='Database mode'; b.title='Saving to the survey_projects tables'; }
-  else { b.className='modebadge mock'; b.textContent='Mock mode'; b.title='Phase 1 mock data'; }
+  if(PERSIST.degraded){ b.style.display='inline-flex'; b.className='modebadge mock'; b.textContent='Mock mode'; b.title='Database unavailable: '+PERSIST.reason; }
+  else { b.style.display='none'; } // DB is the default — no badge needed
 }
 
 /* ── tiny helpers ──────────────────────────────────────────── */
@@ -2929,24 +2927,31 @@ const Screens = {
     return `<div class="screen">
       <div class="eyebrow">Step 10 · RSSI / Studios</div>
       <h1 class="title">Hand off to analysis</h1>
-      <p class="lede">Your ${MOCK.responses.collected} responses are ready. Send them downstream. Design and readiness review are done; this is where collected results get analyzed.</p>
+      <p class="lede">Your ${state.responseCount||0} response${(state.responseCount||0)===1?'':'s'} are ready. Send them downstream. Design and readiness review are done; this is where collected results get analyzed.</p>
       <div class="callout" style="margin-bottom:22px"><div class="ci">${SVG.info}</div>
         <div><h4>SDSI &amp; SIRI are pre-launch only</h4><p>Everything up to here judged whether the instrument was ready to collect interpretable data. RSSI and the Studios analyze the data itself, after deployment or once imported response data is added.</p></div></div>
       <div class="grid g2">
-        ${dest(ICONS.rssi,'Run RSSI: ReliCheck Survey Strength Index','Analyze collected survey data through the ReliCheck Survey Strength Index. RSSI reviews reliability, validity evidence, response quality, item performance, scale performance, missing data, and reporting readiness.',false,"App.go('dataset')",'Load dataset')}
-        ${dest(ICONS.studio,'Analysis Studios','Frequencies, group comparisons, cross-tabs, qualitative themes, and report builder.',false)}
+        ${dest(ICONS.rssi,'Run RSSI','Analyze your collected data through the ReliCheck Survey Strength Index. RSSI reviews reliability, validity evidence, response quality, item performance, and reporting readiness.',false,
+          state.projectId ? `window.location.href='/rssi-app.php?project_id=${encodeURIComponent(state.projectId)}'` : `window.location.href='/rssi-app.php'`,
+          'Open RSSI')}
+        ${dest(ICONS.studio,'Go to a Studio','Take your data directly into a studio for deeper analysis — frequencies, group comparisons, inferential tests, mixed methods, or qualitative themes.',false,
+          state.projectId ? `window.location.href='/descriptive-analysis-workspace.php?project_id=${encodeURIComponent(state.projectId)}'` : `window.location.href='/descriptive-analysis-studio.php'`,
+          'Choose a studio')}
       </div>
       <div class="grid g3" style="margin-top:18px">
-        ${dest('<path d="M3 17l5-6 4 3 5-7 4 4"/>','Quantitative Studio','t-tests, ANOVA, correlation, effect sizes.',true)}
-        ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','Qualitative Studio','Themes, codebook, exemplar quotes.',true)}
-        ${dest('<rect x="3" y="4" width="18" height="14" rx="2"/>','Report Builder','Executive summary, findings, exports.',true)}
+        ${dest('<path d="M3 17l5-6 4 3 5-7 4 4"/>','Descriptive Studio','Frequencies, distributions, group summaries, item rankings.',false,
+          `window.location.href='/descriptive-analysis-workspace.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
+        ${dest('<path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/>','Inferential Studio','t-tests, ANOVA, correlation, regression, effect sizes.',false,
+          `window.location.href='/inferential-statistics-workspace.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
+        ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','MM Studio','Mixed methods — qualitative themes + quantitative analysis together.',false,
+          `window.location.href='/mmstudioV4.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
       </div>
       <div class="btn-row">
         <button class="btn" onclick="App.go('retrieve')">← Responses</button>
         <div class="spacer"></div>
         <button class="btn" onclick="App.go('start')">Start another survey</button>
       </div>
-      <p class="phase-note">Phase 1 hands off with mock data. Phase 2 wires the real RSSI + Studio routes and dataset transfer.</p>
+      <p class="phase-note">Real response data is loaded from your project. Select RSSI or a Studio to continue your analysis.</p>
     </div>`;
   },
 
@@ -3415,9 +3420,9 @@ function render(){
   else { ctx.style.display='none'; }
   updateModeBadge();
   // rail
-  const railFoot = PERSIST.on
-    ? 'Phase 2A · database mode. SDSI Build Check (50) → SIRI Launch Check (100) → RSSI downstream.'
-    : 'Phase 1 prototype · mock data. SDSI Build Check (50) → SIRI Launch Check (100) → RSSI &amp; Studios downstream.';
+  const railFoot = PERSIST.degraded
+    ? 'Mock mode (database unavailable). Changes are not being saved.'
+    : 'SDSI Build Check (50) → SIRI Launch Check (100) → RSSI &amp; Studios downstream.';
   $('#rail').innerHTML = `<div class="rail-h">Development pipeline</div>${railView()}
     <div class="rail-foot">${railFoot}</div>`;
   // degraded-mode banner (db requested but unavailable → mock fallback)
