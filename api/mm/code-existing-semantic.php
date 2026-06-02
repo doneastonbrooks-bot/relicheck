@@ -44,6 +44,11 @@ $uid  = (int)$user['id'];
 
 check_rate_limit('mm_code_semantic:user:' . $uid, 30, 3600);
 
+// This endpoint makes several multi-second AI calls. Free the session lock now
+// (we only read the session, never write it) so the user can navigate to other
+// steps while tagging runs instead of every request blocking behind this one.
+release_session_lock();
+
 $body      = read_json_body();
 $projectId = (int)($body['project_id'] ?? 0);
 if ($projectId <= 0) fail('bad_input', 'Missing project_id.');

@@ -77,3 +77,17 @@ function require_auth(): array
     }
     return $u;
 }
+
+// Release PHP's exclusive session-file lock once a request no longer needs to
+// WRITE to $_SESSION. PHP holds this lock from session_start() until the script
+// ends (or this is called), which serializes all requests in the same browser
+// session. Long-running endpoints (AI calls that take 30-120s) MUST call this
+// right after auth so they don't block concurrent requests (e.g. the user
+// navigating to another step) for the whole AI run. Reading $_SESSION before
+// calling this is fine; do not write $_SESSION after it.
+function release_session_lock(): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+}

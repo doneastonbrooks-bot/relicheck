@@ -25,6 +25,12 @@ $uid  = (int)$user['id'];
 
 check_rate_limit('mm_build:user:' . $uid, 30, 3600);
 
+// Discovery + batched coding makes many multi-second AI calls. Free the session
+// lock now (we only read the session) so concurrent requests in the same
+// browser session (e.g. loading the Data Map step) don't block for the whole
+// run. See release_session_lock() in _session.php.
+release_session_lock();
+
 $body            = read_json_body();
 $projectId       = (int)($body['project_id'] ?? 0);
 $mode            = clean_string((string)($body['mode'] ?? 'hybrid'), 16);
