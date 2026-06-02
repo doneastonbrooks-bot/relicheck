@@ -12,6 +12,48 @@
 // Project model: ?project_id=N is an analysis_projects.id (this studio's
 // own persistent project). Its dataset is loaded from the server via
 // /api/analysis/dataset.php and exposed to the engines.
+//
+// ---------------------------------------------------------------------------
+// STUDIO TEMPLATE CONTRACT  (required structure for every ReliCheck studio)
+// ---------------------------------------------------------------------------
+// Every studio built on this shell MUST follow this sequence:
+//
+//  1. UNIFORM HEADER (top bar)
+//     App font, logo left corner, project context, user avatar.
+//     RSSI stub: when the active project has RSSI results, display a score
+//     badge/link in the header. Hidden otherwise. Design is external to this
+//     template — include it as a shared component when ready.
+//
+//  2. START  (mode='start')
+//     The entry section. User brings in their data here: upload a file, open
+//     a saved project, or connect from SIRI responses. No analysis begins
+//     until a dataset is loaded.
+//
+//  3. OVERVIEW  (mode='overview')
+//     Confirms the loaded data. User reviews variable types, row count, and
+//     construct assignments before proceeding. Acts as a gate: the analysis
+//     steps are only reachable once overview is acknowledged.
+//
+//  4. CONSTRUCTS  (studio-specific pipeline steps)
+//     The analysis process unique to this studio. Each step is a "construct"
+//     in the template — its ID, label, tool reference, and mode are defined
+//     in the studio's BOOT.pipeline. No construct content is shared across
+//     studios; only the rail/step mechanism is shared.
+//
+//  5. REPORT  (mode='report')
+//     Collects saved analyses into a structured output. Design and build are
+//     external to this template — stub the route; the shared report system
+//     plugs in here when ready.
+//
+//  6. UNIFORM FOOTER (studio-dock)
+//     App font, ReliCheck logo left corner. May carry data-dock shortcuts
+//     (upload, open saved, open from SIRI). Design is external to this
+//     template — include as a shared component when ready.
+//
+// To add a new studio: create a $studio_def entry in _analysis_studio_defs.php,
+// define its BOOT.pipeline with the constructs for steps 4, include this file.
+// Steps 1-3 and 5-6 are provided by the shell.
+// ---------------------------------------------------------------------------
 
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';
