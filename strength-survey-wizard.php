@@ -113,7 +113,7 @@ include __DIR__ . '/_platform_shell_header.php';
 <div class="wiz-shell">
 
   <div class="wiz-top">
-    <a class="wiz-back" href="/studio-strength-survey.php">
+    <a class="wiz-back" href="/rssi.php">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
       Back to Survey Studio
     </a>
@@ -160,7 +160,7 @@ include __DIR__ . '/_platform_shell_header.php';
         <textarea id="svWizDesc" name="description" rows="4" maxlength="2000" placeholder="A brief description of the survey, the audience, or the research question."><?= htmlspecialchars((string)($project['description'] ?? '')) ?></textarea>
       </div>
       <div class="wiz-actions">
-        <a class="btn-ghost" href="/studio-strength-survey.php">Cancel</a>
+        <a class="btn-ghost" href="/rssi.php">Cancel</a>
         <button type="submit" class="btn-primary" id="svWizStep1Btn">Continue to data &rarr;</button>
       </div>
     </form>

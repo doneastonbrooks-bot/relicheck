@@ -140,7 +140,7 @@ include __DIR__ . '/_platform_shell_header.php';
 <?php include __DIR__ . '/_studio_template_header.php'; ?>
 
 <div class="work-breadcrumb">
-  <a href="/studio-strength-survey.php" style="text-decoration:none;color:var(--ink-4);">Survey Studio</a>
+  <a href="/rssi.php" style="text-decoration:none;color:var(--ink-4);">Survey Studio</a>
   <span class="sep">/</span>
   <strong>Pick a survey</strong>
 </div>
