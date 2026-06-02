@@ -160,6 +160,14 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .tb-ctx.is-live .dot{background:var(--green)}
 .tb-spacer{flex:1}
 .tb-avatar{width:34px;height:34px;border-radius:50%;background:var(--acc-soft);color:var(--acc-deep);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+/* RSSI stub — visible in topbar when loaded SIRI project has RSSI results */
+.tb-rssi{display:flex;align-items:center}
+.rssi-badge{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;border:1.5px solid transparent;line-height:1}
+.rssi-badge .rssi-score{font-size:17px;font-weight:800}
+.rssi-badge .rssi-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;opacity:.72;white-space:nowrap}
+.rssi-confident{background:var(--green-soft);color:var(--green)}
+.rssi-developing{background:#fff8ee;color:#b45309}
+.rssi-withheld{background:var(--bg);color:var(--ink-3);border-color:var(--line)}
 
 /* Body grid */
 .body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--companion);min-height:0;overflow:hidden}
@@ -283,6 +291,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
     </div>
     <div class="tb-spacer"></div>
     <a class="dock-btn" href="<?= htmlspecialchars($BOOT['projectsUrl']) ?>">All projects</a>
+    <div class="tb-rssi" id="tbRssi" hidden></div>
     <div class="tb-avatar"><?= htmlspecialchars($initials) ?></div>
   </header>
 
@@ -316,7 +325,7 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
 (function(){
   'use strict';
-  const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table' };
+  const state = { stepId: 'start', compTab: 'explain', notes: {}, dataset: null, view: 'table', rssiProjectId: null };
   const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
   function steps(){ return BOOT.pipeline; }
@@ -611,13 +620,42 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     } catch(e){}
     return best;
   }
-  function applyDataset(ds){
+  // opts.surveyProjectId: pass when data came from a SIRI survey project so the
+  // RSSI stub can look up and display its post-data score in the topbar.
+  function applyDataset(ds, opts){
     state.dataset = ds;
     showChip((ds.rowCount||0) + ' rows · ' + ((ds.variables||[]).length) + ' variables');
+    if (opts && opts.surveyProjectId) {
+      state.rssiProjectId = opts.surveyProjectId;
+      loadRssiStub(opts.surveyProjectId);
+    }
     // Once data is loaded, Overview becomes the landing view (Start stays the
     // data hub you can return to). Don't yank the user off a step they chose.
     if (state.stepId === 'start') state.stepId = 'overview';
     render();
+  }
+
+  // Fetch RSSI summary for a survey project and populate the topbar badge.
+  // Called after applyDataset when data source is a SIRI project.
+  function loadRssiStub(surveyProjectId){
+    const wrap = document.getElementById('tbRssi');
+    if (!wrap) return;
+    fetch('/api/dev/rssi-check.php?project_id=' + encodeURIComponent(surveyProjectId), {
+      credentials: 'same-origin', headers: { Accept: 'application/json' }
+    })
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(d){
+      if (!d || !d.ok || !d.has_rssi) { wrap.hidden = true; return; }
+      const tier = d.withheld ? 'withheld' : (d.tier || 'withheld');
+      const score = (!d.withheld && d.pct != null)
+        ? '<span class="rssi-score">' + d.pct + '</span>'
+        : '';
+      wrap.innerHTML = '<a class="rssi-badge rssi-' + tier + '" href="' + esc(d.link)
+        + '" title="' + esc(d.band || 'RSSI result') + '" target="_blank">'
+        + score + '<span class="rssi-lbl">RSSI</span></a>';
+      wrap.hidden = false;
+    })
+    .catch(function(){ wrap.hidden = true; });
   }
   let _loaded=false;
   function loadDataset(){
