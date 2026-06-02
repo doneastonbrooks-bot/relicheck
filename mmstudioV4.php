@@ -2745,45 +2745,62 @@ $("#modalScrim").addEventListener('click',e=>{if(e.target.id==='modalScrim')clos
 let tT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1800);}
 
 // ---- Uniform studio header + footer (plug-ins) ----
-StudioHeader.init({
-  logoSrc:      '/MM-Studio-long.png',
-  logoAlt:      'Mixed Methods Studio',
-  projectLabel: BOOT.projectLabel,
-  projectLive:  BOOT.projectId > 0,
-  projectsUrl:  '/studio-mm-projects.php',
-  initials:     '<?= htmlspecialchars($initials) ?>'
-});
-// MM-specific: insert the design-switch pill into the header bar between
-// the project context and the spacer, then renderSwitch() populates it.
-(function(){
-  const bar=document.querySelector('#studioHeader .sh-bar');
-  const spacer=bar&&bar.querySelector('.sh-spacer');
-  if(!bar||!spacer) return;
-  const ds=document.createElement('div');
-  ds.id='designSwitch';
-  bar.insertBefore(ds,spacer);
-})();
-// MM footer: uniform data dock with MM-appropriate handlers.
-StudioFooter.init({
-  onSiri:   function(){ go('/develop.php?db=1&start=choose'); },
-  onUpload: function(){ toast('Upload — open a saved project or bring data in via SIRI.'); },
-  onSaved:  function(){ go('/studio-mm-projects.php'); }
-});
-// Show RSSI badge from server-resolved scores (no extra fetch needed).
-(function(){
-  const sc=BOOT.scores||{};
-  if(sc.rssi==null&&!sc.rssiWithheld) return;
-  const pct=sc.rssi!=null?Math.round(sc.rssi):null;
-  StudioHeader.setRssiStub({
-    has_rssi: true,
-    score:    sc.rssi,
-    pct:      pct,
-    band:     sc.rssiBand||'',
-    withheld: !!sc.rssiWithheld,
-    tier:     sc.rssiWithheld?'withheld':(pct>=85?'confident':'developing'),
-    link:     BOOT.surveyId>0?'/rssi-app.php?project_id='+BOOT.surveyId:'/rssi.php'
+if(typeof StudioHeader!=='undefined'){
+  StudioHeader.init({
+    logoSrc:      '/MM-Studio-long.png',
+    logoAlt:      'Mixed Methods Studio',
+    logoHeight:   50,
+    projectLabel: BOOT.projectLabel,
+    projectLive:  BOOT.projectId > 0,
+    projectsUrl:  '/studio-mm-projects.php',
+    initials:     '<?= htmlspecialchars($initials) ?>'
   });
-})();
+  // MM-specific: insert the design-switch pill into the header bar
+  // between the project context and the spacer so renderSwitch() finds it.
+  (function(){
+    const bar=document.querySelector('#studioHeader .sh-bar');
+    const spacer=bar&&bar.querySelector('.sh-spacer');
+    if(!bar||!spacer) return;
+    const ds=document.createElement('div');
+    ds.id='designSwitch';
+    bar.insertBefore(ds,spacer);
+  })();
+  // Show RSSI badge from server-resolved scores (no extra fetch needed).
+  (function(){
+    const sc=BOOT.scores||{};
+    if(sc.rssi==null&&!sc.rssiWithheld) return;
+    const pct=sc.rssi!=null?Math.round(sc.rssi):null;
+    StudioHeader.setRssiStub({
+      has_rssi: true,
+      score:    sc.rssi,
+      pct:      pct,
+      band:     sc.rssiBand||'',
+      withheld: !!sc.rssiWithheld,
+      tier:     sc.rssiWithheld?'withheld':(pct>=85?'confident':'developing'),
+      link:     BOOT.surveyId>0?'/rssi-app.php?project_id='+BOOT.surveyId:'/rssi.php'
+    });
+  })();
+} else {
+  // Fallback: render the MM header directly if the plug-in script failed to load.
+  (function(){
+    var el=document.getElementById('studioHeader'); if(!el) return;
+    el.innerHTML='<header style="display:flex;align-items:center;gap:14px;height:90px;'
+      +'padding:0 22px;background:#fff;border-bottom:1px solid #e6e8ec">'
+      +'<a href="/app-2026v4.php" style="display:flex;align-items:center;text-decoration:none">'
+      +'<img src="/MM-Studio-long.png" alt="Mixed Methods Studio" style="height:50px;width:auto;display:block"></a>'
+      +'<div id="designSwitch" style="flex:1;display:flex;justify-content:center"></div>'
+      +'<div style="width:32px;height:32px;border-radius:50%;background:#1f9e44;color:#fff;'
+      +'display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px">'
+      +'<?= htmlspecialchars($initials) ?></div></header>';
+  })();
+}
+if(typeof StudioFooter!=='undefined'){
+  StudioFooter.init({
+    onSiri:   function(){ go('/develop.php?db=1&start=choose'); },
+    onUpload: function(){ toast('Upload — open a saved project or bring data in via SIRI.'); },
+    onSaved:  function(){ go('/studio-mm-projects.php'); }
+  });
+}
 
 state.stepId='start';   // users come straight in to the Start overview (like SIRI)
 render();
