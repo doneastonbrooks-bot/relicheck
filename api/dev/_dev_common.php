@@ -5,7 +5,7 @@
 //   tables, mirroring db/schema_survey_dev_system.sql. Runs on first call per
 //   request so endpoints work on a fresh DB without a manual migration step.
 //   Fully additive: never alters/drops existing ReliCheck tables.
-// • sds_seed_system_templates() — seeds the 6 starter templates once.
+// • sds_seed_system_templates() — seeds system templates; idempotent via INSERT IGNORE.
 // • sds_require_project() — load a project row with an owner check.
 // • sds_item_type() / sds_clean_flag() — input normalisers.
 //
@@ -233,20 +233,22 @@ function sds_ensure_schema(PDO $pdo): void
     $done = true;
 }
 
-// Seed the 6 starter templates once (mirrors develop.php's MOCK.templates so
-// the template browser is populated on a fresh DB). Idempotent via INSERT IGNORE
-// on the unique slug. Each template carries a small build blueprint in payload.
+// Seed system templates (mirrors develop.php's MOCK.templates so the template
+// browser is populated on a fresh DB). Idempotent: INSERT IGNORE on slug unique
+// key means existing rows are never overwritten; new rows are added each call.
 function sds_seed_system_templates(PDO $pdo): void
 {
-    $count = (int)$pdo->query('SELECT COUNT(*) AS c FROM survey_templates WHERE is_system = 1')->fetch()['c'];
-    if ($count > 0) return;
-
     $likert = function (string $prompt, ?string $flag = null) {
         return ['type' => 'Likert (5-pt)', 'prompt' => $prompt, 'flag' => $flag];
     };
     $open = function (string $prompt, ?string $flag = null) {
         return ['type' => 'Open-Ended', 'prompt' => $prompt, 'flag' => $flag];
     };
+    $hdr = function (string $title) {
+        return ['type' => 'Section Text', 'prompt' => $title, 'flag' => null];
+    };
+
+    // --- Original 6 starter templates ---
 
     $engagementItems = [
         $likert('How satisfied are you with your role overall?'),
@@ -259,13 +261,154 @@ function sds_seed_system_templates(PDO $pdo): void
         $open('What is one thing we could do to improve your experience?'),
     ];
 
+    // --- Domain templates ---
+
+    $t360Items = [
+        $hdr('Communication'),
+        $likert('Communicates expectations clearly to the team.'),
+        $likert('Listens to understand before responding.'),
+        $likert('Adjusts communication style to fit the audience.'),
+        $likert('Provides timely, specific, and constructive feedback.'),
+        $likert('Represents the team\'s work credibly to others.'),
+
+        $hdr('Decision Making'),
+        $likert('Gathers relevant information before deciding.'),
+        $likert('Considers longer-term consequences of decisions.'),
+        $likert('Makes timely decisions even under uncertainty.'),
+        $likert('Involves the right people in decisions that affect them.'),
+        $likert('Revisits decisions when new evidence warrants it.'),
+
+        $hdr('Developing Others'),
+        $likert('Identifies and acts on individual growth opportunities for team members.'),
+        $likert('Provides coaching that helps people improve their performance.'),
+        $likert('Delegates work in ways that build capability.'),
+        $likert('Recognizes contributions in ways that are meaningful to the individual.'),
+        $likert('Creates an environment where people feel safe to try new approaches.'),
+
+        $hdr('Accountability'),
+        $likert('Holds self and others to agreed-upon standards.'),
+        $likert('Follows through on commitments reliably.'),
+        $likert('Addresses performance problems directly and constructively.'),
+        $likert('Takes responsibility when things go wrong.'),
+        $likert('Sets goals that are clear, measurable, and achievable.'),
+
+        $hdr('Integrity'),
+        $likert('Behaves consistently with stated values.'),
+        $likert('Treats all people fairly regardless of role or background.'),
+        $likert('Is honest even when the message is difficult to deliver.'),
+        $likert('Keeps sensitive information confidential.'),
+        $likert('Acts in the interest of the team and organization rather than personal gain.'),
+
+        $hdr('Open Feedback'),
+        $open('What does this leader do especially well?'),
+        $open('What is one thing this leader should do differently?'),
+        $open('Any other feedback you would like to share?'),
+    ];
+
+    $progEvalItems = [
+        $hdr('Goal Attainment'),
+        $likert('This program helped me achieve its stated goals.'),
+        $likert('I can apply what I learned in this program to real situations.'),
+        $likert('My knowledge or skills improved as a result of participating.'),
+        $likert('The outcomes I expected from this program were met.'),
+        $likert('I would describe this program as effective.'),
+
+        $hdr('Implementation Fidelity'),
+        $likert('The program was delivered as it was intended to be.'),
+        $likert('Facilitators had the knowledge and skills to deliver this program well.'),
+        $likert('Materials and resources provided were appropriate for the program\'s goals.'),
+        $likert('The pacing allowed enough time to engage with the content.'),
+        $likert('Sessions were organized and well-structured.'),
+
+        $hdr('Participant Experience'),
+        $likert('The program content was relevant to my work or situation.'),
+        $likert('I was actively engaged throughout the program.'),
+        $likert('The environment felt safe for participation and honest discussion.'),
+        $likert('My perspective was respected during the program.'),
+        $likert('I would recommend this program to a colleague.'),
+
+        $hdr('Open Feedback'),
+        $open('What aspect of this program had the most positive impact on you?'),
+        $open('What would you change about this program to make it more effective?'),
+        $open('Any other feedback you would like to share?'),
+    ];
+
+    $hrClimateItems = [
+        $hdr('Organizational Climate'),
+        $likert('People are treated with respect in this organization.'),
+        $likert('There is good cooperation across teams and departments.'),
+        $likert('This organization makes decisions based on evidence and sound reasoning.'),
+        $likert('This organization adapts effectively to change.'),
+        $likert('I understand how my work connects to the organization\'s goals.'),
+
+        $hdr('Inclusion'),
+        $likert('I feel I can be myself at work.'),
+        $likert('Different perspectives are genuinely valued here.'),
+        $likert('Advancement opportunities are available to everyone, not just some groups.'),
+        $likert('I have not experienced or witnessed unfair treatment based on personal characteristics.'),
+        $likert('People feel safe raising concerns without fear of consequences.'),
+
+        $hdr('Leadership Trust'),
+        $likert('Senior leaders communicate a clear direction for this organization.'),
+        $likert('I trust the people leading this organization.'),
+        $likert('Leaders are transparent about decisions that affect employees.'),
+        $likert('Leadership actions are consistent with the values they communicate.'),
+        $likert('I believe senior leaders care about employee wellbeing.'),
+
+        $hdr('Workload and Wellbeing'),
+        $likert('My workload is manageable.'),
+        $likert('I have the resources I need to do my job effectively.'),
+        $likert('I feel supported when I face challenges at work.'),
+        $likert('My work does not regularly interfere with my personal life.'),
+        $likert('I feel energized by my work more often than I feel drained.'),
+
+        $hdr('Open Feedback'),
+        $open('What is working well in this organization that we should continue?'),
+        $open('What is one thing this organization should change or improve?'),
+    ];
+
+    $itemReviewItems = [
+        $hdr('Content Accuracy'),
+        $likert('This item measures the knowledge or skill it is intended to assess.'),
+        $likert('The correct answer is clearly correct given current knowledge in this field.'),
+        $likert('This item is consistent with the learning objectives it is meant to address.'),
+        $likert('The level of detail required by this item is appropriate for the target population.'),
+
+        $hdr('Item Clarity'),
+        $likert('The item stem is unambiguous.'),
+        $likert('A person who knows the content will interpret this item the same way I do.'),
+        $likert('The item tests one specific concept, not multiple ideas at once.'),
+        $likert('The correct answer cannot be identified without knowing the relevant content.'),
+
+        $hdr('Bias Review'),
+        $likert('This item does not favor or disadvantage respondents based on cultural background.'),
+        $likert('The scenario or context used is accessible to all members of the target population.'),
+        $likert('The language is free of demographic, cultural, or gender bias.'),
+        $likert('This item does not require knowledge or experience outside the domain being assessed.'),
+
+        $hdr('Difficulty Calibration'),
+        $likert('This item is appropriately challenging for the target population.'),
+        $likert('A well-prepared respondent would answer this item correctly.'),
+        $likert('An underprepared respondent would find this item difficult.'),
+        $likert('The difficulty level is consistent with the role this item is expected to play in the test.'),
+
+        $hdr('Reviewer Notes'),
+        $open('Identify any specific word, phrase, or element in this item that should be revised.'),
+        $open('Any additional notes on this item?'),
+    ];
+
     $templates = [
-        ['t-eng',  'Workforce',    'Employee Engagement Pulse',    'Validated 3-factor structure; alpha ~ .89 in field use.', 18, '5-pt agreement', ['Engagement', 'Manager Support', 'Growth'], $engagementItems],
-        ['t-cust', 'Customer',     'Customer Satisfaction (CSAT)', 'Includes NPS anchor item and open-ended driver.',          12, 'Mixed',          ['Satisfaction', 'Effort', 'Loyalty'], [$likert('Overall, how satisfied are you with our service?'), $likert('It was easy to get what I needed.'), $open('What is the main reason for your score?')]],
-        ['t-clim', 'Education',    'School Climate Survey (6-8)',  'K-12 reading-level anchored; bias-reviewed wording.',      24, '4-pt frequency', ['Safety', 'Belonging', 'Engagement', 'Relationships'], [$likert('I feel safe at school.'), $likert('I belong at this school.'), $likert('My teachers care about me.')]],
-        ['t-pat',  'Healthcare',   'Patient Experience',           'Aligned to CAHPS-style domains.',                          20, '5-pt + open',    ['Access', 'Communication', 'Trust'], [$likert('I could get appointments when I needed them.'), $likert('My provider explained things clearly.'), $open('How could we improve your care?')]],
-        ['t-360',  '360 Feedback', 'Leadership 360',               'Self + rater forms; rater-group ready.',                   32, '5-pt + behavior', ['Vision', 'Execution', 'People', 'Integrity'], [$likert('This leader sets a clear direction.'), $likert('This leader delivers on commitments.'), $likert('This leader develops people.')]],
-        ['t-test', 'Assessment',   'Grade-8 Knowledge Check',      'Answer-key + distractor analysis ready.',                  25, 'Multiple choice', ['Reading', 'Math', 'Science'], [['type' => 'Multiple Choice', 'prompt' => 'Which value of x satisfies 2x + 3 = 11?', 'flag' => null]]],
+        ['t-eng',       'Workforce',          'Employee Engagement Pulse',    'Validated 3-factor structure; alpha ~ .89 in field use.', 18, '5-pt agreement',  ['Engagement', 'Manager Support', 'Growth'], $engagementItems],
+        ['t-cust',      'Customer',           'Customer Satisfaction (CSAT)', 'Includes NPS anchor item and open-ended driver.',          12, 'Mixed',           ['Satisfaction', 'Effort', 'Loyalty'], [$likert('Overall, how satisfied are you with our service?'), $likert('It was easy to get what I needed.'), $open('What is the main reason for your score?')]],
+        ['t-clim',      'Education',          'School Climate Survey (6-8)',  'K-12 reading-level anchored; bias-reviewed wording.',      24, '4-pt frequency',  ['Safety', 'Belonging', 'Engagement', 'Relationships'], [$likert('I feel safe at school.'), $likert('I belong at this school.'), $likert('My teachers care about me.')]],
+        ['t-pat',       'Healthcare',         'Patient Experience',           'Aligned to CAHPS-style domains.',                          20, '5-pt + open',     ['Access', 'Communication', 'Trust'], [$likert('I could get appointments when I needed them.'), $likert('My provider explained things clearly.'), $open('How could we improve your care?')]],
+        ['t-360',       '360 Feedback',       'Leadership 360',               'Self + rater forms; rater-group ready.',                   32, '5-pt + behavior', ['Vision', 'Execution', 'People', 'Integrity'], [$likert('This leader sets a clear direction.'), $likert('This leader delivers on commitments.'), $likert('This leader develops people.')]],
+        ['t-test',      'Assessment',         'Grade-8 Knowledge Check',      'Answer-key + distractor analysis ready.',                  25, 'Multiple choice', ['Reading', 'Math', 'Science'], [['type' => 'Multiple Choice', 'prompt' => 'Which value of x satisfies 2x + 3 = 11?', 'flag' => null]]],
+        // Domain templates
+        ['t-360-comp',  '360 Feedback',       'Competency-Based 360',         '5-competency framework; self + rater form; write-in items included.',   28, '5-pt behavior',  ['Communication', 'Decision Making', 'Developing Others', 'Accountability', 'Integrity'], $t360Items],
+        ['t-prog-eval', 'Program Evaluation', 'Program Evaluation Survey',    '3-domain design; fidelity + experience + goal attainment.',            18, '5-pt agreement', ['Goal Attainment', 'Implementation Fidelity', 'Participant Experience'], $progEvalItems],
+        ['t-hr-climate','HR / Organizational','Workforce Climate Survey',      '4-domain climate survey; inclusion and wellbeing emphasis.',            22, '5-pt agreement', ['Organizational Climate', 'Inclusion', 'Leadership Trust', 'Workload and Wellbeing'], $hrClimateItems],
+        ['t-item-review','Assessment',        'Test Item Review (SME Panel)', '4 quality criteria for SME item review; write-in revision notes.',      18, '5-pt agreement', ['Content Accuracy', 'Item Clarity', 'Bias Review', 'Difficulty Calibration'], $itemReviewItems],
     ];
 
     $ins = $pdo->prepare(
