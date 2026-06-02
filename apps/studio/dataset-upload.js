@@ -25,6 +25,15 @@
     const s = document.createElement('style');
     s.id = 'du-styles';
     s.textContent = [
+      /* au-* base — widget is self-contained; these mirror analysis-studio.css so the
+         modal renders correctly on pages that do not load that stylesheet (MM, RSSI, etc.) */
+      '.au-overlay{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}',
+      '.au-panel{background:#fff;border-radius:18px;width:100%;max-width:640px;max-height:84vh;overflow:auto;box-shadow:0 24px 70px rgba(15,23,42,.32);padding:26px 28px;position:relative}',
+      '.au-close{position:absolute;top:16px;right:18px;background:none;border:none;font-size:24px;line-height:1;color:#8a8f98;cursor:pointer}',
+      '.au-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:10px;border:1px solid var(--line,#e6e8ec);background:#fff;color:var(--ink,#15171a);font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}',
+      '.au-btn.primary{background:var(--acc,#c2271b);border-color:var(--acc,#c2271b);color:#fff}',
+      '.au-btn:disabled{opacity:.6;cursor:default}',
+      '.au-msg{margin-top:10px;font-size:13px;color:#c2492f}',
       /* Modal panel overrides */
       '.du-panel{max-width:720px!important;padding:0!important;display:flex;flex-direction:column;max-height:92vh}',
       /* Header */
