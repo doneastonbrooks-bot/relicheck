@@ -52,7 +52,13 @@ if (!empty($project['dataset_id'])) {
             ];
         }
         $dataset = ['source' => (string)$drow['title'], 'variables' => $variables, 'rowCount' => (int)$drow['row_count']];
-        json_out(['ok' => true, 'has_data' => true, 'source' => 'dataset', 'dataset' => $dataset, 'payload' => ['studio' => (string)$project['kind'], 'dataset' => $dataset]]);
+        // Look up any survey_projects row linked to the same dataset so the Studio
+        // can show the RSSI badge even when the project was opened from the RSSI handoff.
+        $spRow = $pdo->prepare('SELECT id FROM survey_projects WHERE dataset_id = :did AND user_id = :uid LIMIT 1');
+        $spRow->execute([':did' => (int)$project['dataset_id'], ':uid' => $uid]);
+        $spId = $spRow->fetchColumn();
+        $extra = $spId ? ['survey_project_id' => (int)$spId] : [];
+        json_out(array_merge(['ok' => true, 'has_data' => true, 'source' => 'dataset', 'dataset' => $dataset, 'payload' => ['studio' => (string)$project['kind'], 'dataset' => $dataset]], $extra));
     }
 }
 

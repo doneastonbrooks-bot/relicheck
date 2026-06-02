@@ -704,7 +704,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     fetch('/api/analysis/dataset.php?project_id=' + encodeURIComponent(BOOT.projectId), { credentials:'same-origin', headers:{Accept:'application/json'} })
       .then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){
-        if (d && d.ok && d.has_data && d.dataset) applyDataset(d.dataset);
+        if (d && d.ok && d.has_data && d.dataset) applyDataset(d.dataset, d.survey_project_id ? { surveyProjectId: d.survey_project_id } : undefined);
         else fallback();
       })
       .catch(fallback);
