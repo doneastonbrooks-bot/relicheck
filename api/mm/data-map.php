@@ -81,6 +81,87 @@ if (isset($body['save']) && is_array($body['save'])) {
     if ($json === false) fail('bad_data', 'Could not encode column metadata.', 500);
     $up = $pdo->prepare('UPDATE datasets SET column_meta = :cm WHERE id = :d AND owner_id = :u');
     $up->execute([':cm' => $json, ':d' => $datasetId, ':u' => $uid]);
+
+    // Phase 2026x: as soon as roles are confirmed, copy the open-ended columns
+    // into mm_text_responses so the Qualitative Themes step has responses to
+    // read. Previously this copy ran only at dataset-link time, so confirming a
+    // column as open AFTER linking (the normal order) left the qual table
+    // empty. Runs only when the project has NO responses yet, so it never
+    // disturbs existing data or coding. Mirrors reingest-dataset-text.php.
+    // Wrapped so any failure here can never break role-saving.
+    try {
+        if (mm_response_count($pdo, $projectId) === 0 && is_array($data) && !empty($data)) {
+            $openIdxM = []; $numericIdxM = -1; $refIdxM = -1;
+            foreach ($cm as $ci => $cc) {
+                if (!is_array($cc)) continue;
+                $ctype = (string)($cc['type'] ?? '');
+                $cname = (string)($cc['name'] ?? ('col_' . $ci));
+                if ($ctype === 'open') {
+                    if ($refIdxM === -1 && preg_match('/^(respondent_?ref|response_?id|id|ref|email)$/i', $cname)) {
+                        $refIdxM = $ci; continue;
+                    }
+                    $set = []; $lenSum = 0; $lenCount = 0;
+                    foreach ($data as $row) {
+                        if (!is_array($row)) continue;
+                        $v = isset($row[$ci]) ? trim((string)$row[$ci]) : '';
+                        if ($v === '') continue;
+                        if (count($set) < 200) $set[$v] = true;
+                        $lenSum += mb_strlen($v); $lenCount++;
+                    }
+                    $avgLen = $lenCount > 0 ? ($lenSum / $lenCount) : 0;
+                    if ($avgLen > 20 && count($set) > 12) $openIdxM[] = ['idx' => $ci, 'name' => $cname];
+                } elseif ($ctype === 'likert' && $numericIdxM === -1) {
+                    $numericIdxM = $ci;
+                }
+            }
+            $groupIdxM = -1;
+            foreach ($cm as $ci => $cc) {
+                if (!is_array($cc)) continue;
+                if ((string)($cc['type'] ?? '') === 'likert' || $ci === $refIdxM) continue;
+                $isOpenC = ((string)($cc['type'] ?? '') === 'open');
+                $set = [];
+                foreach ($data as $row) {
+                    if (!is_array($row)) continue;
+                    $v = isset($row[$ci]) ? trim((string)$row[$ci]) : '';
+                    if ($v !== '') $set[$v] = true;
+                    if (count($set) > 20) break;
+                }
+                $d = count($set);
+                if ($d >= 2 && $d <= 12) { if (!$isOpenC) { $groupIdxM = $ci; break; } if ($groupIdxM === -1) $groupIdxM = $ci; }
+            }
+            if (!empty($openIdxM)) {
+                $srcIdM = 0;
+                try {
+                    $f = $pdo->prepare('SELECT id FROM mm_data_sources WHERE project_id = :p AND source_type = "dataset" AND source_ref = :ref ORDER BY id DESC LIMIT 1');
+                    $f->execute([':p' => $projectId, ':ref' => (string)$datasetId]);
+                    $srcIdM = (int)($f->fetchColumn() ?: 0);
+                    if ($srcIdM === 0) {
+                        $ins = $pdo->prepare('INSERT INTO mm_data_sources (project_id, source_type, source_ref, label, field_name, numeric_field, group_field, row_count) VALUES (:p, "dataset", :ref, :lbl, NULL, NULL, NULL, 0)');
+                        $ins->execute([':p' => $projectId, ':ref' => (string)$datasetId, ':lbl' => 'Dataset link']);
+                        $srcIdM = (int)$pdo->lastInsertId();
+                    }
+                } catch (Throwable $e) { error_log('data-map: source resolve failed: ' . $e->getMessage()); }
+
+                $rowI = 0;
+                foreach ($data as $row) {
+                    if (!is_array($row)) { $rowI++; continue; }
+                    $rid = ($refIdxM >= 0 && isset($row[$refIdxM]) && trim((string)$row[$refIdxM]) !== '') ? trim((string)$row[$refIdxM]) : ('R' . ($rowI + 1));
+                    $num = ($numericIdxM >= 0 && isset($row[$numericIdxM]) && is_numeric($row[$numericIdxM])) ? (float)$row[$numericIdxM] : null;
+                    $grp = null;
+                    if ($groupIdxM >= 0 && isset($row[$groupIdxM])) { $g = trim((string)$row[$groupIdxM]); if ($g !== '') $grp = $g; }
+                    foreach ($openIdxM as $o) {
+                        $text = isset($row[$o['idx']]) ? trim((string)$row[$o['idx']]) : '';
+                        if ($text === '') continue;
+                        if (mb_strlen($text) > 8000) $text = mb_substr($text, 0, 8000);
+                        mm_insert_text_response($pdo, $projectId, $srcIdM, $rid, $grp, $num, $text, $o['name'], $o['name']);
+                    }
+                    $rowI++;
+                }
+            }
+        }
+    } catch (Throwable $e) {
+        error_log('data-map: materialize-on-confirm failed for project ' . $projectId . ': ' . $e->getMessage());
+    }
 }
 
 // ----------------------------------------------------------------------------
