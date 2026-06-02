@@ -7,12 +7,14 @@ declare(strict_types=1);
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_mm.php';
+require_once __DIR__ . '/../_rc_projects.php';
 
 require_method('GET', 'POST');
 check_origin();
 $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
+rc_ensure_project_schema($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stmt = $pdo->prepare(
@@ -51,20 +53,35 @@ $dataKindsJson = count($dataKinds) > 0 ? json_encode($dataKinds, JSON_UNESCAPED_
 if ($title === '') fail('bad_input', 'Project title is required.');
 if (!in_array($pathway, ['scores_plus_comments', 'comments_only'], true)) $pathway = 'comments_only';
 
-$stmt = $pdo->prepare(
-    'INSERT INTO mm_projects (user_id, title, pathway, data_kinds, survey_id, dataset_id, notes)
-     VALUES (:uid, :t, :pw, :dk, :s, :d, :n)'
-);
-$stmt->execute([
-    ':uid' => $uid,
-    ':t'   => $title,
-    ':pw'  => $pathway,
-    ':dk'  => $dataKindsJson,
-    ':s'   => $surveyId  !== '' ? $surveyId  : null,
-    ':d'   => $datasetId > 0    ? $datasetId : null,
-    ':n'   => $notes !== '' ? $notes : null,
-]);
-$id = (int)$pdo->lastInsertId();
+$id = 0; $rcId = 0;
+$pdo->beginTransaction();
+try {
+    $pdo->prepare(
+        'INSERT INTO mm_projects (user_id, title, pathway, data_kinds, survey_id, dataset_id, notes)
+         VALUES (:uid, :t, :pw, :dk, :s, :d, :n)'
+    )->execute([
+        ':uid' => $uid,
+        ':t'   => $title,
+        ':pw'  => $pathway,
+        ':dk'  => $dataKindsJson,
+        ':s'   => $surveyId  !== '' ? $surveyId  : null,
+        ':d'   => $datasetId > 0    ? $datasetId : null,
+        ':n'   => $notes !== '' ? $notes : null,
+    ]);
+    $id = (int)$pdo->lastInsertId();
+
+    // RE Item 3: create ecosystem project record and link.
+    $rcId = rc_create_project($pdo, $uid, $title, $notes ?: null);
+    $pdo->prepare('UPDATE mm_projects SET rc_project_id = :r WHERE id = :id')
+        ->execute([':r' => $rcId, ':id' => $id]);
+
+    if ($datasetId > 0) rc_set_project_dataset($pdo, $rcId, $datasetId);
+
+    $pdo->commit();
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    fail('db_error', 'Could not create project: ' . $e->getMessage(), 500);
+}
 
 $row = $pdo->prepare('SELECT * FROM mm_projects WHERE id = :id');
 $row->execute([':id' => $id]);

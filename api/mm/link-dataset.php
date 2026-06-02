@@ -20,6 +20,7 @@ require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_mm.php';
 require_once __DIR__ . '/../_dataset_helpers.php';
+require_once __DIR__ . '/../_rc_projects.php';
 
 require_method('POST');
 check_origin();
@@ -211,7 +212,11 @@ try {
     error_log('mm/link-dataset: text materialization failed: ' . $e->getMessage());
 }
 
-rc_seed_var_meta_from_dataset($pdo, $projectId, 'mm', $datasetId);
+// RE Item 3: propagate dataset link to ecosystem project (if this project has one).
+$rcId = rc_project_id_for_studio($pdo, 'mm_projects', $projectId);
+if ($rcId !== null) rc_set_project_dataset($pdo, $rcId, $datasetId);
+
+rc_seed_var_meta_from_dataset($pdo, $projectId, 'mm', $datasetId, $rcId);
 
 json_out([
     'ok'             => true,

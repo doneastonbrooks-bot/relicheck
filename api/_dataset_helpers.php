@@ -22,16 +22,18 @@ require_once __DIR__ . '/dev/_dev_common.php';
  * never clobbers user-confirmed overrides made via the DataMap (those writes
  * happen through variable-meta-save.php which has its own path).
  *
- * @param PDO    $pdo
- * @param int    $projectId   The project receiving the dataset.
- * @param string $projectType 'analysis' | 'mm' | 'survey'
- * @param int    $datasetId
+ * @param PDO      $pdo
+ * @param int      $projectId    The project receiving the dataset.
+ * @param string   $projectType  'analysis' | 'mm' | 'survey'
+ * @param int      $datasetId
+ * @param int|null $rcProjectId  Ecosystem project id (RE Item 3); null for legacy rows.
  */
 function rc_seed_var_meta_from_dataset(
     PDO    $pdo,
     int    $projectId,
     string $projectType,
-    int    $datasetId
+    int    $datasetId,
+    ?int   $rcProjectId = null
 ): void {
     try {
         sds_ensure_schema($pdo);
@@ -95,6 +97,17 @@ function rc_seed_var_meta_from_dataset(
                 ':st'  => $st,
                 ':inc' => $inc,
             ]);
+        }
+        // Propagate ecosystem project id to the rows we just seeded.
+        if ($rcProjectId !== null) {
+            try {
+                $pdo->prepare(
+                    'UPDATE variable_metadata SET rc_project_id = :rc
+                      WHERE project_id = :pid AND project_type = :pt AND rc_project_id IS NULL'
+                )->execute([':rc' => $rcProjectId, ':pid' => $projectId, ':pt' => $projectType]);
+            } catch (Throwable $e) {
+                // Column may not exist on a first request before rc_ensure_project_schema ran — ignore.
+            }
         }
     } catch (Throwable $e) {
         error_log('rc_seed_var_meta_from_dataset: project=' . $projectId

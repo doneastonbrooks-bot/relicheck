@@ -10,6 +10,7 @@ require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_dataset_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_analysis_studio.php';
+require_once __DIR__ . '/../_rc_projects.php';
 
 require_method('GET', 'POST');
 check_origin();
@@ -17,6 +18,7 @@ $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
 analysis_ensure_schema($pdo);
+rc_ensure_project_schema($pdo);
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $kind = clean_string((string)($_GET['kind'] ?? ''), 20);
@@ -54,25 +56,40 @@ if ($datasetId > 0) {
     if (!$own->fetch()) $datasetId = 0;
 }
 
-$stmt = $pdo->prepare(
-    'INSERT INTO analysis_projects (user_id, kind, title, dataset_id, notes)
-     VALUES (:uid, :kind, :t, :d, :n)'
-);
-$stmt->execute([
-    ':uid'  => $uid,
-    ':kind' => $kind,
-    ':t'    => $title,
-    ':d'    => $datasetId > 0 ? $datasetId : null,
-    ':n'    => $notes !== '' ? $notes : null,
-]);
-$id = (int)$pdo->lastInsertId();
+$id = 0; $rcId = 0;
+$pdo->beginTransaction();
+try {
+    $pdo->prepare(
+        'INSERT INTO analysis_projects (user_id, kind, title, dataset_id, notes)
+         VALUES (:uid, :kind, :t, :d, :n)'
+    )->execute([
+        ':uid'  => $uid,
+        ':kind' => $kind,
+        ':t'    => $title,
+        ':d'    => $datasetId > 0 ? $datasetId : null,
+        ':n'    => $notes !== '' ? $notes : null,
+    ]);
+    $id = (int)$pdo->lastInsertId();
+
+    // RE Item 3: create ecosystem project record and link.
+    $rcId = rc_create_project($pdo, $uid, $title, $notes ?: null);
+    $pdo->prepare('UPDATE analysis_projects SET rc_project_id = :r WHERE id = :id')
+        ->execute([':r' => $rcId, ':id' => $id]);
+
+    if ($datasetId > 0) rc_set_project_dataset($pdo, $rcId, $datasetId);
+
+    $pdo->commit();
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    fail('db_error', 'Could not create project: ' . $e->getMessage(), 500);
+}
 
 $row = $pdo->prepare('SELECT * FROM analysis_projects WHERE id = :id');
 $row->execute([':id' => $id]);
 $project = $row->fetch(PDO::FETCH_ASSOC);
 
 if ($datasetId > 0) {
-    rc_seed_var_meta_from_dataset($pdo, $id, 'analysis', $datasetId);
+    rc_seed_var_meta_from_dataset($pdo, $id, 'analysis', $datasetId, $rcId);
 }
 
 json_out(['ok' => true, 'project' => analysis_project_out($project ?: [])]);

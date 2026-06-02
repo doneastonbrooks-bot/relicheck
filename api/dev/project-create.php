@@ -8,6 +8,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_dev_common.php';
+require_once __DIR__ . '/../_rc_projects.php';
 
 require_method('POST');
 check_origin();
@@ -15,6 +16,7 @@ $user = require_auth();
 
 $pdo = db();
 sds_ensure_schema($pdo);
+rc_ensure_project_schema($pdo);
 
 $body = read_json_body();
 
@@ -58,6 +60,11 @@ try {
         ':settings' => $settingsJson,
     ]);
     $projectId = (int)$pdo->lastInsertId();
+
+    // RE Item 3: create ecosystem project record and link.
+    $rcProjectId = rc_create_project($pdo, (int)$user['id'], $title, $purpose ?: null);
+    $pdo->prepare('UPDATE survey_projects SET rc_project_id = :r WHERE id = :id')
+        ->execute([':r' => $rcProjectId, ':id' => $projectId]);
 
     // Optional sections; remember the first section id to attach loose items.
     $firstSectionId = null;
