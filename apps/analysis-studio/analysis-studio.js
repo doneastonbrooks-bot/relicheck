@@ -760,12 +760,14 @@
         .then(function(r){return r.json();})
         .then(function(d){
           tt.busy=false; tt.result=d; tt.tab='desc';
+          var rb=host.querySelector('#ttRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run t-test';}
           var out=host.querySelector('#ttResults');
           if(out) out.innerHTML=renderTTestResults(d,ctx);
           if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
         })
         .catch(function(){
           tt.busy=false;
+          var rb=host.querySelector('#ttRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run t-test';}
           var out=host.querySelector('#ttResults');
           if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
         });
@@ -853,12 +855,14 @@
         .then(function(r){return r.json();})
         .then(function(d){
           an.busy=false; an.result=d; an.tab='desc';
+          var rb=host.querySelector('#anRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run ANOVA';}
           var out=host.querySelector('#anResults');
           if(out) out.innerHTML=renderAnovaResults(d,ctx);
           if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
         })
         .catch(function(){
           an.busy=false;
+          var rb=host.querySelector('#anRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run ANOVA';}
           var out=host.querySelector('#anResults');
           if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
         });
@@ -945,12 +949,14 @@
         .then(function(r){return r.json();})
         .then(function(d){
           csq.busy=false; csq.result=d; csq.tab='table';
+          var rb=host.querySelector('#csRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run chi-square';}
           var out=host.querySelector('#csResults');
           if(out) out.innerHTML=renderChiSqResults(d,ctx);
           if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
         })
         .catch(function(){
           csq.busy=false;
+          var rb=host.querySelector('#csRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run chi-square';}
           var out=host.querySelector('#csResults');
           if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
         });
@@ -1036,12 +1042,14 @@
         .then(function(r){return r.json();})
         .then(function(d){
           cor.busy=false; cor.result=d; cor.tab='desc';
+          var rb=host.querySelector('#corRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run correlation';}
           var out=host.querySelector('#corResults');
           if(out) out.innerHTML=renderCorResults(d,ctx);
           if(d.ok&&ctx&&ctx.onResult) ctx.onResult();
         })
         .catch(function(){
           cor.busy=false;
+          var rb=host.querySelector('#corRun'); if(rb){rb.disabled=false; rb.innerHTML='▷ Run correlation';}
           var out=host.querySelector('#corResults');
           if(out) out.innerHTML='<div class="as-empty-tool">Network error — please try again.</div>';
         });
