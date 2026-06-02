@@ -1842,7 +1842,57 @@ function renderTrust(s){
    Wired to codebook.php (themes + coverage + sentiment in ONE call),
    coded-responses.php (quotes per theme), and build.php (AI discovery). Studio
    pattern only: summary cards + dx-table + tt-status badges + a quotes panel. */
-const th={base:null,busy:false,err:'',building:false,coding:false,codingAi:false,clearing:false,sel:null,quotes:null,qbusy:false,menu:null,acting:0};
+const th={base:null,busy:false,err:'',building:false,coding:false,codingAi:false,clearing:false,sel:null,quotes:null,qbusy:false,menu:null,acting:0,codeView:false};
+/* ===== Manual per-response coding workspace (lives inside the Themes step) =====
+   One fetch (coder-responses.php) gives every response + this coder's codes + the
+   theme picker; every edit reuses coder-set-coding.php (set/clear, idempotent,
+   coder-scoped). Lets a coder read each response with its participant context and
+   assign one or more theme codes by hand, and flags uncoded / over-coded rows. */
+const cr={loaded:false,busy:false,err:'',data:null,filter:'all'};
+function crFetch(){return fetch('/api/mm/coder-responses.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
+function crSetReq(rid,cid,action){return fetch('/api/mm/coder-set-coding.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,response_id:rid,category_id:cid,action:action})}).then(r=>r.json());}
+function crOpen(){th.codeView=true;cr.loaded=false;cr.data=null;renderThemes(activeStep());}
+function crClose(){th.codeView=false;th.base=null;renderThemes(activeStep());}
+function crFilter(f){cr.filter=f;renderThemes(activeStep());}
+function crRecount(){if(!cr.data)return;const rs=cr.data.responses||[];cr.data.coded=rs.filter(r=>r.code_count>0).length;cr.data.uncoded=rs.length-cr.data.coded;}
+function crAddCode(rid,cid){if(!cid)return;const r=(cr.data.responses||[]).find(x=>x.id===rid);if(!r||r.codes.indexOf(cid)>=0)return;r.codes.push(cid);r.code_count=r.codes.length;crRecount();renderThemes(activeStep());
+  crSetReq(rid,cid,'set').then(j=>{if(!(j&&j.ok)){r.codes=r.codes.filter(c=>c!==cid);r.code_count=r.codes.length;crRecount();toast((j&&(j.message||j.error))||'Could not add code.');renderThemes(activeStep());}}).catch(()=>{r.codes=r.codes.filter(c=>c!==cid);r.code_count=r.codes.length;crRecount();toast('Could not add code.');renderThemes(activeStep());});}
+function crRemoveCode(rid,cid){const r=(cr.data.responses||[]).find(x=>x.id===rid);if(!r)return;const had=r.codes.indexOf(cid);if(had<0)return;r.codes=r.codes.filter(c=>c!==cid);r.code_count=r.codes.length;crRecount();renderThemes(activeStep());
+  crSetReq(rid,cid,'clear').then(j=>{if(!(j&&j.ok)){r.codes.push(cid);r.code_count=r.codes.length;crRecount();toast((j&&(j.message||j.error))||'Could not remove code.');renderThemes(activeStep());}}).catch(()=>{r.codes.push(cid);r.code_count=r.codes.length;crRecount();toast('Could not remove code.');renderThemes(activeStep());});}
+function crStatus(n){if(n===0)return '<span class="tt-status rev">uncoded</span>';if(n>3)return '<span class="tt-status" style="background:#f6e0e1;color:#a3262b">over-coded</span>';return '<span class="tt-status ok">coded</span>';}
+function renderCodeWorkspace(s){
+  const head=thHead(s)+helpBar('l_themes')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`;
+  if(cr.err){$("#centerInner").innerHTML=head+`<div class="work-surface" style="border-radius:16px">${esc(cr.err)}</div><div class="dm-save"><button class="btn" onclick="crClose()">← Back to themes</button></div>`+thNav();return;}
+  if(!cr.loaded){
+    if(!cr.busy){cr.busy=true;crFetch().then(j=>{cr.busy=false;cr.loaded=true;if(j&&j.ok){cr.data=j;}else{cr.err=(j&&(j.message||j.error))||'Could not load responses.';}renderThemes(activeStep());}).catch(()=>{cr.busy=false;cr.loaded=true;cr.err='Could not load your responses.';renderThemes(activeStep());});}
+    $("#centerInner").innerHTML=head+`<div class="work-surface" style="border-radius:16px;color:var(--ink-3)">Loading responses…</div>`+thNav();return;
+  }
+  const d=cr.data||{responses:[],themes:[]};
+  const themes=d.themes||[];
+  if(!themes.length){$("#centerInner").innerHTML=head+`<div class="th-empty"><h3>No themes to code with</h3><p>Add or discover themes first, then return here to code responses by hand.</p></div><div class="dm-save"><button class="btn" onclick="crClose()">← Back to themes</button></div>`+thNav();return;}
+  const tName={};themes.forEach(t=>tName[t.id]=t.name);
+  let rows=d.responses||[];
+  if(cr.filter==='uncoded')rows=rows.filter(r=>r.code_count===0);
+  const bar=`<div class="dm-save"><button class="btn" onclick="crClose()">← Back to themes</button>
+    <span style="margin:0 8px;color:var(--ink-2);font-size:13px">${d.coded||0} of ${d.total||0} coded · ${d.uncoded||0} uncoded</span>
+    <button class="btn ${cr.filter==='all'?'primary':''}" style="padding:4px 10px;font-size:12px" onclick="crFilter('all')">All</button>
+    <button class="btn ${cr.filter==='uncoded'?'primary':''}" style="padding:4px 10px;font-size:12px" onclick="crFilter('uncoded')">Uncoded only</button></div>`;
+  const cards=rows.map(r=>{
+    const meta=[r.respondent_ref?('ID '+esc(r.respondent_ref)):'',r.group_value?esc(r.group_value):'',r.numeric_value?('score '+esc(r.numeric_value)):''].filter(Boolean).join(' · ');
+    const chips=r.codes.map(cid=>`<span class="th-cov" style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--line);border-radius:12px;margin:2px 4px 2px 0">${esc(tName[cid]||('#'+cid))} <span style="cursor:pointer;color:#a3262b;font-weight:700" onclick="crRemoveCode(${r.id},${cid})">×</span></span>`).join('');
+    const avail=themes.filter(t=>r.codes.indexOf(t.id)<0);
+    const picker=avail.length?`<select class="ed-in" style="max-width:240px;margin-top:6px" onchange="crAddCode(${r.id},+this.value);this.value=''"><option value="">+ add code…</option>${avail.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>`:`<span class="dm-note" style="margin-top:6px;display:inline-block">All themes applied</span>`;
+    return `<div class="panel" style="margin-bottom:10px"><div class="panel-b">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div class="dm-note" style="margin:0">${meta||'—'}</div>${crStatus(r.code_count)}</div>
+      <div style="font-size:13.5px;line-height:1.55;margin:8px 0;white-space:pre-wrap">${esc(r.text)}</div>
+      <div>${chips||'<span class="dm-note">No codes yet</span>'}</div>
+      <div>${picker}</div>
+    </div></div>`;}).join('');
+  const body=`<div class="dx-scroll" style="max-height:460px;overflow:auto;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface-2,#f6f7f9)">${cards||'<div class="dm-note" style="padding:8px">No responses match this filter.</div>'}</div>`;
+  const layers=`<div class="dx-layers" style="margin-top:14px"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">Read each response with its participant context and assign the theme codes that fit — by hand. A response may carry more than one code. "Uncoded" flags responses you have not yet judged; "over-coded" (4+) flags ones worth a second look. Edits save as you go.</div></div></div>`;
+  $("#centerInner").innerHTML=head+bar+body+layers+thNav();
+}
+
 function thFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function thQuotesFetch(cid){return fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+cid+'&limit=8',{credentials:'same-origin'}).then(r=>r.json());}
 function thBuildReq(force){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto',force:!!force})}).then(r=>r.json());}
@@ -1881,6 +1931,7 @@ function thQuotesPanel(){
 }
 function renderThemes(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+`<p class="lede">Connect a project with open-ended responses to discover and review themes.</p>`+thNav();return;}
+  if(th.codeView){ return renderCodeWorkspace(s); }
   if(th.err){thMsg(s,th.err);return;}
   if(!th.base){
     if(!th.busy){th.busy=true;thFetch().then(j=>{th.busy=false;if(j&&j.ok){th.base=j;}else{th.err=(j&&(j.message||j.error))||'Could not load themes.';}renderThemes(activeStep());}).catch(()=>{th.busy=false;th.err='Could not load your data.';renderThemes(activeStep());});}
@@ -1911,7 +1962,8 @@ function renderThemes(s){
   const allZero=themes.every(t=>(t.coded_count||0)===0);
   const busy=th.coding||th.codingAi||th.clearing;
   const clearBtn=allZero?'':`<button class="btn" ${busy?'disabled':''} onclick="thClearTags()">${th.clearing?'Clearing…':'Clear tags'}</button>`;
-  const codeBar=`<div class="dm-save"><button class="btn primary" ${busy?'disabled':''} onclick="thCodeAi()">${th.codingAi?'Tagging with ReliCheck Intelligence…':(allZero?'Tag responses with ReliCheck Intelligence':'Re-tag with ReliCheck Intelligence')}</button><button class="btn" ${busy?'disabled':''} onclick="thCode()">${th.coding?'Tagging…':'Keyword tag'}</button>${clearBtn}<span class="dm-note">${allZero?'Your themes are not tagged to any responses yet. ReliCheck Intelligence reads meaning (recommended); keyword tagging is a fast literal-match pass.':'ReliCheck Intelligence reads meaning, so it catches themes worded differently. Keyword tagging is a fast literal match. Clear tags to start over without losing your themes.'}</span></div>`;
+  const codeByHand=`<button class="btn" ${busy?'disabled':''} onclick="crOpen()" title="Read each response and assign codes yourself">✎ Code by hand</button>`;
+  const codeBar=`<div class="dm-save"><button class="btn primary" ${busy?'disabled':''} onclick="thCodeAi()">${th.codingAi?'Tagging with ReliCheck Intelligence…':(allZero?'Tag responses with ReliCheck Intelligence':'Re-tag with ReliCheck Intelligence')}</button><button class="btn" ${busy?'disabled':''} onclick="thCode()">${th.coding?'Tagging…':'Keyword tag'}</button>${clearBtn}${codeByHand}<span class="dm-note">${allZero?'Your themes are not tagged to any responses yet. ReliCheck Intelligence reads meaning (recommended); keyword tagging is a fast literal-match pass.':'ReliCheck Intelligence reads meaning, so it catches themes worded differently. Keyword tagging is a fast literal match. Clear tags to start over without losing your themes.'}</span></div>`;
   const addBar=`<div class="dm-save" style="margin:6px 0 4px"><input id="thNewName" class="ed-in" style="max-width:260px" placeholder="Add a theme by name"><button class="btn" onclick="thAdd()">+ Add theme</button><span class="dm-note">Add a code by hand.</span></div>`;
   $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+cards+codeBar+addBar+table+thQuotesPanel()+layers+thNav();
 }
