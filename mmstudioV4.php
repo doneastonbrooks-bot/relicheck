@@ -123,7 +123,13 @@ if ($projectId > 0) {
           $rawInfo['linked'] = true; $rawInfo['rows'] = count($data); $rawInfo['cols'] = count($cm);
           foreach ($cm as $i => $c) {
             if (!is_array($c)) continue;
-            $name = (string)($c['name'] ?? ('col_' . $i));
+            $name      = (string)($c['name'] ?? ('col_' . $i));
+            $savedType = (string)($c['type'] ?? '');
+            // A column explicitly saved as a string-categorical type in the Data Map
+            // overrides numeric detection for the groupings list (Binary / Dichotomous
+            // → 'single'). 'demographic' is NOT included here because numeric demographics
+            // (e.g. YearsExperience) must remain visible as correlation/regression outcomes.
+            $isSavedCat = in_array($savedType, ['single', 'multi'], true);
             $nonEmpty = 0; $numCount = 0; $distinct = [];
             foreach ($data as $row) {
               if (!is_array($row) || !array_key_exists($i, $row)) continue;
@@ -135,18 +141,33 @@ if ($projectId > 0) {
             $nDistinct  = count($distinct);
             $isNumeric  = $numCount >= 0.8 * $nonEmpty;
             $isId       = ($nonEmpty > 20 && $nDistinct > 0.9 * $nonEmpty);
-            if ($isId) continue;
-            if ($isNumeric && $nDistinct >= 3) {
-              $ttVars['outcomes'][] = ['id' => $i, 'name' => $name];
-            } elseif (!$isNumeric && $nDistinct >= 2 && $nDistinct <= 30) {
+            if ($isId && !$isSavedCat) continue;
+            $avgValLen  = $nDistinct ? array_sum(array_map('strlen', array_keys($distinct))) / $nDistinct : 0;
+            $isVerbatim = ($avgValLen > 40);
+            if ($isNumeric && !$isSavedCat && $nDistinct >= 3) {
+              // Priority 0 = explicitly assigned as Quantitative outcome in Data Map (floats first).
+              // Priority 1 = detected as numeric but not explicitly assigned.
+              $outPriority = ($savedType === 'numeric' || $savedType === 'criterion') ? 0 : 1;
+              $ttVars['outcomes'][] = ['id' => $i, 'name' => $name, 'priority' => $outPriority];
+            } elseif (($isSavedCat || !$isNumeric) && !$isVerbatim && $nDistinct >= 2 && $nDistinct <= 30) {
+              // Categorical grouping: either explicitly saved as categorical in
+              // Data Map, or detected as non-numeric with 2–30 distinct values.
               arsort($distinct); $groups = [];
               foreach ($distinct as $val => $cnt) { $groups[] = ['value' => (string)$val, 'n' => (int)$cnt]; if (count($groups) >= 30) break; }
+              $ttVars['groupings'][] = ['id' => $i, 'name' => $name, 'groups' => $groups];
+            } elseif ($isNumeric && !$isSavedCat && $nDistinct === 2) {
+              // Binary numeric variable auto-detected (0/1, Yes/No, etc.).
+              // Categorical by function — route to groupings, not outcomes.
+              arsort($distinct); $groups = [];
+              foreach ($distinct as $val => $cnt) { $groups[] = ['value' => (string)$val, 'n' => (int)$cnt]; }
               $ttVars['groupings'][] = ['id' => $i, 'name' => $name, 'groups' => $groups];
             }
           }
         }
       }
     }
+    // Sort outcomes: explicitly assigned Quantitative outcomes (priority 0) first.
+    usort($ttVars['outcomes'], fn($a, $b) => ($a['priority'] ?? 1) <=> ($b['priority'] ?? 1));
   } catch (Throwable $e) { /* pickers degrade to empty */ }
 }
 
@@ -341,7 +362,7 @@ label .tt-hint{margin-left:6px}
 .dx-table td{padding:11px 12px;border-bottom:1px solid var(--line-2);text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2);white-space:nowrap}
 .dx-table tr:last-child td{border-bottom:none}
 .dx-name{text-align:left!important;font-weight:650;color:var(--ink)}
-.dx-interp{text-align:left!important;color:var(--ink-2);white-space:normal}
+.dx-interp{text-align:left!important;color:var(--ink-2);white-space:normal!important}
 .dx-neg{color:#c0524a;font-weight:700} .dx-pos{color:var(--mm-ink);font-weight:700}
 .dx-total td{border-top:1.5px solid var(--line);border-bottom:none;font-weight:700;color:var(--ink)}
 .dx-layers{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px;margin-bottom:18px}
@@ -384,7 +405,7 @@ label .tt-hint{margin-left:6px}
 .dm-fit-sel td{background:var(--accent-soft)}
 .dm-fit-sel td:first-child{box-shadow:inset 3px 0 0 var(--btn)}
 .dm-note{font-size:12.5px;color:var(--ink-3)}
-.dm-save{display:flex;align-items:center;gap:12px;margin:14px 0 4px}
+.dm-save{display:flex;align-items:center;gap:12px;margin:0;padding:12px 0;position:sticky;bottom:0;background:var(--bg);border-top:1px solid var(--line);z-index:5}
 /* Qualitative Themes — coverage meter, sentiment chips, quotes */
 .th-bar{height:7px;border-radius:999px;background:var(--line-2);overflow:hidden;min-width:90px;margin-top:5px}
 .th-bar > i{display:block;height:100%;background:var(--qual);border-radius:999px}
@@ -715,21 +736,41 @@ function renderDescriptive(s){
   return renderMeans(s);
 }
 function setFreq(v){dx.freqId=+v;renderDescriptive(activeStep());}
+function isOpenEndedCat(c){
+  // A "categorical" variable is actually open-ended verbatim responses if:
+  // its top category value is long (responses, not codes), OR
+  // nearly every response is unique (high cardinality = free text).
+  // Either case means a frequency table of strings is meaningless.
+  const top=c.categories&&c.categories[0];
+  if(top&&top.value.length>50)return true;
+  const total=c.categories?c.categories.reduce((s,r)=>s+r.count,0):0;
+  const uniq=c.categories?c.categories.length:0;
+  if(total>0&&uniq/total>0.6)return true;
+  return false;
+}
 function renderFreq(s){
-  const cats=dx.base.categorical; const expl=state.design==='explanatory';
-  if(!cats.length){$("#centerInner").innerHTML=descMsg('Frequencies','Frequencies','Who is represented, category by category.','No categorical variables were found to tabulate.');return;}
+  const expl=state.design==='explanatory';
+  // Exclude open-ended verbatim columns — they produce meaningless frequency tables.
+  // Open-ended variables belong in the Qualitative strand (theme coding layer).
+  const allCats=dx.base.categorical||[];
+  const openExcluded=allCats.filter(c=>isOpenEndedCat(c));
+  const cats=allCats.filter(c=>!isOpenEndedCat(c));
+  const openNote=openExcluded.length?`<div class="dm-note" style="margin-bottom:12px"><b>${openExcluded.map(c=>esc(c.name)).join(', ')}</b> ${openExcluded.length===1?'is':'are'} excluded — open-ended responses are not frequency-countable by verbatim string. Use the <b>Qualitative strand</b> (Qualitative Themes step) for theme frequency analysis.</div>`:'';
+  if(!cats.length){$("#centerInner").innerHTML=descMsg('Frequencies','Frequencies','Who is represented, category by category.',openExcluded.length?'No categorical variables found. Open-ended response columns are excluded from frequency tables — see the Qualitative strand.':'No categorical variables were found to tabulate.');return;}
+  // Reset freqId if it pointed at an excluded variable
+  if(dx.freqId!=null&&allCats.find(x=>x.id===dx.freqId)&&!cats.find(x=>x.id===dx.freqId))dx.freqId=null;
   const c=cats.find(x=>x.id===dx.freqId)||cats[0]; dx.freqId=c.id;
   let cum=0; const body=c.categories.map(r=>{cum+=r.valid_pct;return `<tr><td class="dx-name">${esc(r.value)}</td><td>${r.count}</td><td>${_pc(r.pct)}</td><td>${_pc(r.valid_pct)}</td><td>${_pc(cum)}</td></tr>`;}).join('');
   const miss=c.missing?`<tr><td class="dx-name">Missing</td><td>${c.missing}</td><td>${_pc(100*c.missing/(dx.base.rows||1))}</td><td>—</td><td>—</td></tr>`:'';
   const top=c.categories[0];
-  $("#centerInner").innerHTML=descHead('Frequencies','Frequencies','Who is represented in the quantitative phase, category by category.')+helpBar('Frequencies')+`
+  $("#centerInner").innerHTML=descHead('Frequencies','Frequencies','Who is represented in the quantitative phase, category by category.')+helpBar('Frequencies')+openNote+`
     <div style="${_PICK}"><label class="ed-l" style="margin:0">Variable</label>${dxSel(c.id,cats,'setFreq(this.value)')}</div>
     <div class="panel"><div class="panel-h"><div><h3>Table 1 · Frequency distribution for ${esc(c.name)}</h3></div></div>
       <div class="panel-b"><div class="dx-scroll"><table class="dx-table">
         <thead><tr><th class="l">${esc(c.name)}</th><th>Frequency</th><th>Percent</th><th>Valid Percent</th><th>Cumulative Percent</th></tr></thead>
         <tbody>${body}${miss}<tr class="dx-total"><td class="dx-name">Total</td><td>${dx.base.rows}</td><td>100.0%</td><td>100.0%</td><td>—</td></tr></tbody></table></div></div></div>
     <div class="dx-layers">
-      <div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">${top?`The most common ${esc(c.name)} value was “${esc(top.value)}” — ${_pc(top.valid_pct)} of valid responses (n = ${top.count}).`:'No responses to summarize.'}</div></div>
+      <div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">${top?`The most common ${esc(c.name)} value was "${esc(top.value)}" — ${_pc(top.valid_pct)} of valid responses (n = ${top.count}).`:'No responses to summarize.'}</div></div>
       <div class="dx-l"><div class="dx-l-k">Why this matters</div><div class="dx-l-t">How the sample is distributed across ${esc(c.name)} can shape how the other results should be read.</div></div>
       ${expl?`<div class="dx-l dx-q"><div class="dx-l-k">Mixed methods use</div><div class="dx-l-t">Which groups are well represented in the quantitative phase, and which may need qualitative follow-up?</div></div>`:''}
       <div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">Counts describe who is in the data; on their own they do not explain differences between groups.</div></div>
@@ -739,7 +780,11 @@ function renderFreq(s){
 function setMeansNum(v){dx.mNum=+v;renderDescriptive(activeStep());}
 function setMeansGrp(v){dx.mGrp=+v;renderDescriptive(activeStep());}
 function renderMeans(s){
-  const nu=dx.base.numeric,cats=dx.base.categorical; const expl=state.design==='explanatory';
+  const nu=dx.base.numeric; const expl=state.design==='explanatory';
+  // Exclude open-ended variables from the grouping picker — grouping by verbatim
+  // responses is as meaningless here as it is in cross-tabs.
+  const cats=(dx.base.categorical||[]).filter(c=>!isOpenEndedCat(c));
+  if(dx.mGrp!=null&&!cats.find(c=>c.id===dx.mGrp))dx.mGrp=cats.length?cats[0].id:null;
   const t1=nu.length?nu.map(r=>`<tr><td class="dx-name">${esc(r.name)}</td><td>${r.n}</td><td>${_n2(r.mean)}</td><td>${_n2(r.sd)}</td><td>${_n2(r.min)}</td><td>${_n2(r.max)}</td><td>${r.missing}</td></tr>`).join(''):`<tr><td colspan="7">No numeric variables were found.</td></tr>`;
   let t2html='';
   if(nu.length&&cats.length){
@@ -762,7 +807,7 @@ function renderMeans(s){
         <tbody>${t1}</tbody></table></div></div></div>
     ${t2html}
     <div class="dx-layers">
-      <div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">${(hi&&lo&&hi!==lo)?`Across ${nu.length} numeric variables, “${esc(hi.name)}” had the highest average (M = ${_n2(hi.mean)}) and “${esc(lo.name)}” the lowest (M = ${_n2(lo.mean)}).`:(hi?`“${esc(hi.name)}” had a mean of ${_n2(hi.mean)}.`:'No numeric variables to summarize.')}</div></div>
+      <div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">${(hi&&lo&&hi!==lo)?`Across ${nu.length} numeric variables, "${esc(hi.name)}" had the highest average (M = ${_n2(hi.mean)}) and "${esc(lo.name)}" the lowest (M = ${_n2(lo.mean)}).`:(hi?`"${esc(hi.name)}" had a mean of ${_n2(hi.mean)}.`:'No numeric variables to summarize.')}</div></div>
       <div class="dx-l"><div class="dx-l-k">Why this matters</div><div class="dx-l-t">${expl?'In an Explanatory Sequential design, these averages help identify which quantitative patterns may need qualitative explanation.':'These averages set up the comparison your qualitative strand will speak to.'}</div></div>
       ${expl?`<div class="dx-l dx-q"><div class="dx-l-k">Possible follow-up question</div><div class="dx-l-t">What experiences might help explain the differences in these averages between groups?</div></div>`:''}
       <div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">These are averages. They do not test whether differences are statistically significant or explain why they exist.</div></div>
@@ -772,10 +817,17 @@ function renderMeans(s){
 function setXr(v){dx.xr=+v;renderDescriptive(activeStep());}
 function setXc(v){dx.xc=+v;renderDescriptive(activeStep());}
 function renderCrossTabs(s){
-  const cats=dx.base.categorical; const expl=state.design==='explanatory';
-  if(cats.length<2){$("#centerInner").innerHTML=descMsg('Cross-tabs','Cross-Tabs','Compare categories across groups before testing patterns.','Cross-tabs need at least two categorical variables; this dataset has fewer.');return;}
+  const expl=state.design==='explanatory';
+  const allCats=dx.base.categorical||[];
+  const openExcluded=allCats.filter(c=>isOpenEndedCat(c));
+  const cats=allCats.filter(c=>!isOpenEndedCat(c));
+  const openNote=openExcluded.length?`<div class="dm-note" style="margin-bottom:12px"><b>${openExcluded.map(c=>esc(c.name)).join(', ')}</b> excluded from cross-tab — open-ended responses produce one column per unique verbatim string, which is uninterpretable. Use the coded theme variable (e.g. Coder1_Theme_${openExcluded[0]?openExcluded[0].name.replace(/^Q\d+_/,''):'Q'}) as the column instead, or see the Qualitative strand.</div>`:'';
+  // Reset row/col pointers if they landed on an excluded variable
+  if(dx.xr!=null&&!cats.find(c=>c.id===dx.xr))dx.xr=cats.length?cats[0].id:null;
+  if(dx.xc!=null&&!cats.find(c=>c.id===dx.xc)){const alt=cats.find(c=>c.id!==dx.xr);dx.xc=alt?alt.id:(cats.length?cats[0].id:null);}
+  if(cats.length<2){$("#centerInner").innerHTML=descMsg('Cross-tabs','Cross-Tabs','Compare categories across groups before testing patterns.',openExcluded.length?'Cross-tabs need at least two categorical variables. Open-ended response columns are excluded — use coded theme variables from the Qualitative strand instead.':'Cross-tabs need at least two categorical variables; this dataset has fewer.')+openNote;return;}
   if(dx.xr===dx.xc){const alt=cats.find(c=>c.id!==dx.xr); if(alt)dx.xc=alt.id;}
-  const pick=`<div style="${_PICK}"><label class="ed-l" style="margin:0">Rows</label>${dxSel(dx.xr,cats,'setXr(this.value)')}<label class="ed-l" style="margin:0 0 0 12px">Columns</label>${dxSel(dx.xc,cats,'setXc(this.value)')}</div>`;
+  const pick=openNote+`<div style="${_PICK}"><label class="ed-l" style="margin:0">Rows</label>${dxSel(dx.xr,cats,'setXr(this.value)')}<label class="ed-l" style="margin:0 0 0 12px">Columns</label>${dxSel(dx.xc,cats,'setXc(this.value)')}</div>`;
   const key=dx.xr+'x'+dx.xc;
   if(dx.xtabKey!==key&&!dx.xbusy){dx.xbusy=true;descFetch({xtab_row:dx.xr,xtab_col:dx.xc}).then(j=>{dx.xbusy=false;dx.xtabKey=key;dx.xtab=(j&&j.ok&&j.crosstab)?j.crosstab:null;renderDescriptive(activeStep());}).catch(()=>{dx.xbusy=false;dx.xtabKey=key;dx.xtab=null;renderDescriptive(activeStep());});}
   const ct=(dx.xtabKey===key)?dx.xtab:null;
@@ -806,24 +858,26 @@ function fmt(n,d){return (n==null||isNaN(n))?'—':Number(n).toFixed(d==null?2:d
 function ttGroupOpts(g){return (g?g.groups:[]).map(o=>`<option value="${esc(o.value)}">${esc(o.value)} (n=${o.n})</option>`).join('');}
 function renderTTest(s){
   const V=BOOT.ttvars||{datasetReady:false,outcomes:[],groupings:[]};
-  if(!BOOT.projectId||!V.datasetReady||!V.outcomes.length||!V.groupings.length){
+  const _ttGroupings=cleanGroupings();
+  if(!BOOT.projectId||!V.datasetReady||!V.outcomes.length||!_ttGroupings.length){
     $("#centerInner").innerHTML=`
       <div class="ws-header"><div class="eyebrow">Group comparisons <span class="strand-chip quan">QUAN</span></div>
         <h1 class="title">Independent Samples t-Test</h1><p class="lede">Compare the mean of one outcome across two groups.</p></div>
       <div class="work-surface" style="border-radius:16px">No structured dataset with numeric and categorical variables is available for this project yet. Build or connect data from Start, then return here.</div>`;
     return;
   }
-  if(tt.grouping==null) tt.grouping=V.groupings[0].id;
-  const grp=V.groupings.find(g=>g.id===tt.grouping)||V.groupings[0];
+  if(tt.grouping==null||!_ttGroupings.find(g=>g.id===tt.grouping)) tt.grouping=_ttGroupings[0].id;
+  const grp=_ttGroupings.find(g=>g.id===tt.grouping)||_ttGroupings[0];
   const seg=(k,l)=>`<button class="tt-seg ${tt.testType===k?'on':''}" onclick="tt.testType='${k}';renderTTest(activeStep())">${l}</button>`;
   const setup=`
     <div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome and the two groups to compare</div></div></div>
       <div class="panel-b">
         <div class="tt-grid">
           <div class="field"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="ttOut">${V.outcomes.map(o=>`<option value="${o.id}">${esc(o.name)}</option>`).join('')}</select></div>
-          <div class="field"><label>Grouping variable <span class="tt-hint">categorical</span></label><select class="ed-in" id="ttGrp" onchange="tt.grouping=+this.value;renderTTest(activeStep())">${V.groupings.map(g=>`<option value="${g.id}" ${g.id===tt.grouping?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>
-          <div class="field"><label>Group 1</label><select class="ed-in" id="ttG1">${ttGroupOpts(grp)}</select></div>
-          <div class="field"><label>Group 2</label><select class="ed-in" id="ttG2">${ttGroupOpts(grp)}</select></div>
+          <div class="field"><label>Grouping variable <span class="tt-hint">categorical</span></label><select class="ed-in" id="ttGrp" onchange="tt.grouping=+this.value;renderTTest(activeStep())">${_ttGroupings.map(g=>`<option value="${g.id}" ${g.id===tt.grouping?'selected':''}>${esc(g.name)}</option>`).join('')}</select></div>
+          <div class="field"><label>Group 1</label><select class="ed-in" id="ttG1" onchange="ttFixG2()">${ttGroupOpts(grp)}</select></div>
+          <div class="field"><label>Group 2</label><select class="ed-in" id="ttG2" onchange="ttWarnSame()">${ttGroupOpts(grp)}</select></div>
+          <div id="ttSameWarn" style="display:none;color:#8a6418;font-size:12.5px;font-weight:600;margin-top:-8px">Group 1 and Group 2 are the same — pick two different groups before running.</div>
           <div class="field"><label>Test type</label><div class="tt-segs">${seg('auto','Auto')}${seg('welch','Welch')}${seg('student','Student')}</div><div class="tt-hint">Welch is the default — safer when sizes or variances differ.</div></div>
           <div class="field"><label>Confidence</label><select class="ed-in" id="ttConf"><option value="0.90">90%</option><option value="0.95" selected>95%</option><option value="0.99">99%</option></select></div>
         </div>
@@ -835,8 +889,8 @@ function renderTTest(s){
     ${helpBar('t-test')}
     ${setup}
     <div id="ttResults">${tt.result?renderTTestResults(tt.result):''}</div>`;
-  // default group2 to the second distinct value
-  const g2=$("#ttG2"); if(g2&&g2.options.length>1&&!g2.value) g2.selectedIndex=1;
+  // Ensure Group 2 defaults to a different category than Group 1.
+  ttFixG2();
 }
 /* ---- Analysis help registry: one entry per analysis, used by both the
    "How to use this" button (steps + worked example) and the ReliCheck Coach
@@ -1022,6 +1076,22 @@ function toolCoachBlock(key){
     <div class="comp-block"><div class="cb-k"><span class="i">M</span> What it measures</div><div class="cb-t">${h.measures}</div></div>
     <div class="comp-block"><div class="cb-k"><span class="i">✓</span> When to use it</div><div class="cb-t">${h.use}</div></div>`;
 }
+function ttFixG2(){
+  // When Group 1 changes (or on initial render), auto-advance Group 2 to the
+  // first option that differs from Group 1 so the default is never self-vs-self.
+  const g1=$("#ttG1"),g2=$("#ttG2");
+  if(!g1||!g2)return;
+  if(g2.value===g1.value){
+    const alt=Array.from(g2.options).find(o=>o.value!==g1.value);
+    if(alt)g2.value=alt.value;
+  }
+  ttWarnSame();
+}
+function ttWarnSame(){
+  const g1=$("#ttG1"),g2=$("#ttG2"),w=$("#ttSameWarn");
+  if(!g1||!g2||!w)return;
+  w.style.display=g1.value===g2.value?'block':'none';
+}
 function runTTest(){
   const V=BOOT.ttvars;
   const body={project_id:BOOT.projectId,outcome_id:+$("#ttOut").value,grouping_id:+$("#ttGrp").value,group1:$("#ttG1").value,group2:$("#ttG2").value,test_type:tt.testType,confidence:parseFloat($("#ttConf").value)};
@@ -1083,7 +1153,11 @@ function addToExplain(){
 }
 /* ===== One-Way ANOVA (real data via /api/mm/anova.php) — panel mirrors the t-test ===== */
 const an={grouping:null,outcome:null,result:null,tab:'desc',busy:false,added:false};
-function anGroupings(){return ((BOOT.ttvars&&BOOT.ttvars.groupings)||[]).filter(g=>g.groups&&g.groups.length>=3);}
+// Shared guard: a grouping is verbatim open-ended text if its longest group
+// value label is over 50 chars. Real categorical labels are always short.
+function isVerbatimGrouping(g){return g.groups&&g.groups.some(o=>o.value&&o.value.length>50);}
+function cleanGroupings(){return ((BOOT.ttvars&&BOOT.ttvars.groupings)||[]).filter(g=>!isVerbatimGrouping(g));}
+function anGroupings(){return cleanGroupings().filter(g=>g.groups&&g.groups.length>=3);}
 function renderANOVA(s){
   const V=BOOT.ttvars||{datasetReady:false,outcomes:[],groupings:[]};
   const G=anGroupings();
@@ -1167,9 +1241,33 @@ function addAnovaToExplain(){
 }
 /* ===== Chi-Square test of independence (real data via /api/mm/chisquare.php) — panel mirrors the t-test ===== */
 const csq={row:null,col:null,result:null,tab:'table',busy:false,added:false};
+// Cramer's V interpretation using Cohen's df-adjusted thresholds.
+// k = min(rows, cols) - 1; benchmarks tighten as table size grows.
+function csqCramersInterp(v,nRows,nCols){
+  const k=Math.min(nRows,nCols)-1;
+  const T={1:[0.10,0.30,0.50],2:[0.07,0.21,0.35],3:[0.06,0.17,0.29],4:[0.05,0.15,0.25]};
+  const t=T[Math.min(k,4)]||T[4];
+  if(v>=t[2])return 'Large';
+  if(v>=t[1])return 'Medium';
+  if(v>=t[0])return 'Small';
+  return 'Negligible';
+}
+// Check chi-square assumption: all expected cell counts ≥ 5.
+function csqCellWarning(table){
+  const grand=table.grand; if(!grand||!table.matrix||!table.col_totals)return '';
+  const low=[];
+  table.matrix.forEach(row=>{
+    table.col_totals.forEach((colTotal,j)=>{
+      const exp=row.total*colTotal/grand;
+      if(exp<5)low.push(`${esc(row.label)} × ${esc(table.col_labels[j])} (expected ${exp.toFixed(1)})`);
+    });
+  });
+  if(!low.length)return '';
+  return `<div class="dm-note" style="margin-top:10px;color:#8a6418"><b>Assumption check:</b> ${low.length} cell${low.length>1?'s have':' has'} an expected count below 5 — chi-square results may be unreliable. Consider combining sparse categories or using Fisher's exact test. Affected: ${low.join('; ')}.</div>`;
+}
 function renderChiSquare(s){
   const V=BOOT.ttvars||{datasetReady:false,outcomes:[],groupings:[]};
-  const C=(V.groupings||[]);
+  const C=cleanGroupings();
   if(!BOOT.projectId||!V.datasetReady||C.length<2){
     $("#centerInner").innerHTML=`
       <div class="ws-header"><div class="eyebrow">Category relationships <span class="strand-chip quan">QUAN</span></div>
@@ -1217,15 +1315,20 @@ function renderChiSquareResults(r){
     const tot=ct.col_totals.map(t=>`<td>${t}</td><td>${fmt(ct.grand?100*t/ct.grand:0,1)}%</td>`).join('');
     body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">${esc(ct.row_var)}</th>${th}<th>Total</th></tr></thead>
       <tbody>${rows}<tr class="dx-total"><td class="dx-name">Total</td>${tot}<td>${ct.grand}</td></tr></tbody></table></div>
-      <div class="dx-l-t" style="margin-top:10px;font-size:12px;opacity:.7">Percentages are within each row. Columns: ${esc(ct.col_var)}.</div>`;
+      <div class="dx-l-t" style="margin-top:10px;font-size:12px;opacity:.7">Percentages are within each row. Columns: ${esc(ct.col_var)}.</div>
+      ${csqCellWarning(ct)}`;
   } else if(csq.tab==='result'){
     const R=r.result;
     body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Test</th><th>χ²</th><th>df</th><th>N</th><th>p</th><th class="l">Result</th></tr></thead>
       <tbody><tr><td class="dx-name">${esc(r.row.name)} × ${esc(r.col.name)}</td><td class="dx-interp">${esc(R.test_used)}</td><td>${fmt(R.chi2)}</td><td>${fmt(R.df,0)}</td><td>${R.n_total}</td><td>${esc(R.p_str)}</td><td class="dx-interp"><span class="tt-status ${R.significant?'ok':'rev'}">${R.significant?'Significant':'Not significant'}</span></td></tr></tbody></table></div>`;
   } else if(csq.tab==='effect'){
     const E=r.effect;
+    const nR=r.table?r.table.matrix.length:2;
+    const nC=r.table?r.table.col_labels.length:2;
+    const adjInterp=csqCramersInterp(E.value,nR,nC);
+    const interpNote=adjInterp!==E.interpretation?` <span style="font-size:11px;color:var(--ink-3)">(adjusted for ${nR}×${nC} table; API said "${esc(E.interpretation)}")</span>`:'';
     body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Variables</th><th class="l">Effect size</th><th>Value</th><th class="l">Interpretation</th><th class="l">Practical meaning</th></tr></thead>
-      <tbody><tr><td class="dx-name">${esc(r.row.name)} × ${esc(r.col.name)}</td><td class="dx-interp">${esc(E.type)}</td><td>${fmt(E.value,3)}</td><td class="dx-interp">${esc(E.interpretation)}</td><td class="dx-interp">${esc(E.meaning)}</td></tr></tbody></table></div>`;
+      <tbody><tr><td class="dx-name">${esc(r.row.name)} × ${esc(r.col.name)}</td><td class="dx-interp">${esc(E.type)}</td><td>${fmt(E.value,3)}</td><td class="dx-interp">${adjInterp}${interpNote}</td><td class="dx-interp">${esc(E.meaning)}</td></tr></tbody></table></div>`;
   } else {
     const L=r.reporting;
     body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Audience</th><th class="l">Suggested language</th></tr></thead><tbody>
@@ -1343,17 +1446,22 @@ function renderRegression(s){
     return;
   }
   if(reg.outcome==null||!O.find(o=>o.id===reg.outcome)) reg.outcome=O[0].id;
-  // default: select the first available predictor if none chosen
   const avail=O.filter(o=>o.id!==reg.outcome);
-  if(!Object.keys(reg.preds).some(k=>reg.preds[k]&&avail.find(o=>o.id===+k))) { if(avail[0]) reg.preds[avail[0].id]=true; }
+  // No auto-selection of predictors — researcher builds the model intentionally.
+  // Clean up any stale preds that no longer exist in avail (e.g. after outcome change).
+  Object.keys(reg.preds).forEach(k=>{if(!avail.find(o=>o.id===+k))delete reg.preds[k];});
   const outSel=O.map(o=>`<option value="${o.id}" ${o.id===reg.outcome?'selected':''}>${esc(o.name)}</option>`).join('');
+  const nChecked=avail.filter(o=>reg.preds[o.id]).length;
   const chks=avail.map(o=>`<label class="rg-chk" style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line,#e3e5e9);border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" ${reg.preds[o.id]?'checked':''} onchange="regTogglePred(${o.id},this.checked)"> ${esc(o.name)}</label>`).join(' ');
+  const predNote=nChecked===0?'<span style="color:#8a6418;font-size:12.5px;font-weight:600">Select at least one predictor before running.</span>':'';
   const setup=`
     <div class="panel"><div class="panel-h"><div><h3>Setup</h3><div class="ph-sub">Pick the outcome, then check one or more predictors</div></div></div>
       <div class="panel-b">
-        <div class="field" style="max-width:340px"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="regOut" onchange="reg.outcome=+this.value;renderRegression(activeStep())">${outSel}</select></div>
-        <div class="field" style="margin-top:12px"><label>Predictors <span class="tt-hint">numeric</span></label><div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">${chks||'<span class="tt-hint">No other numeric variables available.</span>'}</div></div>
-        <div class="run-actions"><button class="btn primary" onclick="runRegression()" ${reg.busy?'disabled':''}>${reg.busy?'Running…':'▷ Run regression'}</button></div>
+        <div class="field" style="max-width:340px"><label>Outcome variable <span class="tt-hint">numeric</span></label><select class="ed-in" id="regOut" onchange="reg.outcome=+this.value;reg.preds={};renderRegression(activeStep())">${outSel}</select></div>
+        <div class="field" style="margin-top:12px"><label>Predictors <span class="tt-hint">numeric</span></label>
+          <div style="display:flex;gap:8px;margin:0 0 8px;align-items:center"><button class="btn" style="padding:4px 10px;font-size:12px" onclick="regSelectAll()">Select all</button><button class="btn" style="padding:4px 10px;font-size:12px" onclick="reg.preds={};renderRegression(activeStep())">Clear</button>${predNote}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">${chks||'<span class="tt-hint">No other numeric variables available.</span>'}</div></div>
+        <div class="run-actions"><button class="btn primary" onclick="runRegression()" ${reg.busy||!nChecked?'disabled':''}>${reg.busy?'Running…':'▷ Run regression'}</button></div>
       </div></div>`;
   $("#centerInner").innerHTML=`
     <div class="ws-header"><div class="eyebrow">Prediction <span class="strand-chip quan">QUAN</span></div>
@@ -1361,6 +1469,7 @@ function renderRegression(s){
     ${helpBar('Regression')}${setup}<div id="regResults">${reg.result?renderRegressionResults(reg.result):''}</div>`;
 }
 function regTogglePred(id,on){ if(on)reg.preds[id]=true; else delete reg.preds[id]; }
+function regSelectAll(){const V=BOOT.ttvars||{};(V.outcomes||[]).filter(o=>o.id!==reg.outcome).forEach(o=>reg.preds[o.id]=true);renderRegression(activeStep());}
 function runRegression(){
   const ids=Object.keys(reg.preds).filter(k=>reg.preds[k]).map(k=>+k).filter(k=>k!==reg.outcome);
   if(!ids.length){ toast('Check at least one predictor.'); return; }
@@ -1375,7 +1484,11 @@ function renderRegressionResults(r){
   let body='';
   if(reg.tab==='coef'){
     const rows=r.coefficients.map(c=>`<tr><td class="dx-name">${esc(c.term)}</td><td>${fmt(c.b,3)}</td><td>${fmt(c.se,3)}</td><td>${fmt(c.t)}</td><td>${esc(c.p_str)}</td><td class="dx-interp">${c.is_intercept?'—':`<span class="tt-status ${c.sig?'ok':'rev'}">${c.sig?'Significant':'n.s.'}</span>`}</td></tr>`).join('');
-    body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th class="l">Result</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    // Detect likely multicollinearity: 4+ predictors, or sign reversals among non-intercept betas
+    const preds=r.coefficients.filter(c=>!c.is_intercept);
+    const hasSignReversal=preds.some(c=>c.b<0)&&preds.some(c=>c.b>0)&&preds.length>=4;
+    const mcolNote=(preds.length>=4||hasSignReversal)?`<div class="dm-note" style="margin-top:10px;color:#8a6418"><b>Multicollinearity note:</b> With ${preds.length} correlated predictors competing simultaneously, individual coefficients can be suppressed, inflated, or sign-reversed even when the construct they belong to genuinely predicts the outcome. Read the overall model R² and F as the primary finding; treat individual betas as directional indicators, not standalone effect sizes. A sign reversal on a predictor (e.g. a negative beta for a positively-worded item) is a common suppression artifact, not evidence of a negative real-world relationship.</div>`:'';
+    body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Term</th><th>b</th><th>SE</th><th>t</th><th>p</th><th class="l">Result</th></tr></thead><tbody>${rows}</tbody></table></div>${mcolNote}`;
   } else if(reg.tab==='fit'){
     const R=r.result;
     body=`<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Outcome</th><th>R²</th><th>Adj. R²</th><th>F</th><th>df1</th><th>df2</th><th>N</th><th>p</th><th class="l">Model</th></tr></thead>
@@ -1504,6 +1617,7 @@ const DM_ROLE={
  'Case identifier':{type:'identifier',strand:'Integration',uses:'Link qualitative and quantitative records'},
  'Demographic grouping variable':{type:'demographic',strand:'Demographic / Grouping',uses:'Frequencies, group comparisons, chi-square'},
  'Demographic / covariate':{type:'demographic',strand:'Demographic / Grouping',uses:'Descriptives, grouping, correlations'},
+ 'Binary / Dichotomous':{type:'single',strand:'Demographic / Grouping',uses:'Chi-square, t-test grouping, group comparisons'},
  'Quantitative outcome':{type:'numeric',strand:'Quantitative',uses:'Descriptives, correlations, group comparisons'},
  'Likert item':{type:'likert',strand:'Quantitative',uses:'Means, reliability, t-test, ANOVA'},
  'Scale item':{type:'likert',strand:'Quantitative',uses:'Means, reliability, scale construction'},
@@ -1512,7 +1626,6 @@ const DM_ROLE={
  'Exclude from analysis':{type:'ignore',strand:'Excluded',uses:'—'}
 };
 const DM_ROLE_ORDER=Object.keys(DM_ROLE);
-const DM_CONSTRUCTS=['—','AI Readiness','AI Trust','AI Equity Concern','AI Teacher Support','AI Risk Concern','Custom Construct'];
 const DM_QUAL_PURPOSE=['Explain quantitative pattern','Expand quantitative result','Identify emerging issue','Provide quote evidence','Capture concerns','Capture recommendations','Other'];
 function dmFetch(payload){return fetch('/api/mm/data-map.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},payload||{}))}).then(r=>r.json());}
 function dmRole(c){const e=dm.edits[c.idx];return (e&&e.role)||c.assigned_role;}
@@ -1520,17 +1633,29 @@ function dmConstruct(c){const e=dm.edits[c.idx];return (e&&e.construct!=null)?e.
 function dmBadge(t){const ok=(t==='Ready'||t==='Strong'||t==='Yes');return `<span class="tt-status ${ok?'ok':'rev'}">${esc(t)}</span>`;}
 function dmTab(t){dm.tab=t;renderDataMap(activeStep());}
 function dmSetRole(idx,val){dm.edits[idx]=Object.assign({},dm.edits[idx],{role:val});renderDataMap(activeStep());}
-function dmSetConstruct(idx,val){dm.edits[idx]=Object.assign({},dm.edits[idx],{construct:val==='—'?'':val});renderDataMap(activeStep());}
+function dmSetConstruct(idx,val){dm.edits[idx]=Object.assign({},dm.edits[idx],{construct:val||''}); /* no re-render on keystroke — save bar reflects dirty state */}
+function dmSetPoints(idx,val){const n=parseInt(val,10);if(n>=2&&n<=10){dm.edits[idx]=Object.assign({},dm.edits[idx],{points:n});renderDataMap(activeStep());}}
+function dmPointsCell(c){
+  if(c.detected_type!=='Likert')return esc(c.format||c.detected_type);
+  const cur=(dm.edits[c.idx]&&dm.edits[c.idx].points!=null)?dm.edits[c.idx].points:(c.points||c.distinct||'');
+  return `<span style="white-space:nowrap">Likert (<input type="number" class="ed-in" style="width:42px;padding:2px 5px;display:inline-block;text-align:center;font-size:12.5px" min="2" max="10" value="${esc(String(cur))}" onchange="dmSetPoints(${c.idx},this.value)" title="Override scale point count">-point)</span>`;
+}
 function dmInclude(idx,on,role){dmSetRole(idx,on?role:'Exclude from analysis');}
 function dmStage(idx,key,val){dm.edits[idx]=Object.assign({},dm.edits[idx],{[key]:val});if(key!=='focus')renderDataMap(activeStep());}
 function dmRoleSelect(idx,cur){return `<select class="ed-in dm-sel" onchange="dmSetRole(${idx},this.value)">`+DM_ROLE_ORDER.map(r=>`<option ${r===cur?'selected':''}>${esc(r)}</option>`).join('')+`</select>`;}
-function dmConstructSelect(idx,cur){const c=cur||'—';return `<select class="ed-in dm-sel" onchange="dmSetConstruct(${idx},this.value)">`+DM_CONSTRUCTS.map(o=>`<option ${o===c?'selected':''}>${esc(o)}</option>`).join('')+`</select>`;}
+function dmConstructSelect(idx,cur){const v=cur||'';return `<input class="ed-in dm-sel" style="min-width:160px" value="${esc(v)}" placeholder="e.g. Engagement" oninput="dmSetConstruct(${idx},this.value.trim())">`;}
+
 function dmPurposeSelect(idx,cur){return `<select class="ed-in dm-sel" onchange="dmStage(${idx},'purpose',this.value)">`+DM_QUAL_PURPOSE.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')+`</select>`;}
 function dmFocusInput(idx,cur){return `<input class="ed-in dm-sel" style="min-width:190px" value="${esc(cur)}" placeholder="What this question asks" oninput="dmStage(${idx},'focus',this.value)">`;}
 function dmBandSelect(idx){const e=dm.edits[idx]||{};const cur=e.band||'Keep as numeric';return `<div style="margin-top:6px"><select class="ed-in dm-sel" onchange="dmStage(${idx},'band',this.value)">`+['Keep as numeric','Create age bands','Exclude from grouping'].map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')+`</select></div>`;}
 function dmCheck(idx,on,role){return `<label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)"><input type="checkbox" ${on?'checked':''} onchange="dmInclude(${idx},this.checked,'${role.replace(/'/g,"\\'")}')"> ${on?'Yes':'No'}</label>`;}
 function dmPanel(title,thead,rows){return `<div class="panel"><div class="panel-h"><div><h3>${title}</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead>${thead}</thead><tbody>${rows}</tbody></table></div></div></div>`;}
-function dmSaveBar(){const dirty=Object.keys(dm.edits).length>0;return `<div class="dm-save"><button class="btn primary" ${dm.saving?'disabled':''} onclick="dmSave()">${dm.saving?'Saving…':'Save variable roles'}</button><span class="dm-note">${dirty?'You have unsaved changes.':'Confirmed roles are saved to your dataset for later analysis.'}</span></div>`;}
+function dmSaveBar(){
+  const dirty=Object.keys(dm.edits).length>0;
+  const allConfirmed=dm.base&&dm.base.columns.every(c=>!dm.edits[c.idx]&&c.confirmed);
+  const note=dm.saving?'Saving…':allConfirmed?'<span style="color:var(--mm-ink);font-weight:700">✓ All roles confirmed</span>':dirty?'Unsaved changes — save to lock in your map, or use Confirm all.':'Some roles not yet confirmed. Use Confirm all to lock in every row.';
+  return `<div class="dm-save"><button class="btn primary" ${dm.saving||!dirty?'disabled':''} onclick="dmSave()">${dm.saving?'Saving…':'Save changes'}</button><button class="btn" ${dm.saving?'disabled':''} onclick="dmConfirmAll()">Confirm all roles</button><span class="dm-note">${note}</span></div>`;
+}
 function dmHead(s){return `<div class="ws-header"><div class="eyebrow">Data map · organize before you analyze</div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
 function dmNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue to Data Quality →</button></div>`;}
 function dmMsg(s,msg){$("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+dmNav();}
@@ -1539,10 +1664,16 @@ function dmSave(){
   // existing column_meta (e.g. an RSSI-tagged dataset) for untouched variables.
   const idxs=Object.keys(dm.edits);
   if(!idxs.length){toast('No changes to save');return;}
-  const save=idxs.map(k=>{const c=dm.base.columns.find(x=>String(x.idx)===String(k));if(!c)return null;const m=DM_ROLE[dmRole(c)]||{};return {idx:c.idx,type:m.type||'ignore',construct:dmConstruct(c)};}).filter(Boolean);
+  const save=idxs.map(k=>{const c=dm.base.columns.find(x=>String(x.idx)===String(k));if(!c)return null;const m=DM_ROLE[dmRole(c)]||{};const pts=(dm.edits[k]&&dm.edits[k].points!=null)?dm.edits[k].points:null;return {idx:c.idx,type:m.type||'ignore',construct:dmConstruct(c),points:pts};}).filter(Boolean);
   if(!save.length){toast('No changes to save');return;}
   dm.saving=true;renderDataMap(activeStep());
   dmFetch({save}).then(j=>{dm.saving=false;if(j&&j.ok){dm.base=j;dm.edits={};toast('Variable roles saved');}else{toast((j&&(j.message||j.error))||'Could not save roles.');}renderDataMap(activeStep());}).catch(()=>{dm.saving=false;toast('Save failed.');renderDataMap(activeStep());});
+}
+function dmConfirmAll(){
+  if(dm.saving||!dm.base)return;
+  dm.saving=true;renderDataMap(activeStep());
+  const save=dm.base.columns.map(c=>{const m=DM_ROLE[dmRole(c)]||{};const pts=(dm.edits[c.idx]&&dm.edits[c.idx].points!=null)?dm.edits[c.idx].points:(c.points||null);return {idx:c.idx,type:m.type||'ignore',construct:dmConstruct(c),points:pts};});
+  dmFetch({save}).then(j=>{dm.saving=false;if(j&&j.ok){dm.base=j;dm.edits={};toast('All roles confirmed');}else{toast((j&&(j.message||j.error))||'Could not confirm roles.');}renderDataMap(activeStep());}).catch(()=>{dm.saving=false;toast('Confirm failed.');renderDataMap(activeStep());});
 }
 function dmTabBody(d){
   const t=dm.tab;
@@ -1559,7 +1690,7 @@ function dmTabBody(d){
     const list=d.columns.filter(c=>{const m=DM_ROLE[dmRole(c)]||{};return m.strand==='Quantitative'||c.detected_type==='Likert'||c.detected_type==='Numeric';});
     if(!list.length)return dmPanel('Quantitative strand','<tr><th class="l">Variable</th></tr>','<tr><td>No quantitative or Likert variables detected.</td></tr>');
     const rows=list.map(c=>{const inc=dmRole(c)!=='Exclude from analysis';const cons=dmConstruct(c);const def=c.detected_type==='Numeric'?'Quantitative outcome':'Likert item';
-      return `<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${esc(c.format||c.detected_type)}</td><td class="dx-interp">${esc(cons||'—')}</td><td>${dmConstructSelect(c.idx,cons)}</td><td class="dx-interp">${esc((DM_ROLE[dmRole(c)]||{}).uses||'Means, reliability, t-test, ANOVA')}</td><td>${dmCheck(c.idx,inc,def)}</td></tr>`;}).join('');
+      return `<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${dmPointsCell(c)}</td><td class="dx-interp">${esc(cons||'—')}</td><td>${dmConstructSelect(c.idx,cons)}</td><td class="dx-interp">${esc((DM_ROLE[dmRole(c)]||{}).uses||'Means, reliability, t-test, ANOVA')}</td><td>${dmCheck(c.idx,inc,def)}</td></tr>`;}).join('');
     return dmPanel('Quantitative strand','<tr><th class="l">Variable</th><th class="l">Detected Type</th><th class="l">Suggested Construct</th><th class="l">Scale Membership</th><th class="l">Possible Uses</th><th class="l">Include</th></tr>',rows)+dmSaveBar();
   }
   if(t==='qual'){
@@ -1696,7 +1827,7 @@ function thQuotesPanel(){
   if(th.qbusy)return `<div class="th-quotes" style="padding:16px 18px">Loading quotes…</div>`;
   const q=th.quotes;
   if(!q||!q.responses||!q.responses.length)return `<div class="th-quotes" style="padding:16px 18px">No coded quotes for this theme yet.</div>`;
-  const rows=q.responses.map(r=>`<div class="th-quote"><div class="th-quote-t">“${esc(r.text)}”</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}${r.quote_worthy?'<span>· ★ quote-worthy</span>':''}</div></div>`).join('');
+  const rows=q.responses.map(r=>`<div class="th-quote"><div class="th-quote-t">"${esc(r.text)}"</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}${r.quote_worthy?'<span>· ★ quote-worthy</span>':''}</div></div>`).join('');
   return `<div class="ov-sec" style="margin-top:2px">Example quotes · ${esc(q.category?q.category.name:'')} (${q.total} coded)</div><div class="th-quotes">${rows}</div>`;
 }
 function renderThemes(s){
@@ -1746,7 +1877,7 @@ function bkEvidencePanel(){
   if(bk.ebusy)return `<div class="th-quotes" style="padding:16px 18px">Loading evidence…</div>`;
   const q=bk.evidence;
   if(!q||!q.responses||!q.responses.length)return `<div class="th-quotes" style="padding:16px 18px">No coded evidence for this code yet. Tag responses on the Qualitative Themes step first.</div>`;
-  const rows=q.responses.slice(0,12).map(r=>`<div class="th-quote"><div class="th-quote-t">“${esc(r.text)}”</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}</div></div>`).join('');
+  const rows=q.responses.slice(0,12).map(r=>`<div class="th-quote"><div class="th-quote-t">"${esc(r.text)}"</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''}</div></div>`).join('');
   return `<div class="ov-sec" style="margin-top:2px">Evidence · ${q.responses.length} coded responses</div><div class="th-quotes">${rows}</div>`;
 }
 function renderBook(s){
@@ -1788,7 +1919,7 @@ function jdEvidenceFetch(cid){return fetch('/api/mm/codebook-evidence.php?projec
 function jdAllFetch(){return fetch('/api/mm/responses.php?project_id='+BOOT.projectId+'&limit=60',{credentials:'same-origin'}).then(r=>r.json());}
 function jdChoose(themeId){if(jd.choosing===themeId){jd.choosing=null;jd.candidates=null;jd.candFallback=false;renderJoint(activeStep());return;}jd.choosing=themeId;jd.candidates=null;jd.candFallback=false;jd.cbusy=true;renderJoint(activeStep());jdEvidenceFetch(themeId).then(j=>{const coded=(j&&j.ok)?(j.responses||[]):[];if(coded.length){jd.cbusy=false;jd.candidates=coded;jd.candFallback=false;renderJoint(activeStep());}else{jdAllFetch().then(a=>{jd.cbusy=false;jd.candidates=(a&&a.ok)?(a.rows||[]):[];jd.candFallback=true;renderJoint(activeStep());}).catch(()=>{jd.cbusy=false;jd.candidates=[];jd.candFallback=true;renderJoint(activeStep());});}}).catch(()=>{jd.cbusy=false;jd.candidates=null;renderJoint(activeStep());});}
 function jdSetQuote(themeId,responseId){fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'set_quote',theme_id:themeId,response_id:responseId})}).then(r=>r.json()).then(j=>{if(j&&j.ok){jd.base=null;jd.choosing=null;jd.candidates=null;toast('Quote set');renderJoint(activeStep());}else{toast((j&&(j.message||j.error))||'Could not set quote.');}}).catch(()=>toast('Failed.'));}
-function jdCandidatePanel(){if(jd.choosing==null)return '';const t=((jd.base&&jd.base.rows)||[]).find(r=>r.theme_id===jd.choosing);const name=t?t.theme_name:'';if(jd.cbusy)return `<div class="th-quotes" style="padding:16px 18px">Loading responses…</div>`;const c=jd.candidates;if(!c||!c.length)return `<div class="th-quotes" style="padding:16px 18px">No open-ended responses found for this project.</div>`;const note=jd.candFallback?`<div class="dm-note" style="margin:0 0 8px">No responses are tagged to “${esc(name)}” yet — pick any response below to feature it as this theme's quote.</div>`:'';const rows=c.slice(0,15).map(r=>{const rid=r.response_id||r.id;return `<div class="th-quote"><div class="th-quote-t">“${esc(r.text)}”</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''} <button class="btn" style="padding:2px 9px" onclick="jdSetQuote(${jd.choosing},${rid})">Use this quote</button></div></div>`;}).join('');return `<div class="ov-sec" style="margin-top:2px">Choose a quote for ${esc(name)}</div>${note}<div class="th-quotes">${rows}</div>`;}
+function jdCandidatePanel(){if(jd.choosing==null)return '';const t=((jd.base&&jd.base.rows)||[]).find(r=>r.theme_id===jd.choosing);const name=t?t.theme_name:'';if(jd.cbusy)return `<div class="th-quotes" style="padding:16px 18px">Loading responses…</div>`;const c=jd.candidates;if(!c||!c.length)return `<div class="th-quotes" style="padding:16px 18px">No open-ended responses found for this project.</div>`;const note=jd.candFallback?`<div class="dm-note" style="margin:0 0 8px">No responses are tagged to "${esc(name)}" yet — pick any response below to feature it as this theme's quote.</div>`:'';const rows=c.slice(0,15).map(r=>{const rid=r.response_id||r.id;return `<div class="th-quote"><div class="th-quote-t">"${esc(r.text)}"</div><div class="th-quote-m">${r.respondent_ref?'<span>'+esc(r.respondent_ref)+'</span>':''}${r.group_value?'<span>· '+esc(r.group_value)+'</span>':''}${r.sentiment?'<span>· '+esc(r.sentiment)+'</span>':''} <button class="btn" style="padding:2px 9px" onclick="jdSetQuote(${jd.choosing},${rid})">Use this quote</button></div></div>`;}).join('');return `<div class="ov-sec" style="margin-top:2px">Choose a quote for ${esc(name)}</div>${note}<div class="th-quotes">${rows}</div>`;}
 function renderJoint(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<p class="lede">Connect a project with themes and analyses to build a joint display.</p>`+jdNav();return;}
   if(jd.err){jdMsg(s,jd.err);return;}
@@ -1800,7 +1931,7 @@ function renderJoint(s){
   if(!rows.length){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<div class="th-empty"><h3>Nothing to display yet</h3><p>Discover themes and tag responses on the Qualitative Themes step (and run your quantitative tests) first. The joint display merges both strands per theme.</p></div>`+jdNav();return;}
   const anyQuote=rows.some(r=>r.quote&&r.quote.text);
   const body=rows.map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};
-    return `<tr><td class="dx-name">${esc(r.theme_name)}</td><td><div class="th-cov">${f.n||0} <span style="color:var(--ink-3)">(${f.percent||0}%)</span></div></td><td class="dx-interp">${jdAnalysis(r.analysis)}</td><td class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</td><td class="dx-interp">${r.quote&&r.quote.text?'“'+esc(r.quote.text)+'”':'<span style="color:var(--ink-3)">— no quote yet —</span>'}<div style="margin-top:5px"><button class="btn" style="padding:3px 9px" onclick="jdChoose(${r.theme_id})">${jd.choosing===r.theme_id?'Close':'Choose quote'}</button></div></td></tr>`;}).join('');
+    return `<tr><td class="dx-name">${esc(r.theme_name)}</td><td><div class="th-cov">${f.n||0} <span style="color:var(--ink-3)">(${f.percent||0}%)</span></div></td><td class="dx-interp">${jdAnalysis(r.analysis)}</td><td class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</td><td class="dx-interp">${r.quote&&r.quote.text?'"'+esc(r.quote.text)+'"':'<span style="color:var(--ink-3)">— no quote yet —</span>'}<div style="margin-top:5px"><button class="btn" style="padding:3px 9px" onclick="jdChoose(${r.theme_id})">${jd.choosing===r.theme_id?'Close':'Choose quote'}</button></div></td></tr>`;}).join('');
   const table=`<div class="panel"><div class="panel-h"><div><h3>Joint display · ${rows.length} themes</h3><div class="ph-sub">${d.total_responses||0} open-ended responses</div></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Theme</th><th class="l">Frequency (QUAN)</th><th class="l">Statistical result (QUAN)</th><th class="l">Sentiment (QUAL)</th><th class="l">Representative quote (QUAL)</th></tr></thead><tbody>${body}</tbody></table></div></div></div>`;
   const bar=`<div class="dm-save"><button class="btn" ${jd.picking?'disabled':''} onclick="jdPickAll()">${jd.picking?'Picking quotes…':'✦ Pick all with ReliCheck Intelligence'}</button><span class="dm-note">Choose a quote per theme yourself (above), or let ReliCheck Intelligence pick them all at once.</span></div>`;
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each row is one theme seen through both strands at once: how common and how strong it is in the numbers, and the tone and a real quote from the narratives. Rows where the number and the quote agree are convergence; rows where they disagree are what you explain next.</div></div></div>`;
@@ -1895,7 +2026,7 @@ function renderConverge(s){
     return `<div class="panel"><div class="panel-b">
       <div style="font-size:15px;font-weight:700;margin-bottom:8px">${esc(r.theme_name)}</div>
       <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Quantitative</div><div class="ov-v"><span class="th-cov">${f.n||0} (${f.percent||0}%)</span> · ${jdAnalysis(r.analysis)}</div></div>
-      <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Qualitative</div><div class="ov-v"><span class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</span>${r.quote&&r.quote.text?' · “'+esc(r.quote.text.slice(0,120))+'”':''}</div></div>
+      <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Qualitative</div><div class="ov-v"><span class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</span>${r.quote&&r.quote.text?' · "'+esc(r.quote.text.slice(0,120))+'"':''}</div></div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${['Converge','Nuanced','Diverge'].map(l=>`<button class="btn" style="padding:4px 10px" onclick="cvClassify(${r.theme_id},'${l}')">${l}</button>`).join('')}</div>
       <textarea id="cv_note_${r.theme_id}" class="ed-in" rows="2" style="margin-top:8px" placeholder="Your reading: where do the strands agree or diverge, and why?">${esc(note)}</textarea>
       <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="cvSave(${r.theme_id})">${sv?'Saving…':'Save reading'}</button></div>
@@ -1953,7 +2084,7 @@ function renderInterp(s){
   const cards=rows.map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};const sv=ip.saving===r.theme_id;const gn=ip.gen===r.theme_id;const src=r.source==='ai'?'<span class="tt-status rev">ReliCheck Intelligence draft</span>':(r.source==='user'?'<span class="tt-status ok">Yours</span>':'');
     return `<div class="panel"><div class="panel-b">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><div style="font-size:15px;font-weight:700">${esc(r.theme_name)}</div>${src}</div>
-      <div class="dm-note" style="margin:6px 0 8px">${f.n||0} (${f.percent||0}%) · ${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})} · ${jdAnalysis(r.analysis)}${r.quote&&r.quote.text?' · “'+esc(r.quote.text.slice(0,100))+'”':''}</div>
+      <div class="dm-note" style="margin:6px 0 8px">${f.n||0} (${f.percent||0}%) · ${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})} · ${jdAnalysis(r.analysis)}${r.quote&&r.quote.text?' · "'+esc(r.quote.text.slice(0,100))+'"':''}</div>
       <textarea id="ip_${r.theme_id}" class="ed-in" rows="4" placeholder="What does the combined evidence mean for this theme, and for the decision?">${esc(ipPara(r))}</textarea>
       <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="ipSave(${r.theme_id})">${sv?'Saving…':'Save interpretation'}</button><button class="btn" ${gn?'disabled':''} onclick="ipGenerate(${r.theme_id})">${gn?'Drafting…':'✦ Draft with ReliCheck Intelligence'}</button></div>
     </div></div>`;}).join('');
@@ -2130,7 +2261,7 @@ function saveAreaToReport(s){
   if(btn){btn.disabled=true;btn.textContent='Saving…';}
   const ci=document.getElementById('centerInner'); const panel=ci?ci.querySelector('.panel'):null;
   let text='';
-  if(panel){ if(panel.querySelector('iframe')){ text='(Engine output — see the “'+(s.title||'')+'” step in MM Studio.)'; }
+  if(panel){ if(panel.querySelector('iframe')){ text='(Engine output — see the "'+(s.title||'')+'" step in MM Studio.)'; }
     else { text=(panel.innerText||panel.textContent||'').trim().replace(/\n{3,}/g,'\n\n'); } }
   const entry='## '+(s.title||'Analysis')+'\n'+(text||'(no result captured)');
   fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin',headers:{Accept:'application/json'}})

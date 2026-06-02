@@ -71,6 +71,11 @@ if (isset($body['save']) && is_array($body['save'])) {
             if ($c === '') unset($cm[$i]['construct']);
             else $cm[$i]['construct'] = $c;
         }
+        if (array_key_exists('points', $a) && $a['points'] !== null) {
+            $p = (int)$a['points'];
+            if ($p >= 2 && $p <= 10) $cm[$i]['points'] = $p;
+            else unset($cm[$i]['points']);
+        }
     }
     $json = json_encode($cm, JSON_UNESCAPED_UNICODE);
     if ($json === false) fail('bad_data', 'Could not encode column metadata.', 500);
@@ -139,12 +144,14 @@ $cols = [];
 for ($j = 0; $j < $nCols; $j++) {
     $name = trim((string)($cm[$j]['name'] ?? ('Column ' . ($j + 1))));
     $lname = strtolower($name);
-    $savedType = (string)($cm[$j]['type'] ?? '');
-    $confirmed = !empty($cm[$j]['dm_confirmed']);
-    $construct = isset($cm[$j]['construct']) ? (string)$cm[$j]['construct'] : '';
+    $savedType  = (string)($cm[$j]['type'] ?? '');
+    $confirmed  = !empty($cm[$j]['dm_confirmed']);
+    $construct  = isset($cm[$j]['construct']) ? (string)$cm[$j]['construct'] : '';
+    $userPoints = isset($cm[$j]['points']) && (int)$cm[$j]['points'] >= 2 ? (int)$cm[$j]['points'] : null;
 
     // Profile.
     $nonEmpty = 0; $numCount = 0; $intInScale = 0; $lenSum = 0; $distinct = [];
+    $hasDecimals = false; $numMin = PHP_FLOAT_MAX; $numMax = -PHP_FLOAT_MAX;
     foreach ($data as $row) {
         $v = (is_array($row) && array_key_exists($j, $row)) ? $row[$j] : null;
         if ($isMissing($v)) continue;
@@ -156,8 +163,12 @@ for ($j = 0; $j < $nCols; $j++) {
         if ($f !== null) {
             $numCount++;
             if ($f == (int)$f && $f >= 1 && $f <= 7) $intInScale++;
+            if ($f != (int)$f) $hasDecimals = true;
+            if ($f < $numMin) $numMin = $f;
+            if ($f > $numMax) $numMax = $f;
         }
     }
+    if ($numCount === 0) { $numMin = 0; $numMax = 0; }
     $distinctN = count($distinct);
     $numFrac   = $nonEmpty ? $numCount / $nonEmpty : 0.0;
     $uniqFrac  = $nonEmpty ? $distinctN / $nonEmpty : 0.0;
@@ -207,9 +218,15 @@ for ($j = 0; $j < $nCols; $j++) {
         $format = $numericDemo ? 'Numeric (' . $distinctN . ' values)'
                                : implode(', ', array_map('strval', $topCats)) . ($distinctN > 6 ? ', …' : '');
     } elseif ($det === 'Likert') {
-        $format = 'Likert ' . (count($distinct) ? '(' . $distinctN . '-point)' : '');
+        $pts    = $userPoints ?? $distinctN;
+        $format = 'Likert ' . ($pts ? '(' . $pts . '-point)' : '');
     } elseif ($det === 'Numeric') {
-        $format = 'Numeric (' . $distinctN . ' values)';
+        if ($hasDecimals) {
+            $fmt = static fn($n) => rtrim(rtrim(number_format((float)$n, 3, '.', ''), '0'), '.');
+            $format = 'Continuous score (' . $fmt($numMin) . ' to ' . $fmt($numMax) . ')';
+        } else {
+            $format = 'Numeric (' . $distinctN . ' values)';
+        }
     } elseif ($det === 'Open-Ended Text') {
         $format = 'Free text (avg ' . round($avgLen) . ' chars)';
     } elseif ($det === 'ID') {
@@ -222,12 +239,16 @@ for ($j = 0; $j < $nCols; $j++) {
         'assigned_role' => $role,
         'strand' => $strand,
         'analysis_uses' => $uses,
-        'confirmed' => $confirmed,
-        'construct' => $construct,
-        'numeric_demo' => $numericDemo,
-        'distinct' => $distinctN,
-        'categories' => array_map('strval', $topCats),
-        'format' => $format,
+        'confirmed'     => $confirmed,
+        'construct'     => $construct,
+        'points'        => $userPoints,
+        'numeric_demo'  => $numericDemo,
+        'distinct'      => $distinctN,
+        'has_decimals'  => $hasDecimals,
+        'num_min'       => $numCount > 0 ? $numMin : null,
+        'num_max'       => $numCount > 0 ? $numMax : null,
+        'categories'    => array_map('strval', $topCats),
+        'format'        => $format,
     ];
 }
 

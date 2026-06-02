@@ -115,6 +115,13 @@ for ($j = 0; $j < $nCols; $j++) {
         case 'single': case 'multi': case 'demographic': $role = 'categorical'; break;
         // 'ignore' / '' / unknown -> infer below
     }
+    // Sanity-check: if saved type says numeric/likert but the actual data is
+    // mostly non-numeric (e.g. a qualitative coding column with theme labels),
+    // override to null so inference re-classifies it correctly. This prevents
+    // false "invalid numeric values" alerts on text-coded qualitative columns.
+    if (in_array($role, ['numeric', 'likert'], true) && $numFrac < 0.5) {
+        $role = null;
+    }
     if ($role === null) {
         if ($nonEmpty >= 8 && $uniqFrac > 0.9) {
             $role = 'id';
@@ -135,11 +142,13 @@ for ($j = 0; $j < $nCols; $j++) {
 }
 
 // Variable groupings used by the checks.
-$allVars     = array_values(array_filter($cols, fn($c) => $c['role'] !== 'ignore'));
-$numericVars = array_values(array_filter($cols, fn($c) => $c['role'] === 'numeric' || $c['role'] === 'likert'));
-$likertVars  = array_values(array_filter($cols, fn($c) => $c['role'] === 'likert'));
-$openVars    = array_values(array_filter($cols, fn($c) => $c['role'] === 'open'));
-$idVar       = null;
+$allVars         = array_values(array_filter($cols, fn($c) => $c['role'] !== 'ignore'));
+$substantiveVars = array_values(array_filter($cols, fn($c) => !in_array($c['role'], ['ignore', 'id'], true)));
+$numericVars     = array_values(array_filter($cols, fn($c) => $c['role'] === 'numeric' || $c['role'] === 'likert'));
+$continuousVars  = array_values(array_filter($cols, fn($c) => $c['role'] === 'numeric'));
+$likertVars      = array_values(array_filter($cols, fn($c) => $c['role'] === 'likert'));
+$openVars        = array_values(array_filter($cols, fn($c) => $c['role'] === 'open'));
+$idVar           = null;
 foreach ($cols as $c) { if ($c['role'] === 'id') { $idVar = $c; break; } }
 
 $checks = [];
@@ -149,18 +158,20 @@ $mkCheck = static function (string $name, string $finding, string $tone, string 
 $plural = static fn(int $n, string $w) => $n . ' ' . $w . ($n === 1 ? '' : 's');
 
 // 1. Duplicate full rows -----------------------------------------------------
+// Compares substantive variables only (excludes ID) so that two rows with the
+// same answers but different participant IDs — e.g. a re-entry error — are caught.
 $seenFull = []; $dupFull = 0; $dupFullEx = [];
 for ($i = 0; $i < $nRows; $i++) {
     $parts = [];
-    foreach ($allVars as $v) { $parts[] = (string)($v['values'][$i] ?? ''); }
+    foreach ($substantiveVars as $v) { $parts[] = (string)($v['values'][$i] ?? ''); }
     $key = implode("\x1f", $parts);
     if (isset($seenFull[$key])) { $dupFull++; if (count($dupFullEx) < 3) $dupFullEx[] = $i; }
     else $seenFull[$key] = $i;
 }
 $checks[] = $mkCheck('Duplicate full rows',
-    $dupFull === 0 ? 'None' : $plural($dupFull, 'row') . ' identical across all columns',
+    $dupFull === 0 ? 'None' : $plural($dupFull, 'row') . ' identical across all substantive variables',
     $dupFull === 0 ? 'ok' : 'alert',
-    $dupFull ? 'Example row indices: ' . implode(', ', array_map(fn($i) => '#' . ($i + 1), $dupFullEx)) : 'No identical rows.');
+    $dupFull ? 'Example row indices: ' . implode(', ', array_map(fn($i) => '#' . ($i + 1), $dupFullEx)) . ' (ID excluded from comparison)' : 'No identical rows (ID column excluded from comparison).');
 
 // 2. Duplicate IDs -----------------------------------------------------------
 if ($idVar) {
@@ -203,22 +214,28 @@ if (count($likertVars) >= 3) {
 }
 
 // 4. Numeric outliers (Tukey IQR fences) ------------------------------------
+// Only runs on continuous numeric variables. Likert items are ordinal — extreme
+// responses (1 or 5 on a 5-point scale) are valid choices, not statistical
+// outliers. Running IQR fencing on Likert scales produces systematic false positives.
 $outlierCount = 0; $outlierBreak = [];
-foreach ($numericVars as $v) {
+foreach ($continuousVars as $v) {
     $nums = [];
     foreach ($v['values'] as $val) { $f = $num($val); if ($f !== null) $nums[] = $f; }
     if (count($nums) < 4) continue;
     sort($nums);
     $q1 = $quantile($nums, 0.25); $q3 = $quantile($nums, 0.75);
-    $iqr = $q3 - $q1; $lo = $q1 - 1.5 * $iqr; $hi = $q3 + 1.5 * $iqr;
+    $iqr = $q3 - $q1;
+    if ($iqr == 0) continue; // no spread → no meaningful fence
+    $lo = $q1 - 1.5 * $iqr; $hi = $q3 + 1.5 * $iqr;
     $out = 0;
     foreach ($nums as $x) { if ($x < $lo || $x > $hi) $out++; }
     if ($out > 0) { $outlierCount += $out; $outlierBreak[] = $v['name'] . ' (' . $out . ')'; }
 }
+$likertNote = count($likertVars) > 0 ? ' Likert items excluded (ordinal scales; extreme responses are valid choices).' : '';
 $checks[] = $mkCheck('Numeric outliers (Tukey IQR)',
     $outlierCount === 0 ? 'None' : $plural($outlierCount, 'value') . ' outside 1.5x IQR fences',
-    ($outlierCount === 0 || $outlierCount <= $nRows * 0.1) ? 'ok' : 'warn',
-    $outlierBreak ? 'By variable: ' . implode(', ', $outlierBreak) : 'No outliers.');
+    $outlierCount === 0 ? 'ok' : ($outlierCount <= $nRows * 0.1 ? 'warn' : 'alert'),
+    ($outlierBreak ? 'By variable: ' . implode(', ', $outlierBreak) : 'No outliers on continuous variables.') . $likertNote);
 
 // 5. Invalid numeric values --------------------------------------------------
 $invalid = 0; $invalidBreak = [];

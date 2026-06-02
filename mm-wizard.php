@@ -556,7 +556,7 @@ include __DIR__ . '/_platform_shell_header.php';
       .then(() => postWiz({ step: 'design_choice', value: designSrv }))
       .then(d => { if (!d.ok) throw new Error(d.message || 'Could not save design'); })
       .then(() => postWiz({ step: 'complete' }))
-      .then(() => { window.location.href = '/project-snapshot.php?studio=mm&project_id=' + encodeURIComponent(state.projectId); })
+      .then(() => { window.location.href = '/mmstudioV4.php?project_id=' + encodeURIComponent(state.projectId); })
       .catch(err => { alert(err.message || err); nextBtn.disabled = false; nextBtn.textContent = orig; });
   }
 
