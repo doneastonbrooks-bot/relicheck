@@ -411,6 +411,20 @@ label .tt-hint{margin-left:6px}
 .dq-name{font-size:14.5px;font-weight:700;color:var(--ink)}
 .dq-risk{font-size:13px;color:var(--ink-2);margin-top:2px}
 .dq-status{font-size:11.5px;font-weight:700;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em;flex:none}
+.sd-wrap{max-width:680px}
+.sd-h{font-family:'Fraunces','Georgia',serif;font-size:22px;font-weight:600;margin:0 0 6px;color:var(--ink)}
+.sd-sub{color:var(--ink-2);font-size:14px;margin:0 0 24px;line-height:1.6}
+.sd-section{margin-bottom:28px}
+.sd-section-label{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:10px}
+.sd-opt{display:flex;align-items:flex-start;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--panel);cursor:pointer;user-select:none}
+.sd-opt:hover{border-color:var(--accent)}
+.sd-opt.is-on{border-color:var(--accent);background:var(--accent-soft)}
+.sd-opt input{margin-top:3px;flex-shrink:0;accent-color:var(--accent)}
+.sd-opt strong{font-size:13.5px;color:var(--ink)}
+.sd-help{color:var(--ink-3);font-size:12.5px;margin-top:3px;line-height:1.4}
+.sd-rec{display:inline-block;margin-left:8px;background:#1f7a3a;color:#fff;font-size:10.5px;padding:2px 7px;border-radius:999px;font-weight:600}
+.sd-actions{margin-top:8px;display:flex;align-items:center;gap:14px}
+.sd-saved{font-size:13px;color:#1f7a3a;font-weight:600}
 /* Data Map — classification step: summary cards, tabs, integration flow */
 .dm-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
 .dm-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:13px 15px;display:flex;flex-direction:column;gap:6px}
@@ -2528,7 +2542,7 @@ function renderQualSampling(s){
   const reads=qs.findings.map(qsReadFinding);
   const findPanel=reads.length
     ?`<div class="panel"><div class="panel-h"><div><h3>Results you chose to explain</h3><div class="ph-sub">Staged in the previous step — these shape who you follow up with</div></div></div><div class="panel-b">${reads.map(r=>`<div class="ov-row" style="padding:8px 0"><div class="ov-k" style="width:120px">${esc(r.src)}</div><div class="ov-v">${esc(r.plain)}${r.fq?`<div style="margin-top:4px;font-size:12.5px;color:var(--ink-3)">↳ ${esc(r.fq)}</div>`:''}</div></div>`).join('')}</div></div>`
-    :`<div class="dm-note" style="margin-bottom:12px">No findings staged yet. On "Identify Results to Explain", click <b>Add to Results to Explain</b> for the results you want to follow up on, then return here.</div>`;
+    :`<div class="dm-note" style="margin-bottom:12px">No findings staged yet. Run an analysis (t-test, ANOVA, Chi-square, Correlation, or Regression), then click <b>Add to Results to Explain</b> at the bottom of the result. Those findings will appear here.</div>`;
   const grpRef=qs.groupings.length
     ?`<div class="panel"><div class="panel-h"><div><h3>Groups you can sample from</h3><div class="ph-sub">From your data — purposively sample across the contrasting groups</div></div></div><div class="panel-b">${qs.groupings.map(g=>`<div class="ov-row" style="padding:6px 0"><div class="ov-k" style="width:160px">${esc(g.name)}</div><div class="ov-v">${(g.groups||[]).map(o=>`${esc(o.value)} (n=${o.n})`).join(' · ')}</div></div>`).join('')}</div></div>`
     :'';
@@ -2594,7 +2608,7 @@ function renderExplainMap(s){
     }).catch(()=>{em.busy=false;em.err='Could not load your data.';renderExplainMap(activeStep());});}
     emMsg(s,'Gathering your staged results and themes…');return;
   }
-  if(!em.findings.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No results staged yet</h3><p>On "Identify Results to Explain", click <b>Add to Results to Explain</b> for the findings you want to explain, then return here to map each to the theme that explains it.</p></div>`+emNav();return;}
+  if(!em.findings.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No results staged yet</h3><p>Run an analysis and click <b>Add to Results to Explain</b> at the bottom of the result. Once you have staged findings, return here to map each to the qualitative theme that explains it.</p><button class="btn primary" style="margin-top:14px" onclick="goStep('q_inf')">Go to Inferential Analysis →</button></div>`+emNav();return;}
   if(!em.themes.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No themes yet</h3><p>Build or discover your qualitative themes first, then return here to link each quantitative result to the theme that explains it.</p></div>`+emNav();return;}
   const opts=em.themes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
   const rows=em.findings.map((it,i)=>{const r=qsReadFinding(it);
@@ -2612,11 +2626,115 @@ function renderExplainMap(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this is</div><div class="dx-l-t">The explanation map is the heart of an explanatory sequential design: each quantitative result you chose to explain is linked to the qualitative theme that accounts for it, with a sentence on how. These links become your Integration narrative and feed the joint display.</div></div></div>`;
   $("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>`+rows+tableNote+saveBar+saved+layers+emNav();
 }
+// ── Study Design step ────────────────────────────────────────────────────────
+const sd={dataKinds:[...(BOOT.framing.data_kinds||[])],purposes:[...(BOOT.framing.intent_purposes||[])],design:BOOT.framing.chosen_design||'',saving:false};
+const DK_OPTS=[
+  ['open_ended_only',           'Open-ended responses only',                               'Comments, interview text, focus group notes, or any qualitative responses with no numeric scores attached.'],
+  ['survey_plus_open',          'Survey data with open-ended responses',                   'Closed-ended survey items plus one or more comment columns.'],
+  ['survey_plus_separate_qual', 'Survey data and separate interview / focus group data',   'Quantitative survey results AND qualitative data collected separately.'],
+  ['quant_only_with_qual',      'Quantitative data only, but I want to add qualitative interpretation','Scores or metrics in hand; you plan to add qualitative interpretation now.'],
+  ['from_scratch',              'Building a mixed-methods study from scratch',              'No data yet — start the project structure and add data later.'],
+];
+const INTENT_OPTS=[
+  ['explain_survey_results',   'Explain survey results',                 'Use comments to explain why the numbers came out the way they did.'],
+  ['find_themes',              'Find themes in open-ended responses',    'Group qualitative responses into the patterns that recur most.'],
+  ['compare_groups',           'Compare groups',                         'See how themes or scores differ across roles, departments, or other groups.'],
+  ['build_variables_from_text','Build variables from text',              'Turn open-ended responses into quantitative variables for statistical analysis.'],
+  ['strengthen_report',        'Strengthen a report with qualitative evidence','Bring quotes and themes into a report driven by quantitative findings.'],
+  ['mixed_methods_section',    'Create a mixed-methods findings section','Produce a full integrated findings section with joint displays.'],
+  ['evaluation_accreditation', 'Prepare evaluation or accreditation evidence','Generate a defensible evidence package for an evaluation or accreditation review.'],
+  ['pre_survey_exploration',   'Explore patterns before building a survey','Use qualitative data to find the constructs worth measuring next.'],
+];
+const DESIGN_OPTS=[
+  ['A_explain_numbers',       'Explanatory Sequential','Quant first, then qual. Run the numbers, then use comments to explain why they came out the way they did.'],
+  ['B_comments_to_themes',    'Exploratory Sequential','Qual first, then quant. Find themes in open-ended data, then turn them into variables or test them with numbers.'],
+  ['C_compare_themes_groups', 'Convergent Parallel',   'Both at once. Analyze quant and qual independently and compare them side by side in a joint display.'],
+];
+function sdOptHtml(val,label,help,checked,isRadio){
+  const t=isRadio?'radio':'checkbox';
+  return `<label class="sd-opt${checked?' is-on':''}" data-val="${esc(val)}" data-radio="${isRadio?'1':'0'}">
+    <input type="${t}" ${isRadio?'name="sdDesign"':''} ${checked?'checked':''}>
+    <div><strong>${esc(label)}</strong><div class="sd-help">${esc(help)}</div></div>
+  </label>`;
+}
+function sdDesignRec(){
+  const dks=new Set(sd.dataKinds),ps=new Set(sd.purposes);
+  const r={A_explain_numbers:false,B_comments_to_themes:false,C_compare_themes_groups:false};
+  if(dks.has('survey_plus_open')||ps.has('explain_survey_results')) r.A_explain_numbers=true;
+  if(dks.has('open_ended_only')||ps.has('find_themes')||ps.has('build_variables_from_text')) r.B_comments_to_themes=true;
+  if(ps.has('compare_groups')||ps.has('mixed_methods_section')||ps.has('evaluation_accreditation')||ps.has('strengthen_report')) r.C_compare_themes_groups=true;
+  return r;
+}
+function renderStudyDesign(s){
+  const c=$$('.center'); if(!c) return;
+  const rec=sdDesignRec();
+  c.innerHTML=`<div class="sd-wrap">
+    <h3 class="sd-h">Study Design</h3>
+    <p class="sd-sub">${esc(s.lede)}</p>
+    <div class="sd-section">
+      <div class="sd-section-label">What kind of data do you have?</div>
+      <div class="sd-opts" id="sdDk">${DK_OPTS.map(([v,l,h])=>sdOptHtml(v,l,h,sd.dataKinds.includes(v),false)).join('')}</div>
+    </div>
+    <div class="sd-section">
+      <div class="sd-section-label">What are you trying to understand?</div>
+      <div class="sd-opts" id="sdIntent">${INTENT_OPTS.map(([v,l,h])=>sdOptHtml(v,l,h,sd.purposes.includes(v),false)).join('')}</div>
+    </div>
+    <div class="sd-section">
+      <div class="sd-section-label">Choose your mixed-methods design</div>
+      <div class="sd-opts" id="sdDesign">${DESIGN_OPTS.map(([v,l,h])=>{
+        const isOn=sd.design===v;
+        const pill=rec[v]?'<span class="sd-rec">Recommended</span>':'';
+        return `<label class="sd-opt${isOn?' is-on':''}" data-val="${esc(v)}" data-radio="1"><input type="radio" name="sdDesign"${isOn?' checked':''}><div><strong>${esc(l)}</strong>${pill}<div class="sd-help">${esc(h)}</div></div></label>`;
+      }).join('')}</div>
+    </div>
+    <div class="sd-actions">
+      <button class="btn btn-primary" id="sdSaveBtn"${sd.saving?' disabled':''}>
+        ${sd.saving?'Saving…':'Save study design'}
+      </button>
+      <span class="sd-saved" id="sdSavedMsg" hidden>Saved</span>
+    </div>
+  </div>`;
+
+  c.querySelectorAll('#sdDk .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+    e.preventDefault(); const v=o.getAttribute('data-val');
+    const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
+    if(cb.checked){if(!sd.dataKinds.includes(v))sd.dataKinds.push(v);}
+    else{sd.dataKinds=sd.dataKinds.filter(x=>x!==v);}
+  }));
+  c.querySelectorAll('#sdIntent .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+    e.preventDefault(); const v=o.getAttribute('data-val');
+    const cb=o.querySelector('input'); cb.checked=!cb.checked; o.classList.toggle('is-on',cb.checked);
+    if(cb.checked){if(!sd.purposes.includes(v))sd.purposes.push(v);}
+    else{sd.purposes=sd.purposes.filter(x=>x!==v);}
+  }));
+  c.querySelectorAll('#sdDesign .sd-opt').forEach(o=>o.addEventListener('click',function(e){
+    e.preventDefault(); const v=o.getAttribute('data-val');
+    sd.design=v;
+    c.querySelectorAll('#sdDesign .sd-opt').forEach(x=>{const on=x.getAttribute('data-val')===v;x.classList.toggle('is-on',on);const r=x.querySelector('input');if(r)r.checked=on;});
+  }));
+  c.querySelector('#sdSaveBtn').addEventListener('click',function(){
+    sd.saving=true; renderStudyDesign(activeStep());
+    const postWiz=body=>fetch('/api/mm/wizard.php',{method:'POST',credentials:'same-origin',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},body))}).then(r=>r.json());
+    postWiz({step:'data_kind',values:sd.dataKinds})
+      .then(()=>postWiz({step:'purpose',values:sd.purposes}))
+      .then(()=>sd.design?postWiz({step:'design_choice',value:sd.design}):Promise.resolve({ok:true}))
+      .then(()=>{
+        sd.saving=false;
+        if(sd.design){state.design=sd.design;persistDesign(sd.design);}
+        renderStudyDesign(activeStep());
+        const msg=document.getElementById('sdSavedMsg'); if(msg){msg.hidden=false;setTimeout(()=>{msg.hidden=true;},2500);}
+      })
+      .catch(()=>{sd.saving=false;toast('Could not save study design.');renderStudyDesign(activeStep());});
+  });
+}
+
 function renderCenter(){
   const s=activeStep(); const tool=currentTool(s);
   if(s.mode==='start'){ return renderStart(s); }
   if(s.mode==='overview'){ return renderOverview(s); }
   if(s.mode==='datamap'){ return renderDataMap(s); }
+  if(s.mode==='study_design'){ return renderStudyDesign(s); }
   if(s.mode==='quality'){ return renderQuality(s); }
   if(s.id==='l_trust'){ return renderTrust(s); }
   if(s.id==='l_themes'){ return renderThemes(s); }

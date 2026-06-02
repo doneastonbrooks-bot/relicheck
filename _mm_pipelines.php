@@ -38,6 +38,11 @@ $SETUP = [
   ['id'=>'data_map','label'=>'Data Map','strand'=>'neutral','mode'=>'datamap','route'=>null,
    'title'=>'Data Map','lede'=>'Organize your dataset into qualitative, quantitative, demographic, and integration roles.','done'=>false,
    'palette'=>['intro'=>'Roles','groups'=>[]]],
+  // Study Design — data kind, intent, and MM design choice. Moved from the
+  // wizard so users can revisit and change at any time after the Data Map.
+  ['id'=>'study_design','label'=>'Study Design','strand'=>'neutral','mode'=>'study_design','route'=>null,
+   'title'=>'Study Design','lede'=>'Describe your data, name what you want to understand, and choose a mixed-methods design. You can change any of this later.','done'=>false,
+   'palette'=>['intro'=>'Design','groups'=>[]]],
   // Data quality gate — conditions that can distort or weaken the analysis,
   // each with the risk it carries. Shown before the analysis in every design.
   ['id'=>'data_quality','label'=>'Data Quality','strand'=>'neutral','mode'=>'quality','route'=>null,
