@@ -86,13 +86,13 @@ function qual_audit(
 function qual_materialize_segments(PDO $pdo, int $projectId, int $documentId, int $datasetId): int
 {
     // Load dataset rows and column_meta
-    $ds = $pdo->prepare('SELECT column_meta, rows FROM datasets WHERE id = :id LIMIT 1');
+    $ds = $pdo->prepare('SELECT column_meta, data FROM datasets WHERE id = :id LIMIT 1');
     $ds->execute([':id' => $datasetId]);
     $dsRow = $ds->fetch(PDO::FETCH_ASSOC);
     if (!$dsRow) return 0;
 
     $colMeta = $dsRow['column_meta'];
-    $rawRows = $dsRow['rows'];
+    $rawRows = $dsRow['data'];
     if (is_string($colMeta)) $colMeta = json_decode($colMeta, true);
     if (is_string($rawRows)) $rawRows = json_decode($rawRows, true);
     if (!is_array($colMeta) || !is_array($rawRows)) return 0;
