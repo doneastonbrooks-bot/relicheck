@@ -171,6 +171,9 @@ h2.sec{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:30px 0 14px;
 .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 .field textarea{min-height:84px;resize:vertical}
 .field .hint{font-size:12px;color:var(--ink-3);margin-top:6px}
+.file-drop{display:block;cursor:pointer}
+.file-drop-inner{border:2px dashed var(--line);border-radius:var(--r);padding:48px 24px;text-align:center;background:var(--bg);transition:border-color .15s,background .15s}
+.file-drop:hover .file-drop-inner,.file-drop:focus-within .file-drop-inner{border-color:var(--accent);background:var(--accent-soft)}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{padding:8px 14px;border:1.5px solid var(--line);border-radius:999px;font-size:13px;font-weight:600;color:var(--ink-2);background:var(--panel)}
 .chip[data-on="1"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink)}
@@ -762,6 +765,8 @@ const state = {
   importText:'',         // pasted survey text or one-item-per-line list
   importConstructs:'',   // optional: one construct per line, "Name: definition"
   importScale:'',        // optional: response scale note (e.g. "5-pt agreement")
+  importFileName:'',     // name of the uploaded file (upload mode)
+  importParsing:false,   // true while the server is extracting text from a .docx
   // Revise step (Question Review Cards). Keyed by item_ref.
   reviseEditing:{},      // per ref: {mode:'self'|'assist'} when an inline edit panel is open
   reviseDrafts:{},       // per ref: current edit-panel textarea value
@@ -1081,8 +1086,40 @@ const App = {
   },
 
   /* ── Bring In an Existing Survey (Phase 2A.6) ── */
-  setImportMode(m){ state.importMode=m; render(); },
+  setImportMode(m){ state.importMode=m; state.importFileName=''; state.importText=''; state.importParsing=false; render(); },
   setImportField(k,v){ state[k]=v; },
+
+  // File upload handler for "Upload file" import mode.
+  // .txt and .csv are read entirely in the browser.
+  // .docx is sent to the server for XML extraction.
+  handleSurveyFile(file){
+    if(!file) return;
+    const name=file.name||'';
+    const ext=(name.split('.').pop()||'').toLowerCase();
+    const allowed=['docx','txt','csv','tsv'];
+    if(!allowed.includes(ext)){
+      toast('Unsupported file type. Use .docx, .txt, or .csv.'); return;
+    }
+    state.importFileName=name; state.importParsing=true; state.importText=''; render();
+    if(ext==='docx'){
+      const fd=new FormData(); fd.append('file',file);
+      fetch('/api/dev/survey-import-parse.php',{method:'POST',credentials:'same-origin',body:fd})
+        .then(r=>r.json())
+        .then(d=>{
+          state.importParsing=false;
+          if(!d||!d.ok){ toast(d&&d.error?d.error:'Could not read the file.'); state.importFileName=''; render(); return; }
+          state.importText=d.text||'';
+          render();
+        })
+        .catch(()=>{ state.importParsing=false; state.importFileName=''; toast('Network error — try again.'); render(); });
+    } else {
+      const reader=new FileReader();
+      reader.onload=e=>{ state.importParsing=false; state.importText=e.target.result||''; render(); };
+      reader.onerror=()=>{ state.importParsing=false; state.importFileName=''; toast('Could not read the file.'); render(); };
+      reader.readAsText(file);
+    }
+  },
+  clearImportFile(){ state.importFileName=''; state.importText=''; state.importParsing=false; render(); },
 
   // Turn the pasted/typed survey into editable builder items, create the same
   // internal project the normal builder uses, then land in the workspace.
@@ -2159,11 +2196,35 @@ const Screens = {
     const placeholder = mode==='manual'
       ? 'One item per line, for example:\nI feel supported by my manager.\nHow satisfied are you with onboarding?\nWould you recommend us to a friend?'
       : 'Paste your full survey. Questions and their answer options are detected automatically, for example:\n\n1. How satisfied are you with onboarding?\n  a) Very satisfied\n  b) Satisfied\n  c) Dissatisfied\n\n2. I feel supported by my manager. (Strongly agree to strongly disagree)\n\n3. What would you improve? (open response)';
-    const textBlock = mode==='upload'
-      ? `<div class="callout"><div class="ci">${SVG.info}</div>
-          <div><h4>File upload is coming soon</h4><p>Full file parsing is not ready yet. For now, open your file, copy the questions, and use Paste survey text or Manual quick import. Your items will be fully editable after they come in.</p></div></div>`
-      : `<div class="field"><label>${mode==='manual'?'Item list (one per line)':'Survey text'}</label>
+    let textBlock;
+    if(mode==='upload'){
+      if(state.importParsing){
+        textBlock=`<div class="field"><div class="callout"><div class="ci">${SVG.info}</div><div><p>Reading <strong>${e(state.importFileName)}</strong>...</p></div></div></div>`;
+      } else if(state.importFileName && state.importText){
+        textBlock=`<div class="field">
+          <label>Extracted text — review and edit before importing
+            <button class="chip" style="margin-left:10px;font-size:12px" onclick="App.clearImportFile()">Clear file</button>
+          </label>
+          <textarea rows="12" oninput="App.setImportField('importText',this.value)">${e(state.importText)}</textarea>
+          <p class="muted" style="font-size:12.5px;margin-top:6px">From: ${e(state.importFileName)} &middot; ${state.importText.split('\n').filter(l=>l.trim()).length} non-empty lines detected</p>
+        </div>`;
+      } else {
+        textBlock=`<div class="field"><label>Upload a survey file</label>
+          <label class="file-drop" id="surveyFileDrop">
+            <input type="file" accept=".docx,.txt,.csv,.tsv" style="display:none" id="surveyFileInput"
+              onchange="if(this.files[0])App.handleSurveyFile(this.files[0])">
+            <div class="file-drop-inner">
+              <div style="font-size:28px;margin-bottom:8px">&#8613;</div>
+              <div style="font-weight:700;margin-bottom:4px">Drop a file here or click to choose</div>
+              <div class="muted" style="font-size:13px">Accepts .docx (Word), .txt, and .csv</div>
+            </div>
+          </label>
+        </div>`;
+      }
+    } else {
+      textBlock=`<div class="field"><label>${mode==='manual'?'Item list (one per line)':'Survey text'}</label>
           <textarea rows="12" placeholder="${e(placeholder)}" oninput="App.setImportField('importText',this.value)">${e(state.importText||'')}</textarea></div>`;
+    }
     return `<div class="screen">
       <div class="eyebrow">Bring in an existing survey</div>
       <h1 class="title">Bring your survey into ReliCheck</h1>
@@ -3439,6 +3500,13 @@ function render(){
   appEl.className = 'wrap' + (r === 'build' ? ' wrap-build' : '');
   appEl.innerHTML = banner + fn();
   App._focusAfterRender();
+  // Wire drag-and-drop on the survey file drop zone (only present on import/upload screen).
+  const dropZone = document.getElementById('surveyFileDrop');
+  if(dropZone){
+    dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.querySelector('.file-drop-inner').style.borderColor='var(--accent)'; });
+    dropZone.addEventListener('dragleave', ()=>{ dropZone.querySelector('.file-drop-inner').style.borderColor=''; });
+    dropZone.addEventListener('drop', e=>{ e.preventDefault(); const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) App.handleSurveyFile(f); });
+  }
 }
 
 // Boot: in db mode, probe the server (templates-list doubles as an auth check)
