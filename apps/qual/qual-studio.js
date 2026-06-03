@@ -129,15 +129,15 @@
 
   // ── Start ──────────────────────────────────────────────────────────────────
   function renderStart(host) {
-    var hasProject = !!BOOT.projectId;
-    var segCount   = state.projectData ? state.projectData.seg_count : 0;
+    var segCount = state.projectData ? state.projectData.seg_count : 0;
 
-    var html = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
-      + '<h1 class="start-hero">Turn words into <span class="accent">evidence.</span></h1>'
-      + '<p class="lede">Bring in your qualitative data, confirm what was loaded, and map your variables before coding begins.</p>'
+    var html = '<div class="ws-header">'
+      + '<div class="eyebrow">Step 1</div>'
+      + '<h1 class="title">Data Intake</h1>'
+      + '<p class="lede">Upload a CSV or XLSX with open-ended responses, or open an existing project below.</p>'
       + '</div>';
 
-    if (hasProject && segCount > 0) {
+    if (BOOT.projectId && segCount > 0) {
       html += '<div class="begin-loaded"><span class="dot"></span>'
         + '<span style="font-weight:700;color:var(--ink-2)">Data loaded</span>'
         + '<span>' + esc(BOOT.projectLabel) + ' &middot; ' + segCount + ' segments</span>'
@@ -145,65 +145,20 @@
         + '</div>';
     }
 
-    if (!hasProject) {
-      // No project yet — show creation form
-      html += '<div class="panel"><div class="panel-h"><h3>New project</h3></div><div class="panel-b">'
-        + '<div class="field"><label>Project title <span style="color:#c0392b">*</span></label>'
-        + '<input id="st-title" placeholder="e.g. Staff Experience Open-Ends 2026"></div>'
-        + '<div class="grid2">'
-        + '<div class="field"><label>Analysis approach</label><select id="st-approach">'
-        + '<option value="thematic">Thematic Analysis</option>'
-        + '<option value="content">Content Analysis</option>'
-        + '<option value="framework">Framework Analysis</option>'
-        + '<option value="open_ended_survey">Open-Ended Survey Analysis</option>'
-        + '<option value="document">Document Analysis</option>'
-        + '</select></div>'
-        + '<div class="field"><label>Research question <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>'
-        + '<input id="st-rq" placeholder="What are participants saying about..."></div>'
-        + '</div>'
-        + '<div id="st-err" style="display:none;font-size:13px;color:#c0392b;margin-bottom:8px;"></div>'
-        + '<div class="btn-row"><button class="btn primary" id="st-create">Create project</button>'
-        + '<a href="/qual-studio.php" class="btn">All projects</a></div>'
-        + '</div></div>';
-    } else {
-      // Project exists — show upload card
-      html += '<button class="begin-feature" id="stUpload">'
-        + '<span class="bc-ico">&#8681;</span>'
-        + '<div><h4>Upload qualitative data</h4>'
-        + '<p>CSV or XLSX with open-ended responses. The studio detects text columns and loads each response as a codeable segment with participant context.</p>'
-        + '<span class="bc-go">Upload data &rarr;</span></div></button>'
-        + '<div class="begin-sec">Or</div>'
-        + '<div class="begin-grid2">'
-        + '<button class="begin-card2" id="stProjects"><span class="bc-ico" style="font-size:18px">&#9638;</span><h4>Open a different project</h4><p>Return to the project list.</p></button>'
-        + '</div>';
-    }
+    html += '<button class="begin-feature" id="stUpload">'
+      + '<span class="bc-ico">&#8681;</span>'
+      + '<div><h4>Upload qualitative data</h4>'
+      + '<p>CSV or XLSX with open-ended responses. The studio detects text columns and loads each response as a codeable segment with participant context.</p>'
+      + '<span class="bc-go">Upload data &rarr;</span></div></button>'
+      + '<div class="begin-sec">Or</div>'
+      + '<div class="begin-grid2">'
+      + '<button class="begin-card2" id="stProjects"><span class="bc-ico" style="font-size:18px">&#9638;</span><h4>Open a saved project</h4><p>Return to the project list to open a previous analysis.</p></button>'
+      + '</div>';
 
     host.innerHTML = html;
 
     var ov = document.getElementById('stOverview');
     if (ov) ov.addEventListener('click', function () { state.stepId = 'overview'; render(); });
-
-    var create = document.getElementById('st-create');
-    if (create) create.addEventListener('click', function () {
-      var title = (document.getElementById('st-title').value || '').trim();
-      var err   = document.getElementById('st-err');
-      if (!title) { err.textContent = 'A project title is required.'; err.style.display = 'block'; return; }
-      err.style.display = 'none';
-      create.disabled = true; create.textContent = 'Creating...';
-      api('/api/qual/create-project.php', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: title,
-          analysis_approach: (document.getElementById('st-approach') || {}).value || 'thematic',
-          research_question: (document.getElementById('st-rq') || {}).value.trim(),
-        }),
-      }).then(function (r) {
-        window.location.href = '/qual-studio-workspace.php?project_id=' + r.project_id;
-      }).catch(function (e) {
-        err.textContent = 'Error: ' + e.message; err.style.display = 'block';
-        create.disabled = false; create.textContent = 'Create project';
-      });
-    });
 
     var upload = document.getElementById('stUpload');
     if (upload) upload.addEventListener('click', openUpload);
@@ -219,15 +174,37 @@
       onLoaded: function (_err, datasetId) {
         var notice = document.getElementById('centerInner');
         if (notice) notice.innerHTML = '<div class="notice info">Linking dataset and loading segments...</div>';
-        api('/api/qual/link-dataset.php', {
-          method: 'POST',
-          body: JSON.stringify({ project_id: BOOT.projectId, dataset_id: datasetId }),
-        }).then(function (r) {
-          StudioFooter.setDataInfo(r.seg_count, 1);
-          loadProjectData().then(function () { state.stepId = 'overview'; render(); });
-        }).catch(function (e) {
-          if (notice) notice.innerHTML = '<div class="notice err">Could not link dataset: ' + esc(e.message) + '</div>';
-        });
+
+        function linkAndContinue(projectId) {
+          api('/api/qual/link-dataset.php', {
+            method: 'POST',
+            body: JSON.stringify({ project_id: projectId, dataset_id: datasetId }),
+          }).then(function (r) {
+            if (projectId !== BOOT.projectId) {
+              // New project: redirect so the URL carries the project_id and refresh works.
+              window.location.href = '/qual-studio-workspace.php?project_id=' + projectId + '&step=overview';
+              return;
+            }
+            StudioFooter.setDataInfo(r.seg_count, 1);
+            loadProjectData().then(function () { state.stepId = 'overview'; render(); });
+          }).catch(function (e) {
+            if (notice) notice.innerHTML = '<div class="notice err">Could not link dataset: ' + esc(e.message) + '</div>';
+          });
+        }
+
+        if (!BOOT.projectId) {
+          // No project yet — auto-create one, then link. User renames it in Project Setup.
+          api('/api/qual/create-project.php', {
+            method: 'POST',
+            body: JSON.stringify({ title: 'Qualitative Analysis', analysis_approach: 'thematic' }),
+          }).then(function (r) {
+            linkAndContinue(r.project_id);
+          }).catch(function (e) {
+            if (notice) notice.innerHTML = '<div class="notice err">Could not create project: ' + esc(e.message) + '</div>';
+          });
+        } else {
+          linkAndContinue(BOOT.projectId);
+        }
       },
     });
   }
@@ -435,11 +412,106 @@
       document.getElementById('su-next').addEventListener('click', function () { state.stepId='familiarize'; render(); });
     },
 
+    // ── Data Cleaning / De-identification ─────────────────────────────────────
+    deident: function (host) {
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Data Cleaning</div>'
+        + '<h1 class="title">Data Cleaning</h1>'
+        + '<p class="lede">Scan for personal information (emails, phone numbers, names) before analysis begins. Masking is optional but recommended for data shared beyond the original research team.</p></div>'
+        + '<div id="di-body"><div class="btn-row">'
+        + '<button class="btn primary" id="di-scan">Scan for PII</button>'
+        + '<button class="btn" id="di-skip">Skip, continue to Project Setup &rarr;</button>'
+        + '</div></div>';
+
+      document.getElementById('di-skip').addEventListener('click', function () { state.stepId='setup'; render(); });
+      document.getElementById('di-scan').addEventListener('click', function () {
+        var body = document.getElementById('di-body');
+        body.innerHTML = '<div class="notice info">Scanning segments&hellip;</div>';
+        fetch('/api/qual/scan-pii.php?project_id=' + BOOT.projectId)
+          .then(function (r) { return r.json(); })
+          .then(function (d) {
+            if (!d.ok) throw new Error(d.message || 'Scan failed.');
+            renderPiiResults(body, d);
+          })
+          .catch(function (e) {
+            body.innerHTML = '<div class="notice err">Scan error: ' + esc(e.message) + '</div>'
+              + '<div class="btn-row"><button class="btn" id="di-skip2">Continue without scanning</button></div>';
+            document.getElementById('di-skip2').addEventListener('click', function () { state.stepId='setup'; render(); });
+          });
+      });
+
+      function renderPiiResults(body, d) {
+        if (d.flag_count === 0) {
+          body.innerHTML = '<div class="notice info">No PII patterns detected in ' + d.total_segments + ' segments.</div>'
+            + '<div class="btn-row"><button class="btn primary" id="di-done">Continue to Project Setup &rarr;</button></div>';
+          document.getElementById('di-done').addEventListener('click', function () { state.stepId='setup'; render(); });
+          return;
+        }
+
+        var typeLabel = { email:'Email', phone:'Phone', ssn:'ID Number', name_intro:'Name' };
+        var rows = d.flagged.map(function (f) {
+          var patternList = f.patterns.map(function (p) {
+            return '<span class="pii-badge">' + (typeLabel[p.type] || p.type) + ': ' + esc(p.match) + '</span>';
+          }).join(' ');
+          return '<div class="pii-row" id="pii-' + f.segment_id + '">'
+            + '<div class="pii-patterns">' + patternList + '</div>'
+            + '<div class="pii-text">' + esc(f.original) + '</div>'
+            + '<div class="pii-actions">'
+            + '<button class="btn primary" style="font-size:12px;padding:6px 12px" data-mask="' + f.segment_id + '">Mask this segment</button>'
+            + '<button class="btn" style="font-size:12px;padding:6px 12px;margin-left:6px" data-skip="' + f.segment_id + '">Skip</button>'
+            + '</div></div>';
+        }).join('');
+
+        body.innerHTML = '<div class="notice warn">'
+          + d.flag_count + ' segment' + (d.flag_count !== 1 ? 's' : '') + ' with potential PII detected in ' + d.total_segments + ' total segments.'
+          + '</div>'
+          + '<div class="btn-row" style="margin-bottom:18px">'
+          + '<button class="btn primary" id="di-mask-all">Mask all detected</button>'
+          + '<button class="btn" id="di-skip3">Continue without changes</button>'
+          + '</div>'
+          + '<div id="pii-list" style="display:flex;flex-direction:column;gap:12px">' + rows + '</div>'
+          + '<div class="btn-row" style="margin-top:20px"><button class="btn primary" id="di-continue">Continue to Project Setup &rarr;</button></div>';
+
+        document.getElementById('di-skip3').addEventListener('click', function () { state.stepId='setup'; render(); });
+        document.getElementById('di-continue').addEventListener('click', function () { state.stepId='setup'; render(); });
+
+        function maskSegment(sid, btn) {
+          if (btn) { btn.disabled = true; btn.textContent = 'Masking...'; }
+          api('/api/qual/mask-pii.php', {
+            method: 'POST',
+            body: JSON.stringify({ project_id: BOOT.projectId, segment_id: sid }),
+          }).then(function (r) {
+            var row = document.getElementById('pii-' + sid);
+            if (row) {
+              row.innerHTML = '<div class="pii-masked"><span class="pii-badge" style="background:var(--acc-soft);color:var(--acc-deep)">Masked</span> '
+                + esc(r.masked_text) + '</div>';
+            }
+          }).catch(function (e) {
+            if (btn) { btn.disabled = false; btn.textContent = 'Mask this segment'; }
+            alert('Could not mask: ' + e.message);
+          });
+        }
+
+        document.getElementById('di-mask-all').addEventListener('click', function () {
+          d.flagged.forEach(function (f) { maskSegment(f.segment_id, null); });
+        });
+        body.addEventListener('click', function (e) {
+          var btn = e.target.closest('[data-mask]');
+          var skip = e.target.closest('[data-skip]');
+          if (btn) maskSegment(+btn.dataset.mask, btn);
+          if (skip) {
+            var row = document.getElementById('pii-' + skip.dataset.skip);
+            if (row) row.style.opacity = '.4';
+          }
+        });
+      }
+    },
+
+    // ── Familiarization ───────────────────────────────────────────────────────
     familiarize: function (host) {
       var d = state.projectData;
-      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 5</div>'
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Familiarization</div>'
         + '<h1 class="title">Familiarization</h1>'
-        + '<p class="lede">Explore the corpus before formal coding. Read through responses and record your first impressions.</p></div>'
+        + '<p class="lede">Explore the corpus before formal coding. Read through responses, record your first impressions, and let ReliCheck Intelligence surface recurring concepts.</p></div>'
         + '<div class="stats-grid">'
         + _statCard(d.seg_count, 'Segments')
         + _statCard(d.doc_count, 'Data sources')
@@ -454,7 +526,15 @@
         + '<div id="fam-msg" style="display:none;font-size:13px;margin-top:6px;"></div>'
         + '<div class="btn-row"><button class="btn primary" id="fam-save">Save memo</button>'
         + '<button class="btn" id="fam-next">Start coding</button></div>'
-        + '</div></div>';
+        + '</div></div>'
+        + '<div class="panel"><div class="panel-h"><h3>Linguistic Concept Scan'
+        + '<span style="font-size:12px;font-weight:400;color:var(--ink-3);margin-left:10px">powered by ReliCheck Intelligence</span></h3>'
+        + '<p style="font-size:13px;color:var(--ink-3);margin:4px 0 0;">Analyzes a sample of responses and identifies recurring concepts before you begin formal coding. Results persist and can be re-run.</p></div>'
+        + '<div class="panel-b" id="scan-body">'
+        + '<div class="btn-row">'
+        + '<button class="btn primary" id="scan-run">Run Concept Scan</button>'
+        + '<button class="btn" id="scan-cached" style="display:none">Load previous scan</button>'
+        + '</div></div></div>';
 
       document.getElementById('fam-save').addEventListener('click', function () {
         var body = (document.getElementById('fam-memo').value || '').trim();
@@ -470,8 +550,67 @@
         }).catch(function (e) { msg.textContent='Error: '+e.message; msg.style.cssText='display:block;color:#c0392b;'; });
       });
       document.getElementById('fam-next').addEventListener('click', function () { state.stepId='coding'; render(); });
+
+      function runScan(force) {
+        var scanBody = document.getElementById('scan-body');
+        if (!scanBody) return;
+        scanBody.innerHTML = '<div class="notice info">Analyzing corpus with ReliCheck Intelligence&hellip; this may take 15-30 seconds.</div>';
+        api('/api/qual/concept-scan.php', {
+          method: 'POST',
+          body: JSON.stringify({ project_id: BOOT.projectId, force: !!force }),
+        }).then(function (r) {
+          renderConceptScan(scanBody, r);
+        }).catch(function (e) {
+          scanBody.innerHTML = '<div class="notice err">Scan failed: ' + esc(e.message) + '</div>'
+            + '<div class="btn-row"><button class="btn primary" id="scan-retry">Try again</button></div>';
+          document.getElementById('scan-retry').addEventListener('click', function () { runScan(true); });
+        });
+      }
+
+      function renderConceptScan(scanBody, r) {
+        var etColors = {
+          lexical:  'background:#eef3fa;color:#085fcc',
+          phrase:   'background:#e8f5ee;color:#174d30',
+          semantic: 'background:#fff8ee;color:#92400e',
+        };
+        var cards = (r.concepts || []).map(function (c) {
+          var etStyle = etColors[c.evidence_type] || 'background:#f3f4f6;color:#374151';
+          var quotes = (c.example_quotes || []).map(function (q) {
+            return '<div class="concept-quote">&ldquo;' + esc(q) + '&rdquo;</div>';
+          }).join('');
+          return '<div class="concept-card">'
+            + '<div class="concept-top">'
+            + '<span class="concept-name">' + esc(c.concept) + '</span>'
+            + '<span class="concept-et" style="' + etStyle + '">' + esc(c.evidence_type) + '</span>'
+            + '<span class="concept-freq">' + (c.frequency || '?') + ' responses</span>'
+            + '</div>'
+            + quotes
+            + '</div>';
+        }).join('');
+
+        var note = r.from_cache ? '<span style="font-size:12px;color:var(--ink-3)">Cached result</span>' : '';
+        scanBody.innerHTML = '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">'
+          + '<span style="font-size:13px;color:var(--ink-3)">' + (r.segments_scanned || 0) + ' segments scanned</span>'
+          + note
+          + '<button class="btn" style="font-size:12px;padding:5px 12px;margin-left:auto" id="scan-rerun">Re-run scan</button>'
+          + '</div>'
+          + '<div class="concept-grid">' + cards + '</div>';
+        document.getElementById('scan-rerun').addEventListener('click', function () { runScan(true); });
+      }
+
+      // Auto-load cached scan if one exists
+      api('/api/qual/concept-scan.php', {
+        method: 'POST',
+        body: JSON.stringify({ project_id: BOOT.projectId, force: false }),
+      }).then(function (r) {
+        var scanBody = document.getElementById('scan-body');
+        if (scanBody && r.from_cache) renderConceptScan(scanBody, r);
+      }).catch(function () {});
+
+      document.getElementById('scan-run').addEventListener('click', function () { runScan(true); });
     },
 
+    // ── Coding Workspace ──────────────────────────────────────────────────────
     coding: function (host) {
       loadCodesIfNeeded().then(function () {
         var uncodedOnly = false;
@@ -538,12 +677,15 @@
             + '<div class="picker-new"><button class="picker-new-btn" data-seg="' + seg.id + '">'
             + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> New code</button></div>'
             + '</div></div>'
-            + flag + '</div></div>';
+            + '<button class="ai-suggest-btn" data-seg="' + seg.id + '">&#9734; Suggest codes</button>'
+            + flag + '</div>'
+            + '<div class="ai-suggest-panel" id="aip-' + seg.id + '" style="display:none;"></div>'
+            + '</div>';
         }
 
-        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Step 6</div>'
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Coding Workspace</div>'
           + '<h1 class="title">Coding Workspace</h1>'
-          + '<p class="lede">Apply codes to each segment. Participant context appears above every response.</p></div>'
+          + '<p class="lede">Apply codes to each segment. Participant context appears above every response. Use ReliCheck Intelligence to get AI code suggestions.</p></div>'
           + '<div class="filters">'
           + '<input class="search-input" id="seg-search" placeholder="Search segments...">'
           + '<button class="filter-btn active" id="filter-all">All</button>'
@@ -569,12 +711,15 @@
           load();
         });
 
-        // Event delegation for picker, apply, remove, new-code
+        // Event delegation for picker, apply, remove, new-code, AI suggest
         document.getElementById('seg-list').addEventListener('click', function (e) {
-          var addBtn   = e.target.closest('.add-code-btn');
-          var item     = e.target.closest('.picker-item');
-          var newBtn   = e.target.closest('.picker-new-btn');
-          var removeBtn= e.target.closest('.chip-x');
+          var addBtn    = e.target.closest('.add-code-btn');
+          var item      = e.target.closest('.picker-item');
+          var newBtn    = e.target.closest('.picker-new-btn');
+          var removeBtn = e.target.closest('.chip-x');
+          var sugBtn    = e.target.closest('.ai-suggest-btn');
+          var applyAi   = e.target.closest('.ai-apply-btn');
+          var dismissAi = e.target.closest('.ai-dismiss-btn');
 
           if (addBtn) {
             var sid = addBtn.dataset.seg;
@@ -619,7 +764,80 @@
                 if (seg && seg.code_count === 0) { var card = document.getElementById('seg-' + sid); if (card) { card.classList.remove('coded'); } }
               }).catch(function (e) { alert('Error: ' + e.message); });
           }
+          if (sugBtn) {
+            var sid = +sugBtn.dataset.seg;
+            var panel = document.getElementById('aip-' + sid);
+            if (!panel) return;
+            if (panel.style.display !== 'none' && panel.innerHTML !== '') { panel.style.display = 'none'; return; }
+            panel.style.display = 'block';
+            panel.innerHTML = '<div style="padding:12px 0 4px;font-size:12.5px;color:var(--ink-3);">ReliCheck Intelligence is analyzing this segment&hellip;</div>';
+            sugBtn.disabled = true;
+            api('/api/qual/suggest-codes.php', {
+              method: 'POST',
+              body: JSON.stringify({ project_id: BOOT.projectId, segment_id: sid }),
+            }).then(function (r) {
+              sugBtn.disabled = false;
+              renderSuggestions(panel, sid, r.suggestions || []);
+            }).catch(function (ex) {
+              sugBtn.disabled = false;
+              panel.innerHTML = '<div class="notice err" style="margin:8px 0">Could not get suggestions: ' + esc(ex.message) + '</div>';
+            });
+          }
+          if (applyAi) {
+            var sid   = +applyAi.dataset.seg;
+            var cname = applyAi.dataset.name;
+            var existCode = state.codes.find(function (c) { return c.name.toLowerCase() === cname.toLowerCase(); });
+            if (existCode) {
+              applyCode(sid, existCode.id, existCode.name);
+              applyAi.closest('.ai-sug-row').style.opacity = '.4';
+            } else {
+              api('/api/qual/save-code.php', { method:'POST', body:JSON.stringify({ project_id:BOOT.projectId, name:cname }) })
+                .then(function (r) {
+                  state.codes.push({ id: r.code_id, name: cname });
+                  applyCode(sid, r.code_id, cname);
+                  applyAi.closest('.ai-sug-row').style.opacity = '.4';
+                }).catch(function (ex) { alert('Error saving code: ' + ex.message); });
+            }
+          }
+          if (dismissAi) {
+            dismissAi.closest('.ai-sug-row').style.opacity = '.4';
+          }
         });
+
+        function renderSuggestions(panel, sid, suggestions) {
+          if (!suggestions.length) {
+            panel.innerHTML = '<div style="padding:8px 0;font-size:13px;color:var(--ink-3);">No suggestions. Consider adding more codes to the codebook first.</div>';
+            return;
+          }
+          var etColors = {
+            lexical:   '#085fcc',
+            phrase:    '#174d30',
+            semantic:  '#92400e',
+            syntactic: '#6b21a8',
+          };
+          var confIcons = { high: '&#9679;&#9679;&#9679;', medium: '&#9679;&#9679;&#9675;', low: '&#9679;&#9675;&#9675;' };
+          var rows = suggestions.map(function (s) {
+            var etColor = etColors[s.evidence_type] || '#374151';
+            var existBadge = s.is_existing
+              ? '<span style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:var(--acc-soft);color:var(--acc-deep);margin-left:6px">in codebook</span>'
+              : '<span style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:999px;background:#f3f4f6;color:#6b7280;margin-left:6px">new</span>';
+            return '<div class="ai-sug-row">'
+              + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">'
+              + '<span style="font-size:14px;font-weight:700">' + esc(s.name) + '</span>'
+              + existBadge
+              + '<span style="font-size:10.5px;padding:2px 7px;border-radius:999px;font-weight:700;color:' + etColor + ';background:' + etColor + '18">' + esc(s.evidence_type) + '</span>'
+              + '<span style="font-size:11px;color:var(--ink-3);margin-left:2px" title="Confidence">' + (confIcons[s.confidence] || '') + '</span>'
+              + '</div>'
+              + '<div style="font-size:12.5px;color:var(--ink-2);margin-bottom:8px;line-height:1.45">' + esc(s.rationale) + '</div>'
+              + '<div style="display:flex;gap:8px">'
+              + '<button class="btn primary ai-apply-btn" style="font-size:12px;padding:5px 12px" data-seg="' + sid + '" data-name="' + esc(s.name) + '">Apply</button>'
+              + '<button class="btn ai-dismiss-btn" style="font-size:12px;padding:5px 10px">Dismiss</button>'
+              + '</div></div>';
+          }).join('');
+          panel.innerHTML = '<div class="ai-sug-list">'
+            + '<div style="font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:10px">&#9734; ReliCheck Intelligence suggestions</div>'
+            + rows + '</div>';
+        }
 
         function applyCode(sid, cid, cname) {
           api('/api/qual/apply-code.php', { method:'POST', body:JSON.stringify({ project_id:BOOT.projectId, segment_id:sid, code_id:cid }) })
@@ -769,9 +987,10 @@
     start:       '<p>Bring in your qualitative data here. Upload a CSV or XLSX file with open-ended text columns. Participant metadata columns will travel with each segment.</p><p>If you already have data loaded, proceed to <strong>Overview</strong> to review what was imported.</p>',
     overview:    '<p>Review what was loaded before mapping variables. Check the segment count and data sources look correct. If something is wrong, go back to <strong>Start</strong> and re-upload.</p>',
     datamap:     '<p>Confirm which columns are <strong>open-ended text</strong> (these become codeable segments), which are <strong>group variables</strong>, and which are <strong>participant metadata</strong>.</p><p>Coding is only available after you confirm this map.</p>',
+    deident:     '<p><strong>Data Cleaning</strong> scans for emails, phone numbers, social security numbers, and name introductions using pattern matching.</p><p>Masking replaces detected values with tokens like <code>[EMAIL]</code> or <code>[NAME]</code>. This step is optional but recommended when data will be shared or archived beyond the original research context.</p>',
     setup:       '<p>The research question and researcher stance become part of the audit trail. Reviewers and trustworthiness checks will reference them to assess whether the analysis is grounded and transparent.</p>',
-    familiarize: '<p>Read through the data before coding. The First Impressions Memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work. The Trustworthiness Review will check that it exists.</p>',
-    coding:      '<p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p><p><strong>Uncoded</strong> segments have no code yet. <strong>Over-coded (4+)</strong> may indicate an overly broad code.</p>',
+    familiarize: '<p>Read through the data before coding. The First Impressions Memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work.</p><p>The <strong>Linguistic Concept Scan</strong> uses ReliCheck Intelligence to surface recurring concepts across the corpus — organized by evidence type — before you begin formal coding. Results are cached and can be re-run at any time.</p>',
+    coding:      '<p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p><p>Use <strong>Suggest codes</strong> (the star button on each segment) to get AI suggestions classified by evidence type: lexical, phrase, semantic, or syntactic. Apply suggestions you agree with; dismiss the rest.</p>',
     codebook:    '<p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is better than <strong>"support."</strong></p><p>Write definitions specific enough that a second coder would apply the code to the same responses.</p>',
     report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
   };
@@ -802,9 +1021,12 @@
     if (BOOT.projectId) {
       loadProjectData().then(function () {
         state.project = BOOT.project;
-        // If data is already loaded, auto-advance past start
-        if (hasData()) {
-          state.datamapConfirmed = true; // assume map was confirmed on prior session
+        if (BOOT.initialStep) {
+          // Honour an explicit landing step (e.g. after a fresh upload redirect).
+          state.stepId = BOOT.initialStep;
+        } else if (hasData()) {
+          // Returning to an existing project with data — jump past the gate steps.
+          state.datamapConfirmed = true;
           state.stepId = 'setup';
         }
         render();

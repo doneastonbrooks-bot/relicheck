@@ -15,7 +15,7 @@ require_method('POST');
 $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
-$body = json_body();
+$body = read_json_body();
 
 $title = trim((string)($body['title'] ?? ''));
 if ($title === '') fail('bad_input', 'title is required.');

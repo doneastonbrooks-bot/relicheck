@@ -43,6 +43,7 @@ $pipeline = [
     ['id' => 'start',       'label' => 'Start',            'dot' => 'qual', 'mode' => 'start'],
     ['id' => 'overview',    'label' => 'Overview',         'dot' => 'qual', 'mode' => 'overview'],
     ['id' => 'datamap',     'label' => 'Variable Map',     'dot' => 'qual', 'mode' => 'datamap'],
+    ['id' => 'deident',     'label' => 'Data Cleaning',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'deident'],
     ['id' => 'setup',       'label' => 'Project Setup',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'setup'],
     ['id' => 'familiarize', 'label' => 'Familiarization',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'familiarize'],
     ['id' => 'coding',      'label' => 'Coding Workspace', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'coding'],
@@ -55,6 +56,8 @@ $pipeline = [
     ['id' => 'report',      'label' => 'Report Builder',   'dot' => 'qual', 'mode' => 'report'],
 ];
 
+$initialStep = preg_match('/^[a-z_]+$/', $_GET['step'] ?? '') ? $_GET['step'] : null;
+
 $BOOT = [
     'projectId'    => $projectId,
     'project'      => $projectRow,
@@ -63,6 +66,7 @@ $BOOT = [
     'projectsUrl'  => '/qual-studio.php',
     'pipeline'     => array_values($pipeline),
     'initials'     => $initials,
+    'initialStep'  => $initialStep,
 ];
 
 // Script cache-busting
@@ -230,6 +234,28 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .stat-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 16px;text-align:center}
 .stat-card .num{font-size:32px;font-weight:900;color:var(--acc);letter-spacing:-.03em;line-height:1}
 .stat-card .lbl{font-size:12px;color:var(--ink-3);font-weight:600;margin-top:6px}
+/* PII scanner */
+.pii-row{background:var(--panel);border:1.5px solid #fed7aa;border-radius:12px;padding:16px 18px}
+.pii-patterns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.pii-badge{display:inline-flex;align-items:center;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:#fff8ee;color:#92400e}
+.pii-text{font-size:14px;color:var(--ink);line-height:1.6;margin-bottom:12px;padding:10px 12px;background:#fafafa;border-radius:8px;border:1px solid var(--line)}
+.pii-actions{display:flex;align-items:center;gap:8px}
+.pii-masked{font-size:13.5px;color:var(--ink-2);line-height:1.6;padding:8px 0}
+/* Concept scan */
+.concept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.concept-card{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.concept-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.concept-name{font-size:14.5px;font-weight:700;color:var(--ink)}
+.concept-et{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 8px;border-radius:999px}
+.concept-freq{font-size:12px;color:var(--ink-3);margin-left:auto}
+.concept-quote{font-size:13px;color:var(--ink-2);font-style:italic;line-height:1.5;border-left:2px solid var(--acc);padding-left:10px;margin-bottom:6px}
+/* AI code suggestions */
+.ai-suggest-btn{font-size:12px;font-weight:700;color:var(--acc-deep);background:var(--acc-soft);border:none;padding:5px 12px;border-radius:999px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.ai-suggest-btn:hover{background:color-mix(in srgb,var(--acc) 18%,white)}
+.ai-suggest-btn:disabled{opacity:.55;cursor:default}
+.ai-suggest-panel{border-top:1px solid var(--line);margin-top:10px;padding-top:12px}
+.ai-sug-list{display:flex;flex-direction:column;gap:14px}
+.ai-sug-row{padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--line)}
 @media print{
   .rail,.companion,.studioHeader,.studioFooter{display:none!important}
   .app{display:block!important;height:auto!important}

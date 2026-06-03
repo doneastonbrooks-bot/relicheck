@@ -14,7 +14,7 @@ require_method('POST');
 $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
-$body = json_body();
+$body = read_json_body();
 
 $projectId = (int)($body['project_id'] ?? 0);
 $datasetId = (int)($body['dataset_id'] ?? 0);
