@@ -50,7 +50,7 @@ $pipeline = [
     ['id' => 'codebook',    'label' => 'Codebook Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'codebook'],
     ['id' => 'categories',  'label' => 'Category Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'categories'],
     ['id' => 'themes',      'label' => 'Theme Builder',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'themes'],
-    ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes',     'soon' => true],
+    ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes'],
     ['id' => 'trust',       'label' => 'Trustworthiness',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'trust',      'soon' => true],
     ['id' => 'audit',       'label' => 'Audit Trail',      'dot' => 'qual', 'mode' => 'work', 'tool' => 'audit',      'soon' => true],
     ['id' => 'report',      'label' => 'Report Builder',   'dot' => 'qual', 'mode' => 'report'],
@@ -264,6 +264,18 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .theme-card{margin-bottom:16px}
 .cat-check-row{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2);padding:5px 0;cursor:pointer}
 .cat-check-row input[type=checkbox]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
+/* Quote finder */
+.qf-tabs{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:0}
+.qf-tab{font-size:13px;font-weight:700;padding:8px 14px;border:none;background:none;color:var(--ink-3);cursor:pointer;font-family:var(--font);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.13s}
+.qf-tab:hover{color:var(--ink)}
+.qf-tab.on{color:var(--acc-deep);border-bottom-color:var(--acc)}
+.qf-pinned-card{border-color:color-mix(in srgb,var(--acc) 40%,white);background:color-mix(in srgb,var(--acc) 4%,white)}
+.qf-pin-btn{font-size:12.5px;font-weight:700;padding:5px 13px;border-radius:999px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink-2);cursor:pointer;font-family:var(--font);transition:.13s}
+.qf-pin-btn:hover{border-color:var(--acc);color:var(--acc)}
+.qf-do-pin:hover{background:var(--acc-soft)}
+.qf-unpin{border-color:var(--acc);color:var(--acc-deep);background:var(--acc-soft)}
+.qf-unpin:hover{background:#fef2f2;border-color:#c0392b;color:#c0392b}
+.qf-pin-btn:disabled{opacity:.5;cursor:default}
 @media print{
   .rail,.companion,.studioHeader,.studioFooter{display:none!important}
   .app{display:block!important;height:auto!important}

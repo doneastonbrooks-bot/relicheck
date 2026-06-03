@@ -1251,6 +1251,161 @@
       host.innerHTML = '<div class="placeholder">Loading themes...</div>';
       load();
     },
+
+    // ── Quote Finder ──────────────────────────────────────────────────────────
+    quotes: function (host) {
+      var qState = { themes: [], theme: null, segments: [], pinned: [], pinnedIds: [] };
+
+      function load(themeId) {
+        var qs = '/api/qual/get-quotes.php?project_id=' + BOOT.projectId;
+        if (themeId) qs += '&theme_id=' + themeId;
+        return api(qs).then(function (d) {
+          qState.themes    = d.themes    || [];
+          qState.theme     = d.theme     || null;
+          qState.segments  = d.segments  || [];
+          qState.pinned    = d.pinned    || [];
+          qState.pinnedIds = d.pinned_ids || [];
+          renderPage();
+        });
+      }
+
+      function renderPage() {
+        if (!qState.themes.length) {
+          host.innerHTML = '<div class="ws-header"><div class="eyebrow">Quote Finder</div>'
+            + '<h1 class="title">Quote Finder</h1></div>'
+            + '<div class="notice warn">No themes yet. Build themes in the <strong>Theme Builder</strong> step before finding exemplar quotes.</div>';
+          return;
+        }
+
+        // Theme tab bar
+        var tabs = qState.themes.map(function (t) {
+          var active = qState.theme && qState.theme.id == t.id;
+          return '<button class="qf-tab' + (active ? ' on' : '') + '" data-tid="' + t.id + '">'
+            + esc(t.name) + '</button>';
+        }).join('');
+
+        var bodyHtml = '';
+
+        if (!qState.theme) {
+          bodyHtml = '<div class="placeholder" style="margin-top:16px">Select a theme above to find exemplar quotes.</div>';
+        } else {
+          var t = qState.theme;
+
+          // Claim callout
+          bodyHtml += '<div style="padding:14px 18px;background:var(--acc-soft);border-radius:12px;margin-bottom:20px">'
+            + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc-deep);margin-bottom:4px">Finding</div>'
+            + '<div style="font-size:14.5px;color:var(--acc-deep);line-height:1.55;font-style:italic">&ldquo;' + esc(t.interpretive_claim || '') + '&rdquo;</div>'
+            + '</div>';
+
+          // Pinned exemplars
+          var pinnedSegs = qState.segments.filter(function (s) {
+            return qState.pinnedIds.indexOf(+s.id) !== -1;
+          });
+          // Include any pinned segs not in the linked list (edge case)
+          var pinnedBlock = '';
+          if (pinnedSegs.length) {
+            pinnedBlock = '<div style="margin-bottom:24px">'
+              + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--acc-deep);margin-bottom:10px">'
+              + '&#9733; Exemplar quotes (' + pinnedSegs.length + ')</div>'
+              + '<div style="display:flex;flex-direction:column;gap:10px">'
+              + pinnedSegs.map(function (s) { return renderSegCard(s, true); }).join('')
+              + '</div></div>';
+          }
+          bodyHtml += pinnedBlock;
+
+          // Linked segments pool
+          var unpinned = qState.segments.filter(function (s) {
+            return qState.pinnedIds.indexOf(+s.id) === -1;
+          });
+
+          if (!qState.segments.length) {
+            bodyHtml += '<div class="notice warn">No coded segments are linked to this theme yet.'
+              + ' Make sure codes are assigned to categories, and categories are linked to this theme in the Theme Builder.</div>';
+          } else if (unpinned.length) {
+            bodyHtml += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:10px">'
+              + 'Linked segments — ' + unpinned.length + ' remaining</div>'
+              + '<div style="max-height:520px;overflow-y:auto;display:flex;flex-direction:column;gap:10px" id="qf-seg-list">'
+              + unpinned.map(function (s) { return renderSegCard(s, false); }).join('')
+              + '</div>';
+          } else {
+            bodyHtml += '<div style="font-size:13.5px;color:var(--ink-3);margin-top:8px">All linked segments are pinned as exemplars.</div>';
+          }
+        }
+
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Quote Finder</div>'
+          + '<h1 class="title">Quote Finder</h1>'
+          + '<p class="lede">Pin the segments that best evidence each theme. These become the quotes you can cite and defend.</p></div>'
+          + '<div class="qf-tabs" id="qf-tabs">' + tabs + '</div>'
+          + '<div id="qf-body" style="margin-top:20px">' + bodyHtml + '</div>';
+
+        // Tab clicks
+        document.getElementById('qf-tabs').addEventListener('click', function (e) {
+          var btn = e.target.closest('.qf-tab');
+          if (!btn) return;
+          host.innerHTML = '<div class="placeholder">Loading...</div>';
+          load(+btn.dataset.tid);
+        });
+
+        // Pin / unpin delegation
+        host.addEventListener('click', function (e) {
+          var pinBtn = e.target.closest('.qf-pin-btn');
+          if (!pinBtn) return;
+          var segId  = +pinBtn.dataset.seg;
+          var action = pinBtn.dataset.action;
+          pinBtn.disabled = true;
+          api('/api/qual/save-quote.php', {
+            method: 'POST',
+            body: JSON.stringify({
+              project_id: BOOT.projectId,
+              theme_id:   qState.theme.id,
+              segment_id: segId,
+              action:     action,
+            }),
+          }).then(function () { load(qState.theme.id); })
+            .catch(function (ex) { pinBtn.disabled = false; alert('Error: ' + ex.message); });
+        });
+      }
+
+      function renderSegCard(seg, isPinned) {
+        var meta = seg.metadata_json || {};
+        if (typeof meta === 'string') { try { meta = JSON.parse(meta); } catch (_) { meta = {}; } }
+        var metaItems = Object.keys(meta).slice(0, 3).map(function (k) {
+          return '<span class="seg-pid">' + esc(k) + ': ' + esc(String(meta[k])) + '</span>';
+        }).join('');
+        var pid = seg.participant_id ? '<span class="seg-pid">ID: ' + esc(seg.participant_id) + '</span>' : '';
+        var qref = seg.question_ref  ? '<span class="seg-q">' + esc(seg.question_ref) + '</span>' : '';
+
+        var codeTags = (seg.theme_codes || []).map(function (c) {
+          return '<span class="chip" style="font-size:11.5px;padding:2px 9px;background:var(--acc-soft);color:var(--acc-deep)">'
+            + esc(c.code_name) + '<span style="opacity:.55;font-weight:400"> &rarr; ' + esc(c.cat_name) + '</span></span>';
+        }).join('');
+
+        var pinBtn = isPinned
+          ? '<button class="qf-pin-btn qf-unpin" data-seg="' + seg.id + '" data-action="unpin">&#9733; Pinned &mdash; remove</button>'
+          : '<button class="qf-pin-btn qf-do-pin" data-seg="' + seg.id + '" data-action="pin">&#9734; Pin as exemplar</button>';
+
+        return '<div class="seg-card ' + (isPinned ? 'qf-pinned-card' : '') + '" id="qfseg-' + seg.id + '">'
+          + '<div class="seg-meta">' + pid + qref + metaItems + '</div>'
+          + '<div class="seg-text">' + esc(seg.cleaned_text || seg.raw_text) + '</div>'
+          + (codeTags ? '<div class="code-chips" style="margin-bottom:10px">' + codeTags + '</div>' : '')
+          + '<div class="seg-actions">' + pinBtn + '</div>'
+          + '</div>';
+      }
+
+      host.innerHTML = '<div class="placeholder">Loading quotes...</div>';
+      // Auto-select first theme if only one exists
+      api('/api/qual/get-quotes.php?project_id=' + BOOT.projectId).then(function (d) {
+        if (d.themes && d.themes.length === 1) {
+          load(d.themes[0].id);
+        } else {
+          qState.themes = d.themes || [];
+          qState.theme  = null;
+          renderPage();
+        }
+      }).catch(function (e) {
+        host.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>';
+      });
+    },
   };
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1292,6 +1447,7 @@
     codebook:    '<p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is better than <strong>"support."</strong></p><p>Write definitions specific enough that a second coder would apply the code to the same responses.</p>',
     categories:  '<p>Categories group related codes into higher-level buckets. They are not themes yet -- they are organizational containers.</p><p>A good category collects codes that share a <strong>common focus</strong>. Assign each code to exactly one category. Unassigned codes stay visible at the top until you place them.</p>',
     themes:      '<p>A theme is <strong>an interpretive claim</strong>, not a topic label. "Communication" is a topic. "Participants felt excluded from communication channels that shaped their work" is a theme.</p><p>Every theme needs a claim before it can be saved. The claim is your finding -- it states what the data shows, not just what it is about.</p><p>Link supporting categories to show which evidence grounds the theme.</p>',
+    quotes:      '<p>Exemplar quotes are the specific segments you have chosen as the strongest evidence for each theme. They are not just examples -- they are the passages you are prepared to cite and defend.</p><p>Only segments coded through a theme\'s categories appear here. If a segment is missing, check that the relevant code is assigned to a category, and that the category is linked to this theme.</p>',
     report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
   };
 
