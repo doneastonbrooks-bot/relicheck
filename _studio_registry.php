@@ -131,7 +131,7 @@ return [
   'qual' => [
     'slug'           => 'qual',
     'name'           => 'Qualitative Analysis Studio',
-    'mark'           => '/Qual%20Studio.png',
+    'mark'           => '/Qualitative Analysis.png',
     'description'    => 'Move from raw text to trustworthy qualitative interpretation. Code responses, build a codebook, develop evidence-supported themes, and review trustworthiness.',
     'status'         => 'dev',
     'status_label'   => 'In development',
