@@ -1298,7 +1298,7 @@
   // ── Init ───────────────────────────────────────────────────────────────────
   document.addEventListener('DOMContentLoaded', function () {
     StudioHeader.init({
-      logoSrc:      '/Qual-Studio-long.png',
+      logoSrc:      '/Qualitative Analysis.png',
       logoAlt:      'Qualitative Analysis Studio',
       logoHeight:   70,
       projectLabel: BOOT.projectLabel || 'New project',
