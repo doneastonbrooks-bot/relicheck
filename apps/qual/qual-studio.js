@@ -1146,6 +1146,358 @@
         });
       });
     },
+    // ── Dual Coder ────────────────────────────────────────────────────────────
+    dual_coder: function (host) {
+      var dcState = {
+        tab:           'team',     // 'team' | 'review'
+        inviteData:    null,       // from get-invites
+        disagData:     null,       // from get-disagreements
+        reviewFilter:  'disagree', // 'all' | 'disagree' | 'agree'
+      };
+
+      function renderPage() {
+        var html = '<div class="ws-header"><div class="eyebrow">Dual Coder</div>'
+          + '<h1 class="title">Dual Coder</h1>'
+          + '<p class="lede">Invite a second person to independently code the same segments. Compare your decisions to measure reliability and strengthen your findings.</p></div>'
+          + '<div style="display:flex;gap:0;border-bottom:2px solid var(--line);margin-bottom:22px">'
+          + _tab('team',   'Team',              dcState.tab)
+          + _tab('review', 'Disagreement Review', dcState.tab)
+          + '</div>'
+          + '<div id="dc-panel"></div>';
+
+        host.innerHTML = html;
+
+        host.addEventListener('click', function (e) {
+          var t = e.target.closest('.dc-tab');
+          if (t) { dcState.tab = t.dataset.tab; renderPage(); }
+        });
+
+        if (dcState.tab === 'team') renderTeam();
+        else renderReview();
+      }
+
+      function _tab(id, label, active) {
+        return '<button class="dc-tab" data-tab="' + id + '" style="'
+          + 'font-size:13.5px;font-weight:700;padding:9px 18px;border:none;background:none;cursor:pointer;font-family:inherit;'
+          + 'border-bottom:2px solid ' + (active === id ? 'var(--acc)' : 'transparent') + ';'
+          + 'color:' + (active === id ? 'var(--acc-deep)' : 'var(--ink-3)') + ';'
+          + 'margin-bottom:-2px">' + label + '</button>';
+      }
+
+      // ── Team tab ──────────────────────────────────────────────────────────
+      function renderTeam() {
+        var panel = document.getElementById('dc-panel');
+        if (!panel) return;
+        if (dcState.inviteData) { renderTeamContent(panel, dcState.inviteData); return; }
+        panel.innerHTML = '<div class="notice info">Loading team&hellip;</div>';
+        api('/api/qual/get-invites.php?project_id=' + BOOT.projectId)
+          .then(function (d) { dcState.inviteData = d; renderTeamContent(panel, d); })
+          .catch(function (e) { panel.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>'; });
+      }
+
+      function renderTeamContent(panel, d) {
+        var total   = d.total_segments || 0;
+        var lead    = d.lead   || {};
+        var invites = d.invites || [];
+
+        var activeInvite = invites.find(function (i) { return i.status === 'pending' || i.status === 'accepted'; });
+
+        // ── Coder status cards ──────────────────────────────────────────────
+        var leadPct   = total > 0 ? Math.round((lead.coded || 0) / total * 100) : 0;
+        var leadBar   = _progressBar(leadPct, 'var(--acc)');
+        var coderCards = '<div class="grid2" style="gap:14px;margin-bottom:22px">'
+          + '<div class="panel"><div class="panel-b" style="padding:16px">'
+          + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc);margin-bottom:4px">Lead coder (you)</div>'
+          + '<div style="font-size:15px;font-weight:700;margin-bottom:6px">' + esc(lead.name || 'You') + '</div>'
+          + '<div style="font-size:13px;color:var(--ink-3);margin-bottom:8px">' + (lead.coded || 0) + ' of ' + total + ' segments coded</div>'
+          + leadBar
+          + '</div></div>';
+
+        if (activeInvite && activeInvite.status === 'accepted') {
+          var sc      = activeInvite;
+          var scPct   = total > 0 ? Math.round((sc.coded || 0) / total * 100) : 0;
+          var scBar   = _progressBar(scPct, '#0A6FE8');
+          coderCards += '<div class="panel"><div class="panel-b" style="padding:16px">'
+            + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#0A6FE8;margin-bottom:4px">Second coder</div>'
+            + '<div style="font-size:15px;font-weight:700;margin-bottom:6px">' + esc(sc.coder_name || sc.email) + '</div>'
+            + '<div style="font-size:13px;color:var(--ink-3);margin-bottom:8px">' + (sc.coded || 0) + ' of ' + total + ' segments coded</div>'
+            + scBar
+            + '</div></div>';
+        } else {
+          coderCards += '<div class="panel" style="border-style:dashed"><div class="panel-b" style="padding:16px;text-align:center;color:var(--ink-3)">'
+            + '<div style="font-size:28px;margin-bottom:8px">&#43;</div>'
+            + '<div style="font-size:14px;font-weight:600;margin-bottom:4px">Second coder</div>'
+            + '<div style="font-size:13px">Not yet assigned</div>'
+            + '</div></div>';
+        }
+        coderCards += '</div>';
+
+        // ── Active invite ───────────────────────────────────────────────────
+        var inviteSection = '';
+        if (activeInvite) {
+          var badgeColor = activeInvite.status === 'accepted' ? '#1f9e44' : '#d97706';
+          var badgeBg    = activeInvite.status === 'accepted' ? '#e9f7ee' : '#fff8ee';
+          inviteSection = '<div class="panel" style="margin-bottom:18px"><div class="panel-h"><h3>Active invite</h3></div><div class="panel-b">'
+            + '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">'
+            + '<span style="font-weight:700">' + esc(activeInvite.email) + '</span>'
+            + '<span style="font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:' + badgeBg + ';color:' + badgeColor + '">'
+            + esc(activeInvite.status) + '</span>'
+            + '</div>';
+
+          if (activeInvite.status === 'pending') {
+            inviteSection += '<div style="font-size:13px;color:var(--ink-3);margin-bottom:10px">Share this link with the coder. They must log in to ReliCheck to accept it.</div>'
+              + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+              + '<input id="inv-link" value="' + esc(activeInvite.invite_url) + '" readonly style="flex:1;padding:8px 12px;font-size:12.5px;border:1.5px solid var(--line);border-radius:8px;background:var(--bg);font-family:monospace;min-width:0">'
+              + '<button class="btn" id="dc-copy-btn" data-url="' + esc(activeInvite.invite_url) + '">Copy link</button>'
+              + '</div>';
+          }
+
+          inviteSection += '<div class="btn-row" style="margin-top:14px">'
+            + '<button class="btn" id="dc-revoke-btn" data-invite="' + activeInvite.id + '">Revoke invite</button>'
+            + (activeInvite.status === 'pending' ? '' :
+               '<button class="btn primary" id="dc-review-btn">View disagreements &rarr;</button>')
+            + '</div>'
+            + '</div></div>';
+        } else {
+          // No active invite — show create form
+          inviteSection = '<div class="panel" style="margin-bottom:18px"><div class="panel-h"><h3>Invite a second coder</h3></div><div class="panel-b">'
+            + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 14px">The second coder will receive a link giving them access to code this project\'s segments. They use the same codebook you\'ve built — they cannot edit project settings or build themes.</p>'
+            + '<div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">'
+            + '<div class="field" style="flex:1;min-width:200px;margin-bottom:0">'
+            + '<label>Email address</label>'
+            + '<input id="dc-email" type="email" placeholder="colleague@example.com"></div>'
+            + '<button class="btn primary" id="dc-invite-btn">Generate invite link</button>'
+            + '</div>'
+            + '<div id="dc-invite-result" style="margin-top:14px"></div>'
+            + '</div></div>';
+        }
+
+        // ── Past invites ────────────────────────────────────────────────────
+        var revokedInvites = invites.filter(function (i) { return i.status === 'revoked'; });
+        var historySection = '';
+        if (revokedInvites.length) {
+          historySection = '<details style="font-size:13px;color:var(--ink-3)"><summary style="cursor:pointer;margin-bottom:8px">Revoked invites (' + revokedInvites.length + ')</summary>'
+            + revokedInvites.map(function (i) {
+                return '<div style="padding:6px 0;border-bottom:1px solid var(--line-2)">' + esc(i.email) + ' — revoked</div>';
+              }).join('')
+            + '</details>';
+        }
+
+        panel.innerHTML = coderCards + inviteSection + historySection;
+
+        // Wire events
+        var copyBtn = document.getElementById('dc-copy-btn');
+        if (copyBtn) {
+          copyBtn.addEventListener('click', function () {
+            var url = this.dataset.url;
+            navigator.clipboard.writeText(url).then(function () {
+              copyBtn.textContent = 'Copied!';
+              setTimeout(function () { copyBtn.textContent = 'Copy link'; }, 2000);
+            }).catch(function () {
+              var inp = document.getElementById('inv-link');
+              if (inp) { inp.select(); document.execCommand('copy'); }
+              copyBtn.textContent = 'Copied!';
+              setTimeout(function () { copyBtn.textContent = 'Copy link'; }, 2000);
+            });
+          });
+        }
+
+        var revokeBtn = document.getElementById('dc-revoke-btn');
+        if (revokeBtn) {
+          revokeBtn.addEventListener('click', function () {
+            var invId = +this.dataset.invite;
+            if (!confirm('Revoke this invite? The second coder will lose access to code this project.')) return;
+            revokeBtn.disabled = true;
+            api('/api/qual/revoke-invite.php', {
+              method: 'POST',
+              body: JSON.stringify({ project_id: BOOT.projectId, invite_id: invId }),
+            }).then(function () {
+              dcState.inviteData = null;
+              renderTeam();
+            }).catch(function (e) { alert('Error: ' + e.message); revokeBtn.disabled = false; });
+          });
+        }
+
+        var reviewBtn = document.getElementById('dc-review-btn');
+        if (reviewBtn) {
+          reviewBtn.addEventListener('click', function () { dcState.tab = 'review'; renderPage(); });
+        }
+
+        var inviteBtn = document.getElementById('dc-invite-btn');
+        if (inviteBtn) {
+          inviteBtn.addEventListener('click', function () {
+            var email = (document.getElementById('dc-email').value || '').trim();
+            if (!email) { alert('Enter an email address.'); return; }
+            inviteBtn.disabled = true; inviteBtn.textContent = 'Generating...';
+            var result = document.getElementById('dc-invite-result');
+            api('/api/qual/invite-coder.php', {
+              method: 'POST',
+              body: JSON.stringify({ project_id: BOOT.projectId, email: email }),
+            }).then(function (r) {
+              dcState.inviteData = null;
+              if (result) {
+                result.innerHTML = '<div class="notice info" style="margin:0">'
+                  + '<div style="margin-bottom:8px;font-weight:700">Invite link generated</div>'
+                  + '<div style="font-size:12.5px;margin-bottom:10px;color:var(--ink-2)">Share this link with ' + esc(email) + '. They must log in to ReliCheck to accept it.</div>'
+                  + '<div style="display:flex;gap:8px;align-items:center">'
+                  + '<input id="new-inv-link" value="' + esc(r.invite_url) + '" readonly style="flex:1;padding:8px 12px;font-size:12px;border:1.5px solid var(--acc);border-radius:8px;background:#fff;font-family:monospace;min-width:0">'
+                  + '<button class="btn" id="new-copy-btn" data-url="' + esc(r.invite_url) + '">Copy</button>'
+                  + '</div></div>';
+                var cb = document.getElementById('new-copy-btn');
+                if (cb) cb.addEventListener('click', function () {
+                  navigator.clipboard.writeText(this.dataset.url).catch(function () {});
+                  cb.textContent = 'Copied!';
+                  setTimeout(function () { cb.textContent = 'Copy'; }, 2000);
+                });
+              }
+              inviteBtn.disabled = false; inviteBtn.textContent = 'Generate invite link';
+              // Reload team after short delay
+              setTimeout(function () { dcState.inviteData = null; renderTeam(); }, 1200);
+            }).catch(function (e) {
+              if (result) result.innerHTML = '<div class="notice err">' + esc(e.message) + '</div>';
+              inviteBtn.disabled = false; inviteBtn.textContent = 'Generate invite link';
+            });
+          });
+        }
+      }
+
+      function _progressBar(pct, color) {
+        return '<div style="background:var(--bg);border-radius:999px;height:6px;overflow:hidden">'
+          + '<div style="height:6px;border-radius:999px;background:' + color + ';width:' + pct + '%"></div>'
+          + '</div>'
+          + '<div style="font-size:11.5px;color:var(--ink-3);margin-top:4px;text-align:right">' + pct + '%</div>';
+      }
+
+      // ── Review tab ────────────────────────────────────────────────────────
+      function renderReview() {
+        var panel = document.getElementById('dc-panel');
+        if (!panel) return;
+        if (dcState.disagData) { renderReviewContent(panel, dcState.disagData); return; }
+        panel.innerHTML = '<div class="notice info">Comparing coder decisions&hellip;</div>';
+        api('/api/qual/get-disagreements.php?project_id=' + BOOT.projectId)
+          .then(function (d) { dcState.disagData = d; renderReviewContent(panel, d); })
+          .catch(function (e) { panel.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>'; });
+      }
+
+      function renderReviewContent(panel, d) {
+        if (!d.ready) {
+          panel.innerHTML = '<div class="placeholder">'
+            + '<div style="font-size:24px;margin-bottom:10px">&#128101;</div>'
+            + '<strong>No second coder yet</strong><br>'
+            + '<span style="font-size:13px;color:var(--ink-3)">'
+            + esc(d.reason || 'Invite a second coder in the Team tab.')
+            + '</span></div>';
+          return;
+        }
+
+        var stats   = d.stats || {};
+        var coders  = d.coders || {};
+        var lead    = coders.lead   || {};
+        var second  = coders.second || {};
+        var segs    = d.segments || [];
+
+        var pct     = stats.agreement_pct;
+        var pctColor = pct === null ? 'var(--ink-3)' : pct >= 75 ? '#1f9e44' : pct >= 60 ? '#d97706' : '#c0392b';
+
+        var html = '<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px">'
+          + _statCard(stats.both_coded    || 0, 'Both coded')
+          + _statCard(stats.agreements    || 0, 'Agreements')
+          + _statCard(stats.disagreements || 0, 'Disagreements')
+          + '<div class="stat-card"><div class="num" style="color:' + pctColor + '">' + (pct !== null ? pct + '%' : '—') + '</div><div class="lbl">Agreement rate</div></div>'
+          + '</div>';
+
+        if (!segs.length) {
+          html += '<div class="placeholder">No segments have been coded by both coders yet. Check that ' + esc(second.name || 'the second coder') + ' has coded some segments first.</div>';
+          panel.innerHTML = html;
+          return;
+        }
+
+        html += '<div style="font-size:12.5px;color:var(--ink-2);margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:8px">'
+          + '<strong>' + esc(lead.name || 'Lead') + '</strong> vs <strong>' + esc(second.name || 'Second coder') + '</strong>'
+          + (stats.both_coded < segs.length + 1 ? '' : '')
+          + '</div>'
+          + '<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">'
+          + _rfBtn('disagree', 'Disagreements (' + (stats.disagreements || 0) + ')',  dcState.reviewFilter)
+          + _rfBtn('agree',    'Agreements ('    + (stats.agreements    || 0) + ')',   dcState.reviewFilter)
+          + _rfBtn('all',      'All (' + segs.length + ')',                            dcState.reviewFilter)
+          + '</div>'
+          + '<div id="dc-seg-list">';
+
+        var filtered = segs.filter(function (s) {
+          if (dcState.reviewFilter === 'disagree') return !s.is_agreement;
+          if (dcState.reviewFilter === 'agree')    return  s.is_agreement;
+          return true;
+        });
+
+        if (!filtered.length) {
+          html += '<div class="placeholder">No segments match this filter.</div>';
+        } else {
+          html += filtered.map(function (s) {
+            var meta = s.metadata_json || {};
+            var metaItems = Object.keys(meta).slice(0, 3).map(function (k) {
+              return '<span class="seg-pid">' + esc(k) + ': ' + esc(String(meta[k])) + '</span>';
+            }).join('');
+            var pid  = s.participant_id ? '<span class="seg-pid">ID: ' + esc(s.participant_id) + '</span>' : '';
+            var qref = s.question_ref   ? '<span class="seg-q">'  + esc(s.question_ref)   + '</span>' : '';
+
+            var agreedChips = (s.agreed || []).map(function (c) {
+              return '<span class="chip" style="background:var(--green-soft);color:var(--green)">' + esc(c.name) + '</span>';
+            }).join('');
+
+            var onlyLeadChips = (s.only_lead || []).map(function (c) {
+              return '<span class="chip" style="background:#fff8ee;color:#b45309">' + esc(c.name) + '</span>';
+            }).join('');
+
+            var onlySecondChips = (s.only_second || []).map(function (c) {
+              return '<span class="chip" style="background:#EEF3FA;color:#085fcc">' + esc(c.name) + '</span>';
+            }).join('');
+
+            var badge = s.is_agreement
+              ? '<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--green-soft);color:var(--green)">Agreement</span>'
+              : '<span style="font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:#fff8ee;color:#b45309">Disagreement</span>';
+
+            var coderRows = '<div style="margin-top:12px;display:flex;flex-direction:column;gap:8px">';
+            coderRows += '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+              + '<div style="font-size:11.5px;font-weight:700;color:var(--ink-3);width:80px;flex-shrink:0;padding-top:3px">Lead</div>'
+              + '<div class="code-chips" style="margin:0;flex:1">'
+              + (agreedChips + onlyLeadChips || '<span style="font-size:12.5px;color:var(--ink-3);font-style:italic">No codes applied</span>')
+              + '</div></div>';
+            coderRows += '<div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">'
+              + '<div style="font-size:11.5px;font-weight:700;color:#085fcc;width:80px;flex-shrink:0;padding-top:3px">Second</div>'
+              + '<div class="code-chips" style="margin:0;flex:1">'
+              + (agreedChips + onlySecondChips || '<span style="font-size:12.5px;color:var(--ink-3);font-style:italic">No codes applied</span>')
+              + '</div></div>';
+            coderRows += '</div>';
+
+            return '<div class="seg-card" style="margin-bottom:12px">'
+              + '<div class="seg-meta">' + pid + qref + metaItems + badge + '</div>'
+              + '<div class="seg-text" style="margin-bottom:8px">' + esc(s.text) + '</div>'
+              + coderRows
+              + '</div>';
+          }).join('');
+        }
+
+        html += '</div>';
+        panel.innerHTML = html;
+
+        // Filter button events
+        panel.querySelectorAll('.dc-rf-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            dcState.reviewFilter = btn.dataset.filter;
+            renderReviewContent(panel, d);
+          });
+        });
+      }
+
+      function _rfBtn(id, label, active) {
+        return '<button class="dc-rf-btn filter-btn' + (active === id ? ' active' : '') + '" data-filter="' + id + '">' + label + '</button>';
+      }
+
+      // ── Init ──────────────────────────────────────────────────────────────
+      host.innerHTML = '<div class="placeholder">Loading&hellip;</div>';
+      renderPage();
+    },
+
     // ── Category Builder ──────────────────────────────────────────────────────
     categories: function (host) {
       var catState = { categories: [], unassigned: [] };
@@ -2028,6 +2380,7 @@
     familiarize: '<p>Read through the data before coding. The First Impressions Memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work.</p><p>The <strong>Linguistic Concept Scan</strong> uses ReliCheck Intelligence to surface recurring concepts across the corpus — organized by evidence type — before you begin formal coding. Results are cached and can be re-run at any time.</p>',
     coding:      '<p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p><p>Use <strong>Suggest codes</strong> (the star button on each segment) to get AI suggestions classified by evidence type: lexical, phrase, semantic, or syntactic. Apply suggestions you agree with; dismiss the rest.</p>',
     codebook:    '<p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is better than <strong>"support."</strong></p><p>Write definitions specific enough that a second coder would apply the code to the same responses.</p>',
+    dual_coder:  '<p><strong>Dual coding</strong> strengthens credibility by having a second person independently apply your codebook to the same segments. Disagreements are not failures -- they reveal ambiguous codes or text that genuinely supports multiple interpretations.</p><p><strong>Team tab:</strong> Generate an invite link to share with your second coder. They log into ReliCheck and code using the same codebook you built -- they cannot edit the project or build themes.</p><p><strong>Disagreement Review tab:</strong> Once they have coded, compare decisions segment by segment. Use disagreements to refine code definitions in the Codebook Builder before building categories.</p><p>Cohen\'s kappa for the full project is shown in the <strong>Trustworthiness</strong> step.</p>',
     categories:  '<p>Categories group related codes into higher-level buckets. They are not themes yet -- they are organizational containers.</p><p>A good category collects codes that share a <strong>common focus</strong>. Assign each code to exactly one category. Unassigned codes stay visible at the top until you place them.</p>',
     themes:      '<p>A theme is <strong>an interpretive claim</strong>, not a topic label. "Communication" is a topic. "Participants felt excluded from communication channels that shaped their work" is a theme.</p><p>Every theme needs a claim before it can be saved. The claim is your finding -- it states what the data shows, not just what it is about.</p><p>Link supporting categories to show which evidence grounds the theme.</p>',
     quotes:      '<p>Exemplar quotes are the specific segments you have chosen as the strongest evidence for each theme. They are not just examples -- they are the passages you are prepared to cite and defend.</p><p>Only segments coded through a theme\'s categories appear here. If a segment is missing, check that the relevant code is assigned to a category, and that the category is linked to this theme.</p>',

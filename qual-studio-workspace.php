@@ -48,6 +48,7 @@ $pipeline = [
     ['id' => 'familiarize', 'label' => 'Familiarization',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'familiarize'],
     ['id' => 'coding',      'label' => 'Coding Workspace', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'coding'],
     ['id' => 'codebook',    'label' => 'Codebook Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'codebook'],
+    ['id' => 'dual_coder',  'label' => 'Dual Coder',       'dot' => 'qual', 'mode' => 'work', 'tool' => 'dual_coder'],
     ['id' => 'categories',  'label' => 'Category Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'categories'],
     ['id' => 'themes',      'label' => 'Theme Builder',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'themes'],
     ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes'],

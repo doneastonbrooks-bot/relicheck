@@ -20,7 +20,7 @@ $segmentId = (int)($body['segment_id'] ?? 0);
 $codeId    = (int)($body['code_id']    ?? 0);
 if ($projectId <= 0 || $segmentId <= 0 || $codeId <= 0) fail('bad_input', 'project_id, segment_id, code_id required.');
 
-qual_require_project($pdo, $uid, $projectId);
+qual_check_access($pdo, $uid, $projectId);
 
 // Verify segment + code belong to this project
 $seg = $pdo->prepare('SELECT id FROM qual_segments WHERE id=:id AND project_id=:p LIMIT 1');

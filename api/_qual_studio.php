@@ -26,7 +26,7 @@ function qual_ensure_schema(PDO $pdo): void
 }
 
 /**
- * Load a qual_project row and verify it belongs to $uid.
+ * Load a qual_project row and verify it belongs to $uid (ownership check).
  * Exits with a 403/404 fail() if not found or not owned.
  */
 function qual_require_project(PDO $pdo, int $uid, int $projectId): array
@@ -39,6 +39,39 @@ function qual_require_project(PDO $pdo, int $uid, int $projectId): array
     $row = $s->fetch(PDO::FETCH_ASSOC);
     if (!$row) fail('not_found', 'Project not found.', 404);
     return $row;
+}
+
+/**
+ * Load a qual_project row for $uid as either the project owner OR an accepted
+ * second coder (has a row in qual_coder_invites with status='accepted' and
+ * accepted_by=$uid). Use this in endpoints that second coders need to reach
+ * (get-segments, get-codes, apply-code, remove-code).
+ */
+function qual_check_access(PDO $pdo, int $uid, int $projectId): array
+{
+    qual_ensure_schema($pdo);
+
+    // Owner path (fast, most common)
+    $s = $pdo->prepare(
+        "SELECT * FROM qual_projects WHERE id = :id AND user_id = :uid AND status <> 'archived' LIMIT 1"
+    );
+    $s->execute([':id' => $projectId, ':uid' => $uid]);
+    $row = $s->fetch(PDO::FETCH_ASSOC);
+    if ($row) return $row;
+
+    // Accepted-coder path
+    $s2 = $pdo->prepare(
+        "SELECT qp.* FROM qual_coder_invites qi
+         JOIN qual_projects qp ON qp.id = qi.project_id
+         WHERE qi.project_id = :pid AND qi.accepted_by = :uid
+           AND qi.status = 'accepted' AND qp.status <> 'archived'
+         LIMIT 1"
+    );
+    $s2->execute([':pid' => $projectId, ':uid' => $uid]);
+    $row2 = $s2->fetch(PDO::FETCH_ASSOC);
+    if ($row2) return $row2;
+
+    fail('not_found', 'Project not found.', 404);
 }
 
 /**

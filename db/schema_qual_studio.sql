@@ -155,6 +155,22 @@ CREATE TABLE IF NOT EXISTS qual_theme_quotes (
     KEY idx_qtq_theme (theme_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Dual-coder invites: tokens that give a second user coding access to a project
+CREATE TABLE IF NOT EXISTS qual_coder_invites (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    project_id  BIGINT UNSIGNED NOT NULL,
+    invited_by  BIGINT UNSIGNED NOT NULL,
+    email       VARCHAR(255)    NOT NULL,
+    token       VARCHAR(64)     NOT NULL,
+    status      VARCHAR(16)     NOT NULL DEFAULT 'pending',
+    accepted_by BIGINT UNSIGNED NULL,
+    created_at  DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    accepted_at DATETIME        NULL,
+    UNIQUE KEY uq_qci_token (token),
+    KEY idx_qci_proj  (project_id),
+    KEY idx_qci_email (project_id, email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Audit trail: every significant user or AI action
 CREATE TABLE IF NOT EXISTS qual_audit_trail (
     id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

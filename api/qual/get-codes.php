@@ -14,7 +14,7 @@ $uid       = (int)$user['id'];
 $projectId = (int)($_GET['project_id'] ?? 0);
 if ($projectId <= 0) fail('bad_input', 'Missing project_id.');
 
-qual_require_project($pdo, $uid, $projectId);
+qual_check_access($pdo, $uid, $projectId);
 
 $s = $pdo->prepare(
     "SELECT c.*,
