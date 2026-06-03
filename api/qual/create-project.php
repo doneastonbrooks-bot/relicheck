@@ -9,7 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../_helpers.php';
 require_once __DIR__ . '/../_session.php';
 require_once __DIR__ . '/../_rc_projects.php';
-require_once __DIR__ . '/_qual_studio.php';   // wait — path is relative to this file
+require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('POST');
 $user = require_auth();
