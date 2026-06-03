@@ -2,7 +2,7 @@
 // Ecosystem project helpers — RE Infrastructure Item 3.
 //
 // rc_projects is the lightweight parent record that spans all studios.
-// Studio tables (survey_projects, analysis_projects, mm_projects) point up
+// Studio tables (survey_projects, mm_projects) point up
 // to it via rc_project_id (nullable — null means a legacy row created before
 // this infrastructure existed). variable_metadata gains the same FK so
 // cross-studio data-dictionary queries have a single join target.
@@ -37,7 +37,7 @@ function rc_ensure_project_schema(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
-    foreach (['survey_projects', 'analysis_projects', 'mm_projects'] as $tbl) {
+    foreach (['survey_projects', 'mm_projects'] as $tbl) {
         try {
             $c = $pdo->query("SHOW COLUMNS FROM `{$tbl}` LIKE 'rc_project_id'")->fetch();
             if (!$c) {
@@ -46,9 +46,7 @@ function rc_ensure_project_schema(PDO $pdo): void
                     ADD KEY idx_{$tbl}_rc (rc_project_id)");
             }
         } catch (Throwable $e) {
-            // Table may not exist yet (e.g. analysis_projects on a fresh DB
-            // before analysis_ensure_schema runs) — ignore, it will be added
-            // next time this function runs after the table exists.
+            // Table may not exist yet — ignore, will be added next time.
         }
     }
 
@@ -93,11 +91,11 @@ function rc_set_project_dataset(PDO $pdo, int $rcProjectId, int $datasetId): voi
 /**
  * Return the rc_project_id stored on a studio row, or null for legacy rows.
  *
- * @param string $table  One of: survey_projects, analysis_projects, mm_projects
+ * @param string $table  One of: survey_projects, mm_projects
  */
 function rc_project_id_for_studio(PDO $pdo, string $table, int $studioId): ?int
 {
-    static $allowed = ['survey_projects' => true, 'analysis_projects' => true, 'mm_projects' => true];
+    static $allowed = ['survey_projects' => true, 'mm_projects' => true];
     if (!isset($allowed[$table])) return null;
     try {
         $s = $pdo->prepare("SELECT rc_project_id FROM `{$table}` WHERE id = :id LIMIT 1");

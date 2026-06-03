@@ -312,21 +312,19 @@
   }
 
   function attach(datasetId, title, ctx) {
-    if (ctx.projectId) {
-      const url = ctx.projectType === 'mm'
-        ? '/api/mm/link-dataset.php'
-        : '/api/analysis/link-dataset.php';
-      return fetch(url, {
+    // Standalone apps that return datasetId directly (rssi, qual).
+    if (ctx.projectType === 'rssi') {
+      return Promise.resolve(datasetId);
+    }
+    // MM with an existing project — link dataset to it.
+    if (ctx.projectId && ctx.projectType === 'mm') {
+      return fetch('/api/mm/link-dataset.php', {
         method: 'POST', credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project_id: ctx.projectId, dataset_id: datasetId }),
       })
         .then(function (r) { return r.json(); })
         .then(function (d) { if (!d || !d.ok) throw new Error('Link failed.'); return ctx.projectId; });
-    }
-    // Standalone apps (e.g. rssi) that have no project to link — return the dataset id directly.
-    if (ctx.projectType === 'rssi') {
-      return Promise.resolve(datasetId);
     }
     // MM with no pre-existing project — create the project then link.
     if (ctx.projectType === 'mm') {
@@ -348,16 +346,7 @@
             .then(function (d2) { if (!d2 || !d2.ok) throw new Error('Link failed.'); return pid; });
         });
     }
-    return fetch('/api/analysis/projects.php', {
-      method: 'POST', credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ kind: ctx.kind || 'descriptive', title: title, dataset_id: datasetId }),
-    })
-      .then(function (r) { return r.json(); })
-      .then(function (d) {
-        if (!d || !d.ok || !d.project) throw new Error('Project create failed.');
-        return d.project.id;
-      });
+    return Promise.reject(new Error('Unknown projectType: ' + (ctx.projectType || 'none')));
   }
 
   // ── Drop zone (shared between open() and embed()) ────────────────────────────

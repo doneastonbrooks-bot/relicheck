@@ -174,28 +174,9 @@
         return;
       }
 
-      // Descriptive or Inferential: create analysis project, then redirect.
-      fetch('/api/analysis/projects.php', {
-        method: 'POST', credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind: kind, dataset_id: parseInt(dsId, 10), title: 'RSSI dataset analysis' }),
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
-          if (!d || !d.ok || !d.project) throw new Error('Could not create project.');
-          var route = kind === 'descriptive'
-            ? '/descriptive-analysis-workspace.php'
-            : '/inferential-statistics-workspace.php';
-          window.location.href = route + '?project_id=' + encodeURIComponent(d.project.id);
-        })
-        .catch(function (e) { if (msg) msg.textContent = 'Could not open studio: ' + (e && e.message ? e.message : 'try again.'); });
     }
 
-    var da = document.getElementById('rptOpenDA');
-    var is = document.getElementById('rptOpenIS');
     var mm = document.getElementById('rptOpenMM');
-    if (da) da.addEventListener('click', function () { openStudio('descriptive'); });
-    if (is) is.addEventListener('click', function () { openStudio('inferential'); });
     if (mm) mm.addEventListener('click', function () { openStudio('mm'); });
   }
 

@@ -2934,17 +2934,15 @@ const Screens = {
         ${dest(ICONS.rssi,'Run RSSI','Analyze your collected data through the ReliCheck Survey Strength Index. RSSI reviews reliability, validity evidence, response quality, item performance, and reporting readiness.',false,
           state.projectId ? `window.location.href='/rssi-app.php?project_id=${encodeURIComponent(state.projectId)}'` : `window.location.href='/rssi-app.php'`,
           'Open RSSI')}
-        ${dest(ICONS.studio,'Go to a Studio','Take your data directly into a studio for deeper analysis — frequencies, group comparisons, inferential tests, mixed methods, or qualitative themes.',false,
-          state.projectId ? `window.location.href='/descriptive-analysis-workspace.php?project_id=${encodeURIComponent(state.projectId)}'` : `window.location.href='/descriptive-analysis-studio.php'`,
-          'Choose a studio')}
+        ${dest(ICONS.studio,'Go to a Studio','Take your data directly into a studio for deeper analysis — mixed methods or qualitative themes.',false,
+          `window.location.href='/mmstudioV4.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,
+          'Open MM Studio')}
       </div>
-      <div class="grid g3" style="margin-top:18px">
-        ${dest('<path d="M3 17l5-6 4 3 5-7 4 4"/>','Descriptive Studio','Frequencies, distributions, group summaries, item rankings.',false,
-          `window.location.href='/descriptive-analysis-workspace.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
-        ${dest('<path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/>','Inferential Studio','t-tests, ANOVA, correlation, regression, effect sizes.',false,
-          `window.location.href='/inferential-statistics-workspace.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
+      <div class="grid g2" style="margin-top:18px">
         ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','MM Studio','Mixed methods — qualitative themes + quantitative analysis together.',false,
           `window.location.href='/mmstudioV4.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
+        ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','Qualitative Studio','Code responses, build themes, and develop evidence-supported qualitative interpretations.',false,
+          `window.location.href='/qual-studio-workspace.php'`,'Open')}
       </div>
       <div class="btn-row">
         <button class="btn" onclick="App.go('retrieve')">← Responses</button>

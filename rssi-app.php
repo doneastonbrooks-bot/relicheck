@@ -829,12 +829,10 @@ $ITEMS = [
   <div class="jr-actions"><a class="jr-btn" id="rptGenerate"><?= jr_icon('doc') ?> Generate selected report</a><a class="jr-btn ghost" id="rptAll">Combined report (all sections)</a><a class="jr-btn ghost" data-go="orientation">Back to start</a></div>
   <div class="rel-save-status" id="rptStatus" style="display:none;margin-top:14px"></div>
 
-  <!-- RE Item 5: hand off to a Studio for deeper analysis. Shown only when a dataset is loaded. -->
+  <!-- Hand off to a Studio for deeper analysis. Shown only when a dataset is loaded. -->
   <div id="rptStudioHandoff" style="display:none;margin-top:28px;padding-top:22px;border-top:1px solid var(--line)">
     <p style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-5);margin-bottom:12px">Take it further</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button type="button" class="jr-btn ghost" id="rptOpenDA"><?= jr_icon('layers') ?> Descriptive Analysis</button>
-      <button type="button" class="jr-btn ghost" id="rptOpenIS"><?= jr_icon('arrow') ?> Inferential Statistics</button>
       <button type="button" class="jr-btn ghost" id="rptOpenMM"><?= jr_icon('flask') ?> Mixed Methods</button>
     </div>
     <p style="font-size:12.5px;color:var(--ink-5);margin-top:10px" id="rptStudioMsg"></p>

@@ -214,9 +214,7 @@ function sds_ensure_schema(PDO $pdo): void
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci",
 
         // Variable metadata: the data dictionary for every variable in a project.
-        // project_type disambiguates project_id: 'survey'|'analysis'|'mm'.
-        // FK-by-convention on project_id (no constraint) matches the existing
-        // analysis_projects.dataset_id pattern.
+        // project_type disambiguates project_id: 'survey'|'mm'.
         "CREATE TABLE IF NOT EXISTS variable_metadata (
             id                  BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             project_id          BIGINT UNSIGNED  NOT NULL,
