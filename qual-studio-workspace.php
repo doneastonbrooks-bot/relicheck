@@ -53,6 +53,7 @@ $pipeline = [
     ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes'],
     ['id' => 'trust',       'label' => 'Trustworthiness',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'trust'],
     ['id' => 'audit',       'label' => 'Audit Trail',      'dot' => 'qual', 'mode' => 'work', 'tool' => 'audit'],
+    ['id' => 'export',      'label' => 'Export Center',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'export'],
     ['id' => 'report',      'label' => 'Report Builder',   'dot' => 'qual', 'mode' => 'report'],
 ];
 

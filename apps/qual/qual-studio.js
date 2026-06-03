@@ -343,8 +343,201 @@
   function renderReport(host) {
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
       + '<h1 class="title">Report Builder</h1>'
-      + '<p class="lede">Report generation is coming in a future phase. Your codes, themes, and quotes will appear here.</p></div>'
-      + '<div class="placeholder">Not yet built.</div>';
+      + '<p class="lede">A structured summary of your analysis, ready to share or print.</p></div>'
+      + '<div class="notice info">Loading report data&hellip;</div>';
+
+    api('/api/qual/build-report.php?project_id=' + BOOT.projectId)
+      .then(function (d) { renderReportContent(host, d); })
+      .catch(function (e) {
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+          + '<h1 class="title">Report Builder</h1></div>'
+          + '<div class="notice err">Could not load report data: ' + esc(e.message) + '</div>';
+      });
+  }
+
+  function renderReportContent(host, d) {
+    var p      = d.project || {};
+    var stats  = d.stats   || {};
+    var themes = d.themes  || [];
+    var checks = d.member_checks || [];
+
+    var approachLabels = {
+      thematic:'Thematic Analysis', content:'Content Analysis',
+      framework:'Framework Analysis', open_ended_survey:'Open-Ended Survey Analysis',
+      document:'Document Analysis',
+    };
+    var approach = approachLabels[p.analysis_approach] || (p.analysis_approach || '');
+
+    var today = (function () {
+      var now = new Date();
+      return now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    })();
+
+    // ── Print button ───────────────────────────────────────────────────────
+    var topBar = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">'
+      + '<div></div>'
+      + '<div style="display:flex;gap:10px">'
+      + '<button class="btn" id="rep-print"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print / Save as PDF</button>'
+      + '</div></div>';
+
+    // ── Project header ─────────────────────────────────────────────────────
+    var header = '<div class="panel" id="rep-header"><div class="panel-b" style="padding:24px 28px">'
+      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px">'
+      + '<div>'
+      + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:6px">Qualitative Analysis Report</div>'
+      + '<h2 style="margin:0 0 6px;font-size:24px;font-weight:700;letter-spacing:-.02em">' + esc(p.title || 'Untitled Project') + '</h2>'
+      + (approach ? '<div style="font-size:13.5px;color:var(--ink-2)">' + esc(approach) + '</div>' : '')
+      + '</div>'
+      + '<div style="font-size:12.5px;color:var(--ink-3);white-space:nowrap">' + esc(today) + '</div>'
+      + '</div>'
+      + (p.research_question
+        ? '<div style="background:var(--acc-soft);border-radius:10px;padding:14px 16px;margin-bottom:16px">'
+          + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc-deep);margin-bottom:4px">Research question</div>'
+          + '<div style="font-size:14.5px;color:var(--acc-deep);line-height:1.55">' + esc(p.research_question) + '</div>'
+          + '</div>'
+        : '')
+      + '<div class="grid2" style="gap:12px">'
+      + (p.participant_description ? '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:3px">Participants</div><div style="font-size:13.5px">' + esc(p.participant_description) + '</div></div>' : '')
+      + (p.purpose ? '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:3px">Purpose</div><div style="font-size:13.5px">' + esc(p.purpose) + '</div></div>' : '')
+      + '</div>'
+      + '</div></div>';
+
+    // ── Dataset summary ────────────────────────────────────────────────────
+    var summary = '<div class="stats-grid" style="margin-bottom:20px">'
+      + _statCard(stats.seg_count,   'Segments analyzed')
+      + _statCard(stats.total_words, 'Total words')
+      + _statCard(stats.code_count,  'Codes in codebook')
+      + _statCard(stats.theme_count, 'Themes built')
+      + '</div>';
+
+    // ── Themes ─────────────────────────────────────────────────────────────
+    var themeSection = '<div style="margin-bottom:24px">'
+      + '<h3 style="font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px;border-bottom:2px solid var(--acc-soft);padding-bottom:10px">Themes</h3>';
+
+    if (!themes.length) {
+      themeSection += '<div class="placeholder">No themes built yet. Complete the Theme Builder step to see themes here.</div>';
+    } else {
+      themeSection += themes.map(function (t, i) {
+        var catChips = t.categories && t.categories.length
+          ? t.categories.map(function (c) {
+              return '<span class="chip" style="font-size:12px;padding:2px 10px;background:var(--bg);color:var(--ink-2);border:1px solid var(--line)">' + esc(c) + '</span>';
+            }).join('')
+          : '<span style="font-size:12.5px;color:var(--ink-3);font-style:italic">No categories linked</span>';
+
+        var quotesHtml = '';
+        if (t.quotes && t.quotes.length) {
+          quotesHtml = '<div style="margin-top:14px">'
+            + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:10px">Exemplar quotes</div>'
+            + t.quotes.map(function (q) {
+                var text  = q.cleaned_text || q.raw_text || '';
+                var attr  = [];
+                if (q.participant_id) attr.push('ID: ' + q.participant_id);
+                if (q.question_ref)   attr.push(q.question_ref);
+                return '<div style="border-left:3px solid var(--acc);padding:8px 14px;margin-bottom:10px;background:var(--bg);border-radius:0 8px 8px 0">'
+                  + '<div style="font-size:14px;color:var(--ink);line-height:1.65;font-style:italic">&ldquo;' + esc(text) + '&rdquo;</div>'
+                  + (attr.length ? '<div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">' + esc(attr.join(' · ')) + '</div>' : '')
+                  + '</div>';
+              }).join('');
+          quotesHtml += '</div>';
+        } else {
+          quotesHtml = '<div style="font-size:12.5px;color:var(--ink-3);margin-top:10px;font-style:italic">No exemplar quotes pinned for this theme. Use Quote Finder to pin supporting evidence.</div>';
+        }
+
+        return '<div class="panel" style="margin-bottom:16px">'
+          + '<div class="panel-h" style="padding-bottom:14px">'
+          + '<div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px">'
+          + '<span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--acc);background:var(--acc-soft);padding:3px 9px;border-radius:999px">Theme ' + (i + 1) + '</span>'
+          + '<span style="font-size:17px;font-weight:700">' + esc(t.name) + '</span>'
+          + '</div>'
+          + '<div style="background:var(--acc-soft);border-radius:10px;padding:12px 16px">'
+          + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc-deep);margin-bottom:4px">Finding</div>'
+          + '<div style="font-size:14px;color:var(--acc-deep);line-height:1.6;font-style:italic">&ldquo;' + esc(t.interpretive_claim || '(no interpretive claim set)') + '&rdquo;</div>'
+          + '</div>'
+          + '</div>'
+          + '<div class="panel-b">'
+          + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px">Supporting categories</div>'
+          + '<div class="code-chips" style="margin-bottom:0">' + catChips + '</div>'
+          + quotesHtml
+          + (t.notes ? '<div style="margin-top:12px;font-size:13px;color:var(--ink-2);border-top:1px solid var(--line);padding-top:12px">' + esc(t.notes).replace(/\n/g, '<br>') + '</div>' : '')
+          + '</div></div>';
+      }).join('');
+    }
+    themeSection += '</div>';
+
+    // ── Trustworthiness ────────────────────────────────────────────────────
+    var trustSection = '<div style="margin-bottom:24px">'
+      + '<h3 style="font-size:18px;font-weight:700;letter-spacing:-.01em;margin:0 0 14px;border-bottom:2px solid var(--acc-soft);padding-bottom:10px">Trustworthiness</h3>'
+      + '<div class="panel"><div class="panel-b">';
+
+    // Reflexivity
+    var stanceMemo = p.researcher_stance_memo || '';
+    trustSection += '<div style="margin-bottom:20px">'
+      + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px">Researcher reflexivity</div>';
+    if (stanceMemo) {
+      trustSection += '<div style="background:var(--bg);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.6;color:var(--ink-2)">' + esc(stanceMemo).replace(/\n/g, '<br>') + '</div>';
+    } else {
+      trustSection += '<div style="font-size:13px;color:var(--ink-3);font-style:italic">No researcher stance memo recorded. Add one in Project Setup.</div>';
+    }
+    trustSection += '</div>';
+
+    // Member checks
+    trustSection += '<div>'
+      + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px">Member checking</div>';
+    if (checks.length) {
+      var outcomes = {};
+      checks.forEach(function (c) { outcomes[c.outcome] = (outcomes[c.outcome] || 0) + 1; });
+      var outSummary = Object.keys(outcomes).map(function (o) {
+        return outcomes[o] + ' ' + o;
+      }).join(', ');
+      var outcomeColor = function (o) {
+        return o === 'Confirmed' ? '#1f9e44' : o === 'Revised' ? '#d97706' : '#0A6FE8';
+      };
+      trustSection += '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
+        + Object.keys(outcomes).map(function (o) {
+            return '<span style="font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:' + outcomeColor(o) + '22;color:' + outcomeColor(o) + '">'
+              + outcomes[o] + ' ' + esc(o) + '</span>';
+          }).join('')
+        + '</div>'
+        + '<div style="max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">'
+        + checks.map(function (c) {
+            return '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:13px">'
+              + '<div style="font-weight:700;margin-bottom:3px">' + esc(c.finding || '') + '</div>'
+              + (c.notes ? '<div style="color:var(--ink-2);margin-top:4px">' + esc(c.notes).replace(/\n/g, '<br>') + '</div>' : '')
+              + '<div style="font-size:11.5px;color:var(--ink-3);margin-top:6px">'
+              + (c.who ? esc(c.who) + ' &middot; ' : '') + esc(c.date || '') + (c.method ? ' &middot; ' + esc(c.method) : '') + '</div>'
+              + '</div>';
+          }).join('')
+        + '</div>';
+    } else {
+      trustSection += '<div style="font-size:13px;color:var(--ink-3);font-style:italic">No member checks recorded. Add them in the Trustworthiness Review step.</div>';
+    }
+    trustSection += '</div>';
+
+    trustSection += '</div></div>';
+
+    // Audit count note
+    trustSection += '<div style="font-size:12.5px;color:var(--ink-3);margin-top:10px">'
+      + d.audit_count + ' action' + (d.audit_count !== 1 ? 's' : '') + ' logged in the audit trail &mdash; full record available in the Audit Trail step.'
+      + '</div>';
+
+    trustSection += '</div>';
+
+    // ── Assemble ───────────────────────────────────────────────────────────
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow">Qualitative Analysis Studio</div>'
+      + '<h1 class="title">Report Builder</h1>'
+      + '<p class="lede">A structured summary of your analysis, ready to share or print.</p></div>'
+      + topBar
+      + '<div id="rep-printable">'
+      + header
+      + summary
+      + themeSection
+      + trustSection
+      + '</div>';
+
+    var printBtn = document.getElementById('rep-print');
+    if (printBtn) {
+      printBtn.addEventListener('click', function () { window.print(); });
+    }
   }
 
   // ── Work modules ───────────────────────────────────────────────────────────
@@ -1689,6 +1882,113 @@
           host.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>';
         });
     },
+    // ── Export Center ─────────────────────────────────────────────────────────
+    export: function (host) {
+      var p = state.project || {};
+      host.innerHTML = '<div class="ws-header"><div class="eyebrow">Export Center</div>'
+        + '<h1 class="title">Export Center</h1>'
+        + '<p class="lede">Take your qualitative analysis into other tools. Download coded data for MM Studio, share themes with colleagues, or pass evidence to RSSI.</p></div>'
+
+        // Card 1 — Coded segments CSV
+        + '<div class="panel"><div class="panel-h"><h3>Coded segments CSV</h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 6px">One row per segment. Columns: Participant ID, Question, Response text, applied codes, and themes. Ready to import into MM Studio as the qualitative strand of a mixed-methods project.</p>'
+        + '<div style="font-size:12.5px;color:var(--ink-3);margin-bottom:14px">Includes all ' + (state.projectData ? state.projectData.seg_count : '') + ' segments whether coded or not.</div>'
+        + '<a class="btn primary" id="exp-csv-link" href="/api/qual/export-coded.php?project_id=' + BOOT.projectId + '">Download coded segments (.csv)</a>'
+        + '</div></div>'
+
+        // Card 2 — Themes + quotes JSON
+        + '<div class="panel"><div class="panel-h"><h3>Themes and quotes</h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 14px">All themes, their interpretive claims, supporting categories, and pinned exemplar quotes as a JSON file. Use in reports, presentations, or further analysis.</p>'
+        + '<div class="btn-row">'
+        + '<button class="btn primary" id="exp-json-btn">Download themes (.json)</button>'
+        + '</div>'
+        + '<div id="exp-json-msg" style="display:none;font-size:13px;margin-top:8px"></div>'
+        + '</div></div>'
+
+        // Card 3 — MM Studio
+        + '<div class="panel" style="border-left:4px solid var(--quan-ink)"><div class="panel-h"><h3 style="color:var(--quan-ink)">MM Studio — Joint display handoff</h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 10px">Use the coded segments CSV to connect this qualitative analysis to a quantitative dataset in MM Studio. In the Joint Display step, your codes and themes appear alongside quantitative findings for convergence and divergence review.</p>'
+        + '<ol style="font-size:13px;color:var(--ink-2);line-height:1.8;margin:0 0 14px;padding-left:20px">'
+        + '<li>Download the coded segments CSV (card above).</li>'
+        + '<li>In MM Studio, open or start a project and go to the dataset step.</li>'
+        + '<li>Upload this CSV as your qualitative strand dataset.</li>'
+        + '<li>In the Joint Display step, link coded segments to quantitative results.</li>'
+        + '</ol>'
+        + '<a class="btn" href="/studio-mm.php" target="_blank">Open MM Studio &rarr;</a>'
+        + '</div></div>'
+
+        // Card 4 — RSSI
+        + '<div class="panel" style="border-left:4px solid var(--acc)"><div class="panel-h"><h3 style="color:var(--acc-deep)">RSSI — Open-ended evidence</h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 10px">If your survey instrument includes the open-ended questions you just analyzed, their themes can be cited as qualitative evidence alongside the RSSI reliability score. RSSI does not automatically pull from Qual Studio yet, but you can reference your themes directly in the RSSI guidance panel after running a reliability analysis.</p>'
+        + '<a class="btn" href="/rssi-app.php" target="_blank">Open RSSI &rarr;</a>'
+        + '</div></div>'
+
+        // Card 5 — SIRI
+        + '<div class="panel" style="border-left:4px solid #b45309"><div class="panel-h"><h3 style="color:#92400e">SIRI — Open-ended quality flags</h3></div><div class="panel-b">'
+        + '<p style="font-size:13.5px;color:var(--ink-2);margin:0 0 10px">If the open-ended questions in this dataset will be used again in a future survey, bring your findings back to SIRI. Themes that reveal ambiguity, multiple interpretations, or low engagement signal open-ended question quality issues you can address before the next deployment.</p>'
+        + '<a class="btn" href="/siri-app.php" target="_blank">Open SIRI &rarr;</a>'
+        + '</div></div>'
+
+        + '<div class="btn-row" style="margin-top:8px">'
+        + '<button class="btn primary" id="exp-to-report">Build report &rarr;</button>'
+        + '</div>';
+
+      document.getElementById('exp-to-report').addEventListener('click', function () {
+        state.stepId = 'report'; render();
+      });
+
+      document.getElementById('exp-json-btn').addEventListener('click', function () {
+        var btn = document.getElementById('exp-json-btn');
+        var msg = document.getElementById('exp-json-msg');
+        btn.disabled = true;
+        btn.textContent = 'Loading...';
+        api('/api/qual/get-themes.php?project_id=' + BOOT.projectId)
+          .then(function (d) {
+            var themes = d.themes || [];
+            return Promise.all(themes.map(function (t) {
+              return api('/api/qual/get-quotes.php?project_id=' + BOOT.projectId + '&theme_id=' + t.id)
+                .then(function (qd) {
+                  var pinnedIds = qd.pinned_ids || [];
+                  t.pinned_quotes = (qd.segments || [])
+                    .filter(function (s) { return pinnedIds.indexOf(+s.id) !== -1; })
+                    .map(function (s) {
+                      return {
+                        text:           s.cleaned_text || s.raw_text,
+                        participant_id: s.participant_id || null,
+                        question_ref:   s.question_ref  || null,
+                      };
+                    });
+                  return t;
+                });
+            }));
+          })
+          .then(function (themes) {
+            var payload = {
+              project: { title: p.title, research_question: p.research_question, analysis_approach: p.analysis_approach },
+              exported_at: new Date().toISOString(),
+              themes: themes,
+            };
+            var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            var url  = URL.createObjectURL(blob);
+            var a    = document.createElement('a');
+            a.href     = url;
+            a.download = 'qual-themes.json';
+            a.click();
+            URL.revokeObjectURL(url);
+            btn.disabled = false;
+            btn.textContent = 'Download themes (.json)';
+            msg.textContent = 'Downloaded.';
+            msg.style.cssText = 'display:block;color:var(--acc);';
+            setTimeout(function () { msg.style.display = 'none'; }, 2500);
+          })
+          .catch(function (e) {
+            btn.disabled = false;
+            btn.textContent = 'Download themes (.json)';
+            msg.textContent = 'Error: ' + esc(e.message);
+            msg.style.cssText = 'display:block;color:#c0392b;';
+          });
+      });
+    },
   };
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1733,7 +2033,8 @@
     quotes:      '<p>Exemplar quotes are the specific segments you have chosen as the strongest evidence for each theme. They are not just examples -- they are the passages you are prepared to cite and defend.</p><p>Only segments coded through a theme\'s categories appear here. If a segment is missing, check that the relevant code is assigned to a category, and that the category is linked to this theme.</p>',
     trust:       '<p><strong>Trustworthiness</strong> in qualitative research is the parallel to reliability and validity in quantitative work. Three practices are tracked here:</p><ul style="margin:8px 0 0 16px;padding:0;line-height:1.7"><li><strong>Reflexivity</strong> — recording your stance so readers can judge positionality</li><li><strong>Coding agreement</strong> — Cohen\'s kappa when a second coder reviews the same segments</li><li><strong>Member checking</strong> — sharing findings with participants or peers and documenting what changed</li></ul><p style="margin-top:10px">You do not need all three. Each one you do strengthens the case for credibility.</p>',
     audit:       '<p>The audit trail records every significant action in this project: codes applied, themes built, scans run, and member checks logged.</p><p>It is evidence of a <strong>systematic, documented process</strong> -- a key trustworthiness criterion in qualitative research. Reviewers can follow the analytic journey from first import to final claim.</p>',
-    report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
+    export:      '<p>The <strong>Coded segments CSV</strong> is the primary handoff file for MM Studio. It carries every segment with its applied codes and themes, ready to become the qualitative strand in a joint display.</p><p>The <strong>Themes JSON</strong> is useful for sharing findings with colleagues, pasting into reports, or further analysis in other tools.</p><p>The <strong>RSSI</strong> and <strong>SIRI</strong> cards describe how this qualitative evidence connects to post-data reliability analysis and pre-deployment survey design work.</p>',
+    report:      '<p>The report assembles your project header, dataset summary, all themes with their interpretive claims and exemplar quotes, and the trustworthiness evidence you have recorded.</p><p>Use <strong>Print / Save as PDF</strong> to produce a shareable document. The print stylesheet hides the rail and companion panel so only the report body prints.</p><p>If themes or quotes are missing, complete the Theme Builder and Quote Finder steps first, then return here.</p>',
   };
 
   // ── Init ───────────────────────────────────────────────────────────────────
