@@ -48,8 +48,8 @@ $pipeline = [
     ['id' => 'familiarize', 'label' => 'Familiarization',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'familiarize'],
     ['id' => 'coding',      'label' => 'Coding Workspace', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'coding'],
     ['id' => 'codebook',    'label' => 'Codebook Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'codebook'],
-    ['id' => 'categories',  'label' => 'Category Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'categories', 'soon' => true],
-    ['id' => 'themes',      'label' => 'Theme Builder',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'themes',     'soon' => true],
+    ['id' => 'categories',  'label' => 'Category Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'categories'],
+    ['id' => 'themes',      'label' => 'Theme Builder',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'themes'],
     ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes',     'soon' => true],
     ['id' => 'trust',       'label' => 'Trustworthiness',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'trust',      'soon' => true],
     ['id' => 'audit',       'label' => 'Audit Trail',      'dot' => 'qual', 'mode' => 'work', 'tool' => 'audit',      'soon' => true],
@@ -256,6 +256,14 @@ body{font-family:var(--font);color:var(--ink);background:var(--bg);font-size:14p
 .ai-suggest-panel{border-top:1px solid var(--line);margin-top:10px;padding-top:12px}
 .ai-sug-list{display:flex;flex-direction:column;gap:14px}
 .ai-sug-row{padding:12px 14px;background:var(--bg);border-radius:10px;border:1px solid var(--line)}
+/* Category builder */
+.cat-code-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:10px;background:var(--bg);font-size:13.5px;flex-wrap:wrap}
+.cat-code-row:hover{background:color-mix(in srgb,var(--acc) 5%,white)}
+.cat-card{margin-bottom:14px}
+/* Theme builder */
+.theme-card{margin-bottom:16px}
+.cat-check-row{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2);padding:5px 0;cursor:pointer}
+.cat-check-row input[type=checkbox]{accent-color:var(--acc);width:15px;height:15px;cursor:pointer}
 @media print{
   .rail,.companion,.studioHeader,.studioFooter{display:none!important}
   .app{display:block!important;height:auto!important}

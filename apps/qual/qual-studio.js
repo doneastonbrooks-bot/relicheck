@@ -953,6 +953,304 @@
         });
       });
     },
+    // ── Category Builder ──────────────────────────────────────────────────────
+    categories: function (host) {
+      var catState = { categories: [], unassigned: [] };
+
+      function load() {
+        return api('/api/qual/get-categories.php?project_id=' + BOOT.projectId)
+          .then(function (d) {
+            catState.categories = d.categories || [];
+            catState.unassigned = d.unassigned  || [];
+            renderPage();
+          });
+      }
+
+      function renderPage() {
+        var hasCategories = catState.categories.length > 0;
+
+        var unassignedHtml = '';
+        if (catState.unassigned.length) {
+          var items = catState.unassigned.map(function (c) {
+            var catOpts = catState.categories.map(function (cat) {
+              return '<option value="' + cat.id + '">' + esc(cat.name) + '</option>';
+            }).join('');
+            return '<div class="cat-code-row" id="ucode-' + c.id + '">'
+              + '<span class="chip" style="background:var(--bg);border:1px solid var(--line);color:var(--ink-2)">' + esc(c.name) + '</span>'
+              + (c.application_count > 0 ? '<span style="font-size:11.5px;color:var(--ink-3)">' + c.application_count + ' applied</span>' : '')
+              + (catState.categories.length
+                ? '<div style="display:flex;align-items:center;gap:6px;margin-left:auto">'
+                  + '<select class="cat-assign-sel" data-code="' + c.id + '" style="font-size:12px;padding:4px 8px;border:1px solid #d1d5db;border-radius:8px;max-width:160px">'
+                  + '<option value="">Assign to...</option>' + catOpts
+                  + '</select></div>'
+                : '<span style="font-size:12px;color:var(--ink-3);margin-left:auto">Create a category first</span>')
+              + '</div>';
+          }).join('');
+          unassignedHtml = '<div class="panel"><div class="panel-h"><h3>Unassigned codes <span style="font-size:13px;font-weight:400;color:var(--ink-3)">(' + catState.unassigned.length + ')</span></h3></div>'
+            + '<div class="panel-b" style="padding-bottom:12px"><div style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:8px">' + items + '</div></div></div>';
+        } else if (!hasCategories) {
+          unassignedHtml = '<div class="placeholder">No codes in the codebook yet. Build your codebook before grouping codes into categories.</div>';
+        } else {
+          unassignedHtml = '<div style="font-size:13.5px;color:var(--ink-3);margin-bottom:18px">All codes are assigned to a category.</div>';
+        }
+
+        var catsHtml = catState.categories.map(function (cat) {
+          var codeChips = cat.codes.length
+            ? cat.codes.map(function (c) {
+                return '<span class="chip" style="background:var(--acc-soft);color:var(--acc-deep)">' + esc(c.name)
+                  + '<button class="chip-x cat-unassign" data-code="' + c.id + '" title="Remove from category">&times;</button></span>';
+              }).join('')
+            : '<span style="font-size:12.5px;color:var(--ink-3);font-style:italic">No codes assigned</span>';
+
+          return '<div class="panel cat-card" id="cat-' + cat.id + '">'
+            + '<div class="panel-h" style="display:flex;align-items:flex-start;gap:8px">'
+            + '<div style="flex:1"><h3 style="margin-bottom:' + (cat.description ? '4' : '0') + 'px">' + esc(cat.name) + '</h3>'
+            + (cat.description ? '<p style="margin:0 0 0;font-size:13px;color:var(--ink-3)">' + esc(cat.description) + '</p>' : '')
+            + '</div>'
+            + '<button class="btn" style="font-size:12px;padding:5px 12px;flex-shrink:0" data-edit-cat="' + cat.id + '">Edit</button>'
+            + '</div>'
+            + '<div class="panel-b"><div class="code-chips">' + codeChips + '</div></div></div>';
+        }).join('');
+
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Category Builder</div>'
+          + '<h1 class="title">Category Builder</h1>'
+          + '<p class="lede">Group related codes into categories. Categories become the building blocks of themes.</p></div>'
+          + unassignedHtml
+          + '<div style="margin-bottom:20px">'
+          + '<h3 style="font-size:15px;font-weight:700;margin:0 0 12px">Categories</h3>'
+          + (hasCategories ? '<div id="cat-list">' + catsHtml + '</div>' : '<div id="cat-list"></div>')
+          + '</div>'
+          + '<div class="panel" id="cat-form-panel"><div class="panel-h"><h3 id="cat-form-title">Add a category</h3></div><div class="panel-b">'
+          + '<div class="field"><label>Category name <span style="color:#c0392b">*</span></label>'
+          + '<input id="cat-name" placeholder="e.g. Communication Barriers"></div>'
+          + '<div class="field"><label>Description <span style="font-weight:400;color:var(--ink-3)">(optional)</span></label>'
+          + '<input id="cat-desc" placeholder="What kind of codes belong here?"></div>'
+          + '<input type="hidden" id="cat-editing-id">'
+          + '<div id="cat-msg" style="display:none;font-size:13px;margin-top:4px"></div>'
+          + '<div class="btn-row"><button class="btn primary" id="cat-save">Add category</button>'
+          + '<button class="btn" id="cat-cancel" style="display:none">Cancel</button>'
+          + '</div></div></div>'
+          + '<div class="btn-row" style="margin-top:8px">'
+          + '<button class="btn primary" id="cat-to-themes">Next: Build themes &rarr;</button>'
+          + '</div>';
+
+        // Form handlers
+        document.getElementById('cat-save').addEventListener('click', function () {
+          var msg    = document.getElementById('cat-msg');
+          var name   = (document.getElementById('cat-name').value || '').trim();
+          var desc   = (document.getElementById('cat-desc').value || '').trim();
+          var editId = +(document.getElementById('cat-editing-id').value) || 0;
+          if (!name) { msg.textContent = 'Name is required.'; msg.style.cssText = 'display:block;color:#c0392b;'; return; }
+          msg.textContent = 'Saving...'; msg.style.cssText = 'display:block;color:var(--ink-3);';
+          api('/api/qual/save-category.php', {
+            method: 'POST',
+            body: JSON.stringify({ project_id: BOOT.projectId, id: editId || undefined, name: name, description: desc }),
+          }).then(function () { return load(); })
+            .then(function () { clearCatForm(); msg.style.display = 'none'; })
+            .catch(function (e) { msg.textContent = 'Error: ' + e.message; msg.style.cssText = 'display:block;color:#c0392b;'; });
+        });
+
+        document.getElementById('cat-cancel').addEventListener('click', clearCatForm);
+        document.getElementById('cat-to-themes').addEventListener('click', function () { state.stepId = 'themes'; render(); });
+
+        // Edit category button
+        host.addEventListener('click', function (e) {
+          var editBtn = e.target.closest('[data-edit-cat]');
+          if (editBtn) {
+            var cat = catState.categories.find(function (c) { return c.id == editBtn.dataset.editCat; });
+            if (!cat) return;
+            document.getElementById('cat-editing-id').value = cat.id;
+            document.getElementById('cat-name').value = cat.name;
+            document.getElementById('cat-desc').value = cat.description || '';
+            document.getElementById('cat-form-title').textContent = 'Edit category: ' + cat.name;
+            document.getElementById('cat-save').textContent = 'Save changes';
+            document.getElementById('cat-cancel').style.display = 'inline-flex';
+            document.getElementById('cat-form-panel').scrollIntoView({ behavior: 'smooth' });
+          }
+
+          var unassignBtn = e.target.closest('.cat-unassign');
+          if (unassignBtn) {
+            var codeId = +unassignBtn.dataset.code;
+            api('/api/qual/assign-code-category.php', {
+              method: 'POST',
+              body: JSON.stringify({ project_id: BOOT.projectId, code_id: codeId, category_id: 0 }),
+            }).then(load).catch(function (ex) { alert('Error: ' + ex.message); });
+          }
+        });
+
+        // Assign dropdown
+        host.addEventListener('change', function (e) {
+          var sel = e.target.closest('.cat-assign-sel');
+          if (!sel || !sel.value) return;
+          var codeId = +sel.dataset.code;
+          var catId  = +sel.value;
+          sel.disabled = true;
+          api('/api/qual/assign-code-category.php', {
+            method: 'POST',
+            body: JSON.stringify({ project_id: BOOT.projectId, code_id: codeId, category_id: catId }),
+          }).then(load).catch(function (ex) { sel.disabled = false; alert('Error: ' + ex.message); });
+        });
+      }
+
+      function clearCatForm() {
+        document.getElementById('cat-editing-id').value = '';
+        document.getElementById('cat-name').value = '';
+        document.getElementById('cat-desc').value = '';
+        document.getElementById('cat-form-title').textContent = 'Add a category';
+        document.getElementById('cat-save').textContent = 'Add category';
+        document.getElementById('cat-cancel').style.display = 'none';
+        var msg = document.getElementById('cat-msg');
+        if (msg) msg.style.display = 'none';
+      }
+
+      host.innerHTML = '<div class="placeholder">Loading categories...</div>';
+      load();
+    },
+
+    // ── Theme Builder ─────────────────────────────────────────────────────────
+    themes: function (host) {
+      var tState = { themes: [], allCategories: [], editing: null, showForm: false };
+
+      function load() {
+        return api('/api/qual/get-themes.php?project_id=' + BOOT.projectId)
+          .then(function (d) {
+            tState.themes         = d.themes         || [];
+            tState.allCategories  = d.all_categories || [];
+            renderPage();
+          });
+      }
+
+      function renderPage() {
+        var noCategories = !tState.allCategories.length;
+
+        var themeCards = tState.themes.map(function (t) {
+          var catTags = t.categories.length
+            ? t.categories.map(function (c) { return '<span class="chip" style="background:var(--acc-soft);color:var(--acc-deep);font-size:12px">' + esc(c.name) + '</span>'; }).join('')
+            : '<span style="font-size:12.5px;color:var(--ink-3);font-style:italic">No categories linked</span>';
+
+          var availCats = tState.allCategories.map(function (cat) {
+            var linked = t.categories.some(function (tc) { return tc.id == cat.id; });
+            return '<label class="cat-check-row">'
+              + '<input type="checkbox" class="tc-check" data-theme="' + t.id + '" data-cat="' + cat.id + '"'
+              + (linked ? ' checked' : '') + '> '
+              + esc(cat.name) + '</label>';
+          }).join('');
+
+          return '<div class="panel theme-card" id="theme-' + t.id + '">'
+            + '<div class="panel-h">'
+            + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">'
+            + '<h3>' + esc(t.name) + '</h3>'
+            + '<button class="btn" style="font-size:12px;padding:5px 12px;flex-shrink:0" data-edit-theme="' + t.id + '">Edit</button>'
+            + '</div>'
+            + '<div style="margin-top:10px;padding:12px 14px;background:var(--acc-soft);border-radius:10px">'
+            + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc-deep);margin-bottom:4px">Finding</div>'
+            + '<div style="font-size:14px;color:var(--acc-deep);line-height:1.55;font-style:italic">&ldquo;' + esc(t.interpretive_claim) + '&rdquo;</div>'
+            + '</div>'
+            + (t.notes ? '<p style="font-size:13px;color:var(--ink-3);margin:10px 0 0;line-height:1.5">' + esc(t.notes) + '</p>' : '')
+            + '</div>'
+            + '<div class="panel-b">'
+            + '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px">Supporting categories</div>'
+            + '<div class="code-chips" style="margin-bottom:12px">' + catTags + '</div>'
+            + (tState.allCategories.length
+              ? '<details style="font-size:13px"><summary style="cursor:pointer;color:var(--acc);font-weight:600">Link categories&hellip;</summary>'
+                + '<div style="margin-top:10px;display:flex;flex-direction:column;gap:6px">' + availCats + '</div></details>'
+              : '<span style="font-size:12.5px;color:var(--ink-3)">Build categories first to link them to themes.</span>')
+            + '</div></div>';
+        }).join('');
+
+        var formHtml = '<div class="panel" id="theme-form-panel"><div class="panel-h"><h3 id="theme-form-title">Add a theme</h3></div><div class="panel-b">'
+          + '<div class="field"><label>Theme name <span style="color:#c0392b">*</span></label>'
+          + '<input id="th-name" placeholder="e.g. Systemic barriers to participation"></div>'
+          + '<div class="field"><label>Interpretive claim <span style="color:#c0392b">*</span>'
+          + '<span class="hint">State a finding, not a label. What does this theme tell you about participants\' experience?</span></label>'
+          + '<textarea id="th-claim" style="min-height:100px" placeholder="Participants described feeling excluded from decision-making processes, even when they actively sought opportunities to contribute."></textarea></div>'
+          + '<div class="field"><label>Notes <span style="font-weight:400;color:var(--ink-3)">(optional)</span>'
+          + '<span class="hint">Analytic notes, questions, or caveats about this theme.</span></label>'
+          + '<textarea id="th-notes" style="min-height:70px" placeholder="Consider whether this theme overlaps with..."></textarea></div>'
+          + '<input type="hidden" id="th-editing-id">'
+          + '<div id="th-msg" style="display:none;font-size:13px;margin-top:4px"></div>'
+          + '<div class="btn-row"><button class="btn primary" id="th-save">Add theme</button>'
+          + '<button class="btn" id="th-cancel" style="display:none">Cancel</button>'
+          + '</div></div></div>';
+
+        host.innerHTML = '<div class="ws-header"><div class="eyebrow">Theme Builder</div>'
+          + '<h1 class="title">Theme Builder</h1>'
+          + '<p class="lede">Themes are interpretive claims, not topic labels. Each theme answers a question about participants\' experience and is supported by one or more categories.</p></div>'
+          + (noCategories
+            ? '<div class="notice warn" style="margin-bottom:18px">No categories yet. Go to <strong>Category Builder</strong> first to group your codes before building themes.</div>'
+            : '')
+          + (tState.themes.length ? '<div id="theme-list" style="margin-bottom:20px">' + themeCards + '</div>' : '<div id="theme-list"></div>')
+          + formHtml;
+
+        // Save theme
+        document.getElementById('th-save').addEventListener('click', function () {
+          var msg    = document.getElementById('th-msg');
+          var name   = (document.getElementById('th-name').value  || '').trim();
+          var claim  = (document.getElementById('th-claim').value || '').trim();
+          var notes  = (document.getElementById('th-notes').value || '').trim();
+          var editId = +(document.getElementById('th-editing-id').value) || 0;
+          if (!name)  { msg.textContent = 'Theme name is required.';        msg.style.cssText = 'display:block;color:#c0392b;'; return; }
+          if (!claim) { msg.textContent = 'An interpretive claim is required. Themes are findings, not labels.'; msg.style.cssText = 'display:block;color:#c0392b;'; return; }
+          msg.textContent = 'Saving...'; msg.style.cssText = 'display:block;color:var(--ink-3);';
+          api('/api/qual/save-theme.php', {
+            method: 'POST',
+            body: JSON.stringify({ project_id: BOOT.projectId, id: editId || undefined, name: name, interpretive_claim: claim, notes: notes }),
+          }).then(function () { return load(); })
+            .then(function () { clearThemeForm(); msg.style.display = 'none'; })
+            .catch(function (e) { msg.textContent = 'Error: ' + e.message; msg.style.cssText = 'display:block;color:#c0392b;'; });
+        });
+
+        document.getElementById('th-cancel').addEventListener('click', clearThemeForm);
+
+        // Edit theme
+        host.addEventListener('click', function (e) {
+          var editBtn = e.target.closest('[data-edit-theme]');
+          if (editBtn) {
+            var theme = tState.themes.find(function (t) { return t.id == editBtn.dataset.editTheme; });
+            if (!theme) return;
+            document.getElementById('th-editing-id').value = theme.id;
+            document.getElementById('th-name').value  = theme.name;
+            document.getElementById('th-claim').value = theme.interpretive_claim || '';
+            document.getElementById('th-notes').value = theme.notes || '';
+            document.getElementById('theme-form-title').textContent = 'Edit theme: ' + theme.name;
+            document.getElementById('th-save').textContent = 'Save changes';
+            document.getElementById('th-cancel').style.display = 'inline-flex';
+            document.getElementById('theme-form-panel').scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+
+        // Toggle category on/off a theme
+        host.addEventListener('change', function (e) {
+          var cb = e.target.closest('.tc-check');
+          if (!cb) return;
+          cb.disabled = true;
+          api('/api/qual/link-theme-category.php', {
+            method: 'POST',
+            body: JSON.stringify({
+              project_id:  BOOT.projectId,
+              theme_id:    +cb.dataset.theme,
+              category_id: +cb.dataset.cat,
+              action:      cb.checked ? 'add' : 'remove',
+            }),
+          }).then(load).catch(function (ex) { cb.disabled = false; alert('Error: ' + ex.message); });
+        });
+      }
+
+      function clearThemeForm() {
+        document.getElementById('th-editing-id').value = '';
+        document.getElementById('th-name').value  = '';
+        document.getElementById('th-claim').value = '';
+        document.getElementById('th-notes').value = '';
+        document.getElementById('theme-form-title').textContent = 'Add a theme';
+        document.getElementById('th-save').textContent = 'Add theme';
+        document.getElementById('th-cancel').style.display = 'none';
+        var msg = document.getElementById('th-msg');
+        if (msg) msg.style.display = 'none';
+      }
+
+      host.innerHTML = '<div class="placeholder">Loading themes...</div>';
+      load();
+    },
   };
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -992,6 +1290,8 @@
     familiarize: '<p>Read through the data before coding. The First Impressions Memo is evidence of <strong>reflexivity</strong> and early <strong>credibility</strong> work.</p><p>The <strong>Linguistic Concept Scan</strong> uses ReliCheck Intelligence to surface recurring concepts across the corpus — organized by evidence type — before you begin formal coding. Results are cached and can be re-run at any time.</p>',
     coding:      '<p>Codes should capture <strong>meaning</strong>, not just topic. Ask: what is this person saying, not just what words did they use?</p><p>Use <strong>Suggest codes</strong> (the star button on each segment) to get AI suggestions classified by evidence type: lexical, phrase, semantic, or syntactic. Apply suggestions you agree with; dismiss the rest.</p>',
     codebook:    '<p>A code name should be descriptive, not a single vague word. <strong>"Lack of administrative support"</strong> is better than <strong>"support."</strong></p><p>Write definitions specific enough that a second coder would apply the code to the same responses.</p>',
+    categories:  '<p>Categories group related codes into higher-level buckets. They are not themes yet -- they are organizational containers.</p><p>A good category collects codes that share a <strong>common focus</strong>. Assign each code to exactly one category. Unassigned codes stay visible at the top until you place them.</p>',
+    themes:      '<p>A theme is <strong>an interpretive claim</strong>, not a topic label. "Communication" is a topic. "Participants felt excluded from communication channels that shaped their work" is a theme.</p><p>Every theme needs a claim before it can be saved. The claim is your finding -- it states what the data shows, not just what it is about.</p><p>Link supporting categories to show which evidence grounds the theme.</p>',
     report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
   };
 

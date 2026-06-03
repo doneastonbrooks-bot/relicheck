@@ -108,6 +108,39 @@ CREATE TABLE IF NOT EXISTS qual_memos (
     KEY idx_qmemo_obj  (object_type, object_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- Categories: groupings of codes into higher-level buckets
+CREATE TABLE IF NOT EXISTS qual_categories (
+    id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    project_id  BIGINT UNSIGNED NOT NULL,
+    name        VARCHAR(255) NOT NULL,
+    description TEXT NULL,
+    position    SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_qcat_proj (project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Themes: interpretive claims built from categories
+CREATE TABLE IF NOT EXISTS qual_themes (
+    id                 BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    project_id         BIGINT UNSIGNED NOT NULL,
+    name               VARCHAR(255) NOT NULL,
+    interpretive_claim TEXT NULL,
+    notes              TEXT NULL,
+    position           SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+    created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_qthm_proj (project_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Theme → category join (one theme draws on many categories)
+CREATE TABLE IF NOT EXISTS qual_theme_categories (
+    theme_id    BIGINT UNSIGNED NOT NULL,
+    category_id BIGINT UNSIGNED NOT NULL,
+    PRIMARY KEY (theme_id, category_id),
+    KEY idx_qtc_cat (category_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- Audit trail: every significant user or AI action
 CREATE TABLE IF NOT EXISTS qual_audit_trail (
     id           BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
