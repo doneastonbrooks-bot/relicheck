@@ -1406,6 +1406,289 @@
         host.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>';
       });
     },
+
+    // ── Trustworthiness ──────────────────────────────────────────────────────
+    trust: function (host) {
+      var tData = null;
+
+      function renderPage() {
+        var d = tData;
+        var html = '<div class="ws-header"><div class="eyebrow">Trustworthiness Review</div>'
+          + '<h1 class="title">Trustworthiness Review</h1>'
+          + '<p class="lede">Three practices that strengthen the credibility and transferability of qualitative findings.</p></div>';
+
+        // ── 1. Researcher Reflexivity ────────────────────────────────────
+        var r = d.reflexivity || {};
+        var approachLabel = { thematic:'Thematic Analysis', content:'Content Analysis',
+          framework:'Framework Analysis', open_ended_survey:'Open-Ended Survey Analysis',
+          document:'Document Analysis' }[r.analysis_approach] || r.analysis_approach || '—';
+        var stanceMemo = r.stance_memo || '';
+        var rq         = r.research_question || '';
+        html += '<div class="panel" style="margin-bottom:20px">'
+          + '<div class="panel-h"><h3>1 &mdash; Researcher reflexivity</h3></div>'
+          + '<div class="panel-b">'
+          + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 14px">Your recorded stance and research question ground the analysis and are part of the audit trail.</p>'
+          + '<div class="grid2" style="gap:14px;margin-bottom:14px">'
+          + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:4px">Analysis approach</div>'
+          + '<div style="font-size:14px">' + esc(approachLabel) + '</div></div>'
+          + '<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:4px">Research question</div>'
+          + '<div style="font-size:14px">' + (rq ? esc(rq) : '<em style="color:var(--ink-3)">Not yet set</em>') + '</div></div>'
+          + '</div>';
+        if (stanceMemo) {
+          html += '<div style="background:var(--acc-soft);border-radius:10px;padding:14px 16px">'
+            + '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--acc-deep);margin-bottom:6px">Researcher stance memo</div>'
+            + '<div style="font-size:13.5px;line-height:1.6;color:var(--acc-deep)">' + esc(stanceMemo).replace(/\n/g, '<br>') + '</div>'
+            + '</div>';
+        } else {
+          html += '<div class="notice warn" style="margin:0">No researcher stance memo recorded yet. '
+            + '<button class="link-btn" onclick="QS.go(\'setup\')">Add one in Project Setup.</button></div>';
+        }
+        html += '</div></div>';
+
+        // ── 2. Coding Agreement ──────────────────────────────────────────
+        var ag = d.agreement || {};
+        html += '<div class="panel" style="margin-bottom:20px">'
+          + '<div class="panel-h"><h3>2 &mdash; Coding agreement</h3></div>'
+          + '<div class="panel-b">';
+
+        if (!ag.computable) {
+          html += '<p style="font-size:13px;color:var(--ink-2);margin:0 0 12px">' + esc(ag.note || '') + '</p>';
+          if (ag.coders === 0 || ag.coders === 1) {
+            html += '<div style="background:var(--line-2);border-radius:10px;padding:14px 16px;font-size:13px;color:var(--ink-2)">'
+              + '<strong>Cohen\'s kappa</strong> compares two coders\' decisions on the same segments. '
+              + 'With a single coder there is no inter-rater agreement to compute. '
+              + 'You can still proceed -- single-coder analysis is valid, especially with member checking.</div>';
+          }
+        } else {
+          var kappaColor = ag.kappa === null ? 'var(--ink-3)'
+            : ag.kappa >= 0.6 ? '#1f9e44'
+            : ag.kappa >= 0.4 ? '#d97706'
+            : '#c0392b';
+          html += '<div class="grid2" style="gap:14px;margin-bottom:20px">'
+            + '<div class="stat-card" style="text-align:center">'
+            + '<div class="num" style="color:' + kappaColor + '">' + (ag.kappa !== null ? ag.kappa.toFixed(3) : '—') + '</div>'
+            + '<div class="lbl">Cohen\'s kappa</div>'
+            + '<div style="font-size:12px;color:' + kappaColor + ';margin-top:4px;font-weight:600">' + esc(ag.interpretation || '') + '</div>'
+            + '</div>'
+            + '<div class="stat-card" style="text-align:center">'
+            + '<div class="num">' + (ag.percent_agreement !== null ? ag.percent_agreement + '%' : '—') + '</div>'
+            + '<div class="lbl">Percent agreement</div>'
+            + '<div style="font-size:12px;color:var(--ink-3);margin-top:4px">' + ag.shared_segments + ' shared segments</div>'
+            + '</div></div>';
+
+          if (ag.code_breakdown && ag.code_breakdown.length) {
+            html += '<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3);margin-bottom:8px">Codes with lowest agreement</div>'
+              + '<div style="max-height:280px;overflow-y:auto;border:1px solid var(--line);border-radius:8px">'
+              + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+              + '<thead><tr style="background:var(--line-2)">'
+              + '<th style="text-align:left;padding:8px 12px;font-weight:600">Code</th>'
+              + '<th style="text-align:right;padding:8px 12px;font-weight:600;white-space:nowrap">Agreement</th>'
+              + '<th style="text-align:right;padding:8px 12px;font-weight:600">n</th>'
+              + '</tr></thead><tbody>';
+            ag.code_breakdown.forEach(function (row) {
+              var pct = row.pct;
+              var color = pct >= 80 ? '#1f9e44' : pct >= 60 ? '#d97706' : '#c0392b';
+              html += '<tr style="border-top:1px solid var(--line-2)">'
+                + '<td style="padding:8px 12px">' + esc(row.code) + '</td>'
+                + '<td style="padding:8px 12px;text-align:right;font-weight:600;color:' + color + '">' + pct + '%</td>'
+                + '<td style="padding:8px 12px;text-align:right;color:var(--ink-3)">' + row.total + '</td>'
+                + '</tr>';
+            });
+            html += '</tbody></table></div>';
+          }
+        }
+        html += '</div></div>';
+
+        // ── 3. Member Checking ───────────────────────────────────────────
+        var checks = d.member_checks || [];
+        html += '<div class="panel">'
+          + '<div class="panel-h"><h3>3 &mdash; Member checking</h3></div>'
+          + '<div class="panel-b">'
+          + '<p style="font-size:13px;color:var(--ink-2);margin:0 0 16px">Record when you shared findings with participants or peers and what they said. Each entry becomes part of the audit trail.</p>';
+
+        if (checks.length) {
+          html += '<div style="max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:10px;margin-bottom:20px" id="mc-list">'
+            + checks.map(function (c) {
+              var outcomeColor = c.outcome === 'Confirmed' ? '#1f9e44' : c.outcome === 'Revised' ? '#d97706' : '#0A6FE8';
+              return '<div style="border:1px solid var(--line);border-radius:10px;padding:12px 14px">'
+                + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+                + '<span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;background:' + outcomeColor + '22;color:' + outcomeColor + '">' + esc(c.outcome || '') + '</span>'
+                + '<span style="font-size:12px;color:var(--ink-3)">' + esc(c.date || '') + (c.who ? ' &middot; ' + esc(c.who) : '') + '</span>'
+                + '</div>'
+                + '<div style="font-size:13.5px;margin-bottom:' + (c.notes ? '8' : '0') + 'px">' + esc(c.finding) + '</div>'
+                + (c.notes ? '<div style="font-size:12.5px;color:var(--ink-2)">' + esc(c.notes).replace(/\n/g, '<br>') + '</div>' : '')
+                + '</div>';
+            }).join('')
+            + '</div>';
+        } else {
+          html += '<div class="notice" style="margin-bottom:20px">No member checks recorded yet. Add your first one below.</div>';
+        }
+
+        // Add check form
+        html += '<div id="mc-form" style="border:1px solid var(--line);border-radius:12px;padding:16px">'
+          + '<div style="font-size:13px;font-weight:600;margin-bottom:14px">Record a member check</div>'
+          + '<div class="field"><label>Finding or claim you shared <span style="color:#c0392b">*</span></label>'
+          + '<textarea id="mc-finding" rows="2" placeholder="e.g. Participants felt excluded from..."></textarea></div>'
+          + '<div class="grid2">'
+          + '<div class="field"><label>Shared with</label><input id="mc-who" placeholder="e.g. 3 participants, supervisor"></div>'
+          + '<div class="field"><label>Method</label><select id="mc-method">'
+          + '<option value="">Select...</option>'
+          + ['Email summary','Interview review','Focus group','Peer review','Other'].map(function (m) {
+              return '<option value="' + m + '">' + m + '</option>';
+            }).join('')
+          + '</select></div></div>'
+          + '<div class="grid2">'
+          + '<div class="field"><label>Date</label><input id="mc-date" type="date" value="' + new Date().toISOString().slice(0,10) + '"></div>'
+          + '<div class="field"><label>Outcome</label><select id="mc-outcome">'
+          + ['Confirmed','Revised','Mixed'].map(function (o) {
+              return '<option value="' + o + '">' + o + '</option>';
+            }).join('')
+          + '</select></div></div>'
+          + '<div class="field"><label>Notes</label><textarea id="mc-notes" rows="2" placeholder="What did they confirm, challenge, or add?"></textarea></div>'
+          + '<button class="btn" id="mc-save-btn">Save member check</button>'
+          + '</div>'
+          + '</div></div>';
+
+        host.innerHTML = html;
+
+        // Save handler
+        document.getElementById('mc-save-btn').addEventListener('click', function () {
+          var finding = (document.getElementById('mc-finding').value || '').trim();
+          if (!finding) { alert('Finding is required.'); return; }
+          var btn = document.getElementById('mc-save-btn');
+          btn.disabled = true;
+          btn.textContent = 'Saving...';
+          api('/api/qual/save-member-check.php', {
+            method: 'POST',
+            body: JSON.stringify({
+              project_id: BOOT.projectId,
+              check: {
+                finding: finding,
+                who:     (document.getElementById('mc-who').value || '').trim(),
+                method:  (document.getElementById('mc-method').value || '').trim(),
+                date:    (document.getElementById('mc-date').value || '').trim(),
+                outcome: (document.getElementById('mc-outcome').value || 'Confirmed'),
+                notes:   (document.getElementById('mc-notes').value || '').trim(),
+              },
+            }),
+          }).then(function (r) {
+            if (r.ok) {
+              host.innerHTML = '<div class="placeholder">Reloading...</div>';
+              return load();
+            }
+            btn.disabled = false; btn.textContent = 'Save member check';
+          }).catch(function (e) {
+            btn.disabled = false; btn.textContent = 'Save member check';
+            alert('Could not save: ' + e.message);
+          });
+        });
+      }
+
+      function load() {
+        return api('/api/qual/get-trustworthiness.php?project_id=' + BOOT.projectId)
+          .then(function (d) { tData = d; renderPage(); })
+          .catch(function (e) {
+            host.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>';
+          });
+      }
+
+      host.innerHTML = '<div class="placeholder">Loading...</div>';
+      load();
+    },
+
+    // ── Audit Trail ──────────────────────────────────────────────────────────
+    audit: function (host) {
+      var aState = { rows: [], total: 0, offset: 0, limit: 60, loading: false };
+
+      var actionIcons = {
+        code_applied: '&#9679;', code_removed: '&#9675;',
+        theme_saved: '&#11088;', theme_created: '&#11088;',
+        quote_pinned: '&#9733;', quote_unpinned: '&#9734;',
+        member_check_added: '&#10003;',
+        concept_scan_run: '&#128270;', codes_suggested: '&#128270;',
+        project_saved: '&#9998;', dataset_linked: '&#128190;',
+        pii_masked: '&#128274;',
+      };
+
+      function renderPage() {
+        var html = '<div class="ws-header"><div class="eyebrow">Audit Trail</div>'
+          + '<h1 class="title">Audit Trail</h1>'
+          + '<p class="lede">A chronological record of every significant action in this project. '
+          + aState.total + ' ' + (aState.total === 1 ? 'entry' : 'entries') + ' total.</p></div>';
+
+        if (!aState.rows.length) {
+          html += '<div class="notice">No audit trail entries yet. Actions in the project will appear here.</div>';
+          host.innerHTML = html;
+          return;
+        }
+
+        html += '<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden">'
+          + '<table style="width:100%;border-collapse:collapse;font-size:13px">'
+          + '<thead><tr style="background:var(--line-2)">'
+          + '<th style="text-align:left;padding:9px 12px;font-weight:600;width:150px">When</th>'
+          + '<th style="text-align:left;padding:9px 12px;font-weight:600">Action</th>'
+          + '<th style="text-align:left;padding:9px 12px;font-weight:600;color:var(--ink-3)">Object</th>'
+          + '<th style="text-align:left;padding:9px 12px;font-weight:600;color:var(--ink-3)">Detail</th>'
+          + '</tr></thead><tbody id="audit-body">';
+
+        aState.rows.forEach(function (row, i) {
+          var icon   = actionIcons[row.action] || '&#8226;';
+          var when   = (row.created_at || '').replace('T', ' ').slice(0, 16);
+          var objName = row.object_name || '';
+          var detail  = row.memo || row.new_value || '';
+          html += '<tr style="border-top:1px solid var(--line-2);' + (i % 2 === 0 ? '' : 'background:var(--bg)') + '">'
+            + '<td style="padding:8px 12px;color:var(--ink-3);white-space:nowrap;font-size:12px">' + esc(when) + '</td>'
+            + '<td style="padding:8px 12px">'
+            + '<span style="color:var(--acc);margin-right:6px">' + icon + '</span>'
+            + esc(row.action_label || row.action)
+            + '</td>'
+            + '<td style="padding:8px 12px;color:var(--ink-2)">' + esc(objName) + '</td>'
+            + '<td style="padding:8px 12px;color:var(--ink-2);max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(detail) + '">'
+            + esc(detail.length > 80 ? detail.slice(0, 80) + '…' : detail) + '</td>'
+            + '</tr>';
+        });
+
+        html += '</tbody></table></div>';
+
+        if (aState.rows.length < aState.total) {
+          html += '<div style="text-align:center;margin-top:14px">'
+            + '<button class="btn btn-outline" id="audit-more-btn">Load more (' + (aState.total - aState.rows.length) + ' remaining)</button>'
+            + '</div>';
+        }
+
+        host.innerHTML = html;
+
+        var moreBtn = document.getElementById('audit-more-btn');
+        if (moreBtn) {
+          moreBtn.addEventListener('click', function () {
+            moreBtn.disabled = true;
+            moreBtn.textContent = 'Loading...';
+            aState.offset += aState.limit;
+            api('/api/qual/get-audit-trail.php?project_id=' + BOOT.projectId
+              + '&offset=' + aState.offset + '&limit=' + aState.limit)
+              .then(function (d) {
+                aState.rows = aState.rows.concat(d.rows || []);
+                aState.total = d.total || aState.total;
+                renderPage();
+              }).catch(function () {
+                moreBtn.disabled = false;
+                moreBtn.textContent = 'Load more';
+              });
+          });
+        }
+      }
+
+      host.innerHTML = '<div class="placeholder">Loading audit trail...</div>';
+      api('/api/qual/get-audit-trail.php?project_id=' + BOOT.projectId + '&offset=0&limit=60')
+        .then(function (d) {
+          aState.rows   = d.rows   || [];
+          aState.total  = d.total  || 0;
+          aState.offset = 0;
+          renderPage();
+        }).catch(function (e) {
+          host.innerHTML = '<div class="notice err">Could not load: ' + esc(e.message) + '</div>';
+        });
+    },
   };
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -1448,6 +1731,8 @@
     categories:  '<p>Categories group related codes into higher-level buckets. They are not themes yet -- they are organizational containers.</p><p>A good category collects codes that share a <strong>common focus</strong>. Assign each code to exactly one category. Unassigned codes stay visible at the top until you place them.</p>',
     themes:      '<p>A theme is <strong>an interpretive claim</strong>, not a topic label. "Communication" is a topic. "Participants felt excluded from communication channels that shaped their work" is a theme.</p><p>Every theme needs a claim before it can be saved. The claim is your finding -- it states what the data shows, not just what it is about.</p><p>Link supporting categories to show which evidence grounds the theme.</p>',
     quotes:      '<p>Exemplar quotes are the specific segments you have chosen as the strongest evidence for each theme. They are not just examples -- they are the passages you are prepared to cite and defend.</p><p>Only segments coded through a theme\'s categories appear here. If a segment is missing, check that the relevant code is assigned to a category, and that the category is linked to this theme.</p>',
+    trust:       '<p><strong>Trustworthiness</strong> in qualitative research is the parallel to reliability and validity in quantitative work. Three practices are tracked here:</p><ul style="margin:8px 0 0 16px;padding:0;line-height:1.7"><li><strong>Reflexivity</strong> — recording your stance so readers can judge positionality</li><li><strong>Coding agreement</strong> — Cohen\'s kappa when a second coder reviews the same segments</li><li><strong>Member checking</strong> — sharing findings with participants or peers and documenting what changed</li></ul><p style="margin-top:10px">You do not need all three. Each one you do strengthens the case for credibility.</p>',
+    audit:       '<p>The audit trail records every significant action in this project: codes applied, themes built, scans run, and member checks logged.</p><p>It is evidence of a <strong>systematic, documented process</strong> -- a key trustworthiness criterion in qualitative research. Reviewers can follow the analytic journey from first import to final claim.</p>',
     report:      '<p>Report generation is coming in a future phase. Your approved codes, themes, and quotes will appear here.</p>',
   };
 

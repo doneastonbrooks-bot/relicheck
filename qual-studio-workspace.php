@@ -51,8 +51,8 @@ $pipeline = [
     ['id' => 'categories',  'label' => 'Category Builder', 'dot' => 'qual', 'mode' => 'work', 'tool' => 'categories'],
     ['id' => 'themes',      'label' => 'Theme Builder',    'dot' => 'qual', 'mode' => 'work', 'tool' => 'themes'],
     ['id' => 'quotes',      'label' => 'Quote Finder',     'dot' => 'qual', 'mode' => 'work', 'tool' => 'quotes'],
-    ['id' => 'trust',       'label' => 'Trustworthiness',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'trust',      'soon' => true],
-    ['id' => 'audit',       'label' => 'Audit Trail',      'dot' => 'qual', 'mode' => 'work', 'tool' => 'audit',      'soon' => true],
+    ['id' => 'trust',       'label' => 'Trustworthiness',  'dot' => 'qual', 'mode' => 'work', 'tool' => 'trust'],
+    ['id' => 'audit',       'label' => 'Audit Trail',      'dot' => 'qual', 'mode' => 'work', 'tool' => 'audit'],
     ['id' => 'report',      'label' => 'Report Builder',   'dot' => 'qual', 'mode' => 'report'],
 ];
 
