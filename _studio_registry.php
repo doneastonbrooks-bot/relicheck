@@ -151,7 +151,7 @@ return [
     'slug'           => 'basic',
     'kind'           => 'app',
     'name'           => 'ReliCheck Basic',
-    'mark'           => '/relicheck-basic-icon.svg',
+    'mark'           => '/ReliCheck Basic.png',
     'description'    => 'Free starter: build a simple survey, collect up to 25 responses, and get a Basic SIRI and Basic RSSI score. Upgrade any time for the full review.',
     'status'         => 'beta',
     'status_label'   => 'Free',
