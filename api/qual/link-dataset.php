@@ -23,7 +23,7 @@ if ($projectId <= 0 || $datasetId <= 0) fail('bad_input', 'project_id and datase
 $project = qual_require_project($pdo, $uid, $projectId);
 
 // Verify the dataset belongs to this user
-$ds = $pdo->prepare('SELECT id, title FROM datasets WHERE id = :id AND user_id = :u LIMIT 1');
+$ds = $pdo->prepare('SELECT id, title FROM datasets WHERE id = :id AND owner_id = :u LIMIT 1');
 $ds->execute([':id' => $datasetId, ':u' => $uid]);
 $dsRow = $ds->fetch(PDO::FETCH_ASSOC);
 if (!$dsRow) fail('not_found', 'Dataset not found.', 404);
