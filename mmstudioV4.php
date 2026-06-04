@@ -572,6 +572,158 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:1280px){.body{grid-template-columns:var(--rail) minmax(0,1fr)} .companion{display:none}}
 @media(max-width:1040px){.palette{display:none}}
+
+/* ─────────────────────────────────────────────
+   NEW STUDIO LAYER — 2026 redesign
+   ───────────────────────────────────────────── */
+:root{--sttb-h:62px;}
+
+/* 4-row grid: real header / studio topbar / body / real footer */
+.app{grid-template-rows:auto var(--sttb-h) 1fr auto!important}
+
+/* Studio topbar */
+.studio-topbar{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:center;padding:0 20px;background:var(--panel);
+  border-bottom:1px solid var(--line);height:var(--sttb-h);z-index:9;position:relative;}
+.sttb-left{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:-.2px;justify-self:start;}
+.sttb-center{display:flex;align-items:center;justify-self:center;}
+.sttb-right{display:flex;align-items:center;gap:8px;justify-self:end;}
+
+/* Topbar step rail */
+.tb-step{display:flex;align-items:center;cursor:pointer;position:relative;}
+.tb-node{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  font-size:11px;font-weight:600;background:var(--bg);color:var(--ink-3);
+  border:1.5px solid var(--line);transition:all .15s;flex-shrink:0;position:relative;}
+.tb-step:hover .tb-node{border-color:var(--ink-3);color:var(--ink-2);}
+.tb-step.tb-done .tb-node{background:var(--green-soft);color:var(--mm);border-color:transparent;font-size:12px;}
+.tb-step.tb-active .tb-node{background:var(--btn);color:#fff;border-color:transparent;
+  box-shadow:0 1px 6px rgba(109,74,216,.4);width:28px;height:28px;}
+.tb-lbl{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);
+  font-size:10px;font-weight:600;color:var(--btn);white-space:nowrap;pointer-events:none;}
+.tb-conn{width:32px;height:1.5px;background:var(--line);flex-shrink:0;}
+.tb-conn.tb-done{background:var(--mm);opacity:.4;}
+
+/* Body: 2-column — kill palette and companion from grid */
+.body{grid-template-columns:var(--rail) minmax(0,1fr)!important;grid-row:3;}
+.stage{padding:0 24px 0 0!important;}
+
+/* ── Simplified sidebar ── */
+.rail{padding:18px 16px!important;overflow-y:auto!important;}
+/* hide old rail elements */
+.rail .rail-h,.rail .design-pick,.rail .design-flow,#railSteps{display:none!important;}
+
+.sb-lbl{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-3);margin-bottom:8px;display:block;}
+.sb-design-pill{display:flex;gap:3px;background:var(--bg);border-radius:8px;padding:3px;margin-bottom:12px;}
+.sb-dpill-btn{flex:1;border:none;background:transparent;font-family:inherit;font-size:11px;
+  font-weight:500;color:var(--ink-2);padding:5px 4px;border-radius:6px;cursor:pointer;transition:all .13s;white-space:nowrap;}
+.sb-dpill-btn:hover:not(.active){color:var(--ink);background:rgba(0,0,0,.04);}
+.sb-dpill-btn.active{background:var(--btn);color:#fff;font-weight:600;box-shadow:0 1px 3px rgba(109,74,216,.3);}
+.sb-desc{font-size:12.5px;color:var(--ink-2);line-height:1.6;margin-bottom:0;}
+.sb-div{height:1px;background:var(--line);margin:16px 0;}
+
+/* ── Researcher's Notes block ── */
+.nb{background:var(--panel);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.nb-head{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 13px 7px;border-bottom:1px solid var(--line-2);}
+.nb-lbl{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);}
+.nb-step{font-size:10.5px;font-weight:500;color:var(--ink-3);}
+.nb-wrap{border-left:2.5px solid transparent;transition:border-color .15s;}
+.nb-wrap:focus-within{border-left-color:var(--btn);}
+.nb-ta{width:100%;min-height:140px;font-family:inherit;font-size:13px;line-height:1.7;
+  color:var(--ink);background:transparent;border:none;padding:11px 13px;resize:none;outline:none;}
+.nb-ta::placeholder{color:var(--ink-3);font-style:italic;}
+.nb-foot{display:flex;align-items:center;justify-content:space-between;
+  padding:6px 12px 8px;border-top:1px solid var(--line-2);}
+.nb-saved{font-size:10.5px;font-weight:500;color:var(--ink-3);opacity:0;transition:opacity .3s;}
+.nb-saved.vis{opacity:1;}
+.btn-note-rpt{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:11px;
+  font-weight:600;color:var(--btn);background:transparent;border:none;cursor:pointer;
+  padding:3px 8px;border-radius:999px;opacity:0;pointer-events:none;transition:all .12s;}
+.btn-note-rpt.vis{opacity:1;pointer-events:auto;}
+.btn-note-rpt:hover{background:var(--acc-soft);}
+
+/* ── Topbar action buttons (pill) ── */
+.tb-act{display:inline-flex;align-items:center;gap:6px;font-family:inherit;
+  font-size:12.5px;font-weight:500;padding:7px 14px;border-radius:999px;cursor:pointer;
+  white-space:nowrap;transition:all .13s;}
+.tb-act svg{width:13px;height:13px;flex-shrink:0;}
+.tb-act-save{background:transparent;border:1px solid var(--line);color:var(--ink-2);}
+.tb-act-save:hover{background:var(--bg);color:var(--ink);}
+.tb-act-save.saved{color:var(--mm);border-color:rgba(31,158,68,.3);background:var(--green-soft);}
+.tb-act-rpt{background:var(--btn);border:1px solid transparent;color:#fff;
+  box-shadow:0 1px 4px rgba(109,74,216,.3);}
+.tb-act-rpt:hover{background:var(--btn-hover);}
+.rpt-count-badge{font-size:10px;font-weight:700;background:rgba(255,255,255,.25);
+  padding:1px 6px;border-radius:999px;margin-left:2px;display:none;}
+
+/* Save-to-report strip (appears below results) */
+.str-row{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;
+  background:var(--panel);border-top:1px solid var(--line-2);border-radius:0 0 16px 16px;display:none;}
+.str-row.vis{display:flex;}
+.str-hint{font-size:12px;color:var(--ink-3);}
+.btn-str{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12.5px;
+  font-weight:600;color:var(--btn);background:var(--acc-soft);
+  border:1px solid rgba(109,74,216,.15);border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .13s;}
+.btn-str:hover{background:rgba(109,74,216,.14);}
+.btn-str svg{width:12px;height:12px;}
+
+/* ── Report drawer ── */
+.rpt-scrim{display:none;position:fixed;inset:0;background:rgba(20,28,45,.18);z-index:58;}
+.rpt-scrim.open{display:block;}
+.rpt-drawer{position:fixed;top:0;right:0;bottom:0;width:460px;background:var(--panel);
+  box-shadow:-12px 0 40px rgba(20,28,45,.1);z-index:59;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);}
+.rpt-drawer.open{transform:translateX(0);}
+.rpt-head{display:flex;align-items:center;gap:10px;padding:17px 20px 15px;border-bottom:1px solid var(--line-2);}
+.rpt-head h2{font-size:15px;font-weight:700;letter-spacing:-.2px;flex:1;}
+.rpt-badge{font-size:11px;font-weight:700;background:var(--acc-soft);color:var(--btn);padding:2px 9px;border-radius:999px;}
+.rpt-close-btn{width:26px;height:26px;border-radius:7px;border:none;background:var(--bg);
+  color:var(--ink-3);cursor:pointer;font-size:15px;display:grid;place-items:center;}
+.rpt-close-btn:hover{background:var(--line);color:var(--ink);}
+.rpt-body{flex:1;overflow-y:auto;padding:18px 20px;}
+.rpt-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;text-align:center;padding:40px;color:var(--ink-3);}
+.rpt-empty svg{width:36px;height:36px;opacity:.25;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;}
+.rpt-empty p{font-size:13.5px;line-height:1.6;max-width:250px;}
+.rpt-finding{background:var(--bg);border-radius:12px;padding:15px 17px;margin-bottom:10px;position:relative;}
+.rpt-step-tag{font-size:10.5px;font-weight:700;color:var(--btn);letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px;}
+.rpt-finding-title{font-size:13.5px;font-weight:600;color:var(--ink);margin-bottom:4px;padding-right:22px;}
+.rpt-finding-body{font-size:13px;color:var(--ink-2);line-height:1.6;}
+.rpt-rm{position:absolute;top:11px;right:11px;width:20px;height:20px;border-radius:5px;
+  border:none;background:transparent;color:var(--ink-3);cursor:pointer;font-size:13px;
+  display:grid;place-items:center;}
+.rpt-rm:hover{background:rgba(0,0,0,.06);}
+.rpt-foot{padding:13px 20px;border-top:1px solid var(--line);}
+.btn-export{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;
+  background:var(--btn);color:#fff;border:none;font-family:inherit;font-size:13.5px;
+  font-weight:600;padding:11px 18px;border-radius:999px;cursor:pointer;
+  box-shadow:0 1px 4px rgba(109,74,216,.3);}
+.btn-export:hover{background:var(--btn-hover);}
+.btn-export svg{width:14px;height:14px;}
+
+/* ── Coach tab (companion becomes slide-in) ── */
+.companion{transform:translateX(100%)!important;position:fixed!important;
+  top:0!important;right:0!important;bottom:0!important;width:var(--companion)!important;
+  z-index:56!important;transition:transform .26s cubic-bezier(.32,.72,0,1)!important;}
+body.coach-open .companion{transform:translateX(0)!important;}
+.coach-tab-btn{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:55;
+  display:flex;align-items:center;justify-content:center;width:22px;height:110px;
+  background:var(--panel);border:1px solid var(--line);border-right:none;
+  border-radius:8px 0 0 8px;cursor:pointer;box-shadow:-2px 0 8px rgba(0,0,0,.06);
+  transition:width .15s,background .15s;}
+.coach-tab-btn:hover{width:26px;background:var(--acc-soft);}
+body.coach-open .coach-tab-btn{background:var(--acc-soft);border-color:rgba(109,74,216,.2);}
+.coach-tab-lbl{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;
+  font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  user-select:none;white-space:nowrap;transition:color .15s;}
+body.coach-open .coach-tab-lbl{color:var(--btn);}
+
+/* Pill shape for all action buttons */
+.btn{border-radius:999px!important;}
+.btn.primary{border-radius:999px!important;}
+.as-intake-btn{border-radius:999px!important;}
 </style>
 <script src="/apps/studio/dataset-upload.js?v=<?= filemtime(__DIR__.'/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
@@ -581,39 +733,117 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 </head>
 <body>
 <div class="app">
+
+  <!-- Real ReliCheck header (studio-header.js) -->
   <div id="studioHeader"></div>
 
+  <!-- Studio topbar: step rail + actions -->
+  <header class="studio-topbar">
+    <div class="sttb-left">Mixed Methods Studio</div>
+    <div class="sttb-center" id="topbarSteps"></div>
+    <div class="sttb-right">
+      <button class="tb-act tb-act-save" id="saveProjectBtn" onclick="mmSaveProject()">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M13 13H3a1 1 0 0 1-1-1V3l2-1h7l2 2v8a1 1 0 0 1-1 1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="5" y="9" width="6" height="4" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="5.5" y="2" width="4" height="3" rx=".5" stroke="currentColor" stroke-width="1.4"/></svg>
+        Save
+      </button>
+      <button class="tb-act tb-act-rpt" onclick="toggleRptDrawer()">
+        <svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="white" stroke-width="1.4"/><line x1="5" y1="6" x2="11" y2="6" stroke="white" stroke-width="1.4" stroke-linecap="round"/><line x1="5" y1="8.5" x2="11" y2="8.5" stroke="white" stroke-width="1.4" stroke-linecap="round"/><line x1="5" y1="11" x2="8" y2="11" stroke="white" stroke-width="1.4" stroke-linecap="round"/></svg>
+        Report <span class="rpt-count-badge" id="rptCountBadge">0</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 2-column body -->
   <div class="body">
-    <nav class="rail">
-      <div class="rail-h">Analysis Pipeline</div>
-      <div class="design-pick" id="designPick">
+
+    <!-- Simplified sidebar -->
+    <nav class="rail" id="studioSidebar">
+      <!-- hidden old elements keep IDs for legacy JS; new sidebar is below -->
+      <div class="rail-h" style="display:none">Analysis Pipeline</div>
+      <div class="design-pick" id="designPick" style="display:none">
         <button class="design-pick-btn" onclick="toggleDesignMenu(event)">
           <span class="dp-name" id="designName"></span><span class="dp-caret">▾</span>
         </button>
         <div class="design-menu" id="designMenu"></div>
       </div>
-      <div class="design-flow" id="designFlow"></div>
-      <div id="railSteps"></div>
+      <div class="design-flow" id="designFlow" style="display:none"></div>
+      <div id="railSteps" style="display:none"></div>
+
+      <!-- New sidebar content -->
+      <span class="sb-lbl">Study Design</span>
+      <div class="sb-design-pill" id="sbDesignPill"></div>
+      <div class="sb-desc" id="sbDesignDesc"></div>
+
+      <div class="sb-div"></div>
+
+      <span class="sb-lbl">Researcher's Notes</span>
+      <div class="nb">
+        <div class="nb-head">
+          <div class="nb-lbl">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M2 10.5V12h1.5l6-6L8 4.5l-6 6zM11.7 2.8a1 1 0 0 0 0-1.4l-.6-.6a1 1 0 0 0-1.4 0l-1 1L10.2 3.8l1-1z" fill="currentColor"/></svg>
+            This step
+          </div>
+          <span class="nb-step" id="nbStepTag">Step 1</span>
+        </div>
+        <div class="nb-wrap">
+          <textarea class="nb-ta" id="researcherNotes" placeholder="Jot observations, decisions, or hunches..."></textarea>
+        </div>
+        <div class="nb-foot">
+          <span class="nb-saved" id="nbSaved">Saved</span>
+          <button class="btn-note-rpt" id="btnNoteRpt" onclick="mmSaveNoteToReport()">
+            <svg viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            Add to Report
+          </button>
+        </div>
+      </div>
     </nav>
 
+    <!-- Main workstation (existing center) -->
     <div class="stage">
       <main class="center"><div class="center-inner" id="centerInner"></div></main>
-      <aside class="palette" id="palette"></aside>
     </div>
 
+    <!-- Companion: now a slide-in (CSS handles the transform) -->
     <aside class="companion" id="companion">
-      <div class="comp-collapsed-tab" onclick="toggleCompanion()"><span style="font-size:16px">✦</span><span class="ctab-vert">Coach</span></div>
       <div class="comp-head">
         <div class="ch-ico">✦</div>
         <div class="ch-meta"><h3>ReliCheck Coach</h3><div class="ch-sub">Explain · Notes · Intelligence</div></div>
-        <button class="comp-toggle" onclick="toggleCompanion()" title="Collapse">⟩</button>
+        <button class="comp-toggle" onclick="toggleCoach()" title="Close">✕</button>
       </div>
       <div class="comp-tabs" id="compTabs"></div>
       <div class="comp-body" id="compBody"></div>
     </aside>
   </div>
 
+  <!-- Real studio footer (studio-footer.js) -->
   <div id="studioFooter"></div>
+</div>
+
+<!-- Coach pull tab -->
+<button class="coach-tab-btn" onclick="toggleCoach()" aria-label="ReliCheck Coach">
+  <span class="coach-tab-lbl">Coach</span>
+</button>
+
+<!-- Report drawer -->
+<div class="rpt-scrim" id="rptScrim" onclick="toggleRptDrawer()"></div>
+<div class="rpt-drawer" id="rptDrawer">
+  <div class="rpt-head">
+    <h2>Report</h2>
+    <span class="rpt-badge" id="rptBadgeDrawer">0 findings</span>
+    <button class="rpt-close-btn" onclick="toggleRptDrawer()">✕</button>
+  </div>
+  <div class="rpt-body" id="rptBody">
+    <div class="rpt-empty" id="rptEmpty">
+      <svg viewBox="0 0 40 40" fill="none"><rect x="6" y="4" width="28" height="32" rx="3" stroke="currentColor" stroke-width="2"/><line x1="12" y1="14" x2="28" y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="28" y2="20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="26" x2="20" y2="26" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <p>No findings saved yet. Run an analysis and use Save to Report to build your report.</p>
+    </div>
+  </div>
+  <div class="rpt-foot">
+    <button class="btn-export">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 10v3h10v-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/><polyline points="5,7 8,10 11,7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Export Report
+    </button>
+  </div>
 </div>
 
 <div class="modal-scrim" id="modalScrim"><div class="modal" id="modal"></div></div>
@@ -2892,7 +3122,7 @@ function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g
 function alignPalette(){const panel=document.querySelector('.center .panel');const pal=$("#palette");const body=document.querySelector('.body');
   if(!panel||!pal||!body)return;pal.style.marginTop='0px';
   const off=panel.getBoundingClientRect().top-body.getBoundingClientRect().top;pal.style.marginTop=Math.max(0,Math.round(off))+'px';}
-function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();}
+function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();mmRenderTopbarSteps();mmRenderSidebar();}
 // Per-area "Save to report": on any analysis area (work/output step), append a
 // "Save to report" button that adds this area's result to the report's Findings
 // section. Reuses the existing report.php (save_section) + .dm-save styling.
@@ -2938,17 +3168,18 @@ function persistDesign(coreSlug){
     body:JSON.stringify({project_id:BOOT.projectId,step:'design_choice',value:aeSlug})})
    .catch(()=>{});
 }
-function setDesign(k){state.design=k;state.stepId=firstLeadStep();state.toolSel=null;render();$(".center").scrollTop=0;persistDesign(k);toast("Design → "+DESIGNS[k].short);}
+function setDesign(k){state.design=k;state.stepId=firstLeadStep();state.toolSel=null;render();$(".center").scrollTop=0;persistDesign(k);toast("Design → "+DESIGNS[k].short);mmRenderSidebar();}
 function go(u){window.location.href=u;}
 function dockIntake(kind){const m={siri:'Open from SIRI responses',saved:'Open saved project',open:'Open a project',upload:'Upload data',sample:'Try a sample'};toast((m[kind]||'Data intake')+' — opens the shared intake.');}
 function toggleDesignMenu(e){if(e)e.stopPropagation();$("#designPick").classList.toggle('open');}
 function pickDesign(k){$("#designPick").classList.remove('open');if(k!==state.design)setDesign(k);}
 document.addEventListener('click',e=>{const p=$("#designPick");if(p&&!p.contains(e.target))p.classList.remove('open');});
-function goStep(id){state.stepId=id;state.toolSel=null;render();$(".center").scrollTop=0;}
+function goStep(id){state.stepId=id;state.toolSel=null;render();$(".center").scrollTop=0;mmUpdateNotes();}
 function stepBy(dir){const s=steps();const i=s.findIndex(x=>x.id===activeStep().id);const ni=Math.max(0,Math.min(s.length-1,i+dir));state.stepId=s[ni].id;state.toolSel=null;if(dir>0&&ni+1>state.completedThrough)state.completedThrough=ni;render();$(".center").scrollTop=0;}
 function selPal(name){state.toolSel=name;renderCenter();renderPalette();renderCompanion();$(".center").scrollTop=0;alignPalette();toast("Loaded: "+name);}
 function setCompTab(t){state.compTab=t;renderCompanion();}
 function toggleCompanion(){document.body.classList.toggle('companion-collapsed');}
+function toggleCoach(){document.body.classList.toggle('coach-open');}
 window.addEventListener('resize',()=>{$(".center").scrollTop=0;alignPalette();});
 
 function openEdit(){
@@ -2985,6 +3216,136 @@ function closeModal(){$("#modalScrim").classList.remove('open');}
 $("#modalScrim").addEventListener('click',e=>{if(e.target.id==='modalScrim')closeModal();});
 let tT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1800);}
 
+// ─── NEW STUDIO LAYER ─────────────────────────────────────────────────────────
+
+const MM_DESIGN_DESC = {
+  convergent:  'Collect quantitative and qualitative data independently, analyze each strand, then merge to see where they converge or diverge.',
+  explanatory: 'Run the quantitative phase first, then use qualitative follow-up to explain what drove the numbers.',
+  exploratory: 'Start qualitatively to build understanding, then use findings to design or inform the quantitative phase.',
+};
+
+// Topbar step rail
+function mmRenderTopbarSteps(){
+  const el=document.getElementById('topbarSteps'); if(!el) return;
+  const ss=steps(); const act=activeStep();
+  let html='';
+  ss.forEach(function(s,i){
+    const isDone=s.done, isAct=s.id===act.id;
+    const cls=isDone?'tb-done':isAct?'tb-active':'';
+    const inner=isDone?'&#x2713;':s.n;
+    html+=`<div class="tb-step ${cls}" onclick="goStep('${s.id}')" title="${esc(s.label)}">
+      <div class="tb-node">${inner}${isAct?`<span class="tb-lbl">${esc(s.label)}</span>`:''}</div>
+    </div>`;
+    if(i<ss.length-1) html+=`<div class="tb-conn ${isDone?'tb-done':''}"></div>`;
+  });
+  el.innerHTML=html;
+}
+
+// Sidebar design pill + description
+function mmRenderSidebar(){
+  const pill=document.getElementById('sbDesignPill');
+  const desc=document.getElementById('sbDesignDesc');
+  if(pill){
+    pill.innerHTML=DESIGN_ORDER.map(k=>{
+      const d=DESIGNS[k];
+      return `<button class="sb-dpill-btn ${k===state.design?'active':''}" onclick="setDesign('${k}')">${d.short}</button>`;
+    }).join('');
+  }
+  if(desc) desc.textContent = MM_DESIGN_DESC[state.design]||'';
+}
+
+// Notes per step
+const mmNotesStore={};
+let mmNoteTimer=null;
+document.addEventListener('input',function(e){
+  if(e.target.id!=='researcherNotes') return;
+  const act=activeStep();
+  mmNotesStore[act.id]=e.target.value;
+  const saved=document.getElementById('nbSaved');
+  const addBtn=document.getElementById('btnNoteRpt');
+  if(saved) saved.classList.remove('vis');
+  if(addBtn) addBtn.classList.toggle('vis', e.target.value.trim().length>0);
+  clearTimeout(mmNoteTimer);
+  mmNoteTimer=setTimeout(function(){
+    if(saved){saved.classList.add('vis');setTimeout(function(){saved.classList.remove('vis');},2000);}
+  },800);
+});
+function mmUpdateNotes(){
+  const ta=document.getElementById('researcherNotes');
+  const tag=document.getElementById('nbStepTag');
+  const addBtn=document.getElementById('btnNoteRpt');
+  const act=activeStep();
+  if(ta){ ta.value=mmNotesStore[act.id]||''; ta.placeholder='Jot observations for '+esc(act.label)+'…'; }
+  if(tag) tag.textContent='Step '+act.n;
+  if(addBtn) addBtn.classList.toggle('vis', !!(ta&&ta.value.trim()));
+}
+
+// Save button
+function mmSaveProject(){
+  const btn=document.getElementById('saveProjectBtn'); if(!btn) return;
+  btn.classList.add('saved');
+  btn.innerHTML='<svg viewBox="0 0 16 16" fill="none"><polyline points="3,8 6.5,12 13,4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg> Saved';
+  setTimeout(function(){
+    btn.classList.remove('saved');
+    btn.innerHTML='<svg viewBox="0 0 16 16" fill="none"><path d="M13 13H3a1 1 0 0 1-1-1V3l2-1h7l2 2v8a1 1 0 0 1-1 1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><rect x="5" y="9" width="6" height="4" rx=".5" stroke="currentColor" stroke-width="1.4"/><rect x="5.5" y="2" width="4" height="3" rx=".5" stroke="currentColor" stroke-width="1.4"/></svg> Save';
+  },2200);
+}
+
+// Report drawer
+const mmReportFindings=[];
+function mmUpdateReportCount(){
+  const n=mmReportFindings.length;
+  const b1=document.getElementById('rptCountBadge');
+  const b2=document.getElementById('rptBadgeDrawer');
+  if(b1){b1.style.display=n>0?'inline':'none';b1.textContent=n;}
+  if(b2) b2.textContent=n+(n===1?' finding':' findings');
+}
+function toggleRptDrawer(){
+  document.getElementById('rptDrawer').classList.toggle('open');
+  document.getElementById('rptScrim').classList.toggle('open');
+}
+function mmAddFinding(finding){
+  mmReportFindings.push(finding);
+  mmRenderReportFindings();
+  mmUpdateReportCount();
+}
+function mmRemoveFinding(id){
+  const i=mmReportFindings.findIndex(function(f){return f.id===id;});
+  if(i>-1) mmReportFindings.splice(i,1);
+  mmRenderReportFindings();
+  mmUpdateReportCount();
+}
+function mmRenderReportFindings(){
+  const body=document.getElementById('rptBody');
+  const empty=document.getElementById('rptEmpty');
+  if(!body) return;
+  body.querySelectorAll('.rpt-finding').forEach(function(el){el.remove();});
+  if(mmReportFindings.length===0){if(empty)empty.style.display='flex';return;}
+  if(empty) empty.style.display='none';
+  mmReportFindings.forEach(function(f){
+    const el=document.createElement('div'); el.className='rpt-finding';
+    el.innerHTML=`<button class="rpt-rm" onclick="mmRemoveFinding(${f.id})">✕</button>
+      <div class="rpt-step-tag">${esc(f.step)}</div>
+      <div class="rpt-finding-title">${esc(f.title)}</div>
+      <div class="rpt-finding-body">${esc(f.body)}</div>`;
+    body.appendChild(el);
+  });
+}
+function mmSaveNoteToReport(){
+  const ta=document.getElementById('researcherNotes'); if(!ta||!ta.value.trim()) return;
+  const act=activeStep();
+  mmAddFinding({step:'Step '+act.n+' · Researcher\'s Note',title:act.label,body:ta.value.trim(),id:Date.now()});
+  const btn=document.getElementById('btnNoteRpt'); if(!btn) return;
+  btn.style.color='var(--mm)';
+  btn.innerHTML='<svg viewBox="0 0 12 12" fill="none"><polyline points="1,6 4.5,10 11,2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Added';
+  setTimeout(function(){btn.style.color='';btn.innerHTML='<svg viewBox="0 0 12 12" fill="none"><line x1="6" y1="1" x2="6" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="6" x2="11" y2="6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg> Add to Report';},2000);
+}
+
+// Escape closes coach
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&document.body.classList.contains('coach-open'))toggleCoach();});
+
+// ─── END NEW STUDIO LAYER ──────────────────────────────────────────────────────
+
 // ---- Uniform studio header + footer (plug-ins) ----
 if(typeof StudioHeader!=='undefined'){
   StudioHeader.init({
@@ -2995,16 +3356,7 @@ if(typeof StudioHeader!=='undefined'){
     projectsUrl:  '/studio-mm-projects.php',
     initials:     '<?= htmlspecialchars($initials) ?>'
   });
-  // MM-specific: insert the design-switch pill into the header bar
-  // between the project context and the spacer so renderSwitch() finds it.
-  (function(){
-    const bar=document.querySelector('#studioHeader .sh-bar');
-    const spacer=bar&&bar.querySelector('.sh-spacer');
-    if(!bar||!spacer) return;
-    const ds=document.createElement('div');
-    ds.id='designSwitch';
-    bar.insertBefore(ds,spacer);
-  })();
+  // Design-switch pill moved to sidebar; no longer injected into header.
   // Show RSSI badge from server-resolved scores (no extra fetch needed).
   (function(){
     const sc=BOOT.scores||{};
@@ -3055,6 +3407,9 @@ if(typeof StudioFooter!=='undefined'){
 
 state.stepId='start';   // users come straight in to the Start overview (like SIRI)
 render();
+mmRenderTopbarSteps();
+mmRenderSidebar();
+mmUpdateNotes();
 // First open of a project with no design yet → guide the choice.
 if(BOOT.needsDesign){ openHelp(); }
 
