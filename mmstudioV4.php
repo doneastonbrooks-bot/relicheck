@@ -3201,7 +3201,7 @@ function persistDesign(coreSlug){
     body:JSON.stringify({project_id:BOOT.projectId,step:'design_choice',value:aeSlug})})
    .catch(()=>{});
 }
-function setDesign(k){state.design=k;state.stepId=firstLeadStep();state.toolSel=null;render();$(".center").scrollTop=0;persistDesign(k);toast("Design → "+DESIGNS[k].short);mmRenderSidebar();}
+function setDesign(k){state.design=k;state.stepId=steps()[0].id;state.completedThrough=0;state.toolSel=null;render();$(".center").scrollTop=0;persistDesign(k);toast("Design → "+DESIGNS[k].short);mmRenderSidebar();}
 function go(u){window.location.href=u;}
 function dockIntake(kind){const m={siri:'Open from SIRI responses',saved:'Open saved project',open:'Open a project',upload:'Upload data',sample:'Try a sample'};toast((m[kind]||'Data intake')+' — opens the shared intake.');}
 function toggleDesignMenu(e){if(e)e.stopPropagation();$("#designPick").classList.toggle('open');}
