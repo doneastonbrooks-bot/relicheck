@@ -758,16 +758,18 @@ body.coach-open .coach-tab-lbl{color:var(--btn);}
 
     <!-- Simplified sidebar -->
     <nav class="rail" id="studioSidebar">
-      <!-- hidden old elements keep IDs for legacy JS; new sidebar is below -->
-      <div class="rail-h" style="display:none">Analysis Pipeline</div>
-      <div class="design-pick" id="designPick" style="display:none">
-        <button class="design-pick-btn" onclick="toggleDesignMenu(event)">
-          <span class="dp-name" id="designName"></span><span class="dp-caret">▾</span>
-        </button>
-        <div class="design-menu" id="designMenu"></div>
+      <!-- hidden stubs keep legacy JS IDs alive — none are visible -->
+      <div style="display:none">
+        <div id="designSwitch"></div>
+        <div id="designPick">
+          <button class="design-pick-btn" onclick="toggleDesignMenu(event)">
+            <span id="designName"></span><span class="dp-caret">▾</span>
+          </button>
+          <div class="design-menu" id="designMenu"></div>
+        </div>
+        <div id="designFlow"></div>
+        <div id="railSteps"></div>
       </div>
-      <div class="design-flow" id="designFlow" style="display:none"></div>
-      <div id="railSteps" style="display:none"></div>
 
       <!-- New sidebar content -->
       <span class="sb-lbl">Study Design</span>
@@ -801,6 +803,7 @@ body.coach-open .coach-tab-lbl{color:var(--btn);}
     <!-- Main workstation (existing center) -->
     <div class="stage">
       <main class="center"><div class="center-inner" id="centerInner"></div></main>
+      <aside class="palette" id="palette" style="display:none"></aside>
     </div>
 
     <!-- Companion: now a slide-in (CSS handles the transform) -->
