@@ -301,8 +301,9 @@ button{font-family:inherit;cursor:pointer}
 .ctx{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctx .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
-.body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);min-height:0;overflow:hidden;grid-row:3;}
-.stage{display:flex;min-width:0;overflow:hidden;padding:0;}
+.body{display:flex;flex-direction:row;min-height:0;overflow:hidden;grid-row:3;}
+.rail{flex:0 0 var(--rail);}
+.stage{flex:1 1 0;min-width:0;overflow:hidden;}
 /* the left pipeline rail keeps the purple brand; the rest of the app stays gray */
 .rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 16px;overflow-y:auto;grid-row:3;}
 .rail-h{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:4px 12px 8px}
