@@ -695,6 +695,15 @@ label .tt-hint{margin-left:6px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.2);}
 /* palette hidden (tools now in topbar) */
 .palette{display:none!important;}
+/* ── One purple-button family — all match the Study Design switcher's flat indigo
+   treatment (same fill, subtle shadow, indigo-dark hover, no glow/lift). ── */
+.btn.primary,.btn-primary,.step-nav-next,.tb-act-rpt,.btn-export,.btn-export-report,.coach-send{
+  background:var(--indigo)!important;color:#fff!important;border-color:transparent!important;
+  box-shadow:0 1px 3px rgba(85,82,246,.35)!important;font-weight:600;}
+.btn.primary:hover,.btn-primary:hover,.step-nav-next:hover,.tb-act-rpt:hover,.btn-export:hover,.btn-export-report:hover,.coach-send:hover{
+  background:var(--indigo-dark)!important;box-shadow:0 1px 3px rgba(85,82,246,.35)!important;transform:none!important;}
+/* soft purple (Save-to-report chip) keeps the tinted style but the same indigo */
+.btn-str{background:var(--indigo-light)!important;color:var(--indigo)!important;border-color:rgba(85,82,246,.15)!important;box-shadow:none!important;}
 </style>
 <script src="/apps/studio/dataset-upload.js?v=<?= filemtime(__DIR__.'/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
