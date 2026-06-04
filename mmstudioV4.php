@@ -693,8 +693,17 @@ label .tt-hint{margin-left:6px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.12);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.2);}
-/* palette hidden (tools now in topbar) */
+/* palette hidden (replaced by in-content tool tabs) */
 .palette{display:none!important;}
+/* ── In-content tool tabs + footer for analysis steps (replaces the palette).
+   Live OUTSIDE #centerInner so per-analysis re-renders don't wipe them. ── */
+.q-railbar{max-width:960px;margin:0 auto;}
+#qTabsBar{margin-bottom:18px;} #qFootBar{margin-top:4px;}
+#qTabsBar:empty,#qFootBar:empty{display:none;}
+.q-tooltabs{display:inline-flex;gap:3px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:3px;flex-wrap:wrap;max-width:100%;}
+.q-tooltab{border:none;background:transparent;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text-2);padding:7px 14px;border-radius:7px;cursor:pointer;transition:all .13s;white-space:nowrap;}
+.q-tooltab:hover:not(.on){color:var(--text);background:rgba(0,0,0,.04);}
+.q-tooltab.on{background:var(--indigo);color:#fff;box-shadow:0 1px 3px rgba(85,82,246,.35);}
 /* ── One purple-button family — all match the Study Design switcher's flat indigo
    treatment (same fill, subtle shadow, indigo-dark hover, no glow/lift). ── */
 .btn.primary,.btn-primary,.step-nav-next,.tb-act-rpt,.btn-export,.btn-export-report,.coach-send{
@@ -797,7 +806,9 @@ label .tt-hint{margin-left:6px;}
 
   <!-- Main content (row 3, col 2) -->
   <main class="main center" id="mainContent">
+    <div id="qTabsBar" class="q-railbar"></div>
     <div class="content-wrap center-inner" id="centerInner"></div>
+    <div id="qFootBar" class="q-railbar"></div>
   </main>
 
   <!-- RC studio footer (studio-footer.js, row 4) -->
@@ -3177,13 +3188,40 @@ function handleCoachSend(){
 }
 function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function alignPalette(){}
-function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();mmRenderTopbarSteps();mmRenderSidebar();}
+function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();mmRenderTopbarSteps();mmRenderSidebar();mmRenderToolBars();}
+// In-content tool tabs (replaces the hidden palette) + a save/nav footer, for the
+// analysis steps. Rendered into persistent bars OUTSIDE #centerInner so the
+// per-analysis re-renders (runTTest, setFreq, etc.) never wipe them.
+function mmRenderToolBars(){
+  const tb=document.getElementById('qTabsBar'), fb=document.getElementById('qFootBar');
+  if(!tb||!fb) return;
+  const s=activeStep();
+  const isAnalysis=(s.id==='q_desc'||s.id==='q_inf');
+  if(!isAnalysis){ tb.innerHTML=''; fb.innerHTML=''; return; }
+  const tools=toolsOf(s); const cur=currentTool(s);
+  tb.innerHTML = (tools&&tools.length>1)
+    ? '<div class="q-tooltabs">'+tools.map(function(t){
+        return '<button class="q-tooltab '+(cur&&t.name===cur.name?'on':'')+'" onclick="selPal(\''+String(t.name).replace(/'/g,"\\'")+'\')">'+esc(t.name)+'</button>';
+      }).join('')+'</div>'
+    : '';
+  // q_inf analyses have no footer of their own → provide save + nav here.
+  // q_desc fns render their own inline footer-nav, so leave its footer bar empty.
+  if(s.id==='q_inf'){
+    const save=(BOOT.projectId>0)
+      ? '<div class="dm-save" id="mmReportSave" style="margin:0 0 14px"><button class="btn primary" onclick="saveAreaToReport(activeStep())">＋ Save to report</button><span class="dm-note">Adds this result to the report’s Findings section.</span></div>'
+      : '';
+    fb.innerHTML=save+'<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>';
+  } else {
+    fb.innerHTML='';
+  }
+}
 // Per-area "Save to report": on any analysis area (work/output step), append a
 // "Save to report" button that adds this area's result to the report's Findings
 // section. Reuses the existing report.php (save_section) + .dm-save styling.
 function appendReportSave(){
   const s=activeStep();
   if((s.mode!=='work'&&s.mode!=='output')||s.id==='report') return;
+  if(s.id==='q_inf') return; // q_inf save lives in the persistent #qFootBar
   if(!(BOOT.projectId&&BOOT.projectId>0)) return;
   const ci=document.getElementById('centerInner'); if(!ci) return;
   const panel=ci.querySelector('.panel'); if(!panel) return;
@@ -3231,7 +3269,7 @@ function pickDesign(k){$("#designPick").classList.remove('open');if(k!==state.de
 document.addEventListener('click',e=>{const p=$("#designPick");if(p&&!p.contains(e.target))p.classList.remove('open');});
 function goStep(id){state.stepId=id;state.toolSel=null;render();$(".center").scrollTop=0;mmUpdateNotes();}
 function stepBy(dir){const s=steps();const i=s.findIndex(x=>x.id===activeStep().id);const ni=Math.max(0,Math.min(s.length-1,i+dir));state.stepId=s[ni].id;state.toolSel=null;if(dir>0&&ni+1>state.completedThrough)state.completedThrough=ni;render();$(".center").scrollTop=0;}
-function selPal(name){state.toolSel=name;renderCenter();renderPalette();renderCompanion();$(".center").scrollTop=0;alignPalette();toast("Loaded: "+name);}
+function selPal(name){state.toolSel=name;render();const c=document.querySelector('.center');if(c)c.scrollTop=0;}
 function setCompTab(t){state.compTab=t;renderCompanion();}
 function toggleCompanion(){document.body.classList.toggle('companion-collapsed');}
 function toggleCoach(){

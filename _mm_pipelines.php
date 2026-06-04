@@ -88,8 +88,8 @@ $TOOLS = [
     'palette'=>['intro'=>'Pick a descriptive view:','groups'=>[['name'=>'Descriptives','items'=>[
       ['name'=>'Frequencies','strand'=>'quan'],['name'=>'Means & Distributions','strand'=>'quan'],
       ['name'=>'Cross-Tabs','strand'=>'quan'],['name'=>'Group Summaries','strand'=>'quan']]]]]],
-  'q_inf'=>['label'=>'Quantitative Results','strand'=>'quan','mode'=>'work','route'=>'/recommended-analyses.php',
-    'title'=>'Quantitative Results','lede'=>'Test the patterns your other strand will need to interpret.',
+  'q_inf'=>['label'=>'Quantitative Inferential','strand'=>'quan','mode'=>'work','route'=>'/recommended-analyses.php',
+    'title'=>'Quantitative Inferential','lede'=>'Test the patterns your other strand will need to interpret.',
     'palette'=>['intro'=>'Choose a test:','groups'=>[['name'=>'Tests','items'=>[
       ['name'=>'t-test','strand'=>'quan'],
       ['name'=>'ANOVA','strand'=>'quan'],
