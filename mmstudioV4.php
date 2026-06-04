@@ -2054,8 +2054,11 @@ function renderDataMap(s){
   if(!window.DataMap){
     dmMsg(s,'Loading Variable Map component…');return;
   }
-  // Build MM's chrome (header + nav) around the standard DataMap container.
-  $("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')
+  // The DataMap component renders its own canonical "Variable Map" header
+  // (eyebrow + title + the "Confirm data map to unlock" instruction), so MM does
+  // NOT add a second header here — that was the duplicate. Just the help
+  // affordance, then the component, then nav.
+  $("#centerInner").innerHTML=helpBar('data_map')
     +`<div id="mmDmContainer"></div>`+dmNav();
   var container=document.getElementById('mmDmContainer');
   if(!container) return;
