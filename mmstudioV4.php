@@ -2540,7 +2540,7 @@ const cv={base:null,busy:false,err:'',edits:{},saving:0,ai:null,aibusy:false};
 function cvFetch(){return fetch('/api/mm/joint-display.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function cvCapture(){((cv.base&&cv.base.rows)||[]).forEach(r=>{const el=document.getElementById('cv_note_'+r.theme_id);if(el)cv.edits[r.theme_id]=el.value;});}
 function cvClassify(themeId,label){const el=document.getElementById('cv_note_'+themeId);if(!el)return;let body=el.value.trim();['Converge','Diverge','Nuanced','Insufficient'].forEach(l=>{if(body.indexOf(l+':')===0)body=body.slice(l.length+1).trim();});el.value=label+': '+body;cv.edits[themeId]=el.value;el.focus();}
-function cvSave(themeId){cvCapture();const note=cv.edits[themeId]||'';cv.saving=themeId;renderConverge(activeStep());fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_notes',theme_id:themeId,notes:note})}).then(r=>r.json()).then(j=>{cv.saving=0;if(j&&j.ok){toast('Reading saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderConverge(activeStep());}).catch(()=>{cv.saving=0;toast('Save failed.');renderConverge(activeStep());});}
+function cvSave(themeId){cvCapture();const note=clFold(cv.edits[themeId]||'',themeId);cv.edits[themeId]=note;cv.saving=themeId;renderConverge(activeStep());fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_notes',theme_id:themeId,notes:note})}).then(r=>r.json()).then(j=>{cv.saving=0;if(j&&j.ok){toast('Reading saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderConverge(activeStep());}).catch(()=>{cv.saving=0;toast('Save failed.');renderConverge(activeStep());});}
 function cvSuggest(){if(cv.aibusy)return;
   const themes=((cv.base&&cv.base.rows)||[]).map(r=>{const f=r.frequency||{};const sp=(r.sentiment&&r.sentiment.percent)||{};return {name:r.theme_name,freq_n:f.n||0,freq_pct:f.percent||0,sentiment:{positive:sp.positive||0,negative:sp.negative||0,neutral:sp.neutral||0,mixed:sp.mixed||0},analysis:r.analysis||null,quote:(r.quote&&r.quote.text)?r.quote.text.slice(0,300):''};});
   if(!themes.length){toast('Build the joint display (themes + quotes) first.');return;}
@@ -2550,6 +2550,42 @@ function cvHead(s){return `<div class="ws-header"><div class="eyebrow">Convergen
 function cvNav(){return `${navFooter()}`;}
 function cvMsg(s,msg){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+cvNav();}
 function cvAiPanel(){if(cv.aibusy)return `<div class="th-quotes" style="padding:16px 18px">ReliCheck Intelligence is analyzing alignment…</div>`;if(!cv.ai)return '';const f=cv.ai.findings||[];const rows=f.map(x=>`<tr><td class="dx-name">${esc(x.quant_label||'')}</td><td><span class="tt-status ${x.alignment==='aligned'?'ok':'rev'}">${esc(x.alignment||'')}</span></td><td class="dx-interp">${esc(x.interpretation||'')}</td></tr>`).join('');return `<div class="ov-sec" style="margin-top:6px">ReliCheck Intelligence · suggested alignment</div>${cv.ai.summary?`<div class="dm-note" style="margin:0 0 8px">${esc(cv.ai.summary)}</div>`:''}${f.length?`<div class="panel"><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Finding</th><th class="l">Alignment</th><th class="l">Reading</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`:`<div class="th-quotes" style="padding:14px 18px">No quant-linked findings to align yet.</div>`}`;}
+/* ---- Contextual Lens (reusable) — optional per-finding interpretive layer:
+   Context / Voice / Counter-Pattern / Consequence + a divergence flag. Folded
+   into the item's saved note text under a marker, so re-saving replaces (never
+   duplicates) the block and an untouched lens is preserved on re-save. ---- */
+const CL_MARK='— Contextual Lens —';
+function clPanel(id){
+  return `<details style="border:1px solid #e0d4f5;border-radius:8px;margin-top:10px">
+    <summary style="padding:9px 13px;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:8px;user-select:none">
+      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#6B3FA0;color:#fff;font-size:9px;font-weight:800;flex-shrink:0">CL</span>
+      Contextual Lens <span style="font-weight:400;color:var(--ink-3);font-size:11.5px">optional</span>
+    </summary>
+    <div style="padding:12px 14px 14px;border-top:1px solid #e0d4f5">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin-bottom:12px;cursor:pointer;color:var(--ink-2)"><input type="checkbox" id="cl_div_${id}"> Aggregate and experience diverge for this finding</label>
+      <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Context<span style="display:block;font-weight:400;color:var(--ink-3)">What setting, history, role, condition, or environment shapes this finding?</span></label><textarea id="cl_ctx_${id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+      <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Voice<span style="display:block;font-weight:400;color:var(--ink-3)">Whose experience is visible, and whose might be missing or underrepresented?</span></label><textarea id="cl_grp_${id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+      <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Counter-Pattern<span style="display:block;font-weight:400;color:var(--ink-3)">What responses challenge, complicate, or contradict this finding?</span></label><textarea id="cl_ctr_${id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+      <div><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Consequence<span style="display:block;font-weight:400;color:var(--ink-3)">What could happen if this finding is used shallowly, incorrectly, or without context?</span></label><textarea id="cl_act_${id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+    </div></details>`;
+}
+function clVal(pre,id){const el=document.getElementById(pre+'_'+id);return el?(el.value||'').trim():'';}
+function clCompose(id){
+  const div=document.getElementById('cl_div_'+id), diverge=!!(div&&div.checked);
+  const ctx=clVal('cl_ctx',id), grp=clVal('cl_grp',id), ctr=clVal('cl_ctr',id), act=clVal('cl_act',id);
+  if(!ctx&&!grp&&!ctr&&!act&&!diverge) return '';
+  let out=CL_MARK+'\n';
+  if(diverge) out+='⚠ Aggregate and experience diverge.\n';
+  if(ctx) out+='Context: '+ctx+'\n';
+  if(grp) out+='Voice: '+grp+'\n';
+  if(ctr) out+='Counter-pattern: '+ctr+'\n';
+  if(act) out+='Consequence: '+act+'\n';
+  return out.trim();
+}
+function clStrip(text){const i=String(text||'').indexOf(CL_MARK);return i>=0?String(text).slice(0,i).trim():String(text||'');}
+function clExtract(text){const i=String(text||'').indexOf(CL_MARK);return i>=0?String(text).slice(i).trim():'';}
+// Fold a fresh lens (or preserve an existing one) into a note's text.
+function clFold(rawNote,id){const base=clStrip(rawNote);const cl=clCompose(id)||clExtract(rawNote);return cl?(base?base+'\n\n'+cl:cl):base;}
 function renderConverge(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<p class="lede">Connect a project with themes and analyses to compare the strands.</p>`+cvNav();return;}
   if(cv.err){cvMsg(s,cv.err);return;}
@@ -2566,6 +2602,7 @@ function renderConverge(s){
       <div class="ov-row" style="border:none;padding:6px 0"><div class="ov-k">Qualitative</div><div class="ov-v"><span class="th-sent">${thSent({positive:sp.positive,negative:sp.negative,neutral:(sp.neutral||0)+(sp.mixed||0)})}</span>${r.quote&&r.quote.text?' · "'+esc(r.quote.text.slice(0,120))+'"':''}</div></div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">${['Converge','Nuanced','Diverge'].map(l=>`<button class="btn" style="padding:4px 10px" onclick="cvClassify(${r.theme_id},'${l}')">${l}</button>`).join('')}</div>
       <textarea id="cv_note_${r.theme_id}" class="ed-in" rows="2" style="margin-top:8px" placeholder="Your reading: where do the strands agree or diverge, and why?">${esc(note)}</textarea>
+      ${clPanel(r.theme_id)}
       <div class="dm-save"><button class="btn primary" ${sv?'disabled':''} onclick="cvSave(${r.theme_id})">${sv?'Saving…':'Save reading'}</button></div>
     </div></div>`;}).join('');
   const aiBar=`<div class="dm-save"><button class="btn" ${cv.aibusy?'disabled':''} onclick="cvSuggest()">${cv.aibusy?'Analyzing…':'✦ Suggest alignment with ReliCheck Intelligence'}</button><span class="dm-note">Classify each theme yourself above, or get a suggested alignment from the quant-linked findings.</span></div>`;
