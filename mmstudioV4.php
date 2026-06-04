@@ -882,6 +882,15 @@ function buildSteps(){
 }
 const state={design:BOOT.design,stepId:null,completedThrough:0,toolSel:null,compTab:"explain",notes:{}};
 const $=s=>document.querySelector(s);
+// Footer nav whose buttons name the prior step (Back) and the next step (Continue).
+function navFooter(){
+  const ss=steps(); const cur=activeStep();
+  const i=ss.findIndex(function(x){return x.id===cur.id;});
+  const prev=i>0?ss[i-1]:null, next=(i>=0&&i<ss.length-1)?ss[i+1]:null;
+  const back=prev?'<button class="btn" onclick="stepBy(-1)">← '+esc(prev.label)+'</button>':'<span></span>';
+  const fwd=next?'<button class="btn primary" onclick="stepBy(1)">'+esc(next.label)+' →</button>':'<span></span>';
+  return '<div class="footer-nav">'+back+fwd+'</div>';
+}
 function mmStartUpload(){
   if(!window.DatasetUpload)return;
   DatasetUpload.open({projectType:'mm',onLoaded:function(_ds,pid){go('?project_id='+encodeURIComponent(pid));}});
@@ -975,7 +984,7 @@ function renderOverview(s){
       <div class="ov-row"><span class="ov-k">Description</span><div class="ov-v">${BOOT.projDesc?esc(BOOT.projDesc):'<span class="ov-empty">No description yet.</span>'}</div></div>
     </div>
     ${engine}
-    <div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue to analysis →</button></div>`;
+    ${navFooter()}`;
 }
 /* Quantitative Descriptives — REAL data via /api/mm/descriptives.php.
    Three layers per view: the numbers, a plain-language reading, and what may
@@ -993,7 +1002,7 @@ function dxInitDefaults(){const c=dx.base.categorical,nu=dx.base.numeric;
   if(dx.mNum==null&&nu.length)dx.mNum=nu[0].id;
   if(dx.mGrp==null&&c.length)dx.mGrp=c[0].id;}
 function descHead(eyebrow,title,lede){return `<div class="ws-header"><div class="eyebrow">${eyebrow} <span class="strand-chip quan">QUAN</span></div><h1 class="title">${title}</h1><p class="lede">${lede}</p></div>`;}
-function descMsg(eyebrow,title,lede,msg){return descHead(eyebrow,title,lede)+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div><div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function descMsg(eyebrow,title,lede,msg){return descHead(eyebrow,title,lede)+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>${navFooter()}`;}
 function dxSel(cur,list,onch){return `<select class="ed-in" style="max-width:280px" onchange="${onch}">${list.map(o=>`<option value="${o.id}" ${o.id===cur?'selected':''}>${esc(o.name)}</option>`).join('')}</select>`;}
 function renderDescriptive(s){
   const tool=currentTool(s); const name=tool?tool.name:'';
@@ -1050,7 +1059,7 @@ function renderFreq(s){
       ${expl?`<div class="dx-l dx-q"><div class="dx-l-k">Mixed methods use</div><div class="dx-l-t">Which groups are well represented in the quantitative phase, and which may need qualitative follow-up?</div></div>`:''}
       <div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">Counts describe who is in the data; on their own they do not explain differences between groups.</div></div>
     </div>
-    <div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;
+    ${navFooter()}`;
 }
 function setMeansNum(v){dx.mNum=+v;renderDescriptive(activeStep());}
 function setMeansGrp(v){dx.mGrp=+v;renderDescriptive(activeStep());}
@@ -1087,7 +1096,7 @@ function renderMeans(s){
       ${expl?`<div class="dx-l dx-q"><div class="dx-l-k">Possible follow-up question</div><div class="dx-l-t">What experiences might help explain the differences in these averages between groups?</div></div>`:''}
       <div class="dx-l dx-caution"><div class="dx-l-k">Caution</div><div class="dx-l-t">These are averages. They do not test whether differences are statistically significant or explain why they exist.</div></div>
     </div>
-    <div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;
+    ${navFooter()}`;
 }
 function setXr(v){dx.xr=+v;renderDescriptive(activeStep());}
 function setXc(v){dx.xc=+v;renderDescriptive(activeStep());}
@@ -1125,7 +1134,7 @@ function renderCrossTabs(s){
       ${expl?`<div class="dx-l dx-q"><div class="dx-l-k">Possible qualitative follow-up</div><div class="dx-l-t">What experiences help explain the pattern between ${ct?esc(ct.row_var):'these groups'} and ${ct?esc(ct.col_var):'the outcome'}?</div></div>`:''}
     </div>
     <div class="dx-next"><div class="dx-next-k">↳ Recommended next step</div><div class="dx-next-t">Run <b>Chi-square</b> to test whether these two variables are related.</div><button class="btn primary" style="margin-left:auto;padding:7px 14px;font-size:12.5px" onclick="toast('Chi-square — coming to the inferential engine')">Run Chi-square →</button></div>
-    <div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;
+    ${navFooter()}`;
 }
 /* ===== Independent Samples t-Test (real data via /api/mm/ttest.php) ===== */
 const tt={grouping:null,testType:'auto',conf:0.95,result:null,tab:'desc',busy:false,added:false};
@@ -1906,7 +1915,7 @@ const dqs={base:null,busy:false,err:''};
 function qualityFetch(params){return fetch('/api/mm/data-quality.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},params))}).then(r=>r.json());}
 function dqStatus(t){return t==='ok'?'<span class="tt-status ok">Pass</span>':t==='warn'?'<span class="tt-status rev">Review</span>':t==='alert'?'<span class="tt-status rev">Resolve</span>':'—';}
 function dqHead(s){return `<div class="ws-header"><div class="eyebrow">Data quality · before you analyze</div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function dqNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function dqNav(){return `${navFooter()}`;}
 function dqMsg(s,msg){$("#centerInner").innerHTML=dqHead(s)+helpBar('data_quality')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+dqNav();}
 function renderQuality(s){
   // No linked dataset (or demo): preview the framing checks from the pipeline.
@@ -1984,7 +1993,7 @@ function dmSaveBar(){
   return `<div class="dm-save"><button class="btn primary" ${dm.saving||!dirty?'disabled':''} onclick="dmSave()">${dm.saving?'Saving…':'Save changes'}</button><button class="btn" ${dm.saving?'disabled':''} onclick="dmConfirmAll()">Confirm all roles</button><span class="dm-note">${note}</span></div>`;
 }
 function dmHead(s){return `<div class="ws-header"><div class="eyebrow">Data map · organize before you analyze</div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function dmNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue to Data Quality →</button></div>`;}
+function dmNav(){return navFooter();}
 function dmMsg(s,msg){$("#centerInner").innerHTML=dmHead(s)+helpBar('data_map')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+dmNav();}
 function dmSave(){
   // Persist only the columns the user actually touched, so we never clobber
@@ -2124,7 +2133,7 @@ function renderDataMap(s){
 const tr={base:null,busy:false,err:'',saving:false,member:[]};
 function trFetch(payload){return fetch('/api/mm/trustworthiness.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({project_id:BOOT.projectId},payload||{}))}).then(r=>r.json());}
 function trHead(s){return `<div class="ws-header"><div class="eyebrow">Trustworthiness · qualitative credibility <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function trNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function trNav(){return `${navFooter()}`;}
 function trMsg(s,msg){$("#centerInner").innerHTML=trHead(s)+helpBar('l_trust')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+trNav();}
 function trOutcomeBadge(o){return `<span class="tt-status ${o==='Confirmed'?'ok':'rev'}">${esc(o)}</span>`;}
 function trPanel(title,thead,rows){return `<div class="panel"><div class="panel-h"><div><h3>${title}</h3></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead>${thead}</thead><tbody>${rows}</tbody></table></div></div></div>`;}
@@ -2240,7 +2249,7 @@ function thCode(){if(th.coding||th.codingAi)return;th.coding=true;renderThemes(a
 function thCodeAi(){if(th.coding||th.codingAi||th.clearing)return;toast('Working with ReliCheck Intelligence…');th.codingAi=true;renderThemes(activeStep());thCodeAiReq().then(j=>{th.codingAi=false;if(j&&j.ok){th.base=null;th.sel=null;th.quotes=null;toast('Tagged '+(j.coded_rows||0)+' responses to themes');if(j.batch_failures>0)toast('Note: '+j.batch_failures+' batch(es) failed — re-run to fill the gap.');if(j.unmatched_theme_names&&j.unmatched_theme_names.length)toast('Note: some AI labels did not match your themes ('+j.unmatched_theme_names.slice(0,3).join(', ')+'). Re-run if coverage looks low.');renderThemes(activeStep());}else{toast((j&&(j.message||j.error))||'Could not tag responses.');renderThemes(activeStep());}}).catch(()=>{th.codingAi=false;toast('Semantic tagging failed or timed out.');renderThemes(activeStep());});}
 function thClearTags(){if(th.coding||th.codingAi||th.clearing)return;if(!window.confirm('Remove all tags from your responses? Your themes stay; only the coverage and quotes are cleared so you can re-tag.'))return;th.clearing=true;renderThemes(activeStep());thClearReq().then(j=>{th.clearing=false;if(j&&j.ok){th.base=null;th.sel=null;th.quotes=null;toast('Cleared tags from responses');renderThemes(activeStep());}else{toast((j&&(j.message||j.error))||'Could not clear tags.');renderThemes(activeStep());}}).catch(()=>{th.clearing=false;toast('Could not clear tags.');renderThemes(activeStep());});}
 function thHead(s){return `<div class="ws-header"><div class="eyebrow">Qualitative themes · what the responses mean <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function thNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function thNav(){return `${navFooter()}`;}
 function thMsg(s,msg){$("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+thNav();}
 function thConf(c){return `<span class="tt-status ${c==='high'?'ok':'rev'}">${esc(c||'—')}</span>`;}
 function thSent(mix){mix=mix||{};const p=mix.positive||0,g=mix.negative||0,n=(mix.neutral||0)+(mix.mixed||0);const parts=[];if(p)parts.push('<b class="pos">'+p+' +</b>');if(g)parts.push('<b class="neg">'+g+' −</b>');if(n)parts.push('<b class="neu">'+n+' ·</b>');return parts.length?parts.join(' '):'—';}
@@ -2318,7 +2327,7 @@ function bkSelect(v){bkCapture();bk.sel=+v;bk.evidence=null;renderBook(activeSte
 function bkSave(){if(bk.saving||bk.sel==null)return;bkCapture();bk.saving=true;renderBook(activeStep());const cid=bk.sel,e=bk.edits[cid]||{};fetch('/api/mm/codebook.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',project_id:BOOT.projectId,category_id:cid,short_definition:e.short_definition||'',full_description:e.full_description||'',inclusion_rules:e.inclusion_rules||'',exclusion_rules:e.exclusion_rules||'',borderline_cases:e.borderline_cases||'',status:e.status||'draft'})}).then(r=>r.json()).then(j=>{bk.saving=false;if(j&&j.ok){toast('Codebook entry saved');renderBook(activeStep());}else{toast((j&&(j.message||j.error))||'Could not save.');renderBook(activeStep());}}).catch(()=>{bk.saving=false;toast('Save failed.');renderBook(activeStep());});}
 function bkDraft(){if(bk.drafting||bk.sel==null)return;toast('Working with ReliCheck Intelligence…');bkCapture();bk.drafting=true;renderBook(activeStep());const cid=bk.sel;fetch('/api/mm/codebook.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'draft',project_id:BOOT.projectId,category_id:cid})}).then(r=>r.json()).then(j=>{bk.drafting=false;if(j&&j.ok&&j.draft){const d=j.draft;bk.edits[cid]=Object.assign({},bk.edits[cid],{short_definition:d.short_definition||'',full_description:d.full_description||'',inclusion_rules:d.inclusion_rules||'',exclusion_rules:d.exclusion_rules||'',borderline_cases:d.borderline_cases||''});toast('ReliCheck Intelligence draft ready — review and save');renderBook(activeStep());}else{toast((j&&(j.message||j.error))||'Could not draft (needs tagged responses).');renderBook(activeStep());}}).catch(()=>{bk.drafting=false;toast('Draft failed.');renderBook(activeStep());});}
 function bkHead(s){return `<div class="ws-header"><div class="eyebrow">Codebook & evidence · the rulebook for your codes <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function bkNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function bkNav(){return `${navFooter()}`;}
 function bkMsg(s,msg){$("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+bkNav();}
 function bkField(label,id,val,rows){return `<label class="ed-l">${label}</label>`+(rows?`<textarea id="${id}" class="ed-in" rows="${rows}">${esc(val)}</textarea>`:`<input id="${id}" class="ed-in" value="${esc(val)}">`);}
 function bkEvidencePanel(){
@@ -2360,7 +2369,7 @@ const jd={base:null,busy:false,err:'',picking:false,choosing:null,candidates:nul
 function jdFetch(){return fetch('/api/mm/joint-display.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function jdPickAll(){if(jd.picking)return;toast('Working with ReliCheck Intelligence…');jd.picking=true;renderJoint(activeStep());fetch('/api/mm/joint-display.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'pick_all_quotes'})}).then(r=>r.json()).then(j=>{jd.picking=false;if(j&&j.ok){jd.base=null;toast('Picked '+(j.picked||0)+' quotes');renderJoint(activeStep());}else{toast((j&&(j.message||j.error))||'Could not pick quotes.');renderJoint(activeStep());}}).catch(()=>{jd.picking=false;toast('Quote picking failed or timed out.');renderJoint(activeStep());});}
 function jdHead(s){return `<div class="ws-header"><div class="eyebrow">Joint display · numbers and narratives together <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function jdNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function jdNav(){return `${navFooter()}`;}
 function jdMsg(s,msg){$("#centerInner").innerHTML=jdHead(s)+helpBar('joint')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+jdNav();}
 function jdAnalysis(a){if(!a||!a.test)return '—';const pp=a.predictor?esc(a.predictor):'';const oo=a.outcome?esc(a.outcome):'';const pair=(pp||oo)?` (${pp}${pp&&oo?' → ':''}${oo})`:'';return esc(a.test)+pair;}
 function jdEvidenceFetch(cid){return fetch('/api/mm/codebook-evidence.php?project_id='+BOOT.projectId+'&category_id='+cid,{credentials:'same-origin'}).then(r=>r.json());}
@@ -2409,7 +2418,7 @@ function q2Fetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectI
 function q2Toggle(k){q2.vars[k]=!q2.vars[k];renderQ2Q(activeStep());}
 function q2Build(){if(q2.building)return;q2.building=true;renderQ2Q(activeStep());const v=q2.vars;const variables={presence:!!v.presence,intensity:!!v.intensity,sentiment_cat:!!v.sentiment,sentiment_num:!!v.sentiment,length_chars:!!v.length,length_words:!!v.length};fetch('/api/mm/dataset.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,title:'Quantitized themes',variables:variables})}).then(r=>r.json()).then(j=>{q2.building=false;if(j&&j.ok){q2.result=j;mt.vars=null;mt.result=null;mt.pred=0;mt.out=0;jd.base=null;toast('Created '+(j.col_count||0)+' variables');renderQ2Q(activeStep());}else{toast((j&&(j.message||j.error))||'Could not build variables.');renderQ2Q(activeStep());}}).catch(()=>{q2.building=false;toast('Build failed.');renderQ2Q(activeStep());});}
 function q2Head(s){return `<div class="ws-header"><div class="eyebrow">Qual → Quant · make themes measurable <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function q2Nav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function q2Nav(){return `${navFooter()}`;}
 function q2Msg(s,msg){$("#centerInner").innerHTML=q2Head(s)+helpBar('q2q')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+q2Nav();}
 function q2Opt(k,label,desc){const on=!!q2.vars[k];return `<label class="dq-row" style="cursor:pointer"><input type="checkbox" ${on?'checked':''} onchange="q2Toggle('${k}')" style="margin-right:4px"><div class="dq-body"><div class="dq-name">${esc(label)}</div><div class="dq-risk">${esc(desc)}</div></div></label>`;}
 function renderQ2Q(s){
@@ -2440,7 +2449,7 @@ function mtFetch(){return fetch('/api/mm/generated-variables.php?project_id='+BO
 function mtSet(k,v){mt[k]=(k==='test')?v:+v;renderMeasureTest(activeStep());}
 function mtRun(){if(mt.running||!mt.pred||!mt.out||mt.pred===mt.out)return;mt.running=true;renderMeasureTest(activeStep());fetch('/api/mm/analysis-run.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,predictor_id:mt.pred,outcome_id:mt.out,test:mt.test})}).then(r=>r.json()).then(j=>{mt.running=false;if(j&&j.ok){mt.result=j.result;jd.base=null;toast('Test run and saved');renderMeasureTest(activeStep());}else{toast((j&&(j.message||j.error))||'Could not run the test.');renderMeasureTest(activeStep());}}).catch(()=>{mt.running=false;toast('Test failed.');renderMeasureTest(activeStep());});}
 function mtHead(s){return `<div class="ws-header"><div class="eyebrow">Build & test measures · test the measures from your themes <span class="strand-chip quan">QUAN</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function mtNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function mtNav(){return `${navFooter()}`;}
 function mtMsg(s,msg){$("#centerInner").innerHTML=mtHead(s)+helpBar('q_build')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+mtNav();}
 function mtSel(cur,vars,onch){return `<select class="ed-in dm-sel" style="max-width:320px" onchange="${onch}"><option value="0">— choose —</option>${vars.map(v=>`<option value="${v.id}" ${v.id===cur?'selected':''}>${esc(v.name)}${v.theme?' · '+esc(v.theme):''}</option>`).join('')}</select>`;}
 function renderMeasureTest(s){
@@ -2477,7 +2486,7 @@ function cvSuggest(){if(cv.aibusy)return;
   toast('Working with ReliCheck Intelligence…');cvCapture();cv.aibusy=true;renderConverge(activeStep());
   fetch('/api/mm/alignment.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,themes:themes})}).then(r=>r.json()).then(j=>{cv.aibusy=false;cv.ai=(j&&j.ok)?j:null;if(!(j&&j.ok))toast((j&&(j.message||j.error))||'Could not analyze alignment.');renderConverge(activeStep());}).catch(()=>{cv.aibusy=false;toast('Analysis failed or timed out.');renderConverge(activeStep());});}
 function cvHead(s){return `<div class="ws-header"><div class="eyebrow">Convergence & divergence · where the strands meet <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function cvNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function cvNav(){return `${navFooter()}`;}
 function cvMsg(s,msg){$("#centerInner").innerHTML=cvHead(s)+helpBar('converge')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+cvNav();}
 function cvAiPanel(){if(cv.aibusy)return `<div class="th-quotes" style="padding:16px 18px">ReliCheck Intelligence is analyzing alignment…</div>`;if(!cv.ai)return '';const f=cv.ai.findings||[];const rows=f.map(x=>`<tr><td class="dx-name">${esc(x.quant_label||'')}</td><td><span class="tt-status ${x.alignment==='aligned'?'ok':'rev'}">${esc(x.alignment||'')}</span></td><td class="dx-interp">${esc(x.interpretation||'')}</td></tr>`).join('');return `<div class="ov-sec" style="margin-top:6px">ReliCheck Intelligence · suggested alignment</div>${cv.ai.summary?`<div class="dm-note" style="margin:0 0 8px">${esc(cv.ai.summary)}</div>`:''}${f.length?`<div class="panel"><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Finding</th><th class="l">Alignment</th><th class="l">Reading</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`:`<div class="th-quotes" style="padding:14px 18px">No quant-linked findings to align yet.</div>`}`;}
 function renderConverge(s){
@@ -2510,7 +2519,7 @@ function miFetch(){return Promise.all([fetch('/api/mm/project.php?id='+BOOT.proj
 function miScaffold(){const el=document.getElementById('miText');if(!el)return;const reads=(mi.rows||[]).filter(r=>r.notes&&r.notes.trim()).map(r=>'• '+r.theme_name+': '+r.notes.trim());if(!reads.length){toast('No convergence readings yet');return;}el.value=(el.value.trim()?el.value.trim()+'\n\n':'')+'From my convergence readings:\n'+reads.join('\n');el.focus();}
 function miSave(){const el=document.getElementById('miText');const notes=el?el.value:'';mi.saving=true;renderMeta(activeStep());fetch('/api/mm/project.php',{method:'PATCH',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:BOOT.projectId,notes:notes})}).then(r=>r.json()).then(j=>{mi.saving=false;mi.notes=notes;if(j&&j.ok){toast('Meta-inferences saved');}else{toast((j&&(j.message||j.error))||'Could not save.');}renderMeta(activeStep());}).catch(()=>{mi.saving=false;toast('Save failed.');renderMeta(activeStep());});}
 function miHead(s){return `<div class="ws-header"><div class="eyebrow">Meta-inferences · what the whole study concludes <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function miNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function miNav(){return `${navFooter()}`;}
 function miMsg(s,msg){$("#centerInner").innerHTML=miHead(s)+helpBar('meta')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+miNav();}
 function renderMeta(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=miHead(s)+helpBar('meta')+`<p class="lede">Connect a project to draw the study's meta-inferences.</p>`+miNav();return;}
@@ -2537,7 +2546,7 @@ function ipSave(themeId){ipCapture();const text=ip.edits[themeId]||'';ip.saving=
 function ipGenerate(themeId){if(ip.gen)return;toast('Working with ReliCheck Intelligence…');ipCapture();ip.gen=themeId;renderInterp(activeStep());fetch('/api/mm/integration.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate',theme_id:themeId})}).then(r=>r.json()).then(j=>{ip.gen=0;if(j&&j.ok&&j.paragraph){ip.edits[themeId]=j.paragraph;toast('Draft ready — review and save');}else{toast((j&&(j.message||j.error))||'Could not draft.');}renderInterp(activeStep());}).catch(()=>{ip.gen=0;toast('Draft failed.');renderInterp(activeStep());});}
 function ipGenerateAll(){if(ip.genAll)return;toast('Working with ReliCheck Intelligence…');ipCapture();ip.genAll=true;renderInterp(activeStep());fetch('/api/mm/integration.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_all'})}).then(r=>r.json()).then(j=>{ip.genAll=false;if(j&&j.ok){ip.base=null;ip.edits={};toast('Interpretations drafted');}else{toast((j&&(j.message||j.error))||'Could not draft.');}renderInterp(activeStep());}).catch(()=>{ip.genAll=false;toast('Draft failed or timed out.');renderInterp(activeStep());});}
 function ipHead(s){return `<div class="ws-header"><div class="eyebrow">Integrated interpretation · what it means, theme by theme <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function ipNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function ipNav(){return `${navFooter()}`;}
 function ipMsg(s,msg){$("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+ipNav();}
 function renderInterp(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=ipHead(s)+helpBar('interp')+`<p class="lede">Connect a project to interpret the combined evidence.</p>`+ipNav();return;}
@@ -2568,7 +2577,7 @@ function sgRun(){if(sg.running)return;sg.running=true;if(sg.includeAi)toast('Wor
 function sgDedupe(rows){const seen={};const out=[];(rows||[]).forEach(r=>{if(seen[r.check_key])return;seen[r.check_key]=1;out.push(r);});return out;}
 function sgBadge(r){if(r.status==='pass')return '<span class="tt-status ok">Pass</span>';if(r.status==='skip')return '<span style="color:var(--ink-3)">— not yet —</span>';return `<span class="tt-status rev">${r.severity==='high'?'Fix':'Review'}</span>`;}
 function sgHead(s){return `<div class="ws-header"><div class="eyebrow">Evidence strength · how strong is the integrated evidence <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function sgNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function sgNav(){return `${navFooter()}`;}
 function sgMsg(s,msg){$("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+sgNav();}
 function renderStrength(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=sgHead(s)+helpBar('evidence_strength')+`<p class="lede">Connect a project to gauge the strength of its integrated evidence.</p>`+sgNav();return;}
@@ -2604,7 +2613,7 @@ function rpSave(key){rpCapture();const text=rp.edits[key]||'';rp.saving=key;rend
 function rpGenerate(key,isAi){if(rp.gen)return;rpCapture();rp.gen=key;if(isAi)toast('Working with ReliCheck Intelligence…');renderReport(activeStep());fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_section',section_key:key})}).then(r=>r.json()).then(j=>{rp.gen='';if(j&&j.ok){rp.base=null;delete rp.edits[key];toast('Section generated');}else{toast((j&&(j.message||j.error))||'Could not generate.');}renderReport(activeStep());}).catch(()=>{rp.gen='';toast('Generate failed.');renderReport(activeStep());});}
 function rpGenerateAll(){if(rp.genAll)return;rpCapture();rp.genAll=true;toast('Building the report…');renderReport(activeStep());fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'generate_all'})}).then(r=>r.json()).then(j=>{rp.genAll=false;if(j&&j.ok){rp.base=null;rp.edits={};toast('Report assembled');}else{toast((j&&(j.message||j.error))||'Could not build the report.');}renderReport(activeStep());}).catch(()=>{rp.genAll=false;toast('Build failed or timed out.');renderReport(activeStep());});}
 function rpHead(s){return `<div class="ws-header"><div class="eyebrow">Report builder · assemble the write-up <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function rpNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function rpNav(){return `${navFooter()}`;}
 function rpMsg(s,msg){$("#centerInner").innerHTML=rpHead(s)+helpBar('report')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+rpNav();}
 function renderReport(s){
   if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=rpHead(s)+helpBar('report')+`<p class="lede">Connect a project to assemble its report.</p>`+rpNav();return;}
@@ -2640,7 +2649,7 @@ function explLoad(){
     }).catch(()=>{ expl.loaded=true; expl.busy=false; renderCenter(); });
 }
 function explToggle(id){ expl.sel[id]=!expl.sel[id]; renderCenter(); }
-function explNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function explNav(){return `${navFooter()}`;}
 function renderExplain(s){
   const modeChip=`<span class="mode-chip work">Workstation</span>`;
   const chip=`<span class="strand-chip both">MIXED</span>`;
@@ -2739,7 +2748,7 @@ function qsFetch(){return Promise.all([
   fetch('/api/mm/report.php?project_id='+BOOT.projectId+'&action=list_notes&section_key=methods',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)
 ]);}
 function qsHead(s){return `<div class="ws-header"><div class="eyebrow">Qualitative sampling plan · who to follow up with <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function qsNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function qsNav(){return `${navFooter()}`;}
 function qsMsg(s,msg){$("#centerInner").innerHTML=qsHead(s)+helpBar('qual_sampling')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+qsNav();}
 function qsCapture(){const el=document.getElementById('qsText');if(el)qs.plan=el.value;}
 function qsScaffold(){
@@ -2824,7 +2833,7 @@ function emFetch(){return Promise.all([
   fetch('/api/mm/report.php?project_id='+BOOT.projectId+'&action=list_notes&section_key=integration',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)
 ]);}
 function emHead(s){return `<div class="ws-header"><div class="eyebrow">Quant → Qual explanation map · link each result to the theme that explains it <span class="strand-chip both">MIXED</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
-function emNav(){return `<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;}
+function emNav(){return `${navFooter()}`;}
 function emMsg(s,msg){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+emNav();}
 function emCompose(){
   const lines=[EM_MARK,''];
@@ -3111,7 +3120,7 @@ function renderCenter(){
     ${helpBar(helpKey(s))}
     <div class="context-strip"><span class="dot"></span>${esc(BOOT.projectLabel)}</div>
     <div class="panel"><div class="panel-h"><div><h3>${s.title}</h3><div class="ph-sub">${sub}</div></div></div>${body}</div>
-    <div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>`;
+    ${navFooter()}`;
 }
 function renderPalette(){
   const s=activeStep(); const p=s.palette||{intro:"",groups:[]};
@@ -3210,7 +3219,7 @@ function mmRenderToolBars(){
     const save=(BOOT.projectId>0)
       ? '<div class="dm-save" id="mmReportSave" style="margin:0 0 14px"><button class="btn primary" onclick="saveAreaToReport(activeStep())">＋ Save to report</button><span class="dm-note">Adds this result to the report’s Findings section.</span></div>'
       : '';
-    fb.innerHTML=save+'<div class="footer-nav"><button class="btn" onclick="stepBy(-1)">← Back</button><button class="btn primary" onclick="stepBy(1)">Continue →</button></div>';
+    fb.innerHTML=save+navFooter();
   } else {
     fb.innerHTML='';
   }
