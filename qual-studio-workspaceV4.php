@@ -599,6 +599,9 @@ label .tt-hint{margin-left:6px;}
 .tb-connector{width:18px;}
 .tb-node{width:24px;height:24px;}
 .tb-step.active .tb-node{width:26px;height:26px;}
+/* Workstation canvas: one solid white (not MM's faint gray). Panels keep their
+   white fill + hairline border + soft shadow, so cards still read. */
+.main,.center{background:var(--surface);}
 /* code chips */
 .code-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--qual-ink);background:var(--qual-soft);border:1px solid transparent;border-radius:999px;padding:4px 11px;margin:0 6px 6px 0;}
 .code-chip .x{color:var(--qual-ink);opacity:.5;font-weight:700;cursor:pointer;}
