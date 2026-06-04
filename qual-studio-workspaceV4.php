@@ -1,5 +1,5 @@
 <?php
-// qual-studio-workspaceV4.php — Qualitative Studio, 2026 MM-mirrored shell. PROTOTYPE.
+// qual-studio-workspaceV4.php — Qualitative Studio, 2026 MM-mirrored shell.
 //
 // Mirrors mmstudioV4.php's infrastructure wholesale: the 4-row CSS grid
 // (RC header / 76px topbar / sidebar+main / footer), the horizontal top step
@@ -7,10 +7,10 @@
 // Accent is Qual's forest green (per the per-studio accent convention); the
 // structure is MM's.
 //
-// PROTOTYPE STAGE: every step renders high-fidelity SAMPLE data. No /api/qual
-// calls are wired yet — that happens after the design is signed off, at which
-// point the renderers point at the same endpoints the live V3 already uses.
-// This file is NEW and does not touch the live qual-studio-workspaceV3.php.
+// All 14 steps are wired to the same /api/qual endpoints the live V3 uses.
+// Built prototype-first (sample data), then wired chunk by chunk and verified
+// on project 13. The landing page (qual-studio.php) still points at V3 until
+// this is flipped over.
 
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';
@@ -758,69 +758,8 @@ function wsHead(s){
     +'<h1 class="title">'+esc(s.title)+'</h1><p class="lede">'+esc(s.lede)+'</p></div>';
 }
 
-/* ════════ SAMPLE DATA (prototype only) ════════ */
-const SAMPLE={
-  columns:[
-    {name:'RespondentID', role:'Case identifier', kind:'meta'},
-    {name:'Role',         role:'Grouping variable', kind:'group'},
-    {name:'What is working well in your role?', role:'Open-ended response', kind:'open'},
-    {name:'What would make your work more sustainable?', role:'Open-ended response', kind:'open'},
-    {name:'Years teaching', role:'Grouping variable', kind:'group'},
-  ],
-  pii:[
-    {kind:'Email', found:'2 segments', example:'…you can reach me at j.•••••@…', status:'warn'},
-    {kind:'Person name', found:'4 segments', example:'…my mentor ••••• really helped…', status:'warn'},
-    {kind:'Phone number', found:'1 segment', example:'…call me on 07••• •••…', status:'warn'},
-  ],
-  concepts:[
-    {label:'workload / time', n:48},{label:'training & prep', n:31},
-    {label:'colleagues / peers', n:27},{label:'recognition', n:19},{label:'admin paperwork', n:23},
-  ],
-  segments:[
-    {ref:'R012 · Q1', text:'My team genuinely supports each other. When I am buried in marking, someone always offers to take a duty.', codes:['Peer collaboration','Supportive manager']},
-    {ref:'R027 · Q2', text:'There just is not enough time. By the time I have finished admin paperwork the actual planning happens at home, late.', codes:['Time pressure','Administrative load']},
-    {ref:'R031 · Q2', text:'I was thrown into a new year group with almost no training. I am constantly improvising and it is exhausting.', codes:['Lack of training','Burnout signals']},
-    {ref:'R044 · Q1', text:'A simple thank you from leadership goes a long way. When I feel seen I can handle a heavier week.', codes:['Feeling valued']},
-  ],
-  codes:[
-    {name:'Time pressure',        def:'References to insufficient time for core tasks.', n:42},
-    {name:'Administrative load',  def:'Paperwork or admin that competes with teaching.', n:28},
-    {name:'Lack of training',     def:'Feeling under-prepared or unsupported in a new task.', n:19},
-    {name:'Unclear expectations', def:'Not knowing what success looks like.', n:12},
-    {name:'Supportive manager',   def:'A leader who actively backs the respondent.', n:24},
-    {name:'Peer collaboration',   def:'Colleagues sharing load or ideas.', n:31},
-    {name:'Feeling valued',       def:'Recognition that sustains motivation.', n:17},
-    {name:'Burnout signals',      def:'Exhaustion, depletion, or wanting to leave.', n:15},
-  ],
-  categories:[
-    {name:'Barriers to sustainability', sub:'What drains capacity', codes:['Time pressure','Administrative load','Lack of training','Unclear expectations']},
-    {name:'Sources of support',         sub:'What sustains people',  codes:['Supportive manager','Peer collaboration','Feeling valued']},
-    {name:'Wellbeing signals',          sub:'Early warning signs',   codes:['Burnout signals']},
-  ],
-  themes:[
-    {name:'Workload outpaces the support around it', cov:62, pos:18, neu:22, neg:60, n:78},
-    {name:'Training gaps undercut confidence',       cov:41, pos:12, neu:28, neg:60, n:52},
-    {name:'Peer relationships sustain morale',       cov:38, pos:74, neu:18, neg:8,  n:48},
-    {name:'Recognition makes heavy weeks bearable',  cov:29, pos:69, neu:23, neg:8,  n:36},
-  ],
-  quotes:{
-    'Workload outpaces the support around it':[
-      {t:'By the time I have finished admin paperwork the actual planning happens at home, late.', m:'R027 · Year 4 teacher'},
-      {t:'I love the teaching part. It is everything around it that is breaking me.', m:'R009 · Year 6 teacher'},
-    ],
-    'Peer relationships sustain morale':[
-      {t:'When I am buried in marking, someone always offers to take a duty.', m:'R012 · Year 2 teacher'},
-    ],
-  },
-  trust:[
-    {k:'Credibility',     status:'Pass',   note:'Dual coding on 20% of segments; member check completed with 3 respondents.'},
-    {k:'Transferability', status:'Review', note:'Add a richer description of the school context so readers can judge transfer.'},
-    {k:'Dependability',   status:'Pass',   note:'Codebook versioned; every code carries a dated definition and example.'},
-    {k:'Confirmability',  status:'Pass',   note:'Audit trail links each theme back to its coded segments and quotes.'},
-  ],
-};
 
-/* ════════ STEP RENDERERS (sample data) ════════ */
+/* ════════ STEP RENDERERS (live data) ════════ */
 /* api helper (mirrors V3's api(): throws on !ok) */
 function qapi(path,opts){opts=opts||{};return fetch(path,Object.assign({credentials:'same-origin',headers:{'Content-Type':'application/json'}},opts)).then(r=>r.json()).then(d=>{if(!d.ok)throw new Error(d.message||d.error||'Request failed');return d;});}
 
@@ -982,14 +921,37 @@ function qRenderPii(d){
 function qMaskSeg(sid,btn){if(btn){btn.disabled=true;btn.textContent='Masking…';}
   qapi('/api/qual/mask-pii.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,segment_id:sid})}).then(r=>{const row=document.getElementById('qpii-'+sid);if(row)row.innerHTML='<div class="dq-body"><span class="tt-status ok">Masked</span> <span class="dq-risk">'+esc(r.masked_text)+'</span></div>';}).catch(e=>{if(btn){btn.disabled=false;btn.textContent='Mask';}toast('Could not mask: '+e.message);});}
 function qMaskAll(){if(qPii&&qPii.flagged)qPii.flagged.forEach(f=>qMaskSeg(f.segment_id,null));}
+/* ── Step 6 · Familiarization — stats, first-impressions memo, AI concept scan ── */
 function renderFamiliarization(s){
-  const chips=SAMPLE.concepts.map(c=>`<span class="ov-chip">${esc(c.label)} · ${c.n}</span>`).join(' ');
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="panel"><div class="panel-h"><div><h3>First impressions</h3><div class="ph-sub">Capture what stands out before formal coding</div></div></div>
-      <div class="panel-b"><textarea class="ed-in" rows="4" placeholder="What patterns, surprises, or tensions are you noticing on a first read?">Workload and time come up constantly, but so does the buffering effect of supportive colleagues. Worth watching whether recognition moderates burnout.</textarea>
-        <div class="run-actions" style="margin-top:14px"><button class="btn primary" onclick="toast('Memo saved (prototype)')">Save memo</button></div></div></div>
-    <div class="panel"><div class="panel-h"><div><h3>Recurring concepts</h3><div class="ph-sub">✦ Surfaced by ReliCheck Intelligence from your corpus</div></div></div>
-      <div class="panel-b">${chips}<div class="dm-note" style="margin-top:10px">These are starting points, not codes. You decide which become part of the codebook.</div></div></div>`+navFooter();
+    <div class="dm-cards" id="famStats"><div class="dm-card"><div class="dm-card-k">Loading…</div><div class="dm-card-v">—</div></div></div>
+    <div class="panel"><div class="panel-h"><div><h3>First impressions memo</h3><div class="ph-sub">Saved to the audit trail</div></div></div>
+      <div class="panel-b"><div class="dm-note" style="margin-bottom:10px">Before coding, what stands out? What surprises you? What patterns, tensions, or questions do you notice?</div>
+        <textarea class="ed-in" id="famMemo" rows="4" placeholder="I noticed several responses mentioned…"></textarea>
+        <div class="dm-save" style="position:static;margin-top:10px"><button class="btn primary" onclick="qfamSaveMemo()">Save memo</button><span class="dm-note" id="famMsg"></span></div></div></div>
+    <div class="panel"><div class="panel-h"><div><h3>Linguistic concept scan</h3><div class="ph-sub">✦ ReliCheck Intelligence surfaces recurring concepts before you code</div></div></div>
+      <div class="panel-b"><div id="scanBody"><button class="btn primary" onclick="qfamScan(true)">Run concept scan</button><div class="dm-note" style="margin-top:8px">Analyzes a sample of your responses; takes 15–30 seconds.</div></div></div></div>`+navFooter();
+  fetch('/api/qual/get-project.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='familiarization')return;const st=(d&&d.stats)||{};const el=$("#famStats");if(!el)return;
+    el.innerHTML=[['Segments',st.seg_count],['Data sources',st.doc_count],['Total words',st.total_words],['Avg words/seg',st.avg_words],['Codes',st.code_count]].map(x=>`<div class="dm-card"><div class="dm-card-k">${x[0]}</div><div class="dm-card-v">${Number(x[1]||0).toLocaleString()}</div></div>`).join('');
+  }).catch(()=>{});
+  qapi('/api/qual/concept-scan.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,force:false})}).then(r=>{if(activeStep().id==='familiarization'&&r.from_cache)qfamRenderScan(r);}).catch(()=>{});
+}
+function qfamSaveMemo(){
+  const body=($("#famMemo").value||'').trim();const msg=$("#famMsg");
+  if(!body){if(msg){msg.style.color='#c0392b';msg.textContent='Write something before saving.';}return;}
+  if(msg){msg.style.color='';msg.textContent='Saving…';}
+  qapi('/api/qual/save-memo.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,object_type:'project',memo_type:'first_impressions',title:'First Impressions',body:body})}).then(()=>{if(msg){msg.style.color='var(--mm-ink)';msg.textContent='Memo saved.';}}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
+}
+function qfamScan(force){
+  const sb=$("#scanBody");if(sb)sb.innerHTML='<div class="work-surface">Analyzing the corpus with ReliCheck Intelligence… this can take 15–30 seconds.</div>';
+  qapi('/api/qual/concept-scan.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,force:!!force})}).then(r=>{if(activeStep().id==='familiarization')qfamRenderScan(r);}).catch(e=>{if(sb)sb.innerHTML='<div class="work-surface">Scan failed: '+esc(e.message)+'</div><div class="run-actions" style="margin-top:10px"><button class="btn" onclick="qfamScan(true)">Try again</button></div>';});
+}
+function qfamRenderScan(r){
+  const sb=$("#scanBody");if(!sb)return;
+  const cards=(r.concepts||[]).map(c=>{const quotes=(c.example_quotes||[]).map(q=>`<div style="font-size:12px;color:var(--text-2);border-left:3px solid var(--border);padding-left:8px;margin-top:6px;font-style:italic">"${esc(q)}"</div>`).join('');return `<div class="seg-card" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><span style="font-weight:700;font-size:13.5px">${esc(c.concept)}</span><span class="strand-chip qual">${esc(c.evidence_type||'')}</span><span class="dm-note" style="margin-left:auto">${c.frequency||'?'} responses</span></div>${quotes}</div>`;}).join('');
+  sb.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span class="dm-note">${r.from_cache?'Cached · ':''}${r.segments_scanned||0} segments scanned</span><button class="btn" style="font-size:12px;padding:5px 12px;margin-left:auto" onclick="qfamScan(true)">Re-run</button></div><div style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto">${cards}</div>`;
 }
 /* ── Step 7 · Coding Workspace — real segments + codes (chunk 2) ── */
 const qcw={codes:null,segments:[],uncodedOnly:false,search:''};
