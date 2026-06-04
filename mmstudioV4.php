@@ -251,7 +251,7 @@ $BOOT = [
   --qual:#8A4FD0; --qual-soft:#F2EAFB; --qual-ink:#6d36b0;
   --mm:#1f9e44;   --mm-soft:#e9f7ee;   --mm-ink:#157a33;
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif;
-  --rail:248px; --palette:262px; --companion:336px;
+  --rail:224px; --palette:262px; --companion:336px;
   --shadow:0 1px 2px rgba(20,28,45,.04),0 4px 16px rgba(20,28,45,.05);
 }
 *{box-sizing:border-box}
@@ -305,7 +305,7 @@ button{font-family:inherit;cursor:pointer}
 .rail{flex:0 0 var(--rail);}
 .stage{flex:1 1 0;min-width:0;overflow:hidden;}
 /* the left pipeline rail keeps the purple brand; the rest of the app stays gray */
-.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 16px;overflow-y:auto;grid-row:3;}
+.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:20px 16px;overflow-y:auto;flex-shrink:0;}
 .rail-h{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:4px 12px 8px}
 .design-pick{position:relative;padding:0 10px 4px}
 .design-pick-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:9px;padding:5px 8px;cursor:pointer;transition:.12s}
@@ -343,8 +343,8 @@ button{font-family:inherit;cursor:pointer}
 .step.pivot{border:1px dashed var(--accent);background:linear-gradient(180deg,#fffdfb,var(--accent-soft))}
 .step.pivot .num{background:#fff;color:var(--accent);border-color:var(--accent)}
 .step.pivot[data-active="1"] .num{background:var(--accent);color:#fff}
-.center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 28px 60px 28px}
-.center-inner{max-width:none}
+.center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:32px 36px 80px}
+.center-inner{max-width:960px}
 .ws-header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 78%,rgba(245,246,248,0));padding-top:6px;margin-bottom:14px}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:8px}
 .eyebrow .mode-chip{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.04em;background:var(--ink);color:#fff}
@@ -359,7 +359,7 @@ button{font-family:inherit;cursor:pointer}
 .answer{display:flex;gap:11px;align-items:flex-start;padding:12px 15px;border-radius:13px;background:var(--accent-soft);border:1px solid rgba(232,93,58,.2);margin-bottom:16px}
 .answer .a-ico{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;background:var(--accent);color:#fff;font-size:13px}
 .answer .a-text{font-size:14px;line-height:1.55;color:var(--accent-ink)}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}
+.panel{background:var(--panel);border:1px solid rgba(0,0,0,.07);border-radius:16px;box-shadow:0 1px 3px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.06);margin-bottom:18px;overflow:hidden}
 .panel-h{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line-2)}
 .panel-h h3{font-size:15px;font-weight:650}.panel-h .ph-sub{font-size:12.5px;color:var(--ink-3);margin-top:2px}
 .panel-b{padding:20px}
@@ -580,8 +580,9 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 /* Studio topbar */
 .studio-topbar{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr auto 1fr;
   align-items:center;padding:0 20px;background:var(--panel);
-  border-bottom:1px solid var(--line);height:var(--sttb-h);z-index:9;position:relative;}
-.sttb-left{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:-.2px;justify-self:start;}
+  border-bottom:1px solid var(--line);height:var(--sttb-h);z-index:9;position:relative;
+  box-shadow:0 1px 0 var(--line);}
+.sttb-left{font-size:13px;font-weight:600;color:var(--ink-3);letter-spacing:-.1px;justify-self:start;}
 .sttb-center{display:flex;align-items:center;justify-self:center;}
 .sttb-right{display:flex;align-items:center;gap:8px;justify-self:end;}
 
@@ -614,7 +615,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 .sb-div{height:1px;background:var(--line);margin:16px 0;}
 
 /* ── Researcher's Notes block ── */
-.nb{background:var(--panel);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+.nb{background:var(--panel);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.05);border:1px solid var(--line);}
 .nb-head{display:flex;align-items:center;justify-content:space-between;
   padding:9px 13px 7px;border-bottom:1px solid var(--line-2);}
 .nb-lbl{display:flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
@@ -709,8 +710,11 @@ body.coach-open .coach-tab-lbl{color:var(--btn);}
 
 /* Pill shape for all action buttons */
 .btn{border-radius:999px!important;}
-.btn.primary{border-radius:999px!important;}
+.btn.primary{border-radius:999px!important;background:var(--btn);border-color:var(--btn);}
+.btn.primary:hover{background:var(--btn-hover)!important;}
 .as-intake-btn{border-radius:999px!important;}
+.begin-card2:hover{border-color:var(--btn)!important;transform:none;}
+.begin-feature:hover{border-color:var(--btn)!important;}
 </style>
 <script src="/apps/studio/dataset-upload.js?v=<?= filemtime(__DIR__.'/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
