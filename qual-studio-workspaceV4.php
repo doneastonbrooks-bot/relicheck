@@ -1416,40 +1416,133 @@ function qfPage(){
   $("#centerInner").innerHTML=wsHead(s)+`<div class="tt-tabs" style="margin-bottom:18px">${tabs}</div><div id="qfBody">${body}</div>`+navFooter();
 }
 function qfPin(segId,action,btn){if(!qfw.theme)return;if(btn)btn.disabled=true;qapi('/api/qual/save-quote.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,theme_id:qfw.theme.id,segment_id:segId,action:action})}).then(()=>qfLoad(qfw.theme.id)).catch(ex=>{if(btn)btn.disabled=false;toast('Error: '+ex.message);});}
+const APPROACH_LABELS={thematic:'Thematic Analysis',content:'Content Analysis',framework:'Framework Analysis',open_ended_survey:'Open-Ended Survey Analysis',document:'Document Analysis'};
+/* ── Step 13 · Trustworthiness — reflexivity, agreement, member checks (chunk 4) ── */
 function renderTrustworthiness(s){
-  const rows=SAMPLE.trust.map(t=>`<tr><td class="dx-name">${esc(t.k)}</td>
-    <td>${t.status==='Pass'?'<span class="tt-status ok">Documented</span>':'<span class="tt-status rev">Review</span>'}</td>
-    <td class="dx-interp">${esc(t.note)}</td></tr>`).join('');
-  $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="panel"><div class="panel-h"><div><h3>Trustworthiness record</h3><div class="ph-sub">The four criteria reviewers look for (Lincoln &amp; Guba)</div></div></div>
-      <div class="panel-b"><div class="dx-scroll"><table class="dx-table">
-        <thead><tr><th class="l">Criterion</th><th class="l">Status</th><th class="l">How you addressed it</th></tr></thead>
-        <tbody>${rows}</tbody></table></div></div></div>
-    <div class="dx-layers"><div class="dx-l dx-caution"><div class="dx-l-k">One item to resolve</div>
-      <div class="dx-l-t">Transferability is marked Review — add a richer description of the school context so readers can judge how far the findings travel.</div></div></div>`+navFooter();
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading…</div>`+navFooter();
+  fetch('/api/qual/get-trustworthiness.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='trustworthiness')return;qtwPage(d);
+  }).catch(()=>{if(activeStep().id==='trustworthiness')$("#centerInner").innerHTML=wsHead(activeStep())+`<div class="work-surface" style="border-radius:16px">Could not load trustworthiness.</div>`+navFooter();});
 }
+function qtwPage(d){
+  const s=activeStep();
+  const r=d.reflexivity||{};
+  const approach=APPROACH_LABELS[r.analysis_approach]||r.analysis_approach||'—';
+  const reflex=`<div class="panel"><div class="panel-h"><div><h3>1 — Researcher reflexivity</h3><div class="ph-sub">Your stance and question ground the analysis</div></div></div>
+    <div class="panel-b"><div class="form-grid" style="margin-bottom:14px">
+      <div><div class="dx-l-k">Analysis approach</div><div style="font-size:14px;margin-top:4px">${esc(approach)}</div></div>
+      <div><div class="dx-l-k">Research question</div><div style="font-size:14px;margin-top:4px">${r.research_question?esc(r.research_question):'<span class="ov-empty">Not yet set</span>'}</div></div>
+    </div>
+    ${r.stance_memo?`<div style="background:var(--indigo-light);border-radius:10px;padding:14px 16px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:6px">Researcher stance memo</div><div style="font-size:13.5px;line-height:1.6;color:var(--indigo)">${esc(r.stance_memo).replace(/\n/g,'<br>')}</div></div>`:`<div class="dx-caution" style="padding:10px 12px"><div class="dx-l-t" style="color:#7a5e1c">No researcher stance memo recorded. Add one in <a class="ov-link" onclick="goStep('setup')" style="cursor:pointer">Project Setup</a>.</div></div>`}
+    </div></div>`;
+  const ag=d.agreement||{};
+  let agree;
+  if(!ag.computable){
+    agree=`<div class="panel-b"><div class="dm-note" style="margin-bottom:10px">${esc(ag.note||'')}</div><div class="work-surface">Cohen's kappa compares two coders' decisions. With a single coder there is no inter-rater agreement to compute. Single-coder analysis is valid, especially with member checking.</div></div>`;
+  }else{
+    const k=ag.kappa, kColor=k==null?'var(--text-3)':k>=0.6?'var(--mm-ink)':k>=0.4?'#d97706':'#c0392b';
+    agree=`<div class="panel-b"><div class="dm-cards">
+      <div class="dm-card"><div class="dm-card-k">Cohen's kappa</div><div class="dm-card-v" style="color:${kColor}">${k!=null?k.toFixed(3):'—'}</div><div class="dm-note">${esc(ag.interpretation||'')}</div></div>
+      <div class="dm-card"><div class="dm-card-k">Percent agreement</div><div class="dm-card-v">${ag.percent_agreement!=null?ag.percent_agreement+'%':'—'}</div><div class="dm-note">${ag.shared_segments||0} shared segments</div></div>
+    </div></div>`;
+  }
+  const agreement=`<div class="panel"><div class="panel-h"><div><h3>2 — Coding agreement</h3><div class="ph-sub">Inter-rater reliability once a second coder has coded</div></div></div>${agree}</div>`;
+  const checks=d.member_checks||[];
+  const checkList=checks.length?`<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;max-height:280px;overflow-y:auto">${checks.map(c=>{const oc=c.outcome==='Confirmed'?'ok':'rev';return `<div class="seg-card" style="margin-bottom:0"><div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span class="tt-status ${oc}">${esc(c.outcome||'')}</span><span class="dm-note">${esc(c.date||'')}${c.who?' · '+esc(c.who):''}</span></div><div style="font-size:13.5px${c.notes?';margin-bottom:8px':''}">${esc(c.finding)}</div>${c.notes?`<div class="dm-note">${esc(c.notes).replace(/\n/g,'<br>')}</div>`:''}</div>`;}).join('')}</div>`:'';
+  const member=`<div class="panel"><div class="panel-h"><div><h3>3 — Member checking</h3><div class="ph-sub">Record when you shared findings with participants or peers</div></div></div>
+    <div class="panel-b">${checkList}
+      <div style="border:1px solid var(--border);border-radius:12px;padding:16px">
+        <div style="font-weight:600;margin-bottom:12px">Record a member check</div>
+        <label class="ed-l">Finding or claim you shared</label>
+        <textarea class="ed-in" id="mcFinding" rows="2" placeholder="e.g. Respondents felt sizing was inconsistent…"></textarea>
+        <div class="form-grid" style="margin:12px 0 0">
+          <div><label class="ed-l">Shared with</label><input class="ed-in" id="mcWho" placeholder="e.g. 3 participants, supervisor"></div>
+          <div><label class="ed-l">Method</label><select class="ed-in" id="mcMethod"><option value="">Select…</option>${['Email summary','Interview review','Focus group','Peer review','Other'].map(m=>`<option>${m}</option>`).join('')}</select></div>
+        </div>
+        <div class="form-grid" style="margin:12px 0 0">
+          <div><label class="ed-l">Date</label><input class="ed-in" id="mcDate" type="date"></div>
+          <div><label class="ed-l">Outcome</label><select class="ed-in" id="mcOutcome">${['Confirmed','Revised','Mixed'].map(o=>`<option>${o}</option>`).join('')}</select></div>
+        </div>
+        <label class="ed-l">Notes</label>
+        <textarea class="ed-in" id="mcNotes" rows="2" placeholder="What did they confirm, challenge, or add?"></textarea>
+        <div class="dm-save" style="position:static;margin-top:12px"><button class="btn primary" onclick="qtwSaveCheck()">Save member check</button><span class="dm-note" id="mcMsg"></span></div>
+      </div></div></div>`;
+  $("#centerInner").innerHTML=wsHead(s)+reflex+agreement+member+navFooter();
+}
+function qtwSaveCheck(){
+  const finding=($("#mcFinding").value||'').trim();const msg=$("#mcMsg");
+  if(!finding){if(msg){msg.style.color='#c0392b';msg.textContent='Finding is required.';}return;}
+  if(msg){msg.style.color='';msg.textContent='Saving…';}
+  const check={finding:finding,who:($("#mcWho").value||'').trim(),method:($("#mcMethod").value||'').trim(),date:($("#mcDate").value||'').trim(),outcome:($("#mcOutcome").value||'Confirmed'),notes:($("#mcNotes").value||'').trim()};
+  qapi('/api/qual/save-member-check.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,check:check})}).then(()=>renderTrustworthiness(activeStep())).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
+}
+
+/* ── Step 14 · Report & Export — build-report + CSV/JSON export (chunk 4) ── */
 function renderReport(s){
-  const secs=[
-    ['Introduction','This study asked what helps and hinders teachers in sustaining their work, drawing on 214 open-ended responses analyzed with reflexive thematic analysis.'],
-    ['Methods','Responses were segmented and coded against an 8-code codebook. Twenty percent were double-coded (Cohen\'s κ = 0.78). Codes were grouped into three categories and four themes.'],
-    ['Findings','Four themes emerged. Workload outpaces the support around it (62% coverage) dominated, while peer relationships and recognition consistently buffered strain.'],
-    ['Trustworthiness','Credibility, dependability, and confirmability were documented through dual coding, a versioned codebook, and an audit trail linking themes to quotes.'],
-  ];
-  const cards=secs.map(([title,body])=>`
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading report data…</div>`+navFooter();
+  fetch('/api/qual/build-report.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='report')return;qrepPage(d);
+  }).catch(()=>{if(activeStep().id==='report')$("#centerInner").innerHTML=wsHead(activeStep())+`<div class="work-surface" style="border-radius:16px">Could not load report data.</div>`+navFooter();});
+}
+function qrepPage(d){
+  const s=activeStep();
+  const p=d.project||{},stats=d.stats||{},themes=d.themes||[],checks=d.member_checks||[];
+  const approach=APPROACH_LABELS[p.analysis_approach]||p.analysis_approach||'';
+  const pid=BOOT.projectId;
+  const topBar=`<div class="run-actions" style="margin-bottom:20px"><button class="btn primary" onclick="window.print()">Print / Save as PDF</button><a class="btn" href="/api/qual/export-coded.php?project_id=${pid}">Download coded segments (.csv)</a><button class="btn" onclick="qrepJson(this)">Download themes (.json)</button></div>`;
+  const header=`<div class="panel"><div class="panel-b">
+    <div class="dx-l-k">Qualitative Analysis Report</div>
+    <h2 style="margin:6px 0;font-size:24px;font-weight:700">${esc(p.title||'Untitled Project')}</h2>
+    ${approach?`<div class="dm-note" style="margin-bottom:14px">${esc(approach)}</div>`:''}
+    ${p.research_question?`<div style="background:var(--indigo-light);border-radius:10px;padding:14px 16px;margin-bottom:14px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:4px">Research question</div><div style="font-size:14.5px;color:var(--indigo);line-height:1.55">${esc(p.research_question)}</div></div>`:''}
+    <div class="form-grid">${p.participant_description?`<div><div class="dx-l-k">Participants</div><div style="font-size:13.5px;margin-top:3px">${esc(p.participant_description)}</div></div>`:''}${p.purpose?`<div><div class="dx-l-k">Purpose</div><div style="font-size:13.5px;margin-top:3px">${esc(p.purpose)}</div></div>`:''}</div>
+  </div></div>`;
+  const summary=`<div class="dm-cards" style="margin-bottom:20px">
+    <div class="dm-card"><div class="dm-card-k">Segments</div><div class="dm-card-v">${stats.seg_count||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Total words</div><div class="dm-card-v">${stats.total_words||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Codes</div><div class="dm-card-v">${stats.code_count||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Themes</div><div class="dm-card-v">${stats.theme_count||0}</div></div>
+  </div>`;
+  let themeSec=`<h3 style="font-size:18px;font-weight:700;margin:0 0 14px;border-bottom:2px solid var(--indigo-light);padding-bottom:10px">Themes</h3>`;
+  if(!themes.length)themeSec+='<div class="work-surface">No themes built yet. Complete the Theme Builder step first.</div>';
+  else themeSec+=themes.map((t,i)=>{
+    const catChips=t.categories&&t.categories.length?t.categories.map(c=>`<span class="ov-chip">${esc(c)}</span>`).join(''):'<span class="dm-note">No categories linked</span>';
+    let quotes='';
+    if(t.quotes&&t.quotes.length){quotes=`<div style="margin-top:14px"><div class="dx-l-k" style="margin-bottom:10px">Exemplar quotes</div>${t.quotes.map(q=>{const text=q.cleaned_text||q.raw_text||'';const attr=[];if(q.participant_id)attr.push('ID: '+q.participant_id);if(q.question_ref)attr.push(q.question_ref);return `<div style="border-left:3px solid var(--indigo);padding:8px 14px;margin-bottom:10px;background:var(--bg);border-radius:0 8px 8px 0"><div style="font-size:14px;line-height:1.65;font-style:italic">"${esc(text)}"</div>${attr.length?`<div class="dm-note" style="margin-top:6px">${esc(attr.join(' · '))}</div>`:''}</div>`;}).join('')}</div>`;}
+    else quotes='<div class="dm-note" style="margin-top:10px;font-style:italic">No exemplar quotes pinned. Use Quote Finder to pin supporting evidence.</div>';
+    return `<div class="panel"><div class="panel-b">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:10px"><span class="tt-status ok">Theme ${i+1}</span><span style="font-size:17px;font-weight:700">${esc(t.name)}</span></div>
+      <div style="background:var(--indigo-light);border-radius:10px;padding:12px 16px;margin-bottom:12px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:4px">Finding</div><div style="font-size:14px;color:var(--indigo);line-height:1.6;font-style:italic">"${esc(t.interpretive_claim||'(no claim set)')}"</div></div>
+      <div class="dx-l-k" style="margin-bottom:8px">Supporting categories</div><div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">${catChips}</div>
+      ${quotes}
+      ${t.notes?`<div style="margin-top:12px;font-size:13px;color:var(--text-2);border-top:1px solid var(--border);padding-top:12px">${esc(t.notes).replace(/\n/g,'<br>')}</div>`:''}
+    </div></div>`;
+  }).join('');
+  const stance=p.researcher_stance_memo||'';
+  const trustSec=`<h3 style="font-size:18px;font-weight:700;margin:24px 0 14px;border-bottom:2px solid var(--indigo-light);padding-bottom:10px">Trustworthiness</h3>
     <div class="panel"><div class="panel-b">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><div style="font-size:15px;font-weight:700">${esc(title)}</div>
-        <span class="tt-status ok">Drafted</span></div>
-      <textarea class="ed-in" rows="3" style="margin-top:8px">${esc(body)}</textarea>
-      <div class="dm-save" style="position:static"><button class="btn primary" onclick="toast('Section saved (prototype)')">Save section</button>
-        <button class="btn" onclick="toast('✦ ReliCheck Intelligence drafted this section (prototype)')">✦ Generate with ReliCheck Intelligence</button></div>
-    </div></div>`).join('');
-  $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-save" style="position:static;margin-bottom:14px"><button class="btn primary" onclick="toast('Built full report (prototype)')">✦ Build the full report</button>
-      <span class="dm-note">Drafts every section from your themes and evidence. Edit any of them below.</span></div>
-    ${cards}
-    <div class="panel"><div class="panel-h"><div><h3>Download</h3><div class="ph-sub">Includes your edits</div></div></div>
-      <div class="panel-b"><div class="run-actions"><button class="btn primary" onclick="toast('Word export (prototype)')">⬇ Download Word</button>
-        <button class="btn" onclick="toast('Markdown export (prototype)')">⬇ Download Markdown</button></div></div></div>`+navFooter();
+      <div class="dx-l-k" style="margin-bottom:8px">Researcher reflexivity</div>
+      ${stance?`<div style="background:var(--bg);border-radius:8px;padding:12px 14px;font-size:13.5px;line-height:1.6;color:var(--text-2)">${esc(stance).replace(/\n/g,'<br>')}</div>`:'<div class="dm-note" style="font-style:italic">No researcher stance memo recorded.</div>'}
+      <div class="dx-l-k" style="margin:18px 0 8px">Member checking</div>
+      ${checks.length?`<div style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto">${checks.map(c=>`<div class="seg-card" style="margin-bottom:0"><div style="font-weight:700;margin-bottom:3px">${esc(c.finding||'')}</div>${c.notes?`<div class="dm-note" style="margin-top:4px">${esc(c.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="dm-note" style="margin-top:6px">${c.who?esc(c.who)+' · ':''}${esc(c.date||'')}${c.method?' · '+esc(c.method):''}</div></div>`).join('')}</div>`:'<div class="dm-note" style="font-style:italic">No member checks recorded.</div>'}
+      ${d.audit_count?`<div class="dm-note" style="margin-top:10px">${d.audit_count} action${d.audit_count!==1?'s':''} logged in the audit trail.</div>`:''}
+    </div></div>`;
+  const exportSec=`<h3 style="font-size:18px;font-weight:700;margin:24px 0 14px;border-bottom:2px solid var(--indigo-light);padding-bottom:10px">Export &amp; handoff</h3>
+    <div class="panel"><div class="panel-b"><div style="font-weight:700;margin-bottom:6px">MM Studio — Joint display handoff</div><p class="dm-note" style="margin-bottom:10px">Download the coded segments CSV and bring it into MM Studio as the qualitative strand.</p><a class="btn" href="/api/qual/export-coded.php?project_id=${pid}">Download coded segments (.csv)</a></div></div>
+    <div class="panel"><div class="panel-b"><div style="font-weight:700;margin-bottom:6px">RSSI — Open-ended evidence</div><p class="dm-note" style="margin-bottom:10px">Reference your themes as qualitative evidence alongside the RSSI reliability score.</p><a class="btn" href="/rssi-app.php" target="_blank" rel="noopener">Open RSSI →</a></div></div>`;
+  $("#centerInner").innerHTML=wsHead(s)+topBar+`<div id="repPrintable">${header}${summary}${themeSec}${trustSec}${exportSec}</div>`+navFooter();
+}
+function qrepJson(btn){
+  if(btn){btn.disabled=true;btn.textContent='Loading…';}
+  fetch('/api/qual/get-themes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>
+    Promise.all((d.themes||[]).map(t=>fetch('/api/qual/get-quotes.php?project_id='+BOOT.projectId+'&theme_id='+t.id,{credentials:'same-origin'}).then(r=>r.json()).then(qd=>{const ids=qd.pinned_ids||[];t.pinned_quotes=(qd.segments||[]).filter(x=>ids.indexOf(+x.id)!==-1).map(x=>({text:x.cleaned_text||x.raw_text,participant_id:x.participant_id||null,question_ref:x.question_ref||null}));return t;})))
+  ).then(themes=>{
+    const blob=new Blob([JSON.stringify({project_id:BOOT.projectId,themes:themes},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='qual-themes-'+BOOT.projectId+'.json';a.click();URL.revokeObjectURL(url);
+    if(btn){btn.disabled=false;btn.textContent='Download themes (.json)';}
+  }).catch(e=>{if(btn){btn.disabled=false;btn.textContent='Download themes (.json)';}toast('Error: '+e.message);});
 }
 
 /* ════════ RENDER DISPATCH ════════ */
