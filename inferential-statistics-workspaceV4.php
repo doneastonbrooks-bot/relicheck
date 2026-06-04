@@ -694,7 +694,8 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
 
   // ── State (analysis brain) ──
   const state = { stepId: (BOOT.initialStep || 'start'), compTab: 'explain', notes: {}, dataset: null,
-                  view: 'table', datamapConfirmed: false, _datamapMounted: false, rssiProjectId: null };
+                  view: 'table', datamapConfirmed: false, _datamapMounted: false, rssiProjectId: null,
+                  autoMode: null };
 
   const CHECK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
   function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];}); }
@@ -768,22 +769,49 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
         + '<div class="placeholder">No data yet. Go to <strong>Start</strong> to upload a file or open a saved project.</div>';
       return;
     }
+    // Decision point (step 2): after data is in, choose how to proceed.
+    // Auto analyze / Auto report run the recommended tests; Self analyze opens
+    // the full studio. Mirrors the Descriptive studio's entry options.
+    if (state.autoMode) {
+      host.innerHTML = '<div style="margin-bottom:14px"><button class="btn" id="ovBack">&larr; Back to options</button></div>'
+        + '<div id="autoHost"></div>';
+      const back = document.getElementById('ovBack');
+      if (back) back.addEventListener('click', function(){ state.autoMode=null; render(); });
+      if (window.AnalysisStudio && window.AnalysisStudio.renderAutoInferential) {
+        window.AnalysisStudio.renderAutoInferential(document.getElementById('autoHost'),
+          { dataset: ds, mode: state.autoMode, projectId: BOOT.projectId, projectTitle: BOOT.projectLabel });
+      } else {
+        document.getElementById('autoHost').innerHTML = '<div class="placeholder">Auto analysis engine is loading&hellip;</div>';
+      }
+      return;
+    }
+    const choose =
+      '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>'+esc(BOOT.name)+' <span class="strand-chip quan">QUAN</span></div>'
+      + '<h1 class="title">Your data is in. How do you want to proceed?</h1>'
+      + '<p class="lede">Run the recommended tests automatically, or step through the analysis yourself.</p></div>'
+      + '<button class="begin-feature" id="ovAuto"><span class="bc-ico">&#9889;</span>'
+      + '<div><h4>Auto analyze</h4><p>Run the recommended inferential tests on your data and see the results instantly. No setup.</p>'
+      + '<span class="bc-go">Auto analyze &rarr;</span></div></button>'
+      + '<div class="begin-grid2" style="grid-template-columns:repeat(2,1fr);margin-bottom:22px">'
+      + '<button class="begin-card2" id="ovReport"><span class="bc-ico">&#9636;</span><h4>Auto report</h4><p>The same tests plus a written ReliCheck Intelligence report you can print or save as PDF.</p></button>'
+      + '<button class="begin-card2" id="ovSelf"><span class="bc-ico">&#9776;</span><h4>Self analyze</h4><p>Map your variables and run each test yourself, step by step, with full control.</p></button>'
+      + '</div>';
     const vars = ds.variables || [];
     const isNum = function(v){ return /likert|numeric/.test((v.types||[]).join(',').toLowerCase()); };
     const valid = function(v){ return (v.values||[]).filter(function(x){ return x!=='' && x!=null; }).length; };
     const stat = function(n,l){ return '<div><div style="font-size:26px;font-weight:700;line-height:1">'+n+'</div><div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px">'+l+'</div></div>'; };
     const rows = vars.map(function(v){ const n=valid(v), total=(v.values||[]).length;
       return '<tr><td class="dx-name">'+esc(v.name)+'</td><td class="l">'+esc((v.types||['—'])[0])+'</td><td>'+n+'</td><td>'+(total-n)+'</td></tr>'; }).join('');
-    host.innerHTML = '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>'+esc(BOOT.name)+' <span class="strand-chip quan">QUAN</span></div><h1 class="title">Overview</h1>'
-      + '<p class="lede">What is in this dataset, before you analyze it.</p></div>'
-      + (window.AnalysisStudio && window.AnalysisStudio.helpButton ? window.AnalysisStudio.helpButton('overview') : '')
+    host.innerHTML = choose
+      + '<div class="ov-sec" style="margin:26px 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3)">Your dataset</div>'
       + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
       + '<div style="display:flex;gap:34px;flex-wrap:wrap">' + stat(ds.rowCount||0,'Rows') + stat(vars.length,'Variables') + stat(vars.filter(isNum).length,'Numeric') + '</div>'
       + '<p style="margin:14px 0 0;color:var(--text-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'
       + '<div class="panel"><div class="panel-h"><h3>Variables</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
-      + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>'
-      + '<div style="margin-top:6px"><button class="btn primary" id="ovGo">Map variables &rarr;</button></div>';
-    const go = document.getElementById('ovGo'); if (go) go.addEventListener('click', function(){ state.stepId='datamap'; render(); });
+      + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';
+    const auto = document.getElementById('ovAuto'); if (auto) auto.addEventListener('click', function(){ state.autoMode='auto'; render(); });
+    const rep  = document.getElementById('ovReport'); if (rep) rep.addEventListener('click', function(){ state.autoMode='report'; render(); });
+    const self = document.getElementById('ovSelf'); if (self) self.addEventListener('click', function(){ state.stepId='datamap'; render(); });
   }
 
   // Data Map step — shared DataMap component (apps/studio/data-map.js + type-taxonomy.js).

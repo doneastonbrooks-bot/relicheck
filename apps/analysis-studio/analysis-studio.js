@@ -2538,6 +2538,139 @@
     load();
   };
 
+  // ── AUTO ANALYZE / AUTO REPORT (recommended inferential tests, one click) ────
+  // Auto-selects the sensible tests from the data and runs them client-side with
+  // the verified helpers: Welch t (numeric × 2-level), Welch ANOVA (numeric ×
+  // 3+ level), Pearson r (numeric pairs), chi-square (categorical pairs). For
+  // anything beyond this curated set, the user picks Self analyze. mode:'report'
+  // adds the ReliCheck Intelligence narrative on top.
+  function autoLevels(v){ var s=[]; (v.values||[]).forEach(function(x){ if(!isMissing(x)){ var k=String(x); if(s.indexOf(k)<0) s.push(k); } }); return s; }
+  function autoCompute(ds){
+    var nv = numericVars(ds), cv = catVars(ds), out = { groups:[], corr:[], assoc:[] };
+    // Group comparisons: numeric outcome × categorical factor
+    cv.forEach(function(g){
+      var lv = autoLevels(g); if(lv.length<2 || lv.length>10) return;
+      nv.forEach(function(o){
+        if(o.name===g.name) return;
+        var n=Math.min(o.values.length,g.values.length), by={};
+        for(var i=0;i<n;i++){ var y=num(o.values[i]), gg=g.values[i]; if(y===null||isMissing(gg)) continue; (by[String(gg)]=by[String(gg)]||[]).push(y); }
+        var keys=Object.keys(by).filter(function(k){return by[k].length>=2;}); if(keys.length<2) return;
+        if(keys.length===2){
+          var a=by[keys[0]],b=by[keys[1]],m1=mean(a),m2=mean(b),v1=variance(a),v2=variance(b),n1=a.length,n2=b.length;
+          var se=Math.sqrt(v1/n1+v2/n2); if(!se) return; var t=(m1-m2)/se;
+          var dfN=Math.pow(v1/n1+v2/n2,2), dfD=(v1/n1)*(v1/n1)/(n1-1)+(v2/n2)*(v2/n2)/(n2-1), df=dfD?dfN/dfD:(n1+n2-2);
+          var p=Math.min(1,tPValueNP(Math.abs(t),df));
+          var pooled=Math.sqrt(((n1-1)*v1+(n2-1)*v2)/Math.max(n1+n2-2,1)), d=pooled?(m1-m2)/pooled:0;
+          out.groups.push({test:'Welch t-test',outcome:o.name,by:g.name,detail:keys[0]+' vs '+keys[1],stat:'t('+fmtN(df,1)+') = '+fmtN(t,2),p:p,effect:"d = "+fmtN(d,2),mag:effBand('d',d),sortAbs:Math.abs(d)});
+        } else {
+          var gd=keys.map(function(k){return by[k];}),ns=gd.map(function(x){return x.length;}),k=keys.length,means=gd.map(mean),vars_=gd.map(variance);
+          var w=ns.map(function(nn,i){return nn/(vars_[i]||1e-12);}),W=w.reduce(function(s,x){return s+x;},0);
+          var M=w.reduce(function(s,wi,i){return s+wi*means[i];},0)/W, numer=0;
+          for(var i2=0;i2<k;i2++) numer+=w[i2]*Math.pow(means[i2]-M,2); numer/=(k-1);
+          var dsum=0; for(var i3=0;i3<k;i3++) dsum+=Math.pow(1-w[i3]/W,2)/(ns[i3]-1);
+          var denom=1+(2*(k-2)/(k*k-1))*dsum, F=numer/denom, df1=k-1, df2=(k*k-1)/(3*dsum), p2=fPValueNP(F,df1,df2);
+          var all=[].concat.apply([],gd),grand=mean(all);
+          var ssB=gd.reduce(function(s,gx){return s+gx.length*Math.pow(mean(gx)-grand,2);},0);
+          var ssW=gd.reduce(function(s,gx){var gm=mean(gx);return s+gx.reduce(function(a,x){return a+(x-gm)*(x-gm);},0);},0);
+          var eta2=(ssB+ssW)?ssB/(ssB+ssW):0;
+          out.groups.push({test:'Welch ANOVA',outcome:o.name,by:g.name,detail:k+' groups',stat:'F('+df1+', '+fmtN(df2,1)+') = '+fmtN(F,2),p:p2,effect:'η² = '+fmtN(eta2,3),mag:effBand('eta2',eta2),sortAbs:eta2});
+        }
+      });
+    });
+    // Correlations: numeric pairs
+    for(var i=0;i<nv.length;i++) for(var j=i+1;j<nv.length;j++){
+      var x=nv[i],y=nv[j],xs=[],ys=[],n4=Math.min(x.values.length,y.values.length);
+      for(var r=0;r<n4;r++){ var xi=num(x.values[r]),yi=num(y.values[r]); if(xi===null||yi===null) continue; xs.push(xi); ys.push(yi); }
+      if(xs.length<4) continue;
+      var mx=mean(xs),my=mean(ys),sxy=0,sxx=0,syy=0;
+      for(var q=0;q<xs.length;q++){ sxy+=(xs[q]-mx)*(ys[q]-my); sxx+=(xs[q]-mx)*(xs[q]-mx); syy+=(ys[q]-my)*(ys[q]-my); }
+      if(sxx<=0||syy<=0) continue;
+      var rr=sxy/Math.sqrt(sxx*syy),df=xs.length-2,tt=rr*Math.sqrt(df/Math.max(1-rr*rr,1e-12)),pp=Math.min(1,tPValueNP(Math.abs(tt),df));
+      out.corr.push({test:'Pearson r',a:x.name,b:y.name,stat:'r = '+fmtN(rr,2),p:pp,effect:'r² = '+fmtN(rr*rr,2),mag:effBand('r',rr),sortAbs:Math.abs(rr)});
+    }
+    out.corr.sort(function(a,b){return b.sortAbs-a.sortAbs;}); out.corr=out.corr.slice(0,12);
+    // Associations: categorical pairs (chi-square)
+    var cc=cv.filter(function(v){var L=autoLevels(v).length;return L>=2&&L<=10;});
+    for(var a1=0;a1<cc.length;a1++) for(var b1=a1+1;b1<cc.length;b1++){
+      var va=cc[a1],vb=cc[b1],rows=autoLevels(va),cols=autoLevels(vb),N=Math.min(va.values.length,vb.values.length);
+      var cell={},rt={},ct={},tot=0;
+      for(var z=0;z<N;z++){ var ra=va.values[z],cb=vb.values[z]; if(isMissing(ra)||isMissing(cb)) continue; ra=String(ra);cb=String(cb); var kk=ra+''+cb; cell[kk]=(cell[kk]||0)+1; rt[ra]=(rt[ra]||0)+1; ct[cb]=(ct[cb]||0)+1; tot++; }
+      if(tot<8) continue;
+      var chi=0; rows.forEach(function(ra){ cols.forEach(function(cb){ var o=cell[ra+''+cb]||0, e=(rt[ra]||0)*(ct[cb]||0)/tot; if(e>0) chi+=(o-e)*(o-e)/e; }); });
+      var df2=(rows.length-1)*(cols.length-1); if(df2<1) continue;
+      var p=chiSqPNP(chi,df2), V=Math.sqrt(chi/(tot*Math.max(1,Math.min(rows.length-1,cols.length-1))));
+      out.assoc.push({test:'Chi-square',a:va.name,b:vb.name,stat:'χ²('+df2+') = '+fmtN(chi,2),p:p,effect:"Cramér's V = "+fmtN(V,2),mag:effBand('r',V),sortAbs:V});
+    }
+    out.groups.sort(function(a,b){return a.p-b.p;}); out.groups=out.groups.slice(0,12);
+    out.assoc.sort(function(a,b){return a.p-b.p;}); out.assoc=out.assoc.slice(0,12);
+    return out;
+  }
+  function autoSection(title, rows, cols){
+    if(!rows.length) return '';
+    var head = cols.map(function(c){return '<th class="'+(c.l?'l':'')+'">'+esc(c.h)+'</th>';}).join('');
+    var body = rows.map(function(r){
+      var sig = r.p<0.05;
+      return '<tr><td class="dx-name">'+esc(r.test)+'</td>'
+        + '<td class="dx-interp">'+esc(r.label)+'</td>'
+        + '<td>'+esc(r.stat)+'</td>'
+        + '<td>'+(r.p<0.001?'< .001':fmtN(r.p,3).replace(/^0/,''))+'</td>'
+        + '<td class="dx-interp">'+esc(r.effect)+(r.mag?' <span style="color:var(--ink-3)">('+r.mag+')</span>':'')+'</td>'
+        + '<td><span class="tt-status '+(sig?'ok':'rev')+'">'+(sig?'Significant':'n.s.')+'</span></td></tr>';
+    }).join('');
+    return '<div class="ov-sec" style="margin-top:18px">'+esc(title)+'</div>'
+      + '<div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Test</th><th class="l">Variables</th><th>Statistic</th><th>p</th><th class="l">Effect</th><th class="l">Result</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+  }
+  AS.renderAutoInferential = function(host, opts){
+    opts = opts || {};
+    var ds = opts.dataset, mode = opts.mode==='report'?'report':'auto';
+    var pid = opts.projectId||0, title = opts.projectTitle||'Inferential Analysis';
+    if(!ds || !Array.isArray(ds.variables) || !ds.variables.length){ host.innerHTML = '<div class="placeholder">Load data first.</div>'; return; }
+    host.innerHTML = '<div class="placeholder"><span style="opacity:.7">Running the recommended tests on your data…</span></div>';
+    var res = autoCompute(ds);
+    var total = res.groups.length + res.corr.length + res.assoc.length;
+    // normalize rows for rendering
+    res.groups.forEach(function(r){ r.label = r.outcome+' by '+r.by+(r.detail?' ('+r.detail+')':''); });
+    res.corr.forEach(function(r){ r.label = r.a+' & '+r.b; });
+    res.assoc.forEach(function(r){ r.label = r.a+' × '+r.b; });
+
+    function draw(ai){
+      var sig = res.groups.concat(res.corr,res.assoc).filter(function(r){return r.p<0.05;}).length;
+      var h = '<div class="ws-header"><div class="eyebrow">Inferential Analysis</div>'
+        + '<h1 class="title">'+(mode==='report'?'Auto Report':'Auto Analysis')+'</h1>'
+        + '<p class="lede">'+esc(title)+(ds.rowCount?'  ·  N = '+ds.rowCount:'')+'  ·  '+total+' tests run, '+sig+' significant.</p></div>'
+        + '<div class="rep-actions" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+        + '<button class="btn primary" id="aiPrint">Print / Save as PDF</button>'
+        + (mode==='report'?'<button class="btn" id="aiRegen" style="margin-left:auto">Regenerate narrative</button>':'')
+        + '</div>';
+      if(!total){ h += '<div class="placeholder">No tests could be run — the data needs at least one numeric variable plus a grouping or a second numeric variable.</div>'; host.innerHTML=h; wire(); return; }
+      if(mode==='report' && ai){
+        h += '<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">ReliCheck Intelligence</div>';
+        if(ai.headline) h += '<div class="dx-l-t" style="font-weight:600;font-size:15px">'+esc(ai.headline)+'</div>';
+        if(ai.overview) h += '<div class="dx-l-t" style="margin-top:8px">'+esc(ai.overview)+'</div>';
+        h += '</div>'+(ai.synthesis?'<div class="dx-l"><div class="dx-l-k">Interpretation</div><div class="dx-l-t">'+esc(ai.synthesis)+'</div></div>':'')+'</div>';
+      } else if(mode==='report'){
+        h += '<div class="placeholder" style="padding:14px">'+( ai===null ? 'Narrative unavailable; the results below are complete.' : 'Writing the narrative…')+'</div>';
+      }
+      h += autoSection('Group differences', res.groups)
+        + autoSection('Relationships', res.corr)
+        + autoSection('Associations', res.assoc);
+      h += '<div class="dx-layers" style="margin-top:16px"><div class="dx-l dx-caution"><div class="dx-l-k">How to read this</div><div class="dx-l-t">These are the recommended tests auto-selected from your variables, sorted by significance and effect. They are a screening pass, not adjusted for multiple comparisons. For a specific test, choose <strong>Self analyze</strong>.</div></div></div>';
+      host.innerHTML = h; wire();
+    }
+    function wire(){
+      var p=document.getElementById('aiPrint'); if(p) p.addEventListener('click', function(){ window.print(); });
+      var rg=document.getElementById('aiRegen'); if(rg) rg.addEventListener('click', function(){ rg.disabled=true; rg.textContent='Regenerating…'; runNarrative(); });
+    }
+    function runNarrative(){
+      var analyses = res.groups.concat(res.corr,res.assoc).map(function(r){ return { test:r.test, variables:r.label, stats:r.stat+', p '+(r.p<0.001?'< .001':fmtN(r.p,3)), finding:r.effect }; });
+      fetch('/api/analysis/ai-inferential-report.php?project_id='+pid, { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project_id:pid, analyses:analyses, sample:{ n:ds.rowCount||0, k:(ds.variables||[]).length } }) })
+        .then(function(r){ return r.json().catch(function(){return null;}); })
+        .then(function(d){ draw((d&&d.ok)?d.report:null); })
+        .catch(function(){ draw(null); });
+    }
+    if(mode==='report' && total){ draw(undefined); runNarrative(); } else { draw(undefined); }
+  };
+
   // Delegated: any "How to use this" button (in a work step or the Overview)
   // opens its help modal.
   document.addEventListener('click', function(e){
