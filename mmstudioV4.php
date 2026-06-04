@@ -259,7 +259,7 @@ html,body{height:100%}
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:14px;line-height:1.5}
 h1,h2,h3,h4{margin:0;font-weight:700;letter-spacing:-.01em}
 button{font-family:inherit;cursor:pointer}
-.app{display:grid;grid-template-rows:auto 1fr auto;height:100vh}
+.app{display:grid;grid-template-rows:auto var(--sttb-h,62px) 1fr auto;height:100vh}
 /* studio dock (footer) — ReliCheck logo bottom-left, studio name centered (shared studio pattern) */
 .studio-dock{position:relative;padding:12px 22px;box-sizing:border-box;background:rgba(255,255,255,0.92);-webkit-backdrop-filter:saturate(1.4) blur(12px);backdrop-filter:saturate(1.4) blur(12px);border-top:1px solid var(--line);box-shadow:0 -4px 22px rgba(15,23,42,0.07)}
 .studio-dock-logo{position:absolute;left:22px;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;text-decoration:none}
@@ -301,12 +301,10 @@ button{font-family:inherit;cursor:pointer}
 .ctx{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--ink-2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ctx .dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex:none}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;flex:none}
-.body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr) var(--companion);min-height:0;overflow:hidden;transition:grid-template-columns .22s ease}
-body.companion-collapsed{--companion:46px}
-.stage{display:flex;gap:26px;min-width:0;overflow:hidden;padding:0 24px 0 120px}
-@media(max-width:1320px){.stage{padding:0 20px 0 clamp(20px,3vw,48px)}}
+.body{display:grid;grid-template-columns:var(--rail) minmax(0,1fr);min-height:0;overflow:hidden;grid-row:3;}
+.stage{display:flex;min-width:0;overflow:hidden;padding:0;}
 /* the left pipeline rail keeps the purple brand; the rest of the app stays gray */
-.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px;overflow-y:auto;--accent:#6d4ad8;--accent-soft:#efeafd;--accent-ink:#4a2aa0}
+.rail{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 16px;overflow-y:auto;grid-row:3;}
 .rail-h{font-size:10.5px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);padding:4px 12px 8px}
 .design-pick{position:relative;padding:0 10px 4px}
 .design-pick-btn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:none;border:1px solid transparent;border-radius:9px;padding:5px 8px;cursor:pointer;transition:.12s}
@@ -344,7 +342,7 @@ body.companion-collapsed{--companion:46px}
 .step.pivot{border:1px dashed var(--accent);background:linear-gradient(180deg,#fffdfb,var(--accent-soft))}
 .step.pivot .num{background:#fff;color:var(--accent);border-color:var(--accent)}
 .step.pivot[data-active="1"] .num{background:var(--accent);color:#fff}
-.center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 4px 60px 0}
+.center{flex:1 1 auto;overflow-y:auto;min-width:0;padding:30px 28px 60px 28px}
 .center-inner{max-width:none}
 .ws-header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 78%,rgba(245,246,248,0));padding-top:6px;margin-bottom:14px}
 .eyebrow{display:inline-flex;align-items:center;gap:9px;font-size:11.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:8px}
@@ -530,7 +528,8 @@ label .tt-hint{margin-left:6px}
 .pal-item .pdot{width:7px;height:7px;border-radius:50%;flex:none}
 .pal-item.quan .pdot{background:var(--quan)} .pal-item.qual .pdot{background:var(--qual)} .pal-item.both .pdot{background:var(--mm)}
 .pal-empty{font-size:12.5px;color:var(--ink-3);line-height:1.5;border:1.5px dashed var(--line);border-radius:11px;padding:16px;background:var(--bg)}
-.companion{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;overflow:hidden;position:relative}
+.companion{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;position:fixed;top:0;right:0;bottom:0;width:var(--companion);z-index:56;transform:translateX(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);}
+body.coach-open .companion{transform:translateX(0);}
 .comp-head{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line-2)}
 .comp-head .ch-ico{width:30px;height:30px;border-radius:9px;background:var(--accent-soft);color:var(--accent-ink);display:grid;place-items:center;font-size:15px;flex:none}
 .comp-head h3{font-size:14px}.comp-head .ch-sub{font-size:11px;color:var(--ink-3)}
@@ -570,16 +569,12 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 .q-card p{font-size:12.5px;color:var(--ink-2);margin:0;line-height:1.5}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:90;opacity:0;transition:.25s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-@media(max-width:1280px){.body{grid-template-columns:var(--rail) minmax(0,1fr)} .companion{display:none}}
 @media(max-width:1040px){.palette{display:none}}
 
 /* ─────────────────────────────────────────────
    NEW STUDIO LAYER — 2026 redesign
    ───────────────────────────────────────────── */
 :root{--sttb-h:62px;}
-
-/* 4-row grid: real header / studio topbar / body / real footer */
-.app{grid-template-rows:auto var(--sttb-h) 1fr auto!important}
 
 /* Studio topbar */
 .studio-topbar{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:1fr auto 1fr;
@@ -603,12 +598,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 .tb-conn{width:32px;height:1.5px;background:var(--line);flex-shrink:0;}
 .tb-conn.tb-done{background:var(--mm);opacity:.4;}
 
-/* Body: 2-column — kill palette and companion from grid */
-.body{grid-template-columns:var(--rail) minmax(0,1fr)!important;grid-row:3;}
-.stage{padding:0 24px 0 0!important;}
-
 /* ── Simplified sidebar ── */
-.rail{padding:18px 16px!important;overflow-y:auto!important;}
 /* hide old rail elements */
 .rail .rail-h,.rail .design-pick,.rail .design-flow,#railSteps{display:none!important;}
 
@@ -703,11 +693,7 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 .btn-export:hover{background:var(--btn-hover);}
 .btn-export svg{width:14px;height:14px;}
 
-/* ── Coach tab (companion becomes slide-in) ── */
-.companion{transform:translateX(100%)!important;position:fixed!important;
-  top:0!important;right:0!important;bottom:0!important;width:var(--companion)!important;
-  z-index:56!important;transition:transform .26s cubic-bezier(.32,.72,0,1)!important;}
-body.coach-open .companion{transform:translateX(0)!important;}
+/* ── Coach tab ── */
 .coach-tab-btn{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:55;
   display:flex;align-items:center;justify-content:center;width:22px;height:110px;
   background:var(--panel);border:1px solid var(--line);border-right:none;
