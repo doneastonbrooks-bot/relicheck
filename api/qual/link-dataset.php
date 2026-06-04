@@ -12,6 +12,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('POST');
 $user = require_auth();
+release_session_lock();
 $pdo  = db();
 $uid  = (int)$user['id'];
 $body = read_json_body();

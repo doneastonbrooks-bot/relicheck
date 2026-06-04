@@ -27,7 +27,7 @@
 
   // ── CSS ─────────────────────────────────────────────────────────────────────
   var CSS = ''
-    + '.rdm-wrap{font-family:var(--font,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif);font-size:14px;color:var(--ink,#15171a)}'
+    + '.rdm-wrap{font-family:var(--font,-apple-system,BlinkMacSystemFont,"SF Pro Text",Inter,system-ui,sans-serif);font-size:14px;line-height:1.5;color:var(--ink,#15171a);-webkit-font-smoothing:antialiased}'
     + '.rdm-head{margin-bottom:18px}'
     + '.rdm-eyebrow{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3,#8a8f98);margin-bottom:8px}'
     + '.rdm-title{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:0 0 6px}'
@@ -491,19 +491,24 @@
 
   // ── Load flow ────────────────────────────────────────────────────────────────
   function _load() {
+    var rawWithDefaults = applyDefaults(_opts.rawVars || []);
+    if (!_opts.projectId) {
+      _vars    = rawWithDefaults;
+      _saved   = false;
+      _loading = false;
+      render();
+      return;
+    }
     _loading = true;
     _err = '';
     render();
     apiLoad(function (err, j) {
       _loading = false;
-      var rawWithDefaults = applyDefaults(_opts.rawVars || []);
       if (!err && j && j.ok && j.variables && j.variables.length) {
-        // Merge saved metadata onto raw variables, preserving detected_type.
         _vars = mergeApiRows(rawWithDefaults, j.variables);
         _saved = true;
       } else {
-        // No saved metadata yet — use inferred defaults.
-        _vars = rawWithDefaults;
+        _vars  = rawWithDefaults;
         _saved = false;
       }
       render();
@@ -514,8 +519,8 @@
   window.DataMap = {
 
     init: function (opts) {
-      if (!opts || !opts.container || !opts.projectId) {
-        console.error('DataMap.init: container and projectId are required.');
+      if (!opts || !opts.container) {
+        console.error('DataMap.init: container is required.');
         return;
       }
       injectCss();

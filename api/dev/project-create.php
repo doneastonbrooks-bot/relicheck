@@ -27,8 +27,11 @@ $population = clean_string((string)($body['population'] ?? ''), 2000);
 $mode       = clean_string((string)($body['response_mode'] ?? '5-pt agreement'), 64) ?: '5-pt agreement';
 $dataType   = clean_string((string)($body['data_type'] ?? 'Quantitative'), 32) ?: 'Quantitative';
 
+// `source` records how the project was created. 'upload' = brought in from an
+// existing survey file (its columns become the instrument's questions); all
+// values run the same development pipeline.
 $source = clean_string((string)($body['source'] ?? 'scratch'), 24);
-if (!in_array($source, ['ai-build', 'ai-assist', 'scratch', 'existing', 'template'], true)) {
+if (!in_array($source, ['ai-build', 'ai-assist', 'scratch', 'existing', 'template', 'upload'], true)) {
     $source = 'scratch';
 }
 

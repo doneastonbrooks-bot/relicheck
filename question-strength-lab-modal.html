@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Question Strength Lab · popup (mockup) · ReliCheck</title>
+<style>
+  :root{
+    --accent:#E07820; --accent-soft:#fef3e8; --accent-ink:#b85f10;
+    --blue:#0A6FE8; --blue-soft:#EEF3FA;
+    --green:#1f9e44; --green-soft:#e9f7ee;
+    --amber:#c47700; --amber-soft:#fdf3e3;
+    --red:#c4271f; --red-soft:#fbeae9;
+    --ink:#15171a; --ink-2:#5f6368; --ink-3:#8a8f98;
+    --bg:#f5f6f8; --panel:#ffffff;
+    --line:rgba(15,23,42,0.08); --line-2:rgba(15,23,42,0.04);
+    --sh:0 4px 12px rgba(15,23,42,0.07); --sh-lg:0 18px 50px rgba(15,23,42,0.28);
+    --r:16px; --r-sm:11px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .badge{display:inline-block;font-size:11.5px;font-weight:800;padding:2px 9px;border-radius:999px}
+  .b-amber{background:var(--amber-soft);color:var(--amber)} .b-red{background:var(--red-soft);color:var(--red)}
+  .b-green{background:var(--green-soft);color:var(--green)} .b-gray{background:rgba(15,23,42,.06);color:var(--ink-2)}
+  .b-accent{background:var(--accent-soft);color:var(--accent-ink)}
+  .btn{font:inherit;font-weight:700;font-size:14px;border-radius:10px;padding:10px 15px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.12s}
+  .btn:hover{border-color:rgba(15,23,42,.22)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(.96)}
+  .btn.sm{font-size:13px;padding:8px 12px}
+  .btn.ghost{background:none;border-color:transparent;color:var(--ink-2)}
+  .btn.ghost:hover{background:var(--bg);border-color:transparent}
+
+  /* top bar */
+  .top{display:flex;align-items:center;gap:11px;padding:14px 26px;border-bottom:1px solid var(--line);background:var(--panel)}
+  .logo{width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:11px}
+  .top b{font-size:15.5px}
+  .top .lab-name{color:var(--ink-2);font-weight:600;font-size:14px}
+  .top .mock{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);padding:3px 9px;border-radius:999px}
+
+  /* ===== OVERVIEW (behind) ===== */
+  .wrap{max-width:760px;margin:26px auto;padding:0 26px 80px}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 6px}
+  h1{font-size:25px;font-weight:820;letter-spacing:-.02em;margin:0 0 16px}
+  .scorecard{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+  .ring{width:96px;height:96px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;position:relative;
+    background:conic-gradient(var(--accent) calc(var(--p,40)*1%), var(--line) 0)}
+  .ring:before{content:"";position:absolute;inset:9px;background:var(--panel);border-radius:50%}
+  .ring b{position:relative;font-size:25px;font-weight:840}
+  .scorecard .sx{flex:1;min-width:220px}
+  .scorecard .sx h2{margin:0 0 3px;font-size:18px;font-weight:800}
+  .scorecard .sx p{margin:0;color:var(--ink-2);font-size:14px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .pad{padding:22px}
+  .qlist{margin-top:18px;overflow:hidden}
+  .qrow{display:flex;gap:13px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line-2);cursor:pointer;transition:.12s}
+  .qrow:last-child{border-bottom:0}
+  .qrow:hover{background:var(--bg)}
+  .qrow .st{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800}
+  .st.flag{background:var(--amber-soft);color:var(--amber)} .st.block{background:var(--red-soft);color:var(--red)}
+  .st.done{background:var(--green);color:#fff} .st.kept{background:var(--ink-3);color:#fff} .st.strong{background:var(--green-soft);color:var(--green)}
+  .qrow .qx{flex:1;min-width:0}
+  .qrow .ql{font-size:15px;font-weight:700}
+  .qrow .qc{font-size:12.5px;color:var(--ink-3)}
+  .qrow .go{font-size:13px;font-weight:700;color:var(--accent-ink);white-space:nowrap}
+  .qrow .go.muted{color:var(--ink-3)}
+
+  /* ===== MODAL ===== */
+  .scrim{position:fixed;inset:0;background:rgba(15,23,42,.46);backdrop-filter:blur(2px);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:34px 16px;overflow:auto}
+  .scrim.show{display:flex}
+  .modal{background:var(--panel);border-radius:18px;box-shadow:var(--sh-lg);width:100%;max-width:680px;display:flex;flex-direction:column;max-height:calc(100vh - 68px);animation:pop .18s ease}
+  @keyframes pop{from{transform:translateY(8px) scale(.99);opacity:.6}to{transform:none;opacity:1}}
+  .m-head{padding:14px 18px 11px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .m-head .r1{display:flex;align-items:center;gap:10px}
+  .m-head .qn{font-size:13px;font-weight:800;color:var(--accent-ink)}
+  .m-head .sc{margin-left:auto;font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+  .m-head .sc .up{color:var(--green);font-weight:800}
+  .m-head .x{border:0;background:none;font-size:22px;color:var(--ink-3);cursor:pointer;line-height:1;padding:2px 6px;border-radius:8px}
+  .m-head .x:hover{background:var(--bg)}
+  .dots{display:flex;gap:6px;margin-top:10px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer;transition:.15s}
+  .dot.cur{background:var(--accent);transform:scale(1.25)} .dot.done{background:var(--green)} .dot.kept{background:var(--ink-3)} .dot.strong{background:var(--green-soft);box-shadow:inset 0 0 0 1.5px var(--green)}
+  .m-body{flex:1 1 auto;overflow:auto;padding:18px}
+  .m-foot{flex:0 0 auto;border-top:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border-radius:0 0 18px 18px}
+  .m-foot .spacer{flex:1}
+
+  .qmeta{font-size:11.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+  .qtext{font-size:20px;font-weight:760;line-height:1.35;margin:0 0 14px;letter-spacing:-.01em}
+  mark.hl{background:#ffe2c2;color:#7a3d00;border-radius:4px;padding:0 4px;font-weight:760}
+  .opts{display:flex;flex-direction:column;gap:7px}
+  .optrow{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14.5px}
+  .optrow .rk{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+  .optrow.bad{border-style:dashed;border-color:rgba(196,39,31,.4);background:var(--red-soft);color:var(--red)}
+  .optrow.good{border-color:rgba(31,158,68,.35);background:var(--green-soft)}
+  .scalebar{display:flex;gap:6px;flex-wrap:wrap}
+  .pt{font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink-2);background:#fff;flex:1;text-align:center;min-width:60px}
+  .strengthened-note{display:flex;gap:10px;align-items:center;background:var(--green-soft);border:1px solid rgba(31,158,68,.25);border-radius:var(--r-sm);padding:11px 14px;margin-top:12px}
+  .strengthened-note .ic{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;flex:0 0 auto}
+  .strengthened-note p{margin:0;font-size:13.5px;color:#14532b}
+
+  .sec{padding:15px 0;border-top:1px solid var(--line-2)}
+  .sec-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .sec-n{width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex:0 0 auto}
+  .sec-t{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-2)}
+  .sec p{margin:0;font-size:14px}
+  .sec p.muted{color:var(--ink-2)}
+  .learnlink{background:none;border:0;color:var(--blue);font-weight:700;font-size:13px;cursor:pointer;padding:7px 0 0}
+  .learn{margin-top:8px;font-size:13px;color:#23415f;background:var(--blue-soft);border-radius:10px;padding:10px 12px;display:none}
+  .learn.show{display:block}
+  .move{border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:8px;cursor:pointer;transition:.12s}
+  .move:hover{border-color:rgba(224,120,32,.5)}
+  .move.sel{border-color:var(--accent);background:var(--accent-soft)}
+  .move .mt{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700}
+  .move .rk{width:15px;height:15px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+  .move.sel .rk{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px #fff}
+  .move .prev{margin-top:8px;padding-left:24px}
+  .move .prev .chip{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin:0 5px 5px 0;font-size:12px}
+  .move .prev .q2{display:block;margin:3px 0;padding:5px 9px;background:#fff;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .impact .ln{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+  .impact .up{color:var(--green);font-weight:800}
+  .editor{margin-top:10px;display:none}
+  .editor.show{display:block}
+  .editor textarea,.editor input{width:100%;font:inherit;font-size:14.5px;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px}
+  .editor textarea:focus,.editor input:focus{outline:none;border-color:var(--accent)}
+  .editor .orow{display:flex;gap:6px;align-items:center}
+  .editor .x{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:17px;padding:2px 7px}
+  .keepwrap{margin-top:9px;display:none} .keepwrap.show{display:block}
+  .done-modal{text-align:center;padding:10px 6px}
+  .done-modal .ic{width:54px;height:54px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-size:26px;margin:0 auto 12px}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-lg);transition:.28s;pointer-events:none;z-index:70}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="logo">SDS</div><b>Survey Development System</b>
+    <span class="lab-name">· Question Strength Lab</span>
+    <span class="mock">Mockup · sample data</span>
+  </div>
+
+  <!-- OVERVIEW (behind the popup) -->
+  <div class="wrap">
+    <div class="eyebrow">SDSI · Build Check</div>
+    <h1>Team Climate Survey</h1>
+    <div class="card pad">
+      <div class="scorecard">
+        <div class="ring" id="ring"><b id="ovScore">39.6</b></div>
+        <div class="sx">
+          <h2>SDSI <span id="ovScore2">39.6</span> / 50 · <span class="badge b-amber" id="ovBand">Caution</span></h2>
+          <p id="ovSub">5 of your 8 questions can be stronger. Work through them one at a time.</p>
+        </div>
+        <button class="btn primary" onclick="openModal(firstFlagged())">Strengthen my questions →</button>
+      </div>
+    </div>
+    <div class="card qlist" id="qlist"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="scrim" id="scrim" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+var Q = [
+  { n:1, label:'Tenure', cat:'Response options', type:'Single choice',
+    text:'How long have you worked here?', options:['Option 1','Option 2'], badOpts:true,
+    cur:20, fixed:50, blocker:true, chip:'Placeholder options',
+    noticed:'The answer choices are "Option 1" and "Option 2". Those are placeholders, not real categories.',
+    why:'Placeholder answers carry no meaning, so the responses cannot be counted or compared. As written, this question collects nothing you can use.',
+    learn:'Strong categorical answers are mutually exclusive, cover everyone, are ordered when the thing is ordered like tenure, and give people a way to decline.',
+    moves:[
+      {t:'Use standard tenure bands', kind:'options', r:['Less than 1 year','1-3 years','4-6 years','7-10 years','More than 10 years','Prefer not to answer']},
+      {t:'Use a simpler 3-band version', kind:'options', r:['Less than 2 years','2-5 years','More than 5 years','Prefer not to answer']}
+    ]},
+  { n:2, label:'Role level', cat:'Category labels', type:'Single choice',
+    text:'Which best describes your current role level?', options:['The Floor','Team Lead','Upper Management'], badOptIdx:[0],
+    cur:38, fixed:50, chip:'Informal label',
+    noticed:'One option is labeled "The Floor". It is slang, and the three levels are not evenly defined.',
+    why:'Casual or uneven labels read as unprofessional and leave people unsure which option fits them, so the answers get noisy. Clear, parallel levels keep responses comparable.',
+    learn:'Role-level options should be parallel (all job levels), ordered junior to senior, cover the range, and include an "Other" for anyone who does not fit.',
+    moves:[
+      {t:'Use a standard role-level set', kind:'options', r:['Frontline staff / individual contributor','Team lead','Supervisor / manager','Director / senior manager','Executive / senior leadership','Other','Prefer not to answer']},
+      {t:'Just rename "The Floor"', kind:'options', r:['Frontline staff / individual contributor','Team lead','Upper management']}
+    ]},
+  { n:3, label:'Supervisor', cat:'Question wording', type:'Likert · 5-point agreement',
+    text:'My supervisor communicates clearly and treats everyone fairly.', hl:['communicates clearly','treats everyone fairly'],
+    cur:35, fixed:50, chip:'Double-barreled',
+    noticed:'This question asks about two different things at once: clear communication and fair treatment.',
+    why:'When one rating has to cover two ideas, you cannot tell which one drove the answer. Someone might find their supervisor a clear communicator but unfair, with no honest way to respond.',
+    learn:'One item, one idea. If you care about both communication and fairness, ask them as two questions so each gives a clean, separate signal.',
+    moves:[
+      {t:'Split into two questions', kind:'split', r:['My supervisor communicates clearly.','My supervisor treats team members fairly.']},
+      {t:'Keep the communication idea only', kind:'text', r:'My supervisor communicates clearly.'},
+      {t:'Keep the fairness idea only', kind:'text', r:'My supervisor treats team members fairly.'}
+    ]},
+  { n:4, label:'Role clarity', cat:'Looks strong', type:'Likert · 5-point agreement',
+    text:'I understand what is expected of me in my role.', clean:true,
+    praise:'One clear idea, neutral wording, and a scale that fits the question. Nothing to change here.' },
+  { n:5, label:'Feedback', cat:'Scale design', type:'Likert · Strongly disagree to Strongly agree',
+    text:'How often does your supervisor give you useful feedback?', hl:['How often'],
+    scale:['Strongly disagree','Disagree','Neutral','Agree','Strongly agree'], badScale:true,
+    cur:30, fixed:50, chip:'Question and scale mismatch',
+    noticed:'The question asks "how often", but the answer scale runs from "Strongly disagree" to "Strongly agree".',
+    why:'A frequency question needs a frequency scale. Agreeing or disagreeing with "how often" does not make sense, so people guess and the answers are hard to interpret.',
+    learn:'Match the scale to the stem. "How often" pairs with Never to Always. If you would rather keep an agreement scale, rewrite the stem as a statement.',
+    moves:[
+      {t:'Switch to a frequency scale', kind:'scale', r:['Never','Rarely','Sometimes','Often','Always']},
+      {t:'Reword as an agreement statement', kind:'text', r:'My supervisor gives me useful feedback.'}
+    ]},
+  { n:6, label:'Gender', cat:'Privacy and dignity', type:'Single choice',
+    text:'What is your gender?', options:['Woman','Man','Non-binary'],
+    cur:44, fixed:50, chip:'No way to decline',
+    noticed:'This is a personal question, and there is no "Prefer not to answer" option.',
+    why:'People should always be able to decline a personal question with dignity. Without that choice, some skip the rest of the survey or give a false answer, which hurts your data and your response rate.',
+    learn:'For any sensitive or demographic question, add "Prefer not to answer", keep it optional, and say briefly why you collect it.',
+    moves:[
+      {t:'Add "Prefer not to answer"', kind:'options', r:['Woman','Man','Non-binary','Prefer not to answer']},
+      {t:'Add decline and self-describe', kind:'options', r:['Woman','Man','Non-binary','Prefer to self-describe','Prefer not to answer']}
+    ]},
+  { n:7, label:'Workload', cat:'Looks strong', type:'Likert · 5-point agreement',
+    text:'My workload is manageable most weeks.', clean:true, praise:'Specific, single idea, and easy to answer honestly.' },
+  { n:8, label:'Open feedback', cat:'Looks strong', type:'Open response',
+    text:'What is one change that would help you do your job more effectively?', clean:true, praise:'Focused and answerable. A good single open-ended question to close on.' }
+];
+Q.forEach(function(q){ q.status = q.clean?'strong':'pending'; q.sel=0; });
+
+var N=Q.length, cur=0, open=false;
+function round1(n){ return Math.round(n*10)/10; }
+function itemScore(q){ if(q.clean) return 50; return q.status==='strengthened'?q.fixed:q.cur; }
+function surveyScore(){ return round1(Q.reduce(function(a,q){return a+itemScore(q);},0)/N); }
+function projected(){ return round1(Q.reduce(function(a,q){return a+(q.clean?50:(q.status==='kept'?q.cur:q.fixed));},0)/N); }
+function openBlockers(){ return Q.filter(function(q){return q.blocker&&q.status!=='strengthened';}).length; }
+function flaggedLeft(){ return Q.filter(function(q){return !q.clean&&q.status==='pending';}).length; }
+function bandOf(v){ return v>=45?['Strong','b-green']:v>=38?['Good','b-green']:v>=30?['Caution','b-amber']:v>=20?['Weak','b-red']:['Not ready','b-red']; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function firstFlagged(){ var i=Q.findIndex(function(q){return !q.clean&&q.status==='pending';}); return i<0?0:i; }
+function statusIcon(q){
+  if(q.status==='strengthened') return ['done','✓'];
+  if(q.status==='kept') return ['kept','='];
+  if(q.clean) return ['strong','✓'];
+  if(q.blocker) return ['block','!'];
+  return ['flag','!'];
+}
+
+/* ===== overview ===== */
+function renderOverview(){
+  var sc=surveyScore(), b=bandOf(sc), disp=b; if(openBlockers()>0&&sc>=38) disp=['Caution','b-amber'];
+  document.getElementById('ovScore').textContent=sc.toFixed(1);
+  document.getElementById('ovScore2').textContent=sc.toFixed(1);
+  document.getElementById('ovBand').textContent=disp[0];
+  document.getElementById('ovBand').className='badge '+disp[1];
+  document.getElementById('ring').style.setProperty('--p', sc/50*100);
+  var left=flaggedLeft();
+  document.getElementById('ovSub').textContent = left>0
+    ? (left+' of your 8 questions can be stronger. Work through them one at a time.')
+    : 'Every question has been reviewed. Nice work.';
+  document.getElementById('qlist').innerHTML = Q.map(function(q,i){
+    var s=statusIcon(q);
+    var go = q.clean ? '<span class="go muted">Looks strong</span>'
+      : (q.status==='strengthened' ? '<span class="go muted">Strengthened</span>'
+      : (q.status==='kept' ? '<span class="go muted">Kept</span>' : '<span class="go">Strengthen →</span>'));
+    return '<div class="qrow" onclick="openModal('+i+')"><div class="st '+s[0]+'">'+s[1]+'</div>'+
+      '<div class="qx"><div class="ql">Q'+q.n+'. '+esc(q.label)+'</div><div class="qc">'+esc(q.cat)+'</div></div>'+go+'</div>';
+  }).join('');
+}
+
+/* ===== modal ===== */
+function openModal(i){ cur=i; open=true; document.getElementById('scrim').classList.add('show'); document.body.style.overflow='hidden'; renderModal(); }
+function closeModal(){ open=false; document.getElementById('scrim').classList.remove('show'); document.body.style.overflow=''; renderOverview(); }
+function dotsHtml(){ return '<div class="dots">'+Q.map(function(q,i){ var c=i===cur?'cur':(q.status==='strengthened'?'done':(q.status==='kept'?'kept':(q.clean?'strong':''))); return '<span class="dot '+c+'" onclick="openModal('+i+')"></span>'; }).join('')+'</div>'; }
+function hlText(q){ var t=esc(q.text); (q.hl||[]).forEach(function(h){ t=t.replace(esc(h),'<mark class="hl">'+esc(h)+'</mark>'); }); return t; }
+
+function qBlock(q){
+  var body='';
+  if(q.options){ body='<div class="opts">'+q.options.map(function(o,i){ var bad=q.badOpts||(q.badOptIdx&&q.badOptIdx.indexOf(i)>=0); var good=q.status==='strengthened'; return '<div class="optrow'+(good?' good':(bad?' bad':''))+'"><span class="rk"></span>'+esc(o)+'</div>'; }).join('')+'</div>'; }
+  else if(q.scale){ body='<div class="scalebar">'+q.scale.map(function(p){return '<span class="pt">'+esc(p)+'</span>';}).join('')+'</div>'; }
+  else if(q.type==='Open response'){ body='<div class="optrow" style="color:var(--ink-3)">Free text answer</div>'; }
+  var tag = q.status==='strengthened'?'<span class="badge b-green">Strengthened</span>':(q.clean?'<span class="badge b-green">Looks strong</span>':(q.blocker?'<span class="badge b-red">Blocks deployment</span>':'<span class="badge b-amber">Flagged</span>'));
+  var note = q.status==='strengthened'?'<div class="strengthened-note"><span class="ic">✓</span><p>Strengthened. This question now scores '+q.fixed+' / 50.</p></div>':'';
+  return '<div class="qmeta">'+esc(q.type)+' · '+tag+'</div><h2 class="qtext">'+hlText(q)+'</h2>'+body+note;
+}
+function movePreview(m){
+  if(m.kind==='options'||m.kind==='scale') return '<div class="prev">'+m.r.map(function(o){return '<span class="chip">'+esc(o)+'</span>';}).join('')+'</div>';
+  if(m.kind==='split') return '<div class="prev">'+m.r.map(function(o){return '<span class="q2">'+esc(o)+'</span>';}).join('')+'</div>';
+  return '<div class="prev"><span class="q2">'+esc(m.r)+'</span></div>';
+}
+
+function renderModal(){
+  var q=Q[cur];
+  var sc=surveyScore();
+  var head='<div class="m-head"><div class="r1"><span class="qn">Question '+q.n+' of '+N+'</span>'+
+    (q.clean?'':' <span class="badge b-gray">'+esc(q.chip)+'</span>')+
+    '<span class="sc">SDSI '+sc.toFixed(1)+' → <span class="up">'+projected().toFixed(1)+'</span></span>'+
+    '<button class="x" onclick="closeModal()">×</button></div>'+dotsHtml()+'</div>';
+
+  if(q.clean){
+    document.getElementById('modal').innerHTML = head +
+      '<div class="m-body">'+qBlock(q)+
+        '<div class="sec"><div class="sec-h"><span class="sec-n">✓</span><span class="sec-t">What makes this work</span></div><p class="muted">'+esc(q.praise)+'</p></div></div>'+
+      '<div class="m-foot"><button class="btn ghost" onclick="back()">← Back</button><div class="spacer"></div><button class="btn primary" onclick="next()">Next question →</button></div>';
+    return;
+  }
+  var afterSc=round1(Q.reduce(function(a,qq){return a+(qq===q?q.fixed:itemScore(qq));},0)/N);
+  var moves=q.moves.map(function(m,i){ return '<div class="move'+(q.sel===i?' sel':'')+'" onclick="pick('+i+')"><div class="mt"><span class="rk"></span>'+esc(m.t)+'</div>'+movePreview(m)+'</div>'; }).join('');
+  document.getElementById('modal').innerHTML = head +
+    '<div class="m-body">'+ qBlock(q)+
+      '<div class="sec"><div class="sec-h"><span class="sec-n">1</span><span class="sec-t">What ReliCheck noticed</span></div><p>'+esc(q.noticed)+'</p></div>'+
+      '<div class="sec"><div class="sec-h"><span class="sec-n">2</span><span class="sec-t">Why this matters</span></div><p class="muted">'+esc(q.why)+'</p>'+
+        '<button class="learnlink" onclick="toggleLearn()">Learn more about this</button><div class="learn" id="learn">'+esc(q.learn)+'</div></div>'+
+      '<div class="sec"><div class="sec-h"><span class="sec-n">3</span><span class="sec-t">Ways to strengthen this question</span></div>'+moves+'<div class="editor" id="editor"></div></div>'+
+      '<div class="sec"><div class="sec-h"><span class="sec-n">4</span><span class="sec-t">Score impact</span></div>'+
+        '<div class="impact"><div class="ln"><span>This question</span><span><b>'+q.cur+'</b> → <span class="up">'+q.fixed+'</span> / 50</span></div>'+
+        '<div class="ln"><span>Your survey</span><span><b>'+sc.toFixed(1)+'</b> → <span class="up">'+afterSc.toFixed(1)+'</span> / 50</span></div></div></div>'+
+      '<div class="keepwrap" id="keepwrap"><input type="text" id="keepReason" placeholder="Why keep it? (optional, for your records)"><button class="btn sm" onclick="confirmKeep()" style="margin-top:7px">Keep it and continue</button></div>'+
+    '</div>'+
+    '<div class="m-foot">'+
+      '<button class="btn ghost" onclick="back()">← Back</button>'+
+      '<button class="btn ghost" onclick="keep()">Keep original</button>'+
+      '<button class="btn ghost" onclick="skip()">Skip</button>'+
+      '<div class="spacer"></div>'+
+      '<button class="btn sm" onclick="openEditor(\'self\')">Edit myself</button>'+
+      '<button class="btn sm" onclick="openEditor(\'adapt\')">Adapt</button>'+
+      '<button class="btn primary sm" onclick="useRev()">Use this revision →</button>'+
+    '</div>';
+}
+
+function pick(i){ Q[cur].sel=i; renderModal(); }
+function toggleLearn(){ var el=document.getElementById('learn'); if(el) el.classList.toggle('show'); }
+function openEditor(mode){
+  var q=Q[cur], m=q.moves[q.sel], box=document.getElementById('editor'); box.classList.add('show');
+  if(m.kind==='text'){ var seed=mode==='adapt'?m.r:q.text; box.innerHTML='<textarea id="ed0" rows="2">'+esc(seed)+'</textarea><button class="btn sm" onclick="saveEdit()">Save my version</button>'; }
+  else if(m.kind==='split'){ var s=mode==='adapt'?m.r:[q.text,'']; box.innerHTML='<textarea id="ed0" rows="2">'+esc(s[0])+'</textarea><textarea id="ed1" rows="2">'+esc(s[1]||'')+'</textarea><button class="btn sm" onclick="saveEdit()">Save both questions</button>'; }
+  else { var arr=mode==='adapt'?m.r.slice():(q.options||q.scale||[]).slice(); box.innerHTML='<div id="opted">'+arr.map(function(o){return optLine(o);}).join('')+'</div><button class="btn sm ghost" onclick="addEd()">+ Add</button> <button class="btn sm" onclick="saveEdit()">Save my version</button>'; }
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function optLine(o){ return '<div class="orow"><input type="text" value="'+esc(o)+'"><button class="x" onclick="this.parentNode.remove()">×</button></div>'; }
+function addEd(){ var d=document.getElementById('opted'); var div=document.createElement('div'); div.innerHTML=optLine(''); d.appendChild(div.firstChild); }
+function collectEd(){ return Array.prototype.map.call(document.querySelectorAll('#opted input'),function(e){return e.value;}).filter(function(v){return v.trim();}); }
+function saveEdit(){
+  var q=Q[cur], m=q.moves[q.sel];
+  if(m.kind==='text'){ var v=document.getElementById('ed0').value.trim(); if(!v){toast('Write the question first');return;} q.text=v; q.hl=null; }
+  else if(m.kind==='split'){ var a=document.getElementById('ed0').value.trim(); if(!a){toast('Write the question first');return;} q.text=a; q.hl=null; }
+  else { var o=collectEd(); if(o.length<2){toast('Add at least two options');return;} if(q.options)q.options=o; else q.scale=o; q.badOpts=false;q.badScale=false;q.badOptIdx=null; }
+  strengthen('Saved your version');
+}
+function useRev(){
+  var q=Q[cur], m=q.moves[q.sel];
+  if(m.kind==='text'){ q.text=m.r; q.hl=null; }
+  else if(m.kind==='split'){ q.text=m.r[0]; q.hl=null; }
+  else if(m.kind==='options'){ q.options=m.r.slice(); q.badOpts=false; q.badOptIdx=null; }
+  else if(m.kind==='scale'){ q.scale=m.r.slice(); q.badScale=false; }
+  strengthen('Applied: '+m.t);
+}
+function strengthen(msg){ var q=Q[cur]; var gained=round1((q.fixed-q.cur)/N); q.status='strengthened'; renderModal(); renderOverview(); toast(msg+'  ·  +'+gained.toFixed(1)+' to your score'); setTimeout(advanceOrFinish, 700); }
+function keep(){ var k=document.getElementById('keepwrap'); if(k) k.classList.toggle('show'); }
+function confirmKeep(){ Q[cur].status='kept'; renderOverview(); toast('Kept as-is'); advanceOrFinish(); }
+function skip(){ toast('Skipped'); next(); }
+function back(){ for(var k=1;k<=N;k++){ var j=(cur-k+N)%N; if(j!==cur){ cur=j; renderModal(); return; } } }
+function next(){ var j=(cur+1)%N; cur=j; renderModal(); }
+function advanceOrFinish(){
+  var nx=Q.findIndex(function(q){return !q.clean&&q.status==='pending';});
+  if(nx<0) return finish();
+  cur=nx; renderModal();
+}
+function finish(){
+  var sc=surveyScore(), b=bandOf(sc);
+  document.getElementById('modal').innerHTML =
+    '<div class="m-body"><div class="done-modal"><div class="ic">✓</div>'+
+      '<h2 style="margin:0 0 6px;font-size:21px;font-weight:820">Every question reviewed</h2>'+
+      '<p class="muted" style="font-size:14.5px;margin:0 auto;max-width:420px">You lifted your SDSI to '+sc.toFixed(1)+' / 50 ('+b[0]+') and cleared every deployment blocker. Close this to see your full survey.</p>'+
+      '<div style="margin-top:18px"><button class="btn primary" onclick="closeModal()">Back to my survey →</button></div>'+
+    '</div></div>';
+}
+
+document.addEventListener('keydown', function(e){ if(!open) return; if(e.key==='Escape') closeModal(); if(e.key==='ArrowRight') next(); if(e.key==='ArrowLeft') back(); });
+var toastT; function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},2000); }
+
+renderOverview();
+</script>
+</body>
+</html>

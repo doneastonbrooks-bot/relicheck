@@ -20,17 +20,37 @@ Saving any file in this repo auto-uploads to live production in ~15 seconds. Git
 
 ---
 
-## Current state of the upload widget
+## Upload widget — universal rule
 
-All three studio entry points use `apps/studio/dataset-upload.js` — `DatasetUpload.open()`. One widget, one modal, same look everywhere.
+Every studio uses `apps/studio/dataset-upload.js` — `DatasetUpload.open({ projectType, ... })`. One widget, one modal, same file formats, same look. No exceptions. No studio builds its own upload path.
 
-- **D/I Studio** — working, verified
-- **MM Studio** — `mmStartUpload()` in mmstudioV4.php calls `DatasetUpload.open({ projectType:'mm' })`. Widget creates the mm_projects row and links the dataset. **Verify in browser before assuming it works.**
-- **RSSI journey app** — "Upload your data" button calls `DatasetUpload.open({ projectType:'rssi' })`. Widget creates the dataset and redirects to `?dataset_id=N`. **Verify in browser before assuming it works.**
+Supported formats: CSV, TSV, XLSX, JSON, Qualtrics exports, Google Forms exports.
 
-If MM or RSSI upload looks wrong or fails: check the browser console first before touching code.
+| Studio | projectType | Entry |
+|---|---|---|
+| MM Studio | `'mm'` | `mmstudioV4.php` |
+| RSSI App | `'rssi'` | `apps/journey/journey-rssi.js` |
+| Qual Studio | `'qual'` | `apps/qual/qual-studio.js` |
+| Survey Dev System | `'survey'` | `develop.php` |
+
+If upload looks wrong or fails in any studio: check the browser console first before touching code.
 
 There is no mm-wizard.php. It was deleted. Do not recreate it.
+
+---
+
+## How the upload widget routes
+
+In `apps/studio/dataset-upload.js` `attach()`:
+
+- `projectType === 'rssi'` → return datasetId directly (no project record)
+- `projectType === 'survey'` → `api/dev/link-dataset.php` → sets `survey_projects.dataset_id`
+- `projectType === 'qual'`, no projectId → create qual project, then `api/qual/link-dataset.php`
+- `projectType === 'qual'`, with projectId → `api/qual/link-dataset.php` directly
+- `projectType === 'mm'`, no projectId → create mm_projects row, then `api/mm/link-dataset.php`
+- `projectType === 'mm'`, with projectId → `api/mm/link-dataset.php` directly
+
+All link endpoints call `rc_seed_var_meta_from_dataset()` to seed `variable_metadata`.
 
 ---
 
@@ -48,23 +68,13 @@ Build order is locked. Item 4 before Item 5. Define rules before building anythi
 
 ---
 
-## How the upload widget routes
-
-In `apps/studio/dataset-upload.js` `attach()`:
-
-- `ctx.projectId` set → link dataset to existing project
-- `projectType === 'rssi'` → return datasetId directly (no project record)
-- `projectType === 'mm'`, no projectId → create mm_projects row, link dataset, return projectId
-- Otherwise → create analysis_projects row, return projectId
-
----
-
 ## Key files
 
 - Upload widget: `apps/studio/dataset-upload.js`
 - MM Studio: `mmstudioV4.php` (edit with caution — production file)
 - RSSI journey app: `rssi-app.php` + `apps/journey/journey-rssi.js`
-- D/I studio shell: `_analysis_studio_v4_shell.php`
+- Qual Studio: `qual-studio-workspace.php` + `apps/qual/qual-studio.js`
+- Survey Dev System: `develop.php` + `api/dev/link-dataset.php`
 - Ecosystem project helper: `api/_rc_projects.php`
 - Dataset seeding: `api/_dataset_helpers.php`
 

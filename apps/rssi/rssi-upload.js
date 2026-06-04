@@ -63,6 +63,40 @@
     return tabs > commas ? '\t' : ',';
   }
 
+  // Qualtrics exports have 3 header rows. Row 0 = question text (used as headers),
+  // row 1 = ImportId JSON, row 2 = coded values. Real data starts at row 3.
+  function detectQualtricsFormat(parsed) {
+    if (parsed.rows.length < 2) return false;
+    var row1vals = Object.values(parsed.rows[1] || {});
+    return row1vals.some(function (v) { return /^\{"ImportId"/.test(String(v)); });
+  }
+  function stripQualtricsFormat(parsed) {
+    return { headers: parsed.headers, rows: parsed.rows.slice(2) };
+  }
+
+  // SurveyMonkey exports have 2 header rows. Row 0 = question text (headers),
+  // row 1 = sub-question / option labels. Real data starts at row 2.
+  function detectSurveyMonkeyFormat(parsed) {
+    if (parsed.rows.length < 2) return false;
+    var hasSmMeta = parsed.headers.some(function (h) {
+      return /respondent.?id|start.?date|end.?date|ip.?address|email.?address|first.?name|last.?name/i.test(String(h));
+    });
+    if (!hasSmMeta) return false;
+    var subRow = parsed.rows[0] || {};
+    var subVals = Object.values(subRow);
+    return subVals.some(function (v) {
+      return /^(response|open.?ended.?response|open\s*ended|other.*please.*specify|please\s*specify|column\s*\d+)$/i.test(String(v).trim());
+    });
+  }
+  function stripSurveyMonkeyFormat(parsed) {
+    var subRow = parsed.rows[0];
+    var combined = parsed.headers.map(function (h) {
+      var sub = String((subRow && subRow[h]) || '').trim();
+      return (sub && sub !== h) ? h + ' - ' + sub : h;
+    });
+    return { headers: combined, rows: parsed.rows.slice(1) };
+  }
+
   /* ────────────────────────────────────────────────────────────
    * Parse XLSX → { headers, rows }
    * ──────────────────────────────────────────────────────────── */
@@ -993,7 +1027,9 @@
       const delim = detectDelimiter(text);
       return { parsed: parseDelimited(text, delim), buf: buf };
     }).then(function (out) {
-      const parsed = out.parsed;
+      let parsed = out.parsed;
+      if (detectQualtricsFormat(parsed))    parsed = stripQualtricsFormat(parsed);
+      else if (detectSurveyMonkeyFormat(parsed)) parsed = stripSurveyMonkeyFormat(parsed);
       if (!parsed.headers.length) throw new Error('No columns detected.');
       if (!parsed.rows.length)    throw new Error('No data rows detected.');
       // The pre-M2 < 3 Likert hard gate is retired (Phase 1 Q2 +

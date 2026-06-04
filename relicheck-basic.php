@@ -61,7 +61,7 @@ include __DIR__ . '/_platform_shell_header.php';
   </div>
   <div>
     <h3 class="rb-h3">What Basic is not</h3>
-    <p class="rb-note">Basic gives you the score, not the full explanation system. For item review, construct alignment, readiness guidance, publishing and deployment tools, open <strong>full SIRI</strong>. For reliability, validity, item analysis, data quality, scenario testing, and a defensible report, open <strong>RSSI</strong>. For descriptive and statistical analysis, use the <strong>Descriptive</strong> and <strong>Inferential</strong> studios.</p>
+    <p class="rb-note">Basic gives you the score, not the full explanation system. For item review, construct alignment, readiness guidance, publishing and deployment tools, open <strong>full SIRI</strong>. For reliability, validity, item analysis, data quality, scenario testing, and a defensible report, open <strong>RSSI</strong>. For qualitative analysis, codebooks, and themes, open the <strong>Qualitative Studio</strong>. For mixed-methods integration, open <strong>MM Studio</strong>.</p>
     <p class="rb-note">Basic is capped at 25 responses. Upgrade any time to lift the cap and unlock the full tools — your survey keeps the same identity.</p>
   </div>
 </div>

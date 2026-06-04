@@ -145,6 +145,14 @@
         + '</div>';
     }
 
+    if (BOOT.projectId && segCount === 0) {
+      html += '<div id="st-repair-bar" style="margin-bottom:16px;padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:#fafafa;font-size:13.5px;color:var(--ink-2);display:flex;align-items:center;gap:12px">'
+        + '<span>Project loaded but no segments found.</span>'
+        + '<button class="btn" id="stReprocess" style="margin-left:auto">Re-process uploaded data</button>'
+        + '<span id="st-repair-msg" style="font-size:13px"></span>'
+        + '</div>';
+    }
+
     html += '<button class="begin-feature" id="stUpload">'
       + '<span class="bc-ico">&#8681;</span>'
       + '<div><h4>Upload qualitative data</h4>'
@@ -165,46 +173,54 @@
 
     var projects = document.getElementById('stProjects');
     if (projects) projects.addEventListener('click', function () { window.location.href = '/qual-studio.php'; });
+
+    var reprocess = document.getElementById('stReprocess');
+    if (reprocess) reprocess.addEventListener('click', function () {
+      var msg = document.getElementById('st-repair-msg');
+      reprocess.disabled = true;
+      reprocess.textContent = 'Processing...';
+      if (msg) msg.textContent = '';
+      fetch('/api/qual/rematerialize.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project_id: BOOT.projectId }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d.ok) throw new Error(d.message || 'Server error');
+          if (msg) msg.textContent = d.seg_count + ' segments loaded from ' + d.documents_processed + ' document(s).';
+          if (d.seg_count > 0) {
+            loadProjectData().then(function () { state.stepId = 'overview'; render(); }).catch(function () { render(); });
+          } else {
+            var detail = (d.detail || []).map(function (x) {
+              return x.title + ': ' + (x.ok ? x.seg_count + ' seg' : 'error — ' + x.error);
+            }).join(' | ');
+            if (msg) msg.textContent = 'Still 0 segments. ' + (detail || 'No open-ended columns detected.');
+            reprocess.disabled = false;
+            reprocess.textContent = 'Re-process uploaded data';
+          }
+        })
+        .catch(function (e) {
+          if (msg) msg.textContent = 'Error: ' + (e.message || 'unknown');
+          reprocess.disabled = false;
+          reprocess.textContent = 'Re-process uploaded data';
+        });
+    });
   }
 
   function openUpload() {
     if (typeof DatasetUpload === 'undefined') { alert('Upload widget not loaded.'); return; }
     DatasetUpload.open({
-      projectType: 'rssi',  // returns datasetId directly; we link via qual/link-dataset.php
-      onLoaded: function (_err, datasetId) {
-        var notice = document.getElementById('centerInner');
-        if (notice) notice.innerHTML = '<div class="notice info">Linking dataset and loading segments...</div>';
-
-        function linkAndContinue(projectId) {
-          api('/api/qual/link-dataset.php', {
-            method: 'POST',
-            body: JSON.stringify({ project_id: projectId, dataset_id: datasetId }),
-          }).then(function (r) {
-            if (projectId !== BOOT.projectId) {
-              // New project: redirect so the URL carries the project_id and refresh works.
-              window.location.href = '/qual-studio-workspace.php?project_id=' + projectId + '&step=overview';
-              return;
-            }
-            StudioFooter.setDataInfo(r.seg_count, 1);
-            loadProjectData().then(function () { state.stepId = 'overview'; render(); });
-          }).catch(function (e) {
-            if (notice) notice.innerHTML = '<div class="notice err">Could not link dataset: ' + esc(e.message) + '</div>';
-          });
+      projectType: 'qual',
+      projectId: BOOT.projectId || 0,
+      onLoaded: function (_err, projectId) {
+        if (!BOOT.projectId || projectId !== BOOT.projectId) {
+          // New project created — redirect so the URL carries the project_id.
+          window.location.href = '/qual-studio-workspaceV3.php?project_id=' + projectId + '&step=overview';
+          return;
         }
-
-        if (!BOOT.projectId) {
-          // No project yet — auto-create one, then link. User renames it in Project Setup.
-          api('/api/qual/create-project.php', {
-            method: 'POST',
-            body: JSON.stringify({ title: 'Qualitative Analysis', analysis_approach: 'thematic' }),
-          }).then(function (r) {
-            linkAndContinue(r.project_id);
-          }).catch(function (e) {
-            if (notice) notice.innerHTML = '<div class="notice err">Could not create project: ' + esc(e.message) + '</div>';
-          });
-        } else {
-          linkAndContinue(BOOT.projectId);
-        }
+        // Existing project re-linked — reload data (updates seg_count via loadProjectData).
+        loadProjectData().then(function () { state.stepId = 'overview'; render(); }).catch(function () { render(); });
       },
     });
   }
@@ -2425,7 +2441,7 @@
           state.stepId = 'setup';
         }
         render();
-      });
+      }).catch(function () { render(); });
     } else {
       render();
     }

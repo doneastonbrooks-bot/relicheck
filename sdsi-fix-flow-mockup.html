@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Improve your score · guided fix flow (mockup) · ReliCheck</title>
+<style>
+  /* Palette + vocabulary pulled from develop.php (Survey Development System). */
+  :root{
+    --accent:#E07820; --accent-soft:#fef3e8; --accent-ink:#b85f10;
+    --blue:#0A6FE8; --blue-soft:#EEF3FA;
+    --green:#1f9e44; --green-soft:#e9f7ee;
+    --amber:#c47700; --amber-soft:#fdf3e3;
+    --red:#c4271f; --red-soft:#fbeae9;
+    --ink:#15171a; --ink-2:#5f6368; --ink-3:#8a8f98;
+    --bg:#f5f6f8; --panel:#ffffff;
+    --line:rgba(15,23,42,0.08); --line-2:rgba(15,23,42,0.04);
+    --sh:0 4px 12px rgba(15,23,42,0.08); --sh-lg:0 10px 30px rgba(15,23,42,0.13);
+    --r:16px; --r-sm:11px; --r-lg:22px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto;padding:0 20px 80px}
+  /* top brand strip */
+  .top{display:flex;align-items:center;gap:11px;padding:16px 20px;max-width:760px;margin:0 auto}
+  .logo{width:34px;height:34px;border-radius:9px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px;letter-spacing:.02em}
+  .top b{font-size:16px;letter-spacing:-.01em}
+  .top .mock{margin-left:auto;font-size:11px;font-weight:700;color:var(--accent-ink);background:var(--accent-soft);padding:3px 9px;border-radius:999px}
+  .eyebrow{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);margin:8px 0 6px}
+  h1.title{font-size:26px;font-weight:820;letter-spacing:-.02em;margin:0 0 6px}
+  .lede{font-size:15px;color:var(--ink-2);margin:0 0 18px;max-width:620px}
+  /* sticky score bar */
+  .scorebar{position:sticky;top:0;z-index:20;background:rgba(245,246,248,.86);backdrop-filter:blur(8px);
+    padding:12px 0 14px;margin-bottom:18px;border-bottom:1px solid var(--line)}
+  .sb-row{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .sb-score{display:flex;align-items:baseline;gap:8px}
+  .sb-now{font-size:30px;font-weight:840;letter-spacing:-.02em}
+  .sb-of{font-size:13px;color:var(--ink-3);font-weight:600}
+  .sb-arrow{color:var(--ink-3);font-weight:700}
+  .sb-pot{font-size:17px;font-weight:800;color:var(--accent-ink)}
+  .sb-right{margin-left:auto;text-align:right;min-width:180px;flex:1}
+  .sb-prog-label{font-size:12.5px;color:var(--ink-2);font-weight:600;margin-bottom:6px}
+  .bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+  .bar>span{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .5s cubic-bezier(.2,.7,.2,1)}
+  .badge{display:inline-block;font-size:12px;font-weight:800;padding:2px 10px;border-radius:999px;letter-spacing:.01em}
+  .b-amber{background:var(--amber-soft);color:var(--amber)} .b-red{background:var(--red-soft);color:var(--red)}
+  .b-green{background:var(--green-soft);color:var(--green)} .b-blue{background:var(--blue-soft);color:var(--blue)}
+  .b-gray{background:rgba(15,23,42,.06);color:var(--ink-2)}
+  .blockers{font-size:12.5px;color:var(--red);font-weight:700;margin-top:8px}
+  .blockers.clear{color:var(--green)}
+  /* focus card */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh)}
+  .pad{padding:22px}
+  .issue-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .issue-n{font-size:12.5px;font-weight:800;color:var(--ink-3);letter-spacing:.04em;text-transform:uppercase}
+  .impact{margin-left:auto;font-size:12.5px;font-weight:800;color:var(--accent-ink);background:var(--accent-soft);padding:3px 11px;border-radius:999px;white-space:nowrap}
+  /* question in context */
+  .qprev{background:#fbfbfc;border:1px solid var(--line);border-radius:var(--r-sm);padding:14px 16px;margin-bottom:14px}
+  .qprev .meta{font-size:11.5px;color:var(--ink-3);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px}
+  .qprev .qtext{font-size:16.5px;font-weight:600;line-height:1.45}
+  mark.hl{background:#ffe2c2;color:#7a3d00;border-radius:4px;padding:0 3px;font-weight:700}
+  .opts{margin:11px 0 0;display:flex;flex-wrap:wrap;gap:7px}
+  .opt{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:4px 11px;color:var(--ink-2);background:#fff}
+  .opt.bad{border-style:dashed;color:var(--red);background:var(--red-soft)}
+  /* why */
+  .why{display:flex;gap:10px;padding:12px 14px;background:var(--blue-soft);border-radius:var(--r-sm);margin-bottom:6px}
+  .why .ic{flex:0 0 auto;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:800;margin-top:1px}
+  .why p{margin:0;font-size:13.5px;color:#23415f}
+  .why b{color:#1c3450}
+  .ex-toggle{display:inline-flex;align-items:center;gap:5px;background:none;border:0;color:var(--blue);font-weight:700;font-size:12.5px;cursor:pointer;padding:6px 2px;margin-bottom:8px}
+  .ex{display:none;border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;margin-bottom:14px}
+  .ex.show{display:block}
+  .ex .row{display:flex;gap:10px;padding:10px 14px;font-size:13.5px;align-items:flex-start}
+  .ex .row+.row{border-top:1px solid var(--line-2)}
+  .ex .tag{flex:0 0 auto;font-size:11px;font-weight:800;padding:1px 8px;border-radius:999px}
+  .ex .tag.no{background:var(--red-soft);color:var(--red)} .ex .tag.yes{background:var(--green-soft);color:var(--green)}
+  /* fix area */
+  .fix-label{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin:6px 0 8px;display:flex;align-items:center;gap:7px}
+  .ri-dot{width:15px;height:15px;border-radius:4px;background:linear-gradient(135deg,var(--accent),#f2a65a);display:inline-block}
+  .orig{font-size:13.5px;color:var(--ink-3);margin:0 0 10px}
+  .orig s{color:var(--ink-3)}
+  textarea,input[type=text]{width:100%;font:inherit;font-size:15.5px;color:var(--ink);border:1.5px solid var(--line);border-radius:var(--r-sm);padding:11px 13px;background:#fff;resize:vertical}
+  textarea:focus,input[type=text]:focus{outline:none;border-color:var(--accent)}
+  .alts{display:flex;flex-wrap:wrap;gap:8px;margin:11px 0 0}
+  .alt{font-size:13px;border:1px solid var(--line);border-radius:999px;padding:6px 13px;background:#fff;cursor:pointer;color:var(--ink-2);transition:.12s}
+  .alt:hover{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-soft)}
+  .alts .hint{font-size:12px;color:var(--ink-3);align-self:center}
+  .note{font-size:12.5px;color:var(--ink-2);background:var(--accent-soft);border-radius:var(--r-sm);padding:9px 12px;margin-top:11px}
+  /* option editor */
+  .optedit{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+  .optedit .line{display:flex;gap:8px;align-items:center}
+  .optedit .line input{flex:1}
+  .x{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:18px;line-height:1;padding:4px 8px;border-radius:8px}
+  .x:hover{background:var(--red-soft);color:var(--red)}
+  .addopt{align-self:flex-start;margin-top:2px}
+  /* structural toggles */
+  .toggle{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm);margin-bottom:9px}
+  .toggle .t-txt{flex:1}
+  .toggle .t-txt b{display:block;font-size:14.5px}
+  .toggle .t-txt span{font-size:12.5px;color:var(--ink-2)}
+  .sw{flex:0 0 auto;width:44px;height:25px;border-radius:999px;background:var(--line);position:relative;cursor:pointer;transition:.18s;border:0}
+  .sw:after{content:"";position:absolute;top:3px;left:3px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:.18s}
+  .sw.on{background:var(--green)} .sw.on:after{left:22px}
+  /* buttons + actions */
+  .btn{font:inherit;font-weight:700;font-size:14px;border-radius:11px;padding:10px 16px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:.12s}
+  .btn:hover{border-color:rgba(15,23,42,.2)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn.primary:hover{filter:brightness(.96)}
+  .btn.lg{padding:12px 20px;font-size:15px}
+  .btn.ghost{background:none}
+  .actions{display:flex;align-items:center;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .actions .spacer{flex:1}
+  .keepwrap{margin-top:14px;display:none;background:#fbfbfc;border:1px dashed var(--line);border-radius:var(--r-sm);padding:12px 14px}
+  .keepwrap.show{display:block}
+  .keepwrap p{margin:0 0 8px;font-size:13px;color:var(--ink-2)}
+  /* nav dots */
+  .nav{display:flex;align-items:center;justify-content:center;gap:9px;margin-top:24px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.18s}
+  .dot.cur{background:var(--accent);transform:scale(1.25)}
+  .dot.done{background:var(--green)}
+  .dot.kept{background:var(--ink-3)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--ink);color:#fff;font-weight:700;font-size:14px;padding:11px 18px;border-radius:12px;box-shadow:var(--sh-lg);transition:.28s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* done screen */
+  .done{text-align:center;padding:36px 24px}
+  .done .ring{width:128px;height:128px;border-radius:50%;margin:0 auto 18px;display:grid;place-items:center;
+    background:conic-gradient(var(--green) calc(var(--p,50)*1%),var(--line) 0);position:relative}
+  .done .ring:before{content:"";position:absolute;inset:11px;background:var(--panel);border-radius:50%}
+  .done .ring b{position:relative;font-size:30px;font-weight:840}
+  .done h2{font-size:23px;font-weight:820;margin:6px 0 6px}
+  .delta{display:inline-flex;gap:14px;align-items:center;justify-content:center;margin:10px 0 4px;font-size:15px;font-weight:700}
+  .delta .from{color:var(--ink-3)} .delta .to{color:var(--green)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="logo">SDS</div><b>Survey Development System</b>
+    <span class="mock">Mockup · sample data</span>
+  </div>
+
+  <div class="wrap">
+    <div class="eyebrow">SDSI · Improve your score</div>
+    <h1 class="title">Let's strengthen your questions</h1>
+    <p class="lede">We found a few questions that are holding your score back. Work through them one at a time. ReliCheck Intelligence drafts a fix for each, you review and make it yours, and you watch your score climb.</p>
+
+    <!-- sticky score bar -->
+    <div class="scorebar">
+      <div class="sb-row">
+        <div class="sb-score">
+          <span class="sb-now" id="sbNow">36.7</span><span class="sb-of">/ 50</span>
+          <span class="sb-arrow">→</span><span class="sb-pot" id="sbPot">50 potential</span>
+          <span class="badge b-amber" id="sbBand" style="margin-left:4px">Caution</span>
+        </div>
+        <div class="sb-right">
+          <div class="sb-prog-label"><span id="sbResolved">0</span> of <span id="sbTotal">4</span> resolved</div>
+          <div class="bar"><span id="sbBar" style="width:0%"></span></div>
+        </div>
+      </div>
+      <div class="blockers" id="sbBlockers">2 deployment blockers still open</div>
+    </div>
+
+    <!-- focus card (one issue at a time) -->
+    <div class="card pad" id="focus"></div>
+    <div class="nav" id="nav"></div>
+
+    <!-- completion -->
+    <div class="card pad done hidden" id="done">
+      <div class="ring" id="doneRing"><b id="doneScore">50</b></div>
+      <h2>Your survey is much stronger</h2>
+      <div class="delta"><span class="from" id="dFrom">Caution 36.7</span> → <span class="to" id="dTo">Strong 50</span></div>
+      <p class="lede" style="margin:10px auto 18px" id="doneMsg"></p>
+      <button class="btn primary lg" onclick="reset()">Run through it again</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ---- sample model (no engine; illustrative numbers) ---- */
+var ITEMS = [
+  {id:'Q1', score:50}, {id:'Q2', score:50}, {id:'Q4', score:50}, {id:'Q7', score:50},
+  {id:'Q3', score:35, fixed:50}, {id:'Q5', score:20, fixed:50}, {id:'Q6', score:30, fixed:50}, {id:'Q8', score:35, fixed:50}
+];
+var N = ITEMS.length;
+function item(id){ return ITEMS.filter(function(x){return x.id===id;})[0]; }
+
+var ISSUES = [
+  { item:'Q3', type:'wording', sev:'high', chip:'Double-barreled', cap:35,
+    qtype:'Likert · 5-point agreement',
+    qhtml:'"My manager <mark class="hl">communicates clearly</mark> and <mark class="hl">treats everyone fairly</mark>."',
+    orig:'My manager communicates clearly and treats everyone fairly.',
+    why:'It asks <b>two things at once</b>, so "agree" could mean clear communication, fair treatment, or both. You cannot tell which one the answer is about.',
+    ex:{no:'My manager communicates clearly and treats everyone fairly.', yes:'Two questions: one about clear communication, one about fair treatment.'},
+    suggestion:'My manager communicates expectations clearly.',
+    alts:['I understand what my manager expects of me.','My manager keeps the team well informed.'],
+    note:'The second idea, fair treatment, will be added as its own question so both are measured cleanly.' },
+
+  { item:'Q5', type:'options', sev:'critical', chip:'Placeholder options', cap:20, blocker:true,
+    qtype:'Single choice',
+    qhtml:'"How long have you worked here?"',
+    curOptions:['Option 1','Option 2'],
+    why:'Options like <b>"Option 1"</b> carry no meaning, so the answers cannot be analyzed. Right now this question collects nothing usable.',
+    ex:{no:'Option 1 / Option 2', yes:'Real, ordered, non-overlapping bands that cover everyone, plus a way to decline.'},
+    suggestedOptions:['Less than 1 year','1-3 years','4-6 years','7-10 years','More than 10 years','Prefer not to answer'] },
+
+  { item:'Q6', type:'sensitive', sev:'high', chip:'Required sensitive question', cap:30, blocker:true,
+    qtype:'Single choice · required',
+    qhtml:'"What is your disability status?"',
+    curOptions:['Disabled','Not disabled'],
+    why:'Forcing an answer to a sensitive question is <b>coercive</b> and can breach research ethics. People need a dignified way to decline, and a reason it is being asked.',
+    ex:{no:'Required, only "Disabled" / "Not disabled".', yes:'Optional, includes "Prefer not to answer", and states why it is collected.'} },
+
+  { item:'Q8', type:'wording', sev:'high', chip:'Leading wording', cap:35,
+    qtype:'Likert · 5-point agreement',
+    qhtml:'"<mark class="hl">Don\'t you agree that</mark> our <mark class="hl">excellent</mark> benefits improve your wellbeing?"',
+    orig:"Don't you agree that our excellent benefits improve your wellbeing?",
+    why:'<b>"Don\'t you agree"</b> and <b>"excellent"</b> push people toward agreeing, so your results will overstate how positive people really feel.',
+    ex:{no:"Don't you agree that our excellent benefits improve your wellbeing?", yes:'A neutral statement people can honestly agree or disagree with.'},
+    suggestion:'Our benefits support my wellbeing.',
+    alts:['How well do our benefits meet your needs?','Our benefits have a positive effect on my wellbeing.'] }
+];
+ISSUES.forEach(function(s){ s.status='open'; s.draft=null; });
+
+var cur = 0;
+var START_SCORE = score(); // 36.7 baseline
+
+function round1(n){ return Math.round(n*10)/10; }
+function score(){ return round1(ITEMS.reduce(function(a,x){return a+x.score;},0)/N); }
+function potential(){
+  var sum = ITEMS.reduce(function(a,x){return a+x.score;},0);
+  ISSUES.forEach(function(s){ if(s.status==='open'){ var it=item(s.item); sum += (it.fixed-it.score); } });
+  return round1(sum/N);
+}
+function bandOf(v){ return v>=45?['Strong','b-green']:v>=38?['Good','b-green']:v>=30?['Caution','b-amber']:v>=20?['Weak','b-red']:['Not ready','b-red']; }
+function openBlockers(){ return ISSUES.filter(function(s){ return s.blocker && s.status!=='resolved'; }).length; }
+function resolvedCount(){ return ISSUES.filter(function(s){ return s.status!=='open'; }).length; }
+
+function setScorebar(){
+  var sc=score(), b=bandOf(sc);
+  document.getElementById('sbNow').textContent=sc.toFixed(1);
+  // display-band cap: any open blocker holds the band at Caution or lower
+  var disp = b; if(openBlockers()>0 && (sc>=38)) disp=['Caution','b-amber'];
+  document.getElementById('sbBand').textContent=disp[0];
+  document.getElementById('sbBand').className='badge '+disp[1];
+  document.getElementById('sbPot').textContent=potential().toFixed(1)+' potential';
+  document.getElementById('sbResolved').textContent=resolvedCount();
+  document.getElementById('sbTotal').textContent=ISSUES.length;
+  document.getElementById('sbBar').style.width=(resolvedCount()/ISSUES.length*100)+'%';
+  var bl=openBlockers(), el=document.getElementById('sbBlockers');
+  if(bl>0){ el.className='blockers'; el.textContent=bl+' deployment blocker'+(bl===1?'':'s')+' still open'; }
+  else { el.className='blockers clear'; el.textContent='All deployment blockers cleared'; }
+}
+
+function sevBadge(sev){ var m={critical:['Critical','b-red'],high:['High','b-red'],medium:['Medium','b-amber'],low:['Low','b-gray']}; return m[sev]||m.low; }
+
+function render(){
+  if(resolvedCount()===ISSUES.length){ return finish(); }
+  // land on the first open issue if current is already done
+  if(ISSUES[cur].status!=='open'){ var nx=ISSUES.findIndex(function(s){return s.status==='open';}); if(nx>=0) cur=nx; }
+  setScorebar();
+  var s=ISSUES[cur], it=item(s.item);
+  var sb=sevBadge(s.sev);
+  var delta=round1((it.fixed-it.score)/N);
+  var blockerChip = s.blocker?'<span class="badge b-red">Blocks deployment</span>':'';
+  var impact='Scores '+it.score+'/50 (capped at '+s.cap+'). Fixing it: +'+delta.toFixed(1)+' to your survey';
+
+  var fixHtml='';
+  if(s.type==='wording'){
+    var draft = s.draft!=null?s.draft:s.suggestion;
+    fixHtml =
+      '<div class="fix-label"><span class="ri-dot"></span> ReliCheck Intelligence suggests (edit it to make it yours)</div>'+
+      '<p class="orig">Your question now: <s>'+s.orig+'</s></p>'+
+      '<textarea id="editor" rows="2">'+esc(draft)+'</textarea>'+
+      '<div class="alts"><span class="hint">Or start from:</span>'+
+        s.alts.map(function(a,i){return '<button class="alt" onclick="useAlt('+i+')">'+esc(a)+'</button>';}).join('')+
+      '</div>'+
+      (s.note?'<div class="note">'+s.note+'</div>':'');
+  } else if(s.type==='options'){
+    var opts = s.draft!=null?s.draft:s.suggestedOptions.slice();
+    fixHtml =
+      '<div class="fix-label"><span class="ri-dot"></span> ReliCheck Intelligence suggests these options (edit, remove, or add)</div>'+
+      '<div class="optedit" id="optedit">'+
+        opts.map(function(o,i){return optLine(o,i);}).join('')+
+      '</div>'+
+      '<button class="btn ghost addopt" onclick="addOpt()">+ Add option</button>';
+  } else if(s.type==='sensitive'){
+    var st = s.draft||{optional:false,pna:false,purpose:''};
+    fixHtml =
+      '<div class="fix-label"><span class="ri-dot"></span> Make it safe to answer (each step lifts the issue)</div>'+
+      '<div class="toggle"><div class="t-txt"><b>Make this question optional</b><span>People are not forced to disclose a disability.</span></div>'+
+        '<button class="sw'+(st.optional?' on':'')+'" onclick="tog(\'optional\')"></button></div>'+
+      '<div class="toggle"><div class="t-txt"><b>Add "Prefer not to answer"</b><span>A dignified way to decline.</span></div>'+
+        '<button class="sw'+(st.pna?' on':'')+'" onclick="tog(\'pna\')"></button></div>'+
+      '<input type="text" id="purpose" placeholder="One line: why you collect this (optional but recommended)" value="'+esc(st.purpose)+'" oninput="setPurpose(this.value)">';
+  }
+
+  document.getElementById('done').classList.add('hidden');
+  document.getElementById('focus').classList.remove('hidden');
+  document.getElementById('focus').innerHTML =
+    '<div class="issue-head">'+
+      '<span class="issue-n">Issue '+(cur+1)+' of '+ISSUES.length+'</span>'+
+      '<span class="badge '+sb[1]+'">'+sb[0]+'</span>'+
+      '<span class="badge b-gray">'+s.chip+'</span>'+ blockerChip +
+      '<span class="impact">'+impact+'</span>'+
+    '</div>'+
+    '<div class="qprev"><div class="meta">'+s.qtype+'</div><div class="qtext">'+s.qhtml+'</div>'+
+      (s.curOptions?'<div class="opts">'+s.curOptions.map(function(o){return '<span class="opt bad">'+esc(o)+'</span>';}).join('')+'</div>':'')+
+    '</div>'+
+    '<div class="why"><span class="ic">i</span><p>'+s.why+'</p></div>'+
+    '<button class="ex-toggle" onclick="toggleEx()">▾ Show a quick example</button>'+
+    '<div class="ex" id="ex">'+
+      '<div class="row"><span class="tag no">Avoid</span><span>'+esc(s.ex.no)+'</span></div>'+
+      '<div class="row"><span class="tag yes">Better</span><span>'+esc(s.ex.yes)+'</span></div>'+
+    '</div>'+
+    fixHtml +
+    '<div class="actions">'+
+      '<button class="btn primary lg" onclick="saveIssue()">Save my version and continue →</button>'+
+      '<button class="btn ghost" onclick="toggleKeep()">Keep original</button>'+
+      '<div class="spacer"></div>'+
+      '<button class="btn ghost" onclick="skip()">Skip for now</button>'+
+    '</div>'+
+    '<div class="keepwrap" id="keepwrap"><p>Keeping a flagged question leaves the points on the table. If you have a reason, note it for your records.</p>'+
+      '<input type="text" id="keepReason" placeholder="Why are you keeping this question? (optional)"><div style="margin-top:9px">'+
+      '<button class="btn" onclick="keepIssue()">Keep it and continue</button></div></div>';
+  renderNav();
+}
+
+function optLine(o,i){ return '<div class="line"><input type="text" value="'+esc(o)+'" data-i="'+i+'" oninput="editOpt('+i+',this.value)"><button class="x" onclick="rmOpt('+i+')">×</button></div>'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function renderNav(){
+  document.getElementById('nav').innerHTML = ISSUES.map(function(s,i){
+    var c = i===cur?'cur':(s.status==='resolved'?'done':(s.status==='kept'?'kept':''));
+    return '<span class="dot '+c+'" onclick="goto('+i+')"></span>';
+  }).join('');
+}
+function goto(i){ cur=i; render(); }
+
+/* ---- edit handlers ---- */
+function useAlt(i){ var s=ISSUES[cur]; document.getElementById('editor').value=s.alts[i]; document.getElementById('editor').focus(); }
+function toggleEx(){ document.getElementById('ex').classList.toggle('show'); }
+function toggleKeep(){ document.getElementById('keepwrap').classList.toggle('show'); }
+function addOpt(){ var s=ISSUES[cur]; s.draft=collectOpts(); s.draft.push(''); render(); setTimeout(function(){var ls=document.querySelectorAll('#optedit input');if(ls.length)ls[ls.length-1].focus();},0); }
+function rmOpt(i){ var s=ISSUES[cur]; var d=collectOpts(); d.splice(i,1); s.draft=d; render(); }
+function editOpt(i,v){ var s=ISSUES[cur]; var d=collectOpts(); d[i]=v; s.draft=d; }
+function collectOpts(){ return Array.prototype.map.call(document.querySelectorAll('#optedit input'),function(el){return el.value;}); }
+function tog(k){ var s=ISSUES[cur]; s.draft=s.draft||{optional:false,pna:false,purpose:''}; s.draft[k]=!s.draft[k]; render(); }
+function setPurpose(v){ var s=ISSUES[cur]; s.draft=s.draft||{optional:false,pna:false,purpose:''}; s.draft.purpose=v; }
+
+/* ---- resolve / keep / skip ---- */
+function saveIssue(){
+  var s=ISSUES[cur], it=item(s.item);
+  if(s.type==='wording'){ s.draft=document.getElementById('editor').value.trim(); if(!s.draft){ toast('Add some wording first'); return; } }
+  if(s.type==='options'){ var o=collectOpts().filter(function(x){return x.trim();}); if(o.length<2){ toast('Add at least two real options'); return; } s.draft=o; }
+  if(s.type==='sensitive'){ var st=s.draft||{}; if(!st.optional && !st.pna){ toast('Make it optional or add a decline option'); return; } }
+  var gained=round1((it.fixed-it.score)/N);
+  s.status='resolved'; it.score=it.fixed;
+  setScorebar();
+  toast('Nice. +'+gained.toFixed(1)+' to your score');
+  advance();
+}
+function keepIssue(){ var s=ISSUES[cur]; s.keepReason=(document.getElementById('keepReason')||{}).value||''; s.status='kept'; advance(); }
+function skip(){ toast('Skipped. It stays in your list.'); advance(true); }
+function advance(){
+  var next=-1;
+  for(var k=1;k<=ISSUES.length;k++){ var j=(cur+k)%ISSUES.length; if(ISSUES[j].status==='open'){ next=j; break; } }
+  if(next<0){ render(); /* will finish */ } else { cur=next; render(); }
+}
+
+function finish(){
+  document.getElementById('focus').classList.add('hidden');
+  document.getElementById('nav').innerHTML='';
+  var d=document.getElementById('done'); d.classList.remove('hidden');
+  var sc=score(), b=bandOf(sc), sb=bandOf(START_SCORE);
+  d.style.setProperty('--p', (sc/50*100));
+  document.getElementById('doneScore').textContent=sc.toFixed(1);
+  document.getElementById('doneRing').className='ring';
+  document.getElementById('dFrom').textContent=sb[0]+' '+START_SCORE.toFixed(1);
+  document.getElementById('dTo').textContent=b[0]+' '+sc.toFixed(1);
+  var kept=ISSUES.filter(function(s){return s.status==='kept';}).length;
+  var msg='You lifted your SDSI from '+START_SCORE.toFixed(1)+' to '+sc.toFixed(1)+' and cleared every deployment blocker.';
+  if(kept>0) msg='You resolved '+(ISSUES.length-kept)+' of '+ISSUES.length+' issues. '+kept+' kept as-is. Score is now '+sc.toFixed(1)+'.';
+  document.getElementById('doneMsg').textContent=msg;
+  setScorebar();
+}
+function reset(){ ITEMS.forEach(function(x){ if(x.fixed) x.score = (x.id==='Q3'?35:x.id==='Q5'?20:x.id==='Q6'?30:35); }); ISSUES.forEach(function(s){s.status='open';s.draft=null;}); cur=0; render(); }
+
+var toastT;
+function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(function(){t.classList.remove('show');},1800); }
+
+render();
+</script>
+</body>
+</html>

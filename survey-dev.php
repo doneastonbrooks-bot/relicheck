@@ -32,12 +32,12 @@ include __DIR__ . '/_landing_head.php';
 <link rel="stylesheet" href="/studio-landing.css">
 
 <section class="sl-hero">
-  <img src="/SIRI.png" alt="Survey Development System" class="sl-logo rv">
+  <img src="<?= htmlspecialchars($landing_logo) ?>" alt="<?= htmlspecialchars($landing_logo_name) ?>" class="sl-logo rv">
   <h1 class="sl-h1 rv rv-d1"><span class="thin">Survey design,</span><br>done right.</h1>
   <p class="sl-body rv rv-d2">The Survey Intelligence Readiness Index evaluates your survey before launch. Validity, reliability, and administration reviewed and scored so you know exactly where your instrument stands.</p>
   <div class="sl-actions rv rv-d3">
     <a href="/develop.php?db=1&start=choose" class="sl-btn-a">Open SIRI</a>
-    <a href="/develop.php?db=1&start=import" class="sl-btn-b">Import existing survey &#8594;</a>
+    <a href="/develop.php?db=1&start=choose" class="sl-btn-b">Bring in existing data &#8594;</a>
   </div>
   <div class="sl-scroll rv" style="transition-delay:.5s">Scroll</div>
 </section>

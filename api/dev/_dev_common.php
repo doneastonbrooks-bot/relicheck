@@ -261,6 +261,18 @@ function sds_ensure_schema(PDO $pdo): void
         $pdo->exec("ALTER TABLE survey_items ADD COLUMN required TINYINT(1) NOT NULL DEFAULT 0 AFTER flag");
     }
 
+    // Idempotent migration: add survey_projects.dataset_id for externally
+    // uploaded response datasets (linked via the unified upload widget).
+    $hasDatasetId = (int)$pdo->query(
+        "SELECT COUNT(*) AS c FROM information_schema.columns
+         WHERE table_schema = DATABASE()
+           AND table_name = 'survey_projects'
+           AND column_name = 'dataset_id'"
+    )->fetch()['c'];
+    if ($hasDatasetId === 0) {
+        $pdo->exec("ALTER TABLE survey_projects ADD COLUMN dataset_id BIGINT UNSIGNED NULL");
+    }
+
     $done = true;
 }
 
@@ -561,6 +573,7 @@ function sds_project_payload(PDO $pdo, int $projectId): array
             'data_type'     => $proj['data_type'],
             'source'        => $proj['source'],
             'status'        => $proj['status'],
+            'dataset_id'    => isset($proj['dataset_id']) && $proj['dataset_id'] !== null ? (int)$proj['dataset_id'] : null,
             'settings'      => $proj['settings'] !== null ? json_decode((string)$proj['settings'], true) : null,
             'updated_at'    => $proj['updated_at'],
         ],

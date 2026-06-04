@@ -37,7 +37,7 @@ $landing_accent_deep   = '#174d30';
 $landing_accent_soft   = '#e8f5ee';
 $landing_logo          = '/Qualitative Analysis.png';
 $landing_logo_name     = 'Qualitative Analysis Studio';
-$landing_pill_label    = 'In development';
+$landing_pill_label    = 'Live';
 $landing_show_back     = true;
 $landing_user_initials = $initials;
 $landing_user_full     = $user_full;
@@ -73,7 +73,7 @@ include __DIR__ . '/_landing_head.php';
     background:transparent; color:var(--accent);
     border:1.5px solid var(--accent);
   }
-  .qs-recent { margin-top:56px; }
+  .qs-recent { margin-bottom:48px; }
   .qs-recent-h { font-size:13px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#86868b; margin-bottom:16px; }
   .qs-proj-list { display:flex; flex-direction:column; gap:10px; }
   .qs-proj-row {
@@ -101,6 +101,7 @@ include __DIR__ . '/_landing_head.php';
 </style>
 
 <section class="sl-hero" style="min-height:70vh;">
+  <img src="<?= htmlspecialchars($landing_logo) ?>" alt="<?= htmlspecialchars($landing_logo_name) ?>" class="sl-logo rv">
   <h1 class="sl-h1 rv rv-d1" style="max-width:22ch;">
     <span class="thin">Turn words into</span><br>evidence.
   </h1>
@@ -108,9 +109,11 @@ include __DIR__ . '/_landing_head.php';
     Qualitative analysis is not about finding frequent words. ReliCheck helps you examine language patterns, concepts, speaker intent, and evidence strength so your findings can be explained and defended.
   </p>
   <div class="sl-actions rv rv-d3">
-    <a href="/qual-studio-workspace.php" class="sl-btn-a">Open Qualitative Studio</a>
     <?php if (count($recentProjects) > 0): ?>
-      <a href="#recent" class="sl-btn-b">Recent projects</a>
+      <a href="#recent" class="sl-btn-a">Continue a project</a>
+      <a href="/qual-studio-workspaceV3.php" class="sl-btn-b">Start new</a>
+    <?php else: ?>
+      <a href="/qual-studio-workspaceV3.php" class="sl-btn-a">Open Qualitative Studio</a>
     <?php endif; ?>
   </div>
 </section>
@@ -118,43 +121,9 @@ include __DIR__ . '/_landing_head.php';
 <div style="background:#f5f5f7; padding:72px 0;">
   <div class="studio-landing-shell">
 
-    <div class="qs-philosophy rv">
-      <strong>Concepts before codes. Codes before themes. Evidence before claims.</strong><br>
-      The Qualitative Analysis Studio is for researchers who need findings they can explain, defend, and act on — not an AI-generated list of topics.
-    </div>
-
-    <div class="qs-grid">
-      <div class="qs-card rv rv-d1">
-        <div class="qs-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-        </div>
-        <h3>Upload qualitative data</h3>
-        <p>CSV, XLSX, or a ReliCheck survey project. The studio detects open-ended columns and brings each response in as a codeable unit.</p>
-        <a href="/qual-studio-workspace.php" class="qs-card-btn">Open studio</a>
-      </div>
-
-      <div class="qs-card rv rv-d2">
-        <div class="qs-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
-        </div>
-        <h3>Build a codebook</h3>
-        <p>Define codes with clear inclusion and exclusion rules. A well-defined codebook is what separates credible qualitative analysis from impressionistic interpretation.</p>
-        <a href="/qual-studio-workspace.php" class="qs-card-btn outline">Open studio</a>
-      </div>
-
-      <div class="qs-card rv rv-d3">
-        <div class="qs-card-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <h3>Review trustworthiness</h3>
-        <p>Check credibility, dependability, confirmability, and reflexivity before any finding goes into a report. Not a score — a structured review.</p>
-        <a href="/qual-studio-workspace.php" class="qs-card-btn outline">Open studio</a>
-      </div>
-    </div>
-
     <?php if (count($recentProjects) > 0): ?>
-    <div class="qs-recent rv" id="recent" style="margin-top:56px;">
-      <div class="qs-recent-h">Recent projects</div>
+    <div class="qs-recent rv" id="recent">
+      <div class="qs-recent-h">Your projects</div>
       <div class="qs-proj-list">
         <?php foreach ($recentProjects as $p):
             $approachLabels = [
@@ -166,7 +135,7 @@ include __DIR__ . '/_landing_head.php';
             ];
             $label = $approachLabels[$p['analysis_approach']] ?? ucfirst($p['analysis_approach']);
         ?>
-        <a href="/qual-studio-workspace.php?project_id=<?= (int)$p['id'] ?>" class="qs-proj-row">
+        <a href="/qual-studio-workspaceV3.php?project_id=<?= (int)$p['id'] ?>" class="qs-proj-row">
           <span class="qs-proj-dot"></span>
           <span class="qs-proj-name"><?= htmlspecialchars($p['title']) ?></span>
           <span class="qs-approach-chip"><?= htmlspecialchars($label) ?></span>
@@ -179,6 +148,40 @@ include __DIR__ . '/_landing_head.php';
       </div>
     </div>
     <?php endif; ?>
+
+    <div class="qs-philosophy rv" <?= count($recentProjects) > 0 ? 'style="margin-top:48px"' : '' ?>>
+      <strong>Concepts before codes. Codes before themes. Evidence before claims.</strong><br>
+      The Qualitative Analysis Studio is for researchers who need findings they can explain, defend, and act on — not an AI-generated list of topics.
+    </div>
+
+    <div class="qs-grid">
+      <div class="qs-card rv rv-d1">
+        <div class="qs-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <h3>Upload qualitative data</h3>
+        <p>CSV, XLSX, or a ReliCheck survey project. The studio detects open-ended columns and brings each response in as a codeable unit.</p>
+        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn">Open studio</a>
+      </div>
+
+      <div class="qs-card rv rv-d2">
+        <div class="qs-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        </div>
+        <h3>Build a codebook</h3>
+        <p>Define codes with clear inclusion and exclusion rules. A well-defined codebook is what separates credible qualitative analysis from impressionistic interpretation.</p>
+        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn outline">Open studio</a>
+      </div>
+
+      <div class="qs-card rv rv-d3">
+        <div class="qs-card-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </div>
+        <h3>Review trustworthiness</h3>
+        <p>Check credibility, dependability, confirmability, and reflexivity before any finding goes into a report. Not a score — a structured review.</p>
+        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn outline">Open studio</a>
+      </div>
+    </div>
 
   </div>
 </div>

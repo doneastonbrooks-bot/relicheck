@@ -9,6 +9,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('GET');
 $user      = require_auth();
+release_session_lock();
 $pdo       = db();
 $uid       = (int)$user['id'];
 $projectId = (int)($_GET['project_id'] ?? 0);
@@ -18,7 +19,9 @@ qual_require_project($pdo, $uid, $projectId);
 
 // Load themes
 $tSt = $pdo->prepare(
-    "SELECT id, name, interpretive_claim, notes, position
+    "SELECT id, name, interpretive_claim, notes, position,
+            cl_context, cl_group_variation, cl_pattern_type,
+            cl_counter_story, cl_structural_framing, cl_action_caution
      FROM qual_themes
      WHERE project_id = :p
      ORDER BY position ASC, id ASC"

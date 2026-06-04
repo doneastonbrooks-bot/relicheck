@@ -317,9 +317,23 @@ include __DIR__ . '/_landing_head.php';
   </p>
   <div class="mm-hero-actions rv rv-d3">
     <a href="/mmstudioV4.php" class="mm-btn-a">Open MM Studio</a>
+    <a href="#recent" class="mm-start-ghost" style="color:var(--ink-b);font-size:16px" id="mmHeroRecent" hidden>Continue a project</a>
   </div>
   <div class="mm-scroll-cue rv" style="transition-delay:.5s">Scroll</div>
 </section>
+
+<!-- ══════════════════════════════════════════
+     RECENT PROJECTS
+══════════════════════════════════════════ -->
+<div class="mm-recent-wrap" id="recent">
+  <div class="mm-recent-inner">
+    <div class="mm-recent-head rv">
+      <span class="mm-recent-h">Your projects</span>
+      <a href="/studio-mm-projects.php" class="mm-recent-all">See all &rarr;</a>
+    </div>
+    <div id="mmRecentGrid"><p class="mm-recent-empty">Loading your MM projects&hellip;</p></div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════
      SOMETHING MATTERS ECOSYSTEM
@@ -457,19 +471,6 @@ include __DIR__ . '/_landing_head.php';
   </div>
 </section>
 
-<!-- ══════════════════════════════════════════
-     RECENT PROJECTS
-══════════════════════════════════════════ -->
-<div class="mm-recent-wrap">
-  <div class="mm-recent-inner">
-    <div class="mm-recent-head rv">
-      <span class="mm-recent-h">Pick up where you left off</span>
-      <a href="/studio-mm-projects.php" class="mm-recent-all">See all →</a>
-    </div>
-    <div id="mmRecentGrid"><p class="mm-recent-empty">Loading your recent MM projects…</p></div>
-  </div>
-</div>
-
 <script>
 /* ── Scroll-reveal observer ── */
 (function(){
@@ -492,6 +493,9 @@ include __DIR__ . '/_landing_head.php';
         host.innerHTML='<p class="mm-recent-empty">No MM projects yet. <a href="/mmstudioV4.php" style="color:var(--accent);font-weight:700">open MM Studio</a> to start one.</p>';
         return;
       }
+      // Reveal the "Continue a project" hero link now that we know projects exist
+      var heroLink = document.getElementById('mmHeroRecent');
+      if (heroLink) heroLink.hidden = false;
       host.innerHTML=projects.map(function(p){
         return '<a class="mm-proj-card rv in" href="/mmstudioV4.php?project_id='+encodeURIComponent(p.id)+'">'
           +'<span class="mm-proj-label">'+esc(p.pathway||'MM')+'</span>'

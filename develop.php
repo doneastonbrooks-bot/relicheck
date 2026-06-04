@@ -1,11 +1,6 @@
 <?php
 // ════════════════════════════════════════════════════════════════════════
-//  ReliCheck Survey Development System. Phase 1 prototype (front-end only).
-//
-//  Self-contained, standalone screen. NO backend, NO database, NO auth gate:
-//  every screen runs on in-browser mock data so the full start→analysis flow
-//  can be walked end to end. Real AI scoring, deployment, response collection
-//  and exports are deliberately stubbed for later phases.
+//  ReliCheck Survey Development System.
 //
 //  Naming (locked):
 //   • SDSI, the Survey Design Strength Index: 50-pt design-quality review run
@@ -17,6 +12,12 @@
 //     missing data, reporting). Reached, with the Studios, from the final
 //     "RSSI / Studios" handoff. Distinct review moments. SIRI is NOT inside SDSI.
 // ════════════════════════════════════════════════════════════════════════
+require_once __DIR__ . '/api/_db.php';
+require_once __DIR__ . '/api/_session.php';
+start_session_secure();
+$_dv_user     = current_user();
+$_dv_name     = $_dv_user ? ($_dv_user['name'] ?? $_dv_user['email'] ?? '') : '';
+$_dv_initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $_dv_name) ?: 'U', 0, 2));
 ?>
 <!doctype html>
 <html lang="en">
@@ -26,7 +27,7 @@
 <title>Survey Development System · ReliCheck</title>
 <style>
 :root{
-  --accent:#e85d3a; --accent-soft:#fdeee9; --accent-ink:#b8431f;
+  --accent:#E07820; --accent-soft:#fef3e8; --accent-ink:#b85f10;
   --blue:#0A6FE8; --blue-soft:#EEF3FA;
   --green:#1f9e44; --green-soft:#e9f7ee;
   --amber:#c47700; --amber-soft:#fdf3e3;
@@ -56,13 +57,26 @@ a{color:inherit;text-decoration:none}
   background:rgba(255,255,255,0.82);backdrop-filter:saturate(180%) blur(18px);
   border-bottom:1px solid var(--line);
 }
-.brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:18px;letter-spacing:-0.02em}
-.brand svg{flex-shrink:0}
-.brand .sub{font-weight:600;font-size:12.5px;color:var(--ink-3);letter-spacing:0;padding-left:12px;border-left:1px solid var(--line);margin-left:2px}
+.brand{display:flex;align-items:center}
 .topbar-spacer{flex:1}
 .topbar-ctx{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);font-weight:600}
 .topbar-ctx .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
-.avatar{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.avatar-wrap{position:relative}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700;cursor:pointer;appearance:none;-webkit-appearance:none;border:none;padding:0;line-height:1}
+.user-menu{
+  position:absolute;top:calc(100% + 10px);right:0;min-width:196px;
+  background:#fff;border:1px solid rgba(15,23,42,.10);border-radius:14px;
+  box-shadow:0 8px 28px rgba(15,23,42,.12);padding:4px 0;
+  opacity:0;pointer-events:none;transform:translateY(-6px) scale(.97);
+  transition:opacity .13s,transform .13s;transform-origin:top right;z-index:200;
+}
+.user-menu.open{opacity:1;pointer-events:auto;transform:none}
+.user-menu-profile{display:flex;align-items:center;gap:10px;padding:12px 14px 10px}
+.user-menu-avatar{width:32px;height:32px;border-radius:50%;background:#EEF3FA;color:#0A6FE8;font-size:12px;font-weight:700;display:grid;place-items:center;flex:none}
+.user-menu-name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3}
+.user-menu-div{height:1px;background:rgba(15,23,42,.08);margin:3px 0}
+.user-menu-item{display:block;width:100%;padding:9px 14px;font-size:14px;color:var(--ink);font-weight:500;text-decoration:none;background:none;border:none;text-align:left;cursor:pointer;transition:background .1s;box-sizing:border-box}
+.user-menu-item:hover{background:var(--bg)}
 
 /* ── Layout ──────────────────────────────────────────────── */
 .shell{display:flex;min-height:calc(100vh - 60px)}
@@ -88,7 +102,7 @@ a{color:inherit;text-decoration:none}
 .step .tick{display:none;color:var(--green)}
 .step[data-done="1"] .num{background:var(--green-soft);color:var(--green);border-color:transparent}
 .step[data-done="1"] .tick{display:block}
-.step[data-active="1"]{background:var(--accent-soft);color:var(--accent-ink);border-color:rgba(232,93,58,.18)}
+.step[data-active="1"]{background:var(--accent-soft);color:var(--accent-ink);border-color:rgba(15,158,123,.18)}
 .step[data-active="1"] .num{background:var(--accent);color:#fff;border-color:transparent}
 .rail-foot{margin-top:auto;padding:14px 12px 4px;font-size:11.5px;color:var(--ink-3);border-top:1px solid var(--line)}
 
@@ -139,7 +153,7 @@ h2.sec{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:30px 0 14px;
   background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;
   text-align:left;display:flex;flex-direction:column;gap:12px;transition:.15s;box-shadow:var(--sh);position:relative;overflow:hidden;
 }
-.entry-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:rgba(232,93,58,.28)}
+.entry-card:hover{transform:translateY(-3px);box-shadow:var(--sh-lg);border-color:rgba(15,158,123,.28)}
 .entry-card .ico{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
 .entry-card.blue .ico{background:var(--blue-soft);color:var(--blue)}
 .entry-card h3{font-size:17px;font-weight:750;letter-spacing:-0.01em}
@@ -342,24 +356,132 @@ h2.sec{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:30px 0 14px;
 .pvinput[type=range]{padding:0}
 .pvrank{margin:0;padding-left:18px;color:var(--ink-2);font-size:12.5px}
 .pvmeta{color:var(--ink-3);font-size:12.5px}
+/* Respondent preview: the whole survey as a single-page form (matches the live form). */
+.pv-form{max-width:680px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:var(--r-sm);overflow:hidden;box-shadow:0 1px 3px rgba(15,23,42,.05)}
+.pv-form-head{padding:20px 24px;border-bottom:1px solid var(--line);background:var(--bg)}
+.pv-form-body{max-height:62vh;overflow-y:auto;padding:8px 24px}
+.pv-q{padding:18px 0;border-bottom:1px solid var(--line)}
+.pv-q:last-child{border-bottom:none}
+.pv-q-stem{font-size:15px;font-weight:600;color:var(--ink);line-height:1.5;margin-bottom:12px}
+.pv-q-n{color:var(--ink-3);font-weight:700;margin-right:4px}
+.pv-q-body{padding-left:2px}
+.pv-section{padding:16px 0 6px}
+.pv-section-t{font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.pv-break{margin:10px 0;padding:8px 0;text-align:center;color:var(--ink-3);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;border-top:1px dashed var(--line)}
+.pv-form-foot{padding:18px 24px;border-top:1px solid var(--line);display:flex;align-items:center;background:var(--bg)}
+/* Lightweight modal for Deploy/Export actions (share, QR, invite). */
+.dlg-overlay{position:fixed;inset:0;background:rgba(15,23,42,.42);z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px}
+.dlg{background:var(--panel,#fff);border-radius:14px;max-width:480px;width:100%;max-height:86vh;overflow:auto;padding:22px 24px;position:relative;box-shadow:0 24px 70px rgba(15,23,42,.32)}
+.dlg-x{position:absolute;top:12px;right:14px;background:none;border:none;font-size:24px;line-height:1;color:var(--ink-3);cursor:pointer}
+.dlg-h{margin:0 0 14px;font-size:18px;font-weight:800;letter-spacing:-.02em}
+.dlg-body{font-size:14px}
+.dlg-input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:13.5px;margin-bottom:10px;background:var(--bg);color:var(--ink)}
+.dlg-label{display:block;font-size:12.5px;font-weight:700;color:var(--ink-2);margin:6px 0 5px}
+.dlg-btns{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 10px;align-items:center}
+.dlg-note{font-size:12.5px;color:var(--ink-3);margin:6px 0 0;line-height:1.5}
 .qcard-actions{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;align-items:flex-end}
 .qbtns{display:flex;gap:4px}
 .reqtoggle{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:3px 11px;font:inherit;font-size:11.5px;color:var(--ink-2);cursor:pointer}
 .reqtoggle.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent-ink);font-weight:600}
 .fixflash{animation:fixflash 2.2s ease-out}@keyframes fixflash{0%,40%{box-shadow:0 0 0 3px var(--accent),0 0 0 6px var(--accent-soft)}100%{box-shadow:0 0 0 0 transparent}}
+
+/* ── Question Strength Lab: Revise overview + single-question popup (namespaced) ── */
+.qsl-scorecard{display:flex;align-items:center;gap:22px;flex-wrap:wrap;padding:20px 22px}
+.qsl-ring{width:92px;height:92px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;position:relative;background:conic-gradient(var(--accent) calc(var(--p,40)*1%),var(--line) 0)}
+.qsl-ring:before{content:"";position:absolute;inset:9px;background:var(--panel);border-radius:50%}
+.qsl-ring b{position:relative;font-size:23px;font-weight:840}
+.qsl-sx{flex:1;min-width:220px}
+.qsl-sx h2{margin:0 0 3px;font-size:18px;font-weight:800}
+.qsl-sx p{margin:0;color:var(--ink-2);font-size:14px}
+.qsl-qrow{display:flex;gap:13px;align-items:center;padding:13px 18px;border-bottom:1px solid var(--line-2);cursor:pointer;transition:.12s}
+.qsl-qrow:last-child{border-bottom:0}
+.qsl-qrow:hover{background:var(--bg)}
+.qsl-qrow.clean{cursor:default}.qsl-qrow.clean:hover{background:none}
+.qsl-st{flex:0 0 auto;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800}
+.qsl-st.flag{background:var(--amber-soft);color:var(--amber)}
+.qsl-st.block{background:var(--red-soft);color:var(--red)}
+.qsl-st.done,.qsl-st.strong{background:var(--green-soft);color:var(--green)}
+.qsl-st.kept{background:rgba(15,23,42,.06);color:var(--ink-2)}
+.qsl-qx{flex:1;min-width:0}
+.qsl-ql{font-size:14.5px;font-weight:650;line-height:1.3}
+.qsl-qc{font-size:13px;color:var(--ink-3);margin-top:1px}
+.qsl-go{font-size:13px;font-weight:700;color:var(--accent-ink);white-space:nowrap}
+.qsl-go.muted{color:var(--ink-3);font-weight:600}
+.qsl-scrim{position:fixed;inset:0;background:rgba(15,23,42,.46);z-index:9999;display:flex;align-items:flex-start;justify-content:center;padding:34px 16px;overflow:auto}
+.qsl-modal{background:var(--panel);border-radius:18px;box-shadow:0 18px 50px rgba(15,23,42,.28);width:100%;max-width:680px;display:flex;flex-direction:column;max-height:calc(100vh - 68px)}
+.qsl-mhead{padding:14px 18px 11px;border-bottom:1px solid var(--line);flex:0 0 auto}
+.qsl-mr1{display:flex;align-items:center;gap:10px}
+.qsl-qn{font-size:13px;font-weight:800;color:var(--accent-ink)}
+.qsl-sc{margin-left:auto;font-size:13px;font-weight:700;color:var(--ink-2);white-space:nowrap}
+.qsl-x{border:0;background:none;font-size:22px;color:var(--ink-3);cursor:pointer;line-height:1;padding:2px 6px;border-radius:8px}
+.qsl-x:hover{background:var(--bg)}
+.qsl-dots{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.qsl-dot{width:9px;height:9px;border-radius:50%;background:var(--line);cursor:pointer;transition:.15s}
+.qsl-dot.cur{background:var(--accent);transform:scale(1.3)}
+.qsl-dot.done{background:var(--green)}.qsl-dot.kept{background:var(--ink-3)}
+.qsl-mbody{flex:1 1 auto;overflow:auto;padding:18px}
+.qsl-mfoot{flex:0 0 auto;border-top:1px solid var(--line);padding:12px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--panel);border-radius:0 0 18px 18px}
+.qsl-mfoot .sp{flex:1}
+.qsl-qtext{font-size:19px;font-weight:680;line-height:1.35;margin:0 0 14px;letter-spacing:-.01em}
+.qsl-hl{background:#ffe2c2;color:#7a3d00;border-radius:4px;padding:0 4px;font-weight:680}
+.qsl-opts{display:flex;flex-direction:column;gap:7px}
+.qsl-opt{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px}
+.qsl-opt .rk{width:14px;height:14px;border-radius:50%;border:2px solid var(--line);flex:0 0 auto}
+.qsl-opt.bad{border-style:dashed;border-color:rgba(196,39,31,.4);background:var(--red-soft);color:var(--red)}
+.qsl-opt.good{border-color:rgba(31,158,68,.35);background:var(--green-soft)}
+.qsl-scale{display:flex;gap:6px;flex-wrap:wrap}
+.qsl-pt{font-size:12.5px;border:1px solid var(--line);border-radius:8px;padding:7px 10px;color:var(--ink-2);background:#fff;flex:1;text-align:center;min-width:58px}
+.qsl-strong{display:flex;gap:10px;align-items:center;background:var(--green-soft);border:1px solid rgba(31,158,68,.25);border-radius:11px;padding:11px 14px;margin-top:12px}
+.qsl-strong .ic{width:20px;height:20px;border-radius:50%;background:var(--green);color:#fff;display:grid;place-items:center;font-weight:800;flex:0 0 auto}
+.qsl-strong p{margin:0;font-size:13.5px;color:#14532b}
+.qsl-sec{padding:15px 0;border-top:1px solid var(--line-2)}
+.qsl-sech{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.qsl-secn{width:18px;height:18px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;flex:0 0 auto}
+.qsl-sect{font-size:12px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-2)}
+.qsl-sec p{margin:0;font-size:14px}.qsl-sec p.muted{color:var(--ink-2)}
+.qsl-learnlink{background:none;border:0;color:var(--blue);font-weight:700;font-size:13px;cursor:pointer;padding:7px 0 0}
+.qsl-learn{margin-top:8px;font-size:13px;color:#23415f;background:var(--blue-soft);border-radius:10px;padding:10px 12px}
+.qsl-move{border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:8px}
+.qsl-move.sel{border-color:var(--accent);background:var(--accent-soft)}
+.qsl-mt{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700}
+.qsl-prev{margin-top:8px}
+.qsl-prev .chip{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 9px;margin:0 5px 5px 0;font-size:12px}
+.qsl-prev .q2{display:block;margin:3px 0;padding:5px 9px;background:#fff;border:1px solid var(--line);border-radius:8px;font-size:13px;white-space:pre-line}
+.qsl-impact .ln{display:flex;justify-content:space-between;padding:3px 0;font-size:14px}
+.qsl-impact .up{color:var(--green);font-weight:800}
+.qsl-ed{margin-top:10px}
+.qsl-ed textarea,.qsl-ed input{width:100%;box-sizing:border-box;font:inherit;font-size:14.5px;border:1.5px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;background:#fff;color:var(--ink)}
+.qsl-ed .orow{display:flex;gap:6px;align-items:center}
+.qsl-ed .xx{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:17px;padding:2px 7px}
 </style>
 </head>
 <body>
 
 <div class="topbar">
   <div class="brand">
-    <svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M2 17h6l3-9 5 16 4-11 3 4h7" stroke="#e85d3a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    ReliCheck<span class="sub">Survey Development System</span>
+    <img src="SS-Studio-long.png?v=<?= filemtime(__DIR__ . '/SS-Studio-long.png') ?>" alt="Survey Studio" style="height:70px;width:auto;display:block">
   </div>
   <div class="topbar-spacer"></div>
   <div class="topbar-ctx" id="ctx" style="display:none"><span class="dot"></span><span id="ctxName"></span></div>
   <div class="modebadge" id="modeBadge" title=""></div>
-  <div class="avatar">DO</div>
+  <div class="avatar-wrap">
+    <button class="avatar" id="devUserBtn" aria-haspopup="menu" aria-expanded="false" title="<?= htmlspecialchars($_dv_name ?: 'Account') ?>">
+      <?= htmlspecialchars($_dv_initials) ?>
+    </button>
+    <div class="user-menu" id="devUserMenu" role="menu">
+      <?php if ($_dv_name !== ''): ?>
+      <div class="user-menu-profile">
+        <div class="user-menu-avatar"><?= htmlspecialchars($_dv_initials) ?></div>
+        <span class="user-menu-name"><?= htmlspecialchars($_dv_name) ?></span>
+      </div>
+      <div class="user-menu-div"></div>
+      <?php endif; ?>
+      <a class="user-menu-item" href="/account.php" role="menuitem">My account</a>
+      <a class="user-menu-item" href="/projects.php" role="menuitem">Projects</a>
+      <div class="user-menu-div"></div>
+      <a class="user-menu-item" href="#" role="menuitem" id="devSignOut">Sign out</a>
+    </div>
+  </div>
 </div>
 
 <div class="shell">
@@ -369,12 +491,18 @@ h2.sec{font-size:19px;font-weight:700;letter-spacing:-0.01em;margin:30px 0 14px;
 
 <div class="toast" id="toast"></div>
 
+<!-- Shared upload widget (universal entry gate for all studios). Each engine
+     script is version-stamped with its file mtime so a deploy always busts the
+     browser cache — otherwise the page reloads fresh but keeps a stale engine. -->
+<?php $jsv = function($p){ $f=__DIR__.'/'.$p; return $p.'?v='.(is_file($f)?filemtime($f):'1'); }; ?>
+<script src="<?= $jsv('apps/studio/dataset-upload.js') ?>"></script>
+
 <!-- SDSI scoring spine + Build Check engine (deterministic 50-pt design score) -->
-<script src="apps/sdsi/validity-lens-engine.js"></script>
-<script src="apps/sdsi/buildcheck-engine.js"></script>
-<script src="apps/sdsi/siri-readiness.js"></script>
-<script src="apps/sdsi/launchcheck-engine.js"></script>
-<script src="apps/rssi/rssi-engine.js"></script>
+<script src="<?= $jsv('apps/sdsi/validity-lens-engine.js') ?>"></script>
+<script src="<?= $jsv('apps/sdsi/buildcheck-engine.js') ?>"></script>
+<script src="<?= $jsv('apps/sdsi/siri-readiness.js') ?>"></script>
+<script src="<?= $jsv('apps/sdsi/launchcheck-engine.js') ?>"></script>
+<script src="<?= $jsv('apps/rssi/rssi-engine.js') ?>"></script>
 
 <script>
 /* ════════════════════════════════════════════════════════════════════
@@ -712,7 +840,10 @@ function parseConstructs(text){
    STATE. Single source of truth. Screens read it; actions mutate it
    then call render(). The stepper unlocks steps as the user progresses.
    ════════════════════════════════════════════════════════════════════ */
-const STEPS = [
+// One development pipeline, shown for every project. The project `mode` controls
+// routing (where an upload lands, where a reopened project opens), not which steps
+// are visible — the full pipeline is always present so nothing ever disappears.
+const STEPS_BUILD = [
   { id:'start',     lbl:'Start' },
   { id:'setup',     lbl:'Study Setup' },
   { id:'build',     lbl:'Build / Upload / Template' },
@@ -734,6 +865,7 @@ const state = {
   survey:null,           // {id?, title, questions:[{id?,t,type,flag,section_id?,required,options,settings}]}
   projectId:null,        // DB id once persisted (db mode only)
   settings:{},           // full project settings JSON (server replaces it, so we keep + resend the whole object)
+  publishOverride:false, // user acknowledged publishing past an unresolved SIRI blocker
   remoteTemplates:null,  // cached /api/dev/templates-list result (db mode)
   remoteProjects:null,   // cached /api/dev/project-list result (db mode)
   composer:null,         // the question currently being written {type,t,flag,required,options,settings}
@@ -761,15 +893,19 @@ const state = {
   rssiStale:false,         // Phase 4C: saved RSSI predates the latest responses
   rssiRunning:false,       // Phase 4C: guard while a run is in flight
   // Bring In an Existing Survey (Phase 2A.6) intake fields.
-  importMode:'paste',    // paste | manual | upload
+  importMode:'paste',    // paste | manual
   importText:'',         // pasted survey text or one-item-per-line list
   importConstructs:'',   // optional: one construct per line, "Name: definition"
   importScale:'',        // optional: response scale note (e.g. "5-pt agreement")
-  importFileName:'',     // name of the uploaded file (upload mode)
-  importParsing:false,   // true while the server is extracting text from a .docx
-  // Revise step (Question Review Cards). Keyed by item_ref.
+// Revise step (Question Review Cards). Keyed by item_ref.
   reviseEditing:{},      // per ref: {mode:'self'|'assist'} when an inline edit panel is open
   reviseDrafts:{},       // per ref: current edit-panel textarea value
+  // Question Strength Lab popup (opens from the Revise list, one question at a time).
+  labOverlay:null,       // the .qsl-scrim overlay element, or null when closed
+  labPos:0,              // index into the current active-revise list
+  labEdit:null,          // null | 'self' | 'assist' | 'options' when the in-popup editor is open
+  labDraftVal:null,      // current editor textarea value (string) or option array
+  labDoneIdx:null,       // question index just saved, while showing the "Saved" confirmation
 };
 
 /* ════════════════════════════════════════════════════════════════════
@@ -797,6 +933,11 @@ const DB = {
       const msg = (data && (data.message||data.error)) || ('HTTP '+res.status);
       const err = new Error(msg); err.status = res.status; throw err;
     }
+    // Self-heal: a successful server call proves the session + DB are live. If the
+    // app had latched into degraded/mock mode from an earlier transient failure,
+    // restore database mode so saves stop being silently dropped. (Genuine ?mock
+    // mode — PERSIST_REQUESTED false — is left alone.)
+    if(PERSIST_REQUESTED && !PERSIST.on){ PERSIST.on=true; PERSIST.degraded=false; PERSIST.reason=''; try{updateModeBadge();}catch(e){} }
     return data;
   },
   // Map a DB project payload → the in-app state shape (display field is `t`).
@@ -822,9 +963,11 @@ const DB = {
     // Restore the previously computed Build Check (SDSI) so a reloaded project
     // shows its saved score. The full engine result was stored as `review`.
     state.sdsiResult = (payload.sdsi && payload.sdsi.review) ? payload.sdsi.review : null;
-    // Restore the previously computed Launch Check (SIRI) the same way, so a
-    // reloaded project shows its saved 100-point readiness without recomputing.
-    state.siriResult = (payload.siri && payload.siri.review) ? payload.siri.review : null;
+    // Restore the previously computed Launch Check (SIRI). Only accept a review
+    // that matches the current 50-point, five-domain shape (it has a numeric
+    // `siri`). Reviews saved by the old 100-point engine are ignored so the user
+    // simply re-runs SIRI rather than rendering a stale, incompatible result.
+    state.siriResult = (payload.siri && payload.siri.review && payload.siri.review.siri != null) ? payload.siri.review : null;
     state.siriStale = false;
     // Phase 3B: restore deployment settings (link_key, published_at, responses_open).
     state.deploymentSettings = payload.deployment || null;
@@ -976,7 +1119,12 @@ const App = {
 
   async openExisting(id){
     if(PERSIST.on){
-      try { const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); toast('Opened: '+state.survey.title); App.go('build'); return; }
+      try {
+        const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r);
+        toast('Opened: '+state.survey.title);
+        App.go('build');
+        return;
+      }
       catch(e){ degrade(e.message); }
     }
     const s=MOCK.surveys.find(x=>x.id===id);
@@ -1086,40 +1234,8 @@ const App = {
   },
 
   /* ── Bring In an Existing Survey (Phase 2A.6) ── */
-  setImportMode(m){ state.importMode=m; state.importFileName=''; state.importText=''; state.importParsing=false; render(); },
+  setImportMode(m){ state.importMode=m; state.importText=''; render(); },
   setImportField(k,v){ state[k]=v; },
-
-  // File upload handler for "Upload file" import mode.
-  // .txt and .csv are read entirely in the browser.
-  // .docx is sent to the server for XML extraction.
-  handleSurveyFile(file){
-    if(!file) return;
-    const name=file.name||'';
-    const ext=(name.split('.').pop()||'').toLowerCase();
-    const allowed=['docx','txt','csv','tsv'];
-    if(!allowed.includes(ext)){
-      toast('Unsupported file type. Use .docx, .txt, or .csv.'); return;
-    }
-    state.importFileName=name; state.importParsing=true; state.importText=''; render();
-    if(ext==='docx'){
-      const fd=new FormData(); fd.append('file',file);
-      fetch('/api/dev/survey-import-parse.php',{method:'POST',credentials:'same-origin',body:fd})
-        .then(r=>r.json())
-        .then(d=>{
-          state.importParsing=false;
-          if(!d||!d.ok){ toast(d&&d.error?d.error:'Could not read the file.'); state.importFileName=''; render(); return; }
-          state.importText=d.text||'';
-          render();
-        })
-        .catch(()=>{ state.importParsing=false; state.importFileName=''; toast('Network error — try again.'); render(); });
-    } else {
-      const reader=new FileReader();
-      reader.onload=e=>{ state.importParsing=false; state.importText=e.target.result||''; render(); };
-      reader.onerror=()=>{ state.importParsing=false; state.importFileName=''; toast('Could not read the file.'); render(); };
-      reader.readAsText(file);
-    }
-  },
-  clearImportFile(){ state.importFileName=''; state.importText=''; state.importParsing=false; render(); },
 
   // Turn the pasted/typed survey into editable builder items, create the same
   // internal project the normal builder uses, then land in the workspace.
@@ -1160,7 +1276,7 @@ const App = {
 
   setStudy(k,v){
     state.study[k]=v;
-    if(PERSIST.on && state.projectId){
+    if(PERSIST_REQUESTED && state.projectId){
       const map={ name:'title', purpose:'purpose', population:'population' };
       const field=map[k]; if(!field) return;
       clearTimeout(App._studyTimer);
@@ -1187,7 +1303,7 @@ const App = {
   // The server REPLACES the settings column, so we resend the full settings object
   // (existing keys + launchReadiness) and refresh our cache from the echoed project.
   _persistLaunch(){
-    if(!(PERSIST.on && state.projectId)) return;
+    if(!(PERSIST_REQUESTED && state.projectId)) return;
     clearTimeout(App._launchTimer);
     App._launchTimer=setTimeout(async()=>{
       const merged=Object.assign({}, state.settings||{}, { launchReadiness: state.study.launchReadiness||{} });
@@ -1218,7 +1334,13 @@ const App = {
       administration_consistency:{route:S,label:'Set the response mode in Study Setup'},
       redundancy_balance:{route:B,label:'Balance items in the workspace'},
       scale_structure_readiness:{route:B,label:'Group scaled items in the workspace'},
-      completion_burden:{route:B,label:'Adjust survey length in the workspace'}
+      completion_burden:{route:B,label:'Adjust survey length in the workspace'},
+      // SIRI whole-survey domain keys (new 5-domain model) → coarse routing.
+      purpose:{route:S,label:'Add survey purpose and audience in Study Setup'},
+      coverage:{route:B,focus:'build-constructs',label:'Add constructs or map items'},
+      structure:{route:B,label:'Adjust structure and length in the workspace'},
+      scale:{route:R,label:'Fix scale consistency in Revise'},
+      deployment:{route:L,focus:'lr-consent',label:'Document deployment readiness in Launch Readiness'}
     };
     return map[key]||{route:B,label:'Open the workspace'};
   },
@@ -1249,16 +1371,22 @@ const App = {
     let sdsiWarn=null;
     if(!state.sdsiResult) sdsiWarn='The Build Check (SDSI) has not been run. It is advisory, but worth running before launch.';
     else if(state.sdsiStale) sdsiWarn='The Build Check (SDSI) is out of date. It is advisory, but re-running keeps your design score current.';
-    else if(state.sdsiResult.total < 40) sdsiWarn='The Build Check (SDSI) score is '+state.sdsiResult.total.toFixed(1)+' / 50 ('+(state.sdsiResult.band||'developing design')+'). This does not block launch, but strengthening the design is recommended.';
+    else if(state.sdsiResult.total < 38) sdsiWarn='The Build Check (SDSI) score is '+state.sdsiResult.total.toFixed(1)+' / 50 ('+(state.sdsiResult.display_band||state.sdsiResult.band||'Caution')+'). This does not block launch, but strengthening the design is recommended.';
 
     if(!r) return { status:'blocked', headline:'Run the Launch Check first', sdsiWarn:sdsiWarn,
       reasons:[{ msg:'SIRI has not run for this survey yet. Publishing needs a current Launch Check.', route:'siri', focus:'', fixLabel:'Run SIRI Launch Check' }] };
     if(state.siriStale) return { status:'review', headline:'Re-run the Launch Check', sdsiWarn:sdsiWarn,
       reasons:[{ msg:'The survey changed since SIRI last ran. Re-run SIRI to confirm readiness before publishing.', route:'siri', focus:'', fixLabel:'Re-run SIRI' }] };
-    if(r.blocked){
-      const blockers=[];
-      (r.domains||[]).forEach(d=>(d.lenses||[]).forEach(l=>{ if(l.launchReady===false) blockers.push({key:l.key,name:l.name,domain:(d.subtitle||d.name)}); }));
-      return { status:'blocked', headline:'Resolve required launch issues', blockers:blockers, sdsiWarn:sdsiWarn };
+    // New model: deployment blockers (SDSI critical question blockers + SIRI critical
+    // findings) cap the readiness band. They do not change the number, but they hold
+    // the publish gate until resolved or explicitly overridden.
+    const blk=(r.deployment_blocker_count||0);
+    if(blk>=1){
+      const crit=(r.flags||[]).filter(f=>f.severity==='critical').map(f=>({key:f.domainKey,name:f.message,domain:f.domain}));
+      const out={ status:'blocked', headline:(r.blocker_headline||'Resolve required launch issues'), sdsiWarn:sdsiWarn, capNote:(r.total_band_cap_reason||'') };
+      if(crit.length) out.blockers=crit;
+      else out.reasons=[{ msg:'Deployment blockers were found at the question level (Build Check). Resolve them, then re-run SIRI.', route:'sdsi', focus:'', fixLabel:'Open Build Check' }];
+      return out;
     }
     return { status:'ready', headline:'Launch Check passed', sdsiWarn:sdsiWarn };
   },
@@ -1281,23 +1409,24 @@ const App = {
     (((state.survey&&state.survey.questions))||[]).forEach(q=>{ if(nm && q.construct===nm){ q.construct=''; delete q.constructId; } });
     App._markSdsiStale(); App._persistConstructs(); App._persistItems(); render(); },
   setItemConstruct(i,v){ const q=((state.survey&&state.survey.questions)||[])[i]; if(!q) return; q.construct=v||''; if(!v) delete q.constructId; App._markSdsiStale(); App._persistItems(); render(); },
-  _persistConstructs(){ if(PERSIST.on && state.projectId) App.saveConstructs(); },
+  _persistConstructs(){ if(PERSIST_REQUESTED && state.projectId) App.saveConstructs(); },
 
   // Drop the working project/survey so the next entry starts clean. Does NOT
   // delete anything in the database; it only clears the in-app pointer + the
   // localStorage id boot() uses to restore.
   _resetStudy(){
     state.projectId=null; state.survey=null; state.settings={};
+    state.dataset=null; state.datasetError=null; state.rssiResult=null; state.rssiSaved=null;
     state.study={ name:'', purpose:'', population:'', mode:'', dataType:'', launchReadiness:{} };
     state.composer=null; state.composerRef=null; state.composerAI=null;
     state.aiBusy=false; state.aiReason=''; state.sdsiResult=null; state.sdsiStale=false;
-    state.siriResult=null; state.siriStale=false; state.deploymentSettings=null; state.publishReady=false;
+    state.siriResult=null; state.siriStale=false; state.deploymentSettings=null; state.publishReady=false; state.publishOverride=false;
     try { localStorage.removeItem(LS_KEY); } catch(e){}
   },
 
   /* ── three-column question composer ── */
   _ensureSurvey(){ if(!state.survey) state.survey={title:state.study.name||'Untitled Survey',questions:[]}; },
-  _persistItems(){ if(PERSIST.on && state.projectId) App.saveItems(); },
+  _persistItems(){ if(PERSIST_REQUESTED && state.projectId) App.saveItems(); },
   // An actual item changed. The previously shown Build Check no longer reflects
   // the survey, so flag it stale (only meaningful once a review has been run).
   // We do NOT recompute or overwrite the old review here; the user re-runs it.
@@ -1386,10 +1515,10 @@ const App = {
     [qs[i],qs[j]]=[qs[j],qs[i]];
     if(state.composerRef===i) state.composerRef=j; else if(state.composerRef===j) state.composerRef=i;
     render();
-    if(PERSIST.on && state.projectId) App.reorderItems();
+    if(PERSIST_REQUESTED && state.projectId) App.reorderItems();
   },
   async saveItems(){
-    if(!(PERSIST.on && state.projectId)){ toast('Saved (mock)'); return; }
+    if(!(PERSIST_REQUESTED && state.projectId)){ toast('Saved (mock)'); return; }
     setModeBadgeSaving(true);
     try {
       const r=await DB.call('items-save.php',{method:'POST',body:{project_id:state.projectId, items:DB.itemsWire()}});
@@ -1404,7 +1533,7 @@ const App = {
   // syncs deletions. Rehydrates ids back so later saves stay updates, then
   // realigns item->construct mappings to the saved ids.
   async saveConstructs(){
-    if(!(PERSIST.on && state.projectId && state.survey)) return;
+    if(!(PERSIST_REQUESTED && state.projectId && state.survey)) return;
     try {
       const r=await DB.call('constructs-save.php',{method:'POST',body:{project_id:state.projectId, constructs:DB.constructsWire()}});
       state.survey.constructs=(r.constructs||[]).map(c=>({ id:c.id, name:c.name||'', definition:c.definition||'' }));
@@ -1413,20 +1542,43 @@ const App = {
     } catch(e){ degrade(e.message); }
   },
   async reorderItems(){
-    if(!(PERSIST.on && state.projectId)) return;
+    if(!(PERSIST_REQUESTED && state.projectId)) return;
     try { await DB.call('reorder.php',{method:'POST',body:{project_id:state.projectId, item_order:state.survey.questions.map(q=>q.id).filter(Boolean)}}); }
     catch(e){ degrade(e.message); render(); }
   },
 
   async duplicateProject(){
-    if(!(PERSIST.on && state.projectId)){ toast('Duplicate is available in database mode only'); return; }
+    if(!(PERSIST_REQUESTED && state.projectId)){ toast('Duplicate is available in database mode only'); return; }
     try { const r=await DB.call('project-duplicate.php',{method:'POST',body:{id:state.projectId}}); DB.hydrate(r); toast('Project duplicated'); App.go('build'); }
     catch(e){ degrade(e.message); render(); }
   },
   async archiveProject(){
-    if(!(PERSIST.on && state.projectId)){ toast('Archive is available in database mode only'); return; }
+    if(!(PERSIST_REQUESTED && state.projectId)){ toast('Archive is available in database mode only'); return; }
     try { await DB.call('project-archive.php',{method:'POST',body:{id:state.projectId,archived:true}}); toast('Project archived'); try{localStorage.removeItem(LS_KEY);}catch(e){} state.projectId=null; state.survey=null; App.go('start'); }
     catch(e){ degrade(e.message); render(); }
+  },
+  // Remove a project from the projects list. This ARCHIVES it (a soft, recoverable
+  // state change via project-archive.php; the list already hides archived projects).
+  // Nothing is permanently deleted. Always confirmed first.
+  deleteProjectFromList(id){
+    if(!PERSIST.on){ toast('Available in database mode only'); return; }
+    const p=(state.remoteProjects||[]).filter(x=>x.id===id)[0];
+    const name=p?(p.title||p.name||('Project '+id)):('Project '+id);
+    const m=App._modal('Remove project',
+      `<p style="font-size:14px;margin:0 0 8px">Remove <b>${escapeHtml(name)}</b> from your list?</p>`
+      +`<p class="dlg-note" style="margin:0 0 14px">It is archived, not permanently deleted. Nothing is lost, and it can be restored later.</p>`
+      +`<div class="dlg-btns"><button class="btn" id="rmCancel">Cancel</button>`
+      +`<button class="btn primary" id="rmGo" style="background:var(--red);border-color:var(--red)">Remove from list</button></div>`);
+    m.el.querySelector('#rmCancel').addEventListener('click', m.close);
+    m.el.querySelector('#rmGo').addEventListener('click', async ()=>{
+      const go=m.el.querySelector('#rmGo'); go.disabled=true; go.textContent='Removing…';
+      try {
+        await DB.call('project-archive.php',{method:'POST',body:{id:id,archived:true}});
+        if(state.projectId===id){ try{localStorage.removeItem(LS_KEY);}catch(e){} state.projectId=null; state.survey=null; }
+        try { const r=await DB.call('project-list.php'); state.remoteProjects=r.projects; } catch(e){}
+        m.close(); toast('Removed from your list'); render();
+      } catch(e){ m.close(); degrade(e.message); }
+    });
   },
 
   // Build the survey-project payload the Build Check engine reads from current state.
@@ -1457,8 +1609,13 @@ const App = {
   },
   runSdsi(){
     if(!(window.BuildCheck && window.BuildCheck.assess)){
-      // Engine script failed to load; fall back to the illustrative sample.
-      state.sdsiResult=MOCK.sdsi; toast('Build Check engine unavailable, showing a sample'); App.go('sdsi'); return;
+      // Engine script failed to load. In mock mode show the illustrative sample;
+      // in db mode leave it unscored rather than showing a fake number.
+      if(!PERSIST.on){ state.sdsiResult=MOCK.sdsi; }
+      toast('Build Check engine unavailable'); App.go('sdsi'); return;
+    }
+    if(!(state.survey && (state.survey.questions||[]).length)){
+      toast('Add questions before running the Build Check'); App.go('build'); return;
     }
     const prev=state.sdsiResult;
     const proj=App._buildCheckProject();
@@ -1467,12 +1624,14 @@ const App = {
       dlog('first item prompts seen by engine:', proj.items.slice(0,6).map(it=>it.item_ref+': '+it.prompt));
       if(prev) dlog('previous score:', prev.total, prev.categories&&prev.categories.map(c=>c.key+' '+c.points));
     }
-    const r=window.BuildCheck.assess(proj);
+    let r;
+    try { r=window.BuildCheck.assess(proj); }
+    catch(err){ toast('Could not score the survey: '+(err&&err.message||'engine error')); return; }
     state.sdsiResult=r;
     state.sdsiStale=false;
     if(DEBUG_REVISE) dlog('new score:', r.total, r.categories&&r.categories.map(c=>c.key+' '+c.points));
     toast('Build Check scored your design ('+r.total.toFixed(1)+' / 50)');
-    if(PERSIST.on && state.projectId){
+    if(PERSIST_REQUESTED && state.projectId){
       DB.call('sdsi-save.php',{method:'POST',body:{project_id:state.projectId,total:r.total,max:r.max,pct:r.pct,band:r.band,blocked:r.blocked,review:r}}).catch(e=>degrade(e.message));
     }
     App.go('sdsi');
@@ -1506,11 +1665,27 @@ const App = {
     const ref=App._reviseRefOf(q,i);
     const hasCons=((state.survey&&state.survey.constructs)||[]).length>0;
     const structural=!!(QTYPES[q.type]&&QTYPES[q.type].structural);
-    let concerns=(byRef[ref]||[]).map(f=>({msg:f.message, how:f.suggestion, check:f.check, sev:f.severity}));
+    let concerns=(byRef[ref]||[]).map(f=>({msg:f.message, how:f.suggestion, check:f.check, sev:f.severity, why:f.why_it_matters, opts:f.suggested_options, revision:f.suggested_revision}));
     if(hasCons && !structural && !(q.construct||'').trim()){
       concerns.push({msg:'This item is not matched to any defined construct, so it is unclear what it measures.', how:'Map it to the construct it measures, or remove it if it does not belong.', check:'unmatched_construct', sev:'moderate'});
     }
     return concerns;
+  },
+  // Heuristic: is this a metadata / identifier column (respondent id, timestamp,
+  // start date, duration) rather than a real survey question? Uploaded data often
+  // carries these as plain Numeric/Date columns, so we match by name AND keep it
+  // conservative (low-signal types only). Used to keep the Revise LIST focused;
+  // it does NOT change scoring (the engine still scores every column it is given).
+  _isMetaColumn(q){
+    if(!q) return false;
+    const nm=(q.t||'').trim().toLowerCase();
+    if(!nm) return false;
+    if(!/numeric|date|short answer|open|text|number/i.test(q.type||'')) return false;
+    return /^(respondent|response|participant|user|record|case)?\s*id$/.test(nm)
+      || nm==='identifier'
+      || /^(start|end|submission|completion|recorded|response|begin|finish)?\s*(date|time|date\s*\/?\s*time|datetime|timestamp)$/.test(nm)
+      || nm==='timestamp' || nm==='duration' || /^duration\b/.test(nm)
+      || /^submitted/.test(nm) || /\bip address\b/.test(nm);
   },
   _reviseCards(){
     const qs=(state.survey&&state.survey.questions)||[];
@@ -1638,6 +1813,244 @@ const App = {
     toast('Back in review'); render(); App._persistItems();
   },
 
+  /* ── Question Strength Lab popup ──────────────────────────────────────────
+     One question at a time, in a focused modal opened from the Revise list.
+     It is a presentation layer over data the engine already produces
+     (_concernsFor + _reviseSuggestion) and it applies changes through the
+     SAME tested handlers as the Revise page (reviseAcceptSuggestion /
+     reviseFixApply / reviseKeep). No new scoring, no new persistence.        */
+  _labSevRank(s){ return ({critical:0,major:1,high:1,moderate:2,medium:2,minor:3,low:3})[s] ?? 9; },
+  openStrengthLab(index){
+    const a=App._reviseCards().active;
+    if(!a.length){ toast('Nothing to strengthen'); return; }
+    let pos=a.findIndex(c=>c.index===index); if(pos<0) pos=0;
+    state.labPos=pos; state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null;
+    App.labClose();
+    const ov=document.createElement('div'); ov.className='qsl-scrim';
+    ov.addEventListener('click',ev=>{ if(ev.target===ov) App.labClose(); });
+    document.body.appendChild(ov); state.labOverlay=ov;
+    document.body.style.overflow='hidden';
+    App._renderLab();
+  },
+  labClose(){ if(state.labOverlay){ state.labOverlay.remove(); state.labOverlay=null; } document.body.style.overflow=''; state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null; },
+  // The acted item drops off the active list (resolved or kept); labPos then
+  // points at the next question. Re-derive and re-render, or finish.
+  _afterLabAction(){ state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null; App._renderLab(); },
+  // After a change is SAVED, show a clear "Saved" confirmation for that question
+  // (instead of jumping straight to the next), so the user knows it took.
+  _labConfirm(idx){ state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=idx; App._renderLab(); },
+  labContinue(){ state.labDoneIdx=null; App._renderLab(); },
+  labGoto(k){ state.labPos=k; state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null; App._renderLab(); },
+  labBack(){ if(state.labPos>0) state.labPos--; state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null; App._renderLab(); },
+  labNext(){ const len=App._reviseCards().active.length; if(state.labPos<len-1) state.labPos++; state.labEdit=null; state.labDraftVal=null; state.labDoneIdx=null; App._renderLab(); },
+  // Is this a choice-type question whose flag is about its response options?
+  // (If so, the in-popup editor edits OPTIONS rather than wording.)
+  _labOptionChecks:{missing_response_options:1,placeholder_options:1,too_few_options:1,analysis_readiness_concern:1,overlapping_categories:1,category_gaps:1,non_exhaustive_categories:1,inconsistent_option_structure:1,informal_category_label:1,missing_other_option:1,missing_prefer_not_to_answer:1},
+  _labOptionsIssue(c){
+    if(!c) return false;
+    if(!/single|multi|choice|dropdown|select|rank/i.test(c.q.type||'')) return false;
+    return (c.concerns||[]).some(x=>App._labOptionChecks[x.check]);
+  },
+  labEditOpen(mode){
+    const c=App._reviseCards().active[state.labPos]; if(!c) return;
+    if(mode==='options'){
+      state.labEdit='options';
+      const sug=(c.concerns||[]).map(x=>x.opts).filter(o=>Array.isArray(o)&&o.length)[0];
+      let seed=sug?sug.slice():(c.q.options||[]).map(o=>String(o)).filter(o=>o.trim()&&!/^option\s*\d+$/i.test(o.trim()));
+      while(seed.length<2) seed.push('');
+      state.labDraftVal=seed;
+    } else {
+      state.labEdit=mode;
+      let seed=c.q.t||'';
+      if(mode==='assist'){ const sug=App._reviseSuggestion(c); if(sug.kind==='rewrite') seed=sug.text; }
+      state.labDraftVal=seed;
+    }
+    App._renderLab();
+  },
+  labEditCancel(){ state.labEdit=null; state.labDraftVal=null; App._renderLab(); },
+  labDraft(v){ state.labDraftVal=v; },
+  labAddOpt(){ const d=document.getElementById('qslOpts'); if(!d) return; const div=document.createElement('div'); div.className='orow'; div.innerHTML='<input type="text" value=""><button class="xx" onclick="this.parentNode.remove()">&times;</button>'; d.appendChild(div); const inp=div.querySelector('input'); if(inp) inp.focus(); },
+  labUse(idx,ref){ App.reviseAcceptSuggestion(idx,ref); App._labConfirm(idx); },
+  labApplyEdit(idx,ref){
+    if(state.labEdit==='options'){
+      const opts=Array.prototype.map.call(document.querySelectorAll('#qslOpts input'),el=>el.value).filter(v=>v.trim());
+      if(opts.length<2){ toast('Add at least two real options'); return; }
+      App._labSaveOptions(idx,ref,opts); App._labConfirm(idx); return;
+    }
+    const v=(state.labDraftVal!=null?state.labDraftVal:'').trim(); if(!v){ toast('Add the revised question text first'); return; }
+    state.reviseDrafts[ref]=v; App.reviseFixApply(idx,ref); App._labConfirm(idx);
+  },
+  labKeep(idx,ref){ App.reviseKeep(idx,ref); App._afterLabAction(); },
+  // Write a response-option set onto the item and save it the standard way
+  // (_persistItems saves the whole survey, like reviseAcceptSuggestion does for text).
+  _labSaveOptions(idx,ref,opts){
+    const q=state.survey&&state.survey.questions[idx]; if(!q) return;
+    q.options=opts.slice();
+    if(q.settings&&q.settings.review_status) delete q.settings.review_status;
+    App._markSdsiStale(); toast('Response options applied'); render(); App._persistItems();
+  },
+  // Apply the engine's suggested option set in one click (when a flag carries one).
+  labUseOptions(idx,ref){
+    const c=App._reviseCards().active.filter(x=>x.index===idx)[0];
+    const opts=c&&(c.concerns||[]).map(x=>x.opts).filter(o=>Array.isArray(o)&&o.length)[0];
+    if(!opts){ toast('No suggested options for this item'); return; }
+    App._labSaveOptions(idx,ref,opts); App._labConfirm(idx);
+  },
+  _labOptsHtml(q){
+    const e=escapeHtml;
+    const opts=(q.options||[]).map(o=>String(o)).filter(o=>o.trim()!=='');
+    if(opts.length) return '<div class="qsl-opts">'+opts.map(o=>`<div class="qsl-opt"><span class="rk"></span>${e(o)}</div>`).join('')+'</div>';
+    const st=q.settings||{};
+    if(st.likertLow||st.likertHigh) return `<div class="qsl-scale"><span class="qsl-pt">${e(st.likertLow||'low')}</span><span class="qsl-pt" style="flex:1.6;color:var(--ink-3)">·····</span><span class="qsl-pt">${e(st.likertHigh||'high')}</span></div>`;
+    if(/single|multi|choice|dropdown|select/i.test(q.type||'')) return `<div class="qsl-opt bad"><span class="rk"></span>No response options yet</div>`;
+    return '';
+  },
+  _renderLab(){
+    if(!state.labOverlay) return;
+    const e=escapeHtml;
+    const a=App._reviseCards().active;
+    // Live SDSI for the header score (re-assessed so the number moves as you fix).
+    const sd=(window.BuildCheck&&window.BuildCheck.assess)?window.BuildCheck.assess(App._buildCheckProject()):state.sdsiResult;
+    const total=sd&&sd.total!=null?sd.total:null;
+
+    // ── "Saved" confirmation (shown right after a change is applied) ──────────
+    if(state.labDoneIdx!=null){
+      const q=state.survey&&state.survey.questions[state.labDoneIdx];
+      const moreLeft=a.length;
+      let scoreNote='';
+      if(sd&&sd.itemScores&&q){ const s=sd.itemScores.filter(x=>x.question_text===(q.t||''))[0]; if(s) scoreNote=`It now scores <b>${s.score}</b> / 50. `; }
+      const opts=q?(q.options||[]).map(o=>String(o)).filter(o=>o.trim()):[];
+      state.labOverlay.innerHTML=`<div class="qsl-modal">
+        <div class="qsl-mhead"><div class="qsl-mr1">
+          <span class="qsl-qn">Saved</span>
+          <span class="qsl-sc">SDSI ${total!=null?total.toFixed(1):'—'} / 50</span>
+          <button class="qsl-x" title="Done for now" onclick="App.labClose()">&times;</button>
+        </div></div>
+        <div class="qsl-mbody">
+          <div class="qsl-strong"><span class="ic">✓</span><p>Saved. Your change is applied to this question.</p></div>
+          <p class="qsl-qtext" style="margin-top:14px">${e(q?(q.t||'(no text)'):'')}</p>
+          ${opts.length?`<div class="qsl-opts">${opts.map(o=>`<div class="qsl-opt good"><span class="rk"></span>${e(o)}</div>`).join('')}</div>`:''}
+          <p style="margin:14px 0 0;color:var(--ink-2);font-size:13.5px">${scoreNote}${moreLeft?`${moreLeft} question${moreLeft===1?'':'s'} left to strengthen.`:'Every flagged question has been reviewed.'}</p>
+        </div>
+        <div class="qsl-mfoot">
+          <button class="btn sm" onclick="App.labClose()">Done for now</button>
+          <div class="sp"></div>
+          ${moreLeft?`<button class="btn sm primary" onclick="App.labContinue()">Next question →</button>`:`<button class="btn sm primary" onclick="App.labClose();App.runSdsi()">Finish and re-run Build Check →</button>`}
+        </div>
+      </div>`;
+      return;
+    }
+
+    if(!a.length){
+      state.labOverlay.innerHTML=`<div class="qsl-modal"><div class="qsl-mbody" style="text-align:center;padding:34px 24px">
+        <div class="qsl-strong" style="display:inline-flex;margin:0 0 14px"><span class="ic">✓</span><p>Every question reviewed</p></div>
+        <h2 style="margin:0 0 6px;font-size:21px;font-weight:820">Nice work</h2>
+        <p class="muted" style="margin:0 auto 18px;max-width:380px;color:var(--ink-2)">Your survey SDSI is now ${total!=null?total.toFixed(1):'updated'} / 50. Re-run the Build Check to save the new score, then move on to preview.</p>
+        <button class="btn primary" onclick="App.labClose();App.runSdsi()">Re-run Build Check ${SVG.arrow}</button>
+        <button class="btn" style="margin-left:8px" onclick="App.labClose()">Back to my survey</button>
+      </div></div>`;
+      return;
+    }
+    if(state.labPos>=a.length) state.labPos=a.length-1;
+    const c=a[state.labPos], q=c.q, idx=c.index, ref=c.ref;
+    const concerns=(c.concerns||[]).slice().sort((x,y)=>App._labSevRank(x.sev)-App._labSevRank(y.sev));
+    const top=concerns[0]||{};
+    const headline=top.msg||'This question can be stronger.';
+    const others=concerns.slice(1);
+    const worst=concerns.some(x=>x.sev==='critical'||x.sev==='major');
+    const sug=App._reviseSuggestion(c);
+    const optMove=(concerns.map(x=>x.opts).filter(o=>Array.isArray(o)&&o.length)[0])||null;
+    const isOptsIssue=App._labOptionsIssue(c);
+
+    // Why this matters (section 2): the flag's own reason, with a sane fallback.
+    const why=top.why||'A clearer question gives you data you can actually trust and compare across people.';
+
+    // Score impact (section 4): live per-item score + cap.
+    let scoreImpact='';
+    if(sd&&sd.itemScores){ const s=sd.itemScores.filter(x=>x.question_text===(q.t||''))[0];
+      if(s) scoreImpact=`<div class="qsl-sec"><div class="qsl-sech"><span class="qsl-secn">4</span><span class="qsl-sect">Score impact</span></div>
+        <div class="qsl-impact"><div class="ln"><span>This question</span><span><b>${s.score}</b> / 50${s.most_restrictive_cap!=null?` (capped at ${s.most_restrictive_cap})`:''}</span></div>
+        <div class="ln"><span>Your survey SDSI</span><span><b>${total!=null?total.toFixed(1):'—'}</b> / 50</span></div></div></div>`; }
+
+    // Ways to strengthen (section 3): a concrete move when the engine has one,
+    // otherwise the plain-language guidance. Editor opens on Adapt / Edit myself.
+    let strengthen='';
+    if(sug.kind==='rewrite'){
+      strengthen=`<div class="qsl-move sel"><div class="qsl-mt"><span>Use this revision</span></div>
+        <div class="qsl-prev"><span class="q2">${e(sug.text)}</span></div></div>
+        ${sug.note?`<p class="qsl-sec p muted" style="font-size:12.5px;color:var(--ink-3);margin:2px 0 0">${e(sug.note)}</p>`:''}`;
+    } else if(optMove){
+      strengthen=`<div class="qsl-move sel"><div class="qsl-mt"><span>Use these response options</span></div>
+        <div class="qsl-prev">${optMove.map(o=>`<span class="chip">${e(o)}</span>`).join('')}</div></div>`;
+    } else {
+      strengthen=`<p style="margin:0;font-size:14px">${e(sug.text)}</p>`;
+    }
+    let editor='';
+    if(state.labEdit==='options'){
+      const arr=Array.isArray(state.labDraftVal)?state.labDraftVal:['',''];
+      editor=`<div class="qsl-ed"><div id="qslOpts">${arr.map(o=>`<div class="orow"><input type="text" value="${e(o)}" placeholder="Answer choice"><button class="xx" title="Remove" onclick="this.parentNode.remove()">&times;</button></div>`).join('')}</div>
+        <button class="btn sm ghost" onclick="App.labAddOpt()">+ Add option</button></div>`;
+    } else if(state.labEdit){
+      const draft=state.labDraftVal!=null?state.labDraftVal:(q.t||'');
+      editor=`<div class="qsl-ed"><textarea rows="3" oninput="App.labDraft(this.value)">${e(draft)}</textarea></div>`;
+    }
+
+    // Footer: editor mode shows Save/Cancel; otherwise the action ladder, shaped
+    // by whether this is an options issue (edit options) or a wording issue.
+    let foot;
+    if(state.labEdit){
+      const saveLabel=state.labEdit==='options'?'Save options':'Save my version';
+      foot=`<button class="btn sm" onclick="App.labEditCancel()">Cancel</button><div class="sp"></div>
+        <button class="btn sm primary" onclick="App.labApplyEdit(${idx},'${ref}')">${saveLabel}</button>`;
+    } else {
+      let primary;
+      if(isOptsIssue){
+        primary=(optMove?`<button class="btn sm primary" onclick="App.labUseOptions(${idx},'${ref}')">Use these options</button>`:'')
+          +`<button class="btn sm ${optMove?'':'primary'}" onclick="App.labEditOpen('options')">Edit options</button>`;
+      } else if(sug.kind==='rewrite'){
+        primary=`<button class="btn sm primary" onclick="App.labUse(${idx},'${ref}')">Use this revision</button>
+          <button class="btn sm" onclick="App.labEditOpen('assist')">Adapt</button>
+          <button class="btn sm" onclick="App.labEditOpen('self')">Edit myself</button>`;
+      } else {
+        primary=`<button class="btn sm primary" onclick="App.labEditOpen('self')">Edit myself</button>`;
+      }
+      foot=`<button class="btn sm" onclick="App.labBack()" ${state.labPos===0?'disabled style="opacity:.45"':''}>← Back</button>
+        <button class="btn sm" onclick="App.labKeep(${idx},'${ref}')">Keep original</button>
+        <button class="btn sm" onclick="App.labNext()">Skip</button>
+        <div class="sp"></div>
+        ${primary}`;
+    }
+
+    const dots=a.map((x,k)=>`<span class="qsl-dot ${k===state.labPos?'cur':''}" title="Question ${k+1}" onclick="App.labGoto(${k})"></span>`).join('');
+    state.labOverlay.innerHTML=`<div class="qsl-modal">
+      <div class="qsl-mhead">
+        <div class="qsl-mr1">
+          <span class="qsl-qn">Question ${state.labPos+1} of ${a.length}</span>
+          <span class="badge ${worst?'red':'amber'}">${worst?'Needs revision':'Caution'}</span>
+          <span class="qsl-sc">SDSI ${total!=null?total.toFixed(1):'—'} / 50</span>
+          <button class="qsl-x" title="Done for now" onclick="App.labClose()">&times;</button>
+        </div>
+        <div class="qsl-dots">${dots}</div>
+      </div>
+      <div class="qsl-mbody">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <span class="badge gray">${e(typeLabel(q.type))}</span>
+        </div>
+        <p class="qsl-qtext">${e(q.t||'(no text)')}</p>
+        ${App._labOptsHtml(q)}
+        <div class="qsl-sec"><div class="qsl-sech"><span class="qsl-secn">1</span><span class="qsl-sect">What ReliCheck noticed</span></div>
+          <p>${e(headline)}</p>
+          ${others.length?`<ul style="margin:7px 0 0;padding-left:18px;font-size:13px;color:var(--ink-2)">${others.map(o=>`<li>${e(o.msg)}</li>`).join('')}</ul>`:''}</div>
+        <div class="qsl-sec"><div class="qsl-sech"><span class="qsl-secn">2</span><span class="qsl-sect">Why this matters</span></div>
+          <p class="muted">${e(why)}</p></div>
+        <div class="qsl-sec"><div class="qsl-sech"><span class="qsl-secn">3</span><span class="qsl-sect">Ways to strengthen this question</span></div>
+          ${strengthen}${editor}</div>
+        ${scoreImpact}
+      </div>
+      <div class="qsl-mfoot">${foot}</div>
+    </div>`;
+  },
+
   runSiri(){
     if(!(window.LaunchCheck && window.LaunchCheck.assess)){
       // Engine script failed to load; show the empty state rather than a fake score.
@@ -1647,18 +2060,41 @@ const App = {
     const r=window.LaunchCheck.assess(proj, { sdsiResult: state.sdsiResult });
     state.siriResult=r;
     state.siriStale=false;
-    toast('SIRI scored launch readiness ('+r.totalPoints.toFixed(1)+' / 100)');
-    if(PERSIST.on && state.projectId){
-      // The summary uses totalPoints/maxPoints/band.label; siri-save.php expects total/max/band.
-      DB.call('siri-save.php',{method:'POST',body:{project_id:state.projectId,total:r.totalPoints,max:r.maxPoints,pct:r.pct,band:(r.band&&r.band.label)||'',blocked:r.blocked,review:r}}).catch(e=>degrade(e.message));
+    const hasTotal=(r.total!=null);
+    toast(hasTotal
+      ? ('SIRI '+r.siri.toFixed(1)+' / 50 · Total '+r.total.toFixed(1)+' / 100 ('+r.total_band+')')
+      : ('SIRI scored '+r.siri.toFixed(1)+' / 50'));
+    if(PERSIST_REQUESTED && state.projectId){
+      // Persist the meaningful headline (Total /100 + band when SDSI is available,
+      // else SIRI /50). The full review object carries the rest for rehydration.
+      DB.call('siri-save.php',{method:'POST',body:{
+        project_id:state.projectId,
+        total: hasTotal ? r.total : r.siri,
+        max: hasTotal ? 100 : 50,
+        pct: hasTotal ? Math.round(r.total) : r.pct,
+        band: hasTotal ? r.total_band : '',
+        blocked: (r.deployment_blocker_count||0) >= 1,
+        review:r
+      }}).catch(e=>degrade(e.message));
     }
     App.go('siri');
   },
-  async publishNow(){
-    // Phase 3A gate: never proceed unless SIRI passes.
+  setPublishOverride(v){ state.publishOverride=!!v; render(); },
+  async publishNow(force){
+    // SIRI is the launch gate. Normally publishing requires status 'ready'. A user
+    // may deliberately publish past a HARD blocker only after explicitly
+    // acknowledging it (force + state.publishOverride); cautions never block.
     const g=App._publishGate();
-    if(g.status!=='ready'){ toast('Resolve the Launch Check before publishing'); App.go('publish'); return; }
-    if(!(PERSIST.on && state.projectId)){ toast('Database mode required to generate a survey link'); return; }
+    if(g.status!=='ready'){
+      const acknowledged = force && g.status==='blocked' && state.publishOverride;
+      if(!acknowledged){ toast('Resolve the Launch Check before publishing, or acknowledge to publish anyway'); App.go('publish'); return; }
+    }
+    // A real project id means the project exists on the server (an uploaded or saved
+    // survey), so do NOT hard-block on a possibly-stale PERSIST.on flag. Attempt the
+    // publish and let the server be the source of truth; only true demo mode with no
+    // server project at all (no id) cannot publish.
+    if(!state.projectId){ toast('Publishing needs a saved survey. Open or upload one with ?db=1 while signed in — demo mode cannot generate a real survey link.'); return; }
+    const overrode = g.status==='blocked' && state.publishOverride;
     // Phase 3B: call the publish endpoint — generates the link key, sets status = published.
     // Does NOT yet open responses; that is Phase 3C.
     if(state.deploymentSettings && state.deploymentSettings.link_key){
@@ -1666,12 +2102,20 @@ const App = {
       state.publishReady=true; App.go('deploy'); return;
     }
     try {
-      const r=await DB.call('project-publish.php',{method:'POST',body:{project_id:state.projectId}});
+      const r=await DB.call('project-publish.php',{method:'POST',body:{project_id:state.projectId, override:overrode}});
+      // Success proves the session + DB are live — clear any stale degraded flag so
+      // the rest of the app stops thinking it is in demo mode.
+      if(!PERSIST.on){ PERSIST.on=true; PERSIST.degraded=false; PERSIST.reason=''; }
       state.deploymentSettings=r.deployment;
       state.publishReady=true;
-      toast('Survey link generated. Responses open in a later phase.');
+      toast(overrode ? 'Published with unresolved issues acknowledged. Survey link generated.' : 'Survey link generated. Responses open in a later phase.');
       App.go('deploy');
-    } catch(e){ degrade(e.message); render(); }
+    } catch(e){
+      // Genuine failure now (e.g. not signed in). Be specific instead of silently
+      // dropping to mock mode.
+      toast('Could not publish: '+(e&&e.message||'the server rejected the request')+'. If you are not signed in, reopen with ?db=1 while logged in.');
+      render();
+    }
   },
   async toggleResponsesOpen(){
     const ds=state.deploymentSettings;
@@ -1687,7 +2131,7 @@ const App = {
   // Phase 3E: load stored responses for the current project, then re-render.
   // Called once by the retrieve() screen when its list has not been fetched yet.
   async _loadResponses(){
-    if(!(PERSIST.on && state.projectId)) return;
+    if(!(PERSIST_REQUESTED && state.projectId)) return;
     if(state.responsesLoading || state.responseList!==null) return;
     state.responsesLoading=true; state.responsesError=null;
     try {
@@ -1708,7 +2152,7 @@ const App = {
   // navigate to it so the browser handles the file download. No-op with a toast
   // when there is nothing to export.
   exportResponsesCsv(){
-    if(!(PERSIST.on && state.projectId)){ toast('Database mode required to export'); return; }
+    if(!(PERSIST_REQUESTED && state.projectId)){ toast('Database mode required to export'); return; }
     if(!state.responseList || state.responseList.length===0){ toast('No responses to export yet'); return; }
     const url='/api/dev/project-export.php?project_id='+encodeURIComponent(state.projectId);
     window.location.href=url;
@@ -1718,7 +2162,7 @@ const App = {
   // engine can score in a later phase. This only loads/shapes data; it computes
   // no RSSI score and no reliability statistic. Called once by the dataset screen.
   async _loadDataset(){
-    if(!(PERSIST.on && state.projectId)) return;
+    if(!(PERSIST_REQUESTED && state.projectId)) return;
     if(state.datasetLoading || state.dataset!==null) return;
     state.datasetLoading=true; state.datasetError=null;
     try {
@@ -1732,6 +2176,55 @@ const App = {
     }
   },
   refreshDataset(){ state.dataset=null; state.datasetError=null; App._loadDataset(); render(); },
+  // "Bring In an Existing Survey" (the Upload in Build / Upload / Template).
+  // Uploads the file, whose columns are materialized into the survey's questions
+  // server-side (link-dataset.php), then loads the populated project and enters
+  // the pipeline at Study Setup. The response rows stay linked for RSSI later.
+  openFreshUpload(){
+    if(!window.DatasetUpload){ toast('Upload widget unavailable'); return; }
+    App._resetStudy();
+    state.entry='upload';
+    DatasetUpload.open({
+      projectType:'survey',
+      projectId: null,
+      onLoaded(_err, newProjectId){
+        if(!newProjectId){ return; }
+        if(!PERSIST.on){ PERSIST.on = true; PERSIST.degraded = false; PERSIST.reason = ''; }
+        // Load the project so its freshly materialized questions hydrate, then
+        // start at Study Setup (the top of the pipeline), NOT at RSSI.
+        (async()=>{
+          try {
+            const r = await DB.call('project-load.php?id='+encodeURIComponent(newProjectId));
+            DB.hydrate(r);
+            const n = (state.survey && state.survey.questions) ? state.survey.questions.length : 0;
+            toast(n ? ('Brought in '+n+' question'+(n===1?'':'s')) : 'Survey uploaded');
+          } catch(e){
+            state.projectId = +newProjectId;
+            try{ localStorage.setItem(LS_KEY, String(state.projectId)); }catch(_){}
+            degrade(e.message);
+          }
+          App.go('setup');
+        })();
+      }
+    });
+  },
+  // Called from the dataset screen — links to the current project if one is loaded.
+  openUploadDataset(){
+    if(!window.DatasetUpload){ toast('Upload widget unavailable'); return; }
+    DatasetUpload.open({
+      projectType:'survey',
+      projectId: state.projectId || null,
+      onLoaded(_err, newProjectId){
+        if(newProjectId){
+          state.projectId = +newProjectId;
+          if(!PERSIST.on){ PERSIST.on = true; PERSIST.degraded = false; PERSIST.reason = ''; }
+          try{ localStorage.setItem(LS_KEY, String(state.projectId)); }catch(_){}
+        }
+        App.go('dataset');
+        App.refreshDataset();
+      }
+    });
+  },
   // ── Phase 4C: run + persist RSSI ───────────────────────────────────────────
   // Runs the deterministic RSSI engine (apps/rssi/rssi-engine.js) over the
   // Phase 4A dataset in the browser, then POSTs the structured result to
@@ -1739,7 +2232,7 @@ const App = {
   // and SIRI) and stamps the authoritative response-data fingerprint. The
   // engine honestly withholds the score when the N fence trips.
   async runRssi(){
-    if(!(PERSIST.on && state.projectId)){ toast('Database mode required to run RSSI'); return; }
+    if(!(PERSIST_REQUESTED && state.projectId)){ toast('Database mode required to run RSSI'); return; }
     if(!(window.RSSIEngine && window.RSSIEngine.score)){ toast('RSSI engine unavailable'); return; }
     // Make sure we have the dataset (load it if the preview has not yet).
     let ds=state.dataset;
@@ -1800,6 +2293,172 @@ const App = {
     toast('RSSI JSON exported');
   },
   stub(label){ toast(label+' connects in a later phase'); },
+
+  // ── Step 9: Deploy + Export (all client-side; no server endpoints added) ─────
+  _publicUrl(){
+    const ds=state.deploymentSettings;
+    return (ds && ds.link_key) ? ('https://relichecksurvey.com/s/'+ds.link_key) : null;
+  },
+  _needLink(){
+    const u=App._publicUrl();
+    if(!u){ toast('Publish the survey first to get a shareable link'); App.go('publish'); return null; }
+    return u;
+  },
+  _surveySlug(){
+    const t=(state.survey&&state.survey.title)||state.study.name||'survey';
+    return String(t).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')||'survey';
+  },
+  // Normalized instrument items for export: numbered questions + section markers.
+  _instrumentItems(){
+    const qs=((state.survey&&state.survey.questions)||[]);
+    const structural=['Section Text','Page Break','Thank-you Message'];
+    let n=0; const out=[];
+    qs.forEach(q=>{
+      const isStruct=structural.includes(q.type);
+      if(!isStruct) n++;
+      out.push({ n:isStruct?null:n, structural:isStruct, prompt:q.t||'', type:q.type||'',
+        required:!!q.required, construct:q.construct||'', options:(q.options&&q.options.length)?q.options.slice():[] });
+    });
+    return out;
+  },
+  _download(filename, text, mime){
+    const blob=new Blob([text],{type:mime||'text/plain'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  },
+  _copy(text){
+    const ok=()=>toast('Copied to clipboard');
+    if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(ok).catch(()=>App._copyFallback(text)); }
+    else App._copyFallback(text);
+  },
+  _copyFallback(text){
+    const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast('Copied to clipboard'); }catch(e){ toast('Select the text and copy manually'); }
+    ta.remove();
+  },
+  _modal(title, bodyHtml){
+    const ov=document.createElement('div'); ov.className='dlg-overlay';
+    ov.innerHTML='<div class="dlg"><button class="dlg-x" aria-label="Close">&times;</button>'
+      +'<h3 class="dlg-h">'+escapeHtml(title)+'</h3><div class="dlg-body">'+bodyHtml+'</div></div>';
+    const close=()=>ov.remove();
+    ov.addEventListener('click',e=>{ if(e.target===ov) close(); });
+    ov.querySelector('.dlg-x').addEventListener('click',close);
+    document.body.appendChild(ov);
+    return { el:ov, close:close };
+  },
+  // 1 — Share link
+  shareLink(){
+    const url=App._needLink(); if(!url) return;
+    const e=escapeHtml;
+    const subj=encodeURIComponent('You are invited to take a survey');
+    const body=encodeURIComponent('Please take a moment to complete this survey:\n\n'+url+'\n\nThank you.');
+    const m=App._modal('Share survey link',
+      '<input class="dlg-input" id="shUrl" readonly value="'+e(url)+'">'
+      +'<div class="dlg-btns">'
+        +'<button class="btn primary" id="shCopy">Copy link</button>'
+        +'<a class="btn" href="mailto:?subject='+subj+'&body='+body+'">Email</a>'
+        +'<a class="btn" href="'+e(url)+'" target="_blank" rel="noopener">Open survey</a>'
+      +'</div>'
+      +'<p class="dlg-note">Anyone with this link can respond once the survey is open for responses.</p>');
+    m.el.querySelector('#shCopy').addEventListener('click',()=>App._copy(url));
+    m.el.querySelector('#shUrl').addEventListener('focus',function(){ this.select(); });
+  },
+  // 2 — QR / mobile
+  showQR(){
+    const url=App._needLink(); if(!url) return;
+    const m=App._modal('QR code',
+      '<div id="qrBox" style="display:flex;justify-content:center;align-items:center;min-height:200px;padding:10px 0;color:var(--muted)">Generating…</div>'
+      +'<div class="dlg-btns"><button class="btn primary" id="qrDl" disabled>Download PNG</button>'
+      +'<a class="btn" href="'+escapeHtml(url)+'" target="_blank" rel="noopener">Open survey</a></div>'
+      +'<p class="dlg-note">Print or display this code for in-person or on-site fielding.</p>');
+    App._loadQR().then(QR=>{
+      const box=m.el.querySelector('#qrBox'); if(!box) return;
+      box.innerHTML='';
+      const holder=document.createElement('div'); box.appendChild(holder);
+      // qrcodejs renders a <canvas> (and <img> fallback) into the holder element.
+      try { new QR(holder, { text:url, width:220, height:220, correctLevel: QR.CorrectLevel.M }); }
+      catch(e){ box.textContent='Could not generate the QR code.'; return; }
+      setTimeout(()=>{
+        const canvas=holder.querySelector('canvas'), img=holder.querySelector('img');
+        const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : '');
+        if(!dataUrl) return;
+        const dl=m.el.querySelector('#qrDl'); dl.disabled=false;
+        dl.addEventListener('click',()=>{ const a=document.createElement('a'); a.href=dataUrl;
+          a.download='survey-qr-'+App._surveySlug()+'.png'; document.body.appendChild(a); a.click(); a.remove(); });
+      }, 250);
+    }).catch(()=>{ const box=m.el.querySelector('#qrBox'); if(box) box.textContent='Could not load the QR generator.'; });
+  },
+  _loadQR(){
+    if(window.QRCode) return Promise.resolve(window.QRCode);
+    if(App._qrP) return App._qrP;
+    App._qrP=new Promise((res,rej)=>{
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+      s.onload=()=>res(window.QRCode); s.onerror=()=>rej(new Error('qr load failed'));
+      document.head.appendChild(s);
+    });
+    return App._qrP;
+  },
+  // 3 — Invite panel (composes an email to the user's mail client; managed
+  //     sending + automatic reminders are a later backend phase, stated plainly).
+  invitePanel(){
+    const url=App._needLink(); if(!url) return;
+    const e=escapeHtml;
+    const m=App._modal('Invite a respondent list',
+      '<label class="dlg-label">Email addresses (one per line, or comma-separated)</label>'
+      +'<textarea class="dlg-input" id="invEmails" rows="5" placeholder="alex@example.com&#10;sam@example.com"></textarea>'
+      +'<label class="dlg-label">Message</label>'
+      +'<textarea class="dlg-input" id="invMsg" rows="3">Please take a moment to complete this survey:\n\n'+e(url)+'\n\nThank you.</textarea>'
+      +'<div class="dlg-btns"><button class="btn primary" id="invSend">Compose email</button></div>'
+      +'<p class="dlg-note">This opens your email client with the recipients on BCC. Managed sending and automatic reminders are not yet available.</p>');
+    m.el.querySelector('#invSend').addEventListener('click',()=>{
+      const raw=m.el.querySelector('#invEmails').value||'';
+      const emails=raw.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>/@/.test(s));
+      if(!emails.length){ toast('Add at least one email address'); return; }
+      const subj=encodeURIComponent('You are invited to take a survey');
+      const body=encodeURIComponent(m.el.querySelector('#invMsg').value||url);
+      window.location.href='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+subj+'&body='+body;
+    });
+  },
+  // 4 — Word / PDF: print-ready instrument (Save as PDF from the browser dialog).
+  exportInstrumentDoc(){
+    const items=App._instrumentItems();
+    if(!items.length){ toast('Add questions before exporting the instrument'); return; }
+    const w=window.open('','_blank');
+    if(!w){ toast('Allow pop-ups to export the instrument'); return; }
+    w.document.open(); w.document.write(buildInstrumentDoc(items)); w.document.close();
+    const go=()=>{ try{ w.focus(); w.print(); }catch(e){} };
+    if(w.document.readyState==='complete') setTimeout(go,150); else w.onload=()=>setTimeout(go,150);
+  },
+  // 5 — CSV / Excel: item-bank export.
+  exportInstrumentCsv(){
+    const items=App._instrumentItems().filter(it=>!it.structural);
+    if(!items.length){ toast('Add questions before exporting'); return; }
+    const esc=v=>{ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+    const rows=[['No','Question','Type','Required','Construct','Options']];
+    items.forEach(it=>rows.push([it.n, it.prompt, it.type, it.required?'Required':'Optional', it.construct, (it.options||[]).join(' | ')]));
+    const csv='﻿'+rows.map(r=>r.map(esc).join(',')).join('\r\n');
+    App._download('instrument-'+App._surveySlug()+'.csv', csv, 'text/csv');
+    toast('Instrument CSV exported');
+  },
+  // 6 — API / Qualtrics: portable JSON to import into another platform.
+  exportInstrumentJson(){
+    const items=App._instrumentItems();
+    if(!items.filter(it=>!it.structural).length){ toast('Add questions before exporting'); return; }
+    const payload={
+      title:(state.survey&&state.survey.title)||state.study.name||'Survey',
+      purpose:state.study.purpose||'', population:state.study.population||'',
+      exported_at:new Date().toISOString(),
+      item_count:items.filter(it=>!it.structural).length,
+      items:items.map((it,i)=>({ position:i+1, kind:it.structural?'section':'question', prompt:it.prompt,
+        type:it.type, required:it.required, construct:it.construct||null, options:it.options||[] }))
+    };
+    App._download('instrument-'+App._surveySlug()+'.json', JSON.stringify(payload,null,2), 'application/json');
+    toast('Instrument exported for import into another platform');
+  },
 };
 window.App = App;
 
@@ -1827,6 +2486,36 @@ function ring(pct, color, valueText, labelText){
    ════════════════════════════════════════════════════════════════════ */
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
+// Step 9 export: a self-contained, print-ready instrument document (Word/PDF via
+// the browser's print dialog). Renders every question with its answer format from
+// the live survey — no server call, no recompute.
+function buildInstrumentDoc(items){
+  const e=escapeHtml;
+  const title=e((state.survey&&state.survey.title)||state.study.name||'Survey');
+  const purpose=state.study.purpose?('<p class="purpose">'+e(state.study.purpose)+'</p>'):'';
+  const body=items.map(it=>{
+    if(it.structural){ return '<div class="sec">'+e(it.prompt||'')+'</div>'; }
+    const t=it.type, opts=it.options||[]; let ans;
+    if(/Likert|Rating|Scale|NPS/i.test(t)){
+      const n=/NPS/i.test(t)?11:5;
+      ans='<div class="scale">'+Array.from({length:n},(_,i)=>'<span>'+(/NPS/i.test(t)?i:i+1)+'</span>').join('')+'</div>';
+    } else if(opts.length){ ans='<ul class="opts">'+opts.map(o=>'<li>&#9633; '+e(o)+'</li>').join('')+'</ul>'; }
+    else if(/Yes\/No/i.test(t)){ ans='<ul class="opts"><li>&#9633; Yes</li><li>&#9633; No</li></ul>'; }
+    else if(/True\/False/i.test(t)){ ans='<ul class="opts"><li>&#9633; True</li><li>&#9633; False</li></ul>'; }
+    else { ans='<div class="line"></div>'; }
+    return '<div class="q"><div class="stem"><b>'+it.n+'.</b> '+e(it.prompt||'(untitled)')+(it.required?' <span class="req">*</span>':'')+'</div>'+ans+'</div>';
+  }).join('');
+  return '<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'
+    +'body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1c2238;max-width:680px;margin:32px auto;padding:0 24px;line-height:1.5}'
+    +'h1{font-size:24px;margin:0 0 4px;letter-spacing:-.02em} .purpose{color:#555;margin:0 0 20px}'
+    +'.q{margin:0 0 18px;page-break-inside:avoid} .stem{font-size:15px;margin-bottom:8px} .req{color:#c2271b}'
+    +'.opts{list-style:none;padding:0;margin:6px 0 0} .opts li{margin:3px 0;color:#333}'
+    +'.scale{display:flex;gap:12px;color:#555;flex-wrap:wrap} .scale span{border:1px solid #ccc;border-radius:50%;width:26px;height:26px;display:inline-flex;align-items:center;justify-content:center;font-size:12.5px}'
+    +'.line{border-bottom:1px solid #bbb;height:26px;margin-top:6px} .sec{font-weight:800;font-size:16px;margin:24px 0 10px;border-top:1px solid #eee;padding-top:14px}'
+    +'@media print{body{margin:0}}'
+    +'</style></head><body><h1>'+title+'</h1>'+purpose+body+'</body></html>';
+}
+
 // ── Phase 4F: assemble a stand-alone printable RSSI document ────────────────
 // Wraps the SAME pure renderer used on screen (Screens.rssiReport, forPrint=true)
 // in a self-contained HTML page with an inlined stylesheet subset, so the printed
@@ -1843,7 +2532,7 @@ function buildRssiPrintDoc(rr, saved){
   const nTxt=`${e(String(fc.analyzableN||0))} analyzable of ${e(String(fc.totalN||0))} collected (min ${e(String(fc.minN||30))})`;
   // Minimal stylesheet — the design tokens plus the classes the report markup uses.
   const css=`
-    :root{--accent:#e85d3a;--blue:#0A6FE8;--blue-soft:#EEF3FA;--green:#1f9e44;--green-soft:#e9f7ee;
+    :root{--accent:#0F9E7B;--blue:#0A6FE8;--blue-soft:#EEF3FA;--green:#1f9e44;--green-soft:#e9f7ee;
       --amber:#c47700;--amber-soft:#fdf3e3;--red:#c4271f;--red-soft:#fbeae9;
       --ink:#15171a;--ink-2:#5f6368;--ink-3:#8a8f98;--bg:#f5f6f8;--panel:#fff;
       --line:rgba(15,23,42,0.12);--line-2:rgba(15,23,42,0.06);--r:14px;}
@@ -2111,11 +2800,11 @@ const Screens = {
       <h1 class="title">How would you like to begin?</h1>
       <p class="lede">Build, upload, strengthen, publish, deploy and retrieve a survey, then hand clean data to analysis. Pick a starting point; you can change course at any step.</p>
       <div style="margin-bottom:22px">
-        <button class="entry-card blue" style="width:100%" onclick="App.setEntry('import')">
+        <button class="entry-card blue" style="width:100%" onclick="App.openFreshUpload()">
           <div class="ico">${icon(ICONS.import)}</div>
           <h3>Bring In an Existing Survey</h3>
-          <p>Already have a survey? Bring it into ReliCheck to assess its structure, item quality, construct alignment, and readiness before launch.</p>
-          <span class="go">Bring it in ${SVG.arrow}</span>
+          <p>Upload a CSV or Excel file from Google Forms, SurveyMonkey, or Qualtrics. ReliCheck detects the format automatically.</p>
+          <span class="go">Upload file ${SVG.arrow}</span>
         </button>
       </div>
       <div class="eyebrow" style="margin-bottom:10px">Or start a new survey</div>
@@ -2168,17 +2857,21 @@ const Screens = {
       ? `<div class="row"><div class="grow muted" style="padding:8px 0">No saved projects yet. Start a new survey to create one.</div></div>`
       : list.map(s=>{
           const name=s.title||s.name;
-          const status=s.status||'Draft';
-          const b = (status==='Collecting'||status==='active')?'green':(status==='Closed'||status==='archived')?'gray':'amber';
-          const sub = useDb
-            ? `${s.items} items · ${s.mode||''}`.trim()
-            : `${s.items} items · ${s.responses} responses · updated ${s.updated}`;
+          const isUpload = useDb && s.dataset_id!=null && (s.items||0)===0;
+          const status = isUpload ? 'Uploaded data' : (s.status||'Draft');
+          const b = isUpload?'green':(status==='Collecting'||status==='active')?'green':(status==='Closed'||status==='archived')?'gray':'amber';
+          const sub = isUpload
+            ? `Uploaded response data${s.response_count?` · ${s.response_count} rows`:''}`
+            : (useDb
+                ? `${s.items} items · ${s.mode||''}`.trim()
+                : `${s.items} items · ${s.responses} responses · updated ${s.updated}`);
           return `<div class="row">
             <div class="grow"><h4>${name}</h4>
               <div class="sub">${sub}</div></div>
             <span class="badge ${b}">${status}</span>
             ${s.siri!=null?`<span class="pill">SIRI ${s.siri}</span>`:''}
             <button class="btn sm" onclick="App.openExisting(${s.id})">Open ${SVG.arrow}</button>
+            ${useDb?`<button class="btn sm" title="Remove this project from your list" style="color:var(--red)" onclick="App.deleteProjectFromList(${s.id})">Delete</button>`:''}
           </div>`;}).join('');
     return `<div class="screen">
       <div class="eyebrow">Existing surveys</div>
@@ -2196,35 +2889,8 @@ const Screens = {
     const placeholder = mode==='manual'
       ? 'One item per line, for example:\nI feel supported by my manager.\nHow satisfied are you with onboarding?\nWould you recommend us to a friend?'
       : 'Paste your full survey. Questions and their answer options are detected automatically, for example:\n\n1. How satisfied are you with onboarding?\n  a) Very satisfied\n  b) Satisfied\n  c) Dissatisfied\n\n2. I feel supported by my manager. (Strongly agree to strongly disagree)\n\n3. What would you improve? (open response)';
-    let textBlock;
-    if(mode==='upload'){
-      if(state.importParsing){
-        textBlock=`<div class="field"><div class="callout"><div class="ci">${SVG.info}</div><div><p>Reading <strong>${e(state.importFileName)}</strong>...</p></div></div></div>`;
-      } else if(state.importFileName && state.importText){
-        textBlock=`<div class="field">
-          <label>Extracted text — review and edit before importing
-            <button class="chip" style="margin-left:10px;font-size:12px" onclick="App.clearImportFile()">Clear file</button>
-          </label>
-          <textarea rows="12" oninput="App.setImportField('importText',this.value)">${e(state.importText)}</textarea>
-          <p class="muted" style="font-size:12.5px;margin-top:6px">From: ${e(state.importFileName)} &middot; ${state.importText.split('\n').filter(l=>l.trim()).length} non-empty lines detected</p>
-        </div>`;
-      } else {
-        textBlock=`<div class="field"><label>Upload a survey file</label>
-          <label class="file-drop" id="surveyFileDrop">
-            <input type="file" accept=".docx,.txt,.csv,.tsv" style="display:none" id="surveyFileInput"
-              onchange="if(this.files[0])App.handleSurveyFile(this.files[0])">
-            <div class="file-drop-inner">
-              <div style="font-size:28px;margin-bottom:8px">&#8613;</div>
-              <div style="font-weight:700;margin-bottom:4px">Drop a file here or click to choose</div>
-              <div class="muted" style="font-size:13px">Accepts .docx (Word), .txt, and .csv</div>
-            </div>
-          </label>
-        </div>`;
-      }
-    } else {
-      textBlock=`<div class="field"><label>${mode==='manual'?'Item list (one per line)':'Survey text'}</label>
-          <textarea rows="12" placeholder="${e(placeholder)}" oninput="App.setImportField('importText',this.value)">${e(state.importText||'')}</textarea></div>`;
-    }
+    const textBlock=`<div class="field"><label>${mode==='manual'?'Item list (one per line)':'Survey text'}</label>
+        <textarea rows="12" placeholder="${e(placeholder)}" oninput="App.setImportField('importText',this.value)">${e(state.importText||'')}</textarea></div>`;
     return `<div class="screen">
       <div class="eyebrow">Bring in an existing survey</div>
       <h1 class="title">Bring your survey into ReliCheck</h1>
@@ -2238,7 +2904,7 @@ const Screens = {
           <input value="${e(state.study.population||'')}" placeholder="e.g. New hires in their first 90 days" oninput="App.setStudy('population',this.value)"></div>
 
         <div class="field"><label>How would you like to bring it in?</label>
-          <div class="chips">${tab('paste','Paste survey text')}${tab('manual','Manual quick import')}${tab('upload','Upload file')}</div></div>
+          <div class="chips">${tab('paste','Paste survey text')}${tab('manual','Manual quick import')}</div></div>
         ${textBlock}
 
         <div class="field"><label>Constructs <span class="muted" style="font-weight:500">(optional)</span></label>
@@ -2284,7 +2950,7 @@ const Screens = {
   build(){
     const s=state.survey||{title:'Untitled',questions:[]};
     const e=escapeHtml;
-    const editable = PERSIST.on && state.projectId;
+    const editable = PERSIST_REQUESTED && state.projectId;
     const n=s.questions.length;
     const cs=(s.constructs)||[];
     const isStruct=(t)=>!!(QTYPES[t]&&QTYPES[t].structural);
@@ -2371,7 +3037,28 @@ const Screens = {
   },
 
   sdsi(){
-    const sd=state.sdsiResult||MOCK.sdsi;
+    // No real Build Check yet → show a run prompt, NEVER a sample score. SDSI must
+    // always reflect the actual survey (built or uploaded), the same way SIRI does.
+    if(!state.sdsiResult){
+      const hasItems = !!(state.survey && (state.survey.questions||[]).length);
+      return `<div class="screen">
+        <div class="eyebrow">Step 3 · SDSI · The Build Check</div>
+        <h1 class="title">SDSI: the Build Check</h1>
+        <p class="lede"><b>SDSI helps you improve the survey while you are building it.</b> It looks at the parts (your questions, scales, and flow) so you can catch weak spots and fix them before anyone takes it.</p>
+        <div class="callout" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><p style="margin:0">SDSI looks at the parts while you are building. SIRI checks the whole survey before you launch.</p></div></div>
+        <div class="card pad" style="text-align:center;margin-bottom:22px">
+          <h2 class="sec" style="margin-top:0">Run the Build Check</h2>
+          <p class="muted" style="font-size:14px;max-width:540px;margin:0 auto 16px">${hasItems
+            ? 'SDSI reviews every question for validity and scores each item across five 10-point domains. A serious item-level flaw caps that question’s score, so one bad question cannot hide behind four good domains. Your survey SDSI is the average of the final item scores, out of 50.'
+            : 'Add or import your questions in Build first, then run the Build Check here.'}</p>
+          ${hasItems
+            ? `<button class="btn primary lg" onclick="App.runSdsi()">Run SDSI Build Check ${SVG.arrow}</button>`
+            : `<button class="btn primary lg" onclick="App.go('build')">Go to Build ${SVG.arrow}</button>`}
+        </div>
+        <div class="btn-row"><button class="btn" onclick="App.go('build')">← Build</button></div>
+      </div>`;
+    }
+    const sd=state.sdsiResult;
     // Normalise: the real engine returns `categories`; the sample fallback uses `lenses`.
     const cats=(sd.categories||sd.lenses||[]).map(c=>({
       nm:c.name||c.nm, pt:(c.points!=null?c.points:c.pt), max:(c.weight!=null?c.weight:c.max), warn:!!c.warn
@@ -2405,7 +3092,7 @@ const Screens = {
       ? `<h2 class="sec">Strengths</h2>`+(sd.strengths.map(s=>`<div class="callout"><div class="ci">${SVG.info}</div><div><p style="margin:0">${escapeHtml(s)}</p></div></div>`).join(''))
       : '';
     const bandKey=sd.bandKey||'';
-    const bandClass=(bandKey==='weak'||bandKey==='notready')?'red':((bandKey==='developing')?'amber':'green');
+    const bandClass=(bandKey==='weak'||bandKey==='notready')?'red':((bandKey==='caution')?'amber':'green');
     const cautionN=cats.filter(c=>c.warn).length;
     return `<div class="screen">
       <div class="eyebrow">Step 3 · SDSI · The Build Check</div>
@@ -2420,16 +3107,19 @@ const Screens = {
           <div>
             <div class="badge ${bandClass}">${escapeHtml(sd.band)}</div>
             <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:8px 0 4px">SDSI ${Number(sd.total).toFixed(1)} / 50</h2>
-            <p class="muted" style="font-size:14px">Design quality across ${cats.length} categories · ${cautionN} ${cautionN===1?'category':'categories'} to strengthen.</p>
+            <p class="muted" style="font-size:14px">Item validity across ${cats.length} domains · average of ${sd.scoredItems!=null?sd.scoredItems:cats.length} question${sd.scoredItems===1?'':'s'}.</p>
           </div>
         </div>
       </div>
+      ${sd.deployment_blocker_count>0?`<div class="callout red" style="margin-bottom:18px"><div class="ci">${SVG.info}</div>
+        <div><h4>${escapeHtml(sd.blocker_headline||(sd.deployment_blocker_count+' questions are not deployment-ready.'))}</h4>
+          <p style="margin:0">${escapeHtml(sd.sdsi_band_cap_reason||'Critical item-level problems were detected.')} The numeric SDSI score reflects the average quality of all questions; the readiness band is capped because one or more questions contain critical issues that should be fixed before deployment.</p></div></div>`:''}
       <div class="grid g3">${lenses}</div>
       ${strengths}
       <h2 class="sec">What to strengthen</h2>
       ${flags}
       <details class="exp"><summary>Show design-scoring methodology <span class="faint">▾</span></summary>
-        <div class="body">SDSI (the Survey Design Strength Index) reviews how the survey is built, before anyone takes it. It strengthens the parts: your questions, scales, and flow. The design points it earns later feed into the SIRI Launch Check. SDSI does not judge results. That happens later in RSSI, after responses come in.</div></details>
+        <div class="body">SDSI (the Survey Design Strength Index) reviews how the survey is built, before anyone takes it, by scoring every question for validity. Each question is scored across five 10-point domains (Completeness; Clarity; Neutrality and Single Construct; Response Quality; and Dignity, Privacy and Analysis Readiness). The domain scores measure quality. On top of that, a serious item-level flaw caps the question’s score (for example, missing or placeholder options cap it low, a double-barreled or leading question caps it in the mid 30s), and several serious flaws on one question lower it further, so a fundamentally weak question cannot score well just because only one domain was affected. Your survey SDSI is the average of these final question scores, out of 50. SDSI stays at the question level: whole-survey readiness (purpose, coverage, flow) is the SIRI Launch Check, and result reliability is RSSI, after responses come in.</div></details>
       <div class="btn-row">
         <button class="btn" onclick="App.go('build')">← Workspace</button>
         <div class="spacer"></div>
@@ -2515,214 +3205,164 @@ const Screens = {
     const r=state.siriResult;
     const head=`<div class="eyebrow">Step 7 · SIRI · The Launch Check</div>
       <h1 class="title">SIRI: the Launch Check</h1>
-      <p class="lede"><b>SIRI checks the completed survey before you send it out.</b> It looks at the whole survey, not just the parts, and confirms it is ready to launch.</p>`;
+      <p class="lede"><b>SIRI checks the whole finished survey before you send it out.</b> It scores the survey out of 50 across five whole-survey areas, then combines with your Build Check (SDSI) for a Total Survey Strength out of 100. SIRI does not measure reliability; that comes later, from responses (RSSI).</p>`;
     // Empty state: SIRI has not been run for this survey yet. Show no fake score.
     if(!r){
       return `<div class="screen">${head}
-        <div class="callout amber" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><p style="margin:0">The Launch Check has not run yet for this survey. It scores the finished instrument out of 100 across Validity, Reliability, and Administration readiness.</p></div></div>
+        <div class="callout amber" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><p style="margin:0">The Launch Check has not run yet for this survey. It scores the finished instrument out of 50 across five whole-survey areas: Survey Purpose &amp; Alignment, Construct Coverage, Structure &amp; Flow, Scale &amp; Measurement Design, and Deployment Readiness.</p></div></div>
         <div class="card pad" style="text-align:center;margin-bottom:22px">
           <h2 class="sec" style="margin-top:0">Run the Launch Check</h2>
-          <p class="muted" style="font-size:14px;max-width:520px;margin:0 auto 16px">SIRI reads the survey exactly as you have built it. Launch information that has not been documented yet, such as a consent notice or respondent instructions, lowers the score until you add it.</p>
+          <p class="muted" style="font-size:14px;max-width:520px;margin:0 auto 16px">SIRI reads the survey exactly as you have built it. Run the Build Check (SDSI) first to see your full Total Survey Strength out of 100. Launch information that is not documented yet, such as a consent notice, lowers the score until you add it.</p>
           <button class="btn primary lg" onclick="App.runSiri()">Run SIRI Launch Check ${SVG.arrow}</button>
         </div>
         <div class="btn-row"><button class="btn" onclick="App.go('launch')">← Launch Readiness</button></div>
       </div>`;
     }
-    const pct=Math.round(r.pct);
-    const cautions=(r.notes||[]).filter(n=>n.sev==='warn').length;
-    const bandClass=r.blocked?'red':(pct>=80?'green':'amber');
+    const hasTotal=(r.total!=null);
+    const siriPct=Math.round(r.pct);
+    // Whole-survey domain bars (each /10).
     const doms=(r.domains||[]).map(d=>{
-      const dpct=Math.round(d.pct);
-      const lenses=(d.lenses||[]).map(l=>{
-        const badge=(l.launchReady===false)
-          ? ' <span class="badge red" style="padding:1px 7px">blocked</span>'
-          : (l.score<80 ? ' <span class="badge amber" style="padding:1px 7px">caution</span>' : '');
-        return `<div class="lens"><span class="nm">${e(l.name)}${badge}</span>
-          <span class="pt">${l.points.toFixed(1)}<span class="faint">/${l.weight}</span></span></div>`;
-      }).join('');
+      const dpct=Math.round((d.points/d.max)*100);
+      const badge = d.points>=10 ? ' <span class="badge green" style="padding:1px 7px">strong</span>'
+                  : (d.points>=6 ? ' <span class="badge amber" style="padding:1px 7px">review</span>'
+                  : ' <span class="badge red" style="padding:1px 7px">weak</span>');
       return `<div class="dom">
-        <div class="dom-head"><span class="nm">${e(d.subtitle||d.name)}</span>
-          <span class="pts">${d.totalPoints.toFixed(1)}<small>/${d.maxPoints}</small></span></div>
-        <div class="meter"><span style="width:${dpct}%;background:var(--accent)"></span></div>
-        <div class="lenses">${lenses}</div></div>`;
+        <div class="dom-head"><span class="nm">${e(d.name)}${badge}</span>
+          <span class="pts">${d.points.toFixed(1)}<small>/${d.max}</small></span></div>
+        <div class="meter"><span style="width:${dpct}%;background:var(--accent)"></span></div></div>`;
     }).join('');
-    const checks=(r.checklist||[]).map(c=>`<div class="lens" style="margin-bottom:10px">
-        <span class="nm">${e(c.t)}</span><span class="badge ${c.ok?'green':'amber'}">${c.ok?'ready':'review'}</span></div>`).join('');
 
-    // ── Phase 2E: turn findings into actionable items ──────────────────────
-    // Blockers = any lens not launch-ready (across all domains). Advisory = the
-    // engine's notes that are NOT already represented by a blocker.
-    const allLenses=[];
-    (r.domains||[]).forEach(d=>(d.lenses||[]).forEach(l=>allLenses.push(Object.assign({domain:(d.subtitle||d.name)},l))));
-    const nameToKey={}; allLenses.forEach(l=>{ nameToKey[l.name]=l.key; });
-    const noteMsg={}; (r.notes||[]).forEach(n=>{ if(!(n.lens in noteMsg)||n.sev==='warn') noteMsg[n.lens]=n.msg; });
-    const DEFAULT_REASON={
-      consent_privacy:'Consent/privacy documentation is required before launch readiness can be granted.',
-      construct_definition:'No construct is defined, so it is unclear what the survey measures.',
-      sensitive_safety:'This survey touches sensitive topics without a clear decline path.',
-      purpose_alignment:'A blocking design issue must be resolved before launch.',
-      completion_burden:'The survey has no answerable questions yet.'
-    };
-    const blockers=allLenses.filter(l=>l.launchReady===false);
-    const blockedNames={}; blockers.forEach(l=>{ blockedNames[l.name]=1; });
-    const advisories=(r.notes||[]).filter(n=>!blockedNames[n.lens]);
-
-    // Compose the App.go(...) argument list for a finding, deep-linking to the
-    // exact section/item: launch sections by id, the first unmapped item card, etc.
+    // Findings (whole-survey), ordered by severity. Each routes to the relevant step.
+    const SEV_RANK={critical:0,high:1,medium:2,low:3};
+    const SEV_LABEL={critical:'Critical',high:'High',medium:'Medium',low:'Low'};
+    const SEV_CLS={critical:'red',high:'red',medium:'amber',low:''};
+    const flags=(r.flags||[]).slice().sort((a,b)=>(SEV_RANK[a.severity]-SEV_RANK[b.severity]));
+    const critCount=flags.filter(f=>f.severity==='critical').length;
     const fixArg=(key)=>{ const fx=App._fixFor(key); let focus=fx.focus||'';
-      if(key==='item_construct_alignment'){ const u=App._firstUnmappedItem(); if(u>=0) focus='qcard-'+u; }
       return { route:fx.route, label:fx.label, arg: focus?`'${fx.route}','${focus}'`:`'${fx.route}'` }; };
-    const fixBtn=(key)=>{ const fx=fixArg(key); return `<button class="btn sm" onclick="App.go(${fx.arg})">${e(fx.label)} ${SVG.arrow}</button>`; };
-    const blockerRows=blockers.map(l=>`<div class="callout red" style="margin-bottom:10px"><div class="ci">${SVG.info}</div>
-        <div style="flex:1"><h4 style="margin:0 0 2px">${e(l.name)} <span class="faint" style="font-weight:500">· ${e(l.domain)}</span></h4>
-          <p style="margin:0 0 8px;font-size:14px">${e(noteMsg[l.name]||DEFAULT_REASON[l.key]||'This must be resolved before launch.')}</p>
-          ${fixBtn(l.key)}</div></div>`).join('');
-    const advisoryRows=advisories.length
-      ? advisories.map(n=>`<div class="callout ${n.sev==='warn'?'amber':''}" style="margin-bottom:10px"><div class="ci">${SVG.info}</div>
-          <div style="flex:1"><h4 style="margin:0 0 2px">${e(n.lens)}</h4>
-            <p style="margin:0 0 8px;font-size:14px">${e(n.msg)}</p>
-            ${fixBtn(nameToKey[n.lens]||'')}</div></div>`).join('')
-      : `<div class="callout green"><div class="ci">${SVG.check}</div><div><p style="margin:0">No advisory improvements suggested.</p></div></div>`;
+    const flagRows = flags.length
+      ? flags.map(f=>{ const fx=fixArg(f.domainKey);
+          return `<div class="callout ${SEV_CLS[f.severity]||''}" style="margin-bottom:10px"><div class="ci">${SVG.info}</div>
+            <div style="flex:1"><h4 style="margin:0 0 2px">${e(f.message)} <span class="faint" style="font-weight:500">· ${e(f.domain)} · ${SEV_LABEL[f.severity]||f.severity}</span></h4>
+              ${f.suggestion?`<p style="margin:0 0 8px;font-size:14px">${e(f.suggestion)}</p>`:''}
+              <button class="btn sm" onclick="App.go(${fx.arg})">${e(fx.label)} ${SVG.arrow}</button></div></div>`;
+        }).join('')
+      : `<div class="callout green"><div class="ci">${SVG.check}</div><div><p style="margin:0">No issues found across the five whole-survey areas.</p></div></div>`;
 
-    const mustFix=blockers.length
-      ? `<h2 class="sec" style="margin-top:22px">Must fix before launch <span class="badge red">${blockers.length}</span></h2>
-         <p class="muted" style="font-size:13.5px;margin:0 0 12px">These hold the launch verdict at &ldquo;Blocked for review&rdquo;. The score does not change, but SIRI will not clear until each is resolved.</p>
-         ${blockerRows}` : '';
-
-    const gate=r.blocked
-      ? `<div class="callout red" style="margin-top:6px"><div class="ci">${SVG.info}</div>
-          <div><h4>Blocked for review</h4><p style="margin:0">Resolve the items under &ldquo;Must fix before launch&rdquo;, then re-run SIRI. The launch gate is orthogonal: it never changes the ${r.totalPoints.toFixed(1)} / 100 score.</p></div></div>`
-      : `<div class="callout green" style="margin-top:6px"><div class="ci">${SVG.check}</div>
-          <div><h4>Launch gate clear</h4><p style="margin:0">No unresolved blockers. The advisory items below are optional improvements.</p></div></div>`;
+    // Total Survey Strength hero (SDSI + SIRI = 100) when SDSI is available; else SIRI-only.
+    const bandKeyCls={strong:'green',good:'green',caution:'amber',weak:'red',notready:'red'};
+    const totalCls = hasTotal ? (bandKeyCls[r.total_band_key]||'amber') : 'amber';
+    const capCallout = (hasTotal && r.total_band_was_capped)
+      ? `<div class="callout red" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><h4 style="margin:0 0 2px">Readiness capped at &ldquo;${e(r.total_band)}&rdquo;</h4><p style="margin:0;font-size:14px">${e(r.total_band_cap_reason)}</p></div></div>`
+      : '';
+    const hero = hasTotal
+      ? `<div class="card pad" style="margin-bottom:18px">
+          <div class="ring-wrap">
+            ${ring(Math.round(r.total),'var(--accent)', r.total.toFixed(1), 'of 100')}
+            <div>
+              <div class="badge ${totalCls}">${e(r.total_band)}${r.total_band_was_capped?' · capped':''}</div>
+              <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:8px 0 4px">Total Survey Strength ${r.total.toFixed(1)} / 100</h2>
+              <p class="muted" style="font-size:14px">SDSI ${r.sdsi.toFixed(1)} / 50 (questions) + SIRI ${r.siri.toFixed(1)} / 50 (whole survey).${r.deployment_blocker_count?(' '+r.deployment_blocker_count+' deployment blocker'+(r.deployment_blocker_count===1?'':'s')+'.'):''}</p>
+            </div>
+          </div>
+        </div>`
+      : `<div class="card pad" style="margin-bottom:18px">
+          <div class="ring-wrap">
+            ${ring(siriPct,'var(--accent)', r.siri.toFixed(1), 'of 50')}
+            <div>
+              <div class="badge amber">SIRI only</div>
+              <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:8px 0 4px">SIRI ${r.siri.toFixed(1)} / 50</h2>
+              <p class="muted" style="font-size:14px">Run the Build Check (SDSI) to see your Total Survey Strength out of 100. <button class="btn sm" onclick="App.go('sdsi')">Open Build Check ${SVG.arrow}</button></p>
+            </div>
+          </div>
+        </div>`;
     const stale=state.siriStale ? `<div class="callout amber" style="margin-bottom:14px"><div class="ci">${SVG.info}</div><div style="flex:1"><h4 style="margin:0 0 2px">This Launch Check is out of date</h4><p style="margin:0 0 8px">You changed the survey since SIRI last ran. Re-run it to see the current readiness. <button class="btn sm" onclick="App.runSiri()">Re-run SIRI ${SVG.arrow}</button></p></div></div>` : '';
     return `<div class="screen">${head}
       ${stale}
-      <div class="callout amber" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><p style="margin:0">A survey can have strong questions and still not be ready to launch. Use the actions below to resolve each finding, then re-run SIRI.</p></div></div>
-      <div class="card pad" style="margin-bottom:18px">
-        <div class="ring-wrap">
-          ${ring(pct,'var(--accent)', r.totalPoints.toFixed(1), 'of 100')}
-          <div>
-            <div class="badge ${bandClass}">${e(r.verdict)}</div>
-            <h2 style="font-size:22px;font-weight:800;letter-spacing:-0.02em;margin:8px 0 4px">SIRI ${r.totalPoints.toFixed(1)} / 100</h2>
-            <p class="muted" style="font-size:14px">Validity 50 + Reliability 35 + Administration 15. ${blockers.length} blocker${blockers.length===1?'':'s'}, ${advisories.length} advisory item${advisories.length===1?'':'s'}.</p>
-          </div>
-        </div>
-      </div>
-      ${gate}
-      ${mustFix}
-      <h2 class="sec" style="margin-top:22px">Advisory improvements <span class="badge amber">${advisories.length}</span></h2>
-      <p class="muted" style="font-size:13.5px;margin:0 0 12px">Optional. These do not block launch, but resolving them strengthens the instrument.</p>
-      ${advisoryRows}
-      <div class="grid g2" style="grid-template-columns:1fr 1fr;align-items:start;margin-top:22px">
-        <div class="card pad"><h2 class="sec" style="margin-top:0">Readiness domains</h2><div class="grid">${doms}</div></div>
-        <div class="card pad"><h2 class="sec" style="margin-top:0">Deployment &amp; compliance</h2>${checks}</div>
-      </div>
+      ${capCallout}
+      ${hero}
+      <h2 class="sec" style="margin-top:6px">Findings <span class="badge ${flags.length?(critCount?'red':'amber'):'green'}">${flags.length}</span></h2>
+      <p class="muted" style="font-size:13.5px;margin:0 0 12px">SIRI looks at the whole survey, not individual questions. Critical findings cap your readiness band until they are resolved; the number itself does not change.</p>
+      ${flagRows}
+      <div class="card pad" style="margin-top:18px"><h2 class="sec" style="margin-top:0">Whole-survey readiness domains <span class="faint" style="font-weight:500">· SIRI ${r.siri.toFixed(1)} / 50</span></h2><div class="grid">${doms}</div></div>
       <details class="exp"><summary>Show readiness-scoring methodology <span class="faint">▾</span></summary>
-        <div class="body">SIRI (the Survey Instrument Readiness Index) checks the whole finished survey before launch. It adds up three areas: Validity 50, Reliability 35, and Administration 15, for a total of 100. SIRI scores the survey as you have built it; launch information that has not been documented, such as consent or instructions, lowers the score until you add it. An unresolved launch blocker holds the verdict at &ldquo;Blocked for review&rdquo; without changing the number. Advisory items are optional and do not block launch.</div></details>
+        <div class="body">SIRI (the Survey Instrument Readiness Index) scores the whole finished survey out of 50 across five areas: Survey Purpose &amp; Alignment, Construct Coverage, Survey Structure &amp; Flow, Scale &amp; Measurement Design, and Deployment Readiness &amp; Evidence Use. Each area starts at 10 points; findings subtract by severity (Critical -10, High -6, Medium -3, Low -1) and never drop below 0. SIRI does not measure reliability; that is RSSI, computed after responses are collected. Your SIRI combines with the Build Check (SDSI, the question-level score out of 50) for a Total Survey Strength out of 100. When critical deployment blockers are present, the readiness band is capped even though the number is unchanged.</div></details>
       <div class="btn-row">
         <button class="btn" onclick="App.go('launch')">← Launch Readiness</button>
         <div class="spacer"></div>
         <button class="btn" onclick="App.runSiri()">Re-run SIRI</button>
-        ${r.blocked
-          ? (blockers.length ? `<button class="btn primary lg" onclick="App.go(${fixArg(blockers[0].key).arg})">Resolve first blocker ${SVG.arrow}</button>` : '')
-          : `<button class="btn primary lg" onclick="App.go('publish')">Ready, continue to publish ${SVG.arrow}</button>`}
+        <button class="btn primary lg" onclick="App.go('publish')">Continue to publish ${SVG.arrow}</button>
       </div>
     </div>`;
   },
 
   revise(){
     const e=escapeHtml;
-    const {active, later}=App._reviseCards();
+    const {active, later, kept}=App._reviseCards();
+    const qs=(state.survey&&state.survey.questions)||[];
+    const answerable=qs.filter(q=>!(QTYPES[q.type]&&QTYPES[q.type].structural));
+    const meaningful=answerable.filter(q=>!App._isMetaColumn(q));
+    if(!answerable.length){
+      return `<div class="screen"><div class="eyebrow">Step 4 · Revise</div><h1 class="title">Strengthen your questions</h1>
+        <div class="callout amber"><div class="ci">${SVG.info}</div><div><h4>No questions yet</h4><p style="margin:0">Add or import your questions in Build first, then come back to strengthen them.</p></div>
+          <div style="margin-left:auto"><button class="btn sm primary" onclick="App.go('build')">Go to Build ${SVG.arrow}</button></div></div></div>`;
+    }
+    // Live SDSI for the score ring (fresh assess matches the live concern list).
+    const sd=(window.BuildCheck&&window.BuildCheck.assess)?window.BuildCheck.assess(App._buildCheckProject()):state.sdsiResult;
+    const total=sd&&sd.total!=null?sd.total:null;
+    const band=sd?(sd.band||''):'';
+    const bandCls=/strong|good/i.test(band)?'green':(/caution/i.test(band)?'amber':'red');
 
-    const reviewCard=(c)=>{
-      const q=c.q, ref=c.ref, idx=c.index;
-      const worst=c.concerns.some(x=>x.sev==='critical'||x.sev==='major')?'red':'amber';
-      const concernList=c.concerns.map(x=>`<li>${e(x.msg)}</li>`).join('');
-      const sug=App._reviseSuggestion(c);
-      const editing=state.reviseEditing[ref];
+    const SEVRANK={critical:0,major:1,high:1,moderate:2,medium:2,minor:3,low:3};
+    const oneConcern=(c)=>{ const l=(c.concerns||[]).slice().sort((a,b)=>((SEVRANK[a.sev]??9)-(SEVRANK[b.sev]??9))); return (l[0]&&l[0].msg)||'This question can be stronger.'; };
+    const byIndex={};
+    active.forEach(c=>byIndex[c.index]={kind:'active',c});
+    later.forEach(c=>byIndex[c.index]={kind:'later',c});
+    kept.forEach(c=>byIndex[c.index]={kind:'kept',c});
 
-      // Suggested-revision block: a concrete rewrite to preview, tailored
-      // guidance, or a manual-review prompt. All deterministic, no AI.
-      let suggestBlock;
-      if(sug.kind==='rewrite'){
-        suggestBlock=`<div class="callout"><div>
-          <h4 style="margin:0 0 4px">Suggested revision</h4>
-          <p style="white-space:pre-line;margin:0;font-size:14px">${e(sug.text)}</p>
-          ${sug.note?`<p class="muted" style="font-size:12.5px;margin:6px 0 0">${e(sug.note)}</p>`:''}
-        </div></div>`;
-      } else if(sug.kind==='guidance'){
-        suggestBlock=`<div class="callout"><div>
-          <h4 style="margin:0 0 4px">How to strengthen it</h4>
-          <p style="margin:0;font-size:14px">${e(sug.text)}</p></div></div>`;
+    // Full survey list: every answerable question, flagged or already strong.
+    const rows=qs.map((q,i)=>{
+      if(QTYPES[q.type]&&QTYPES[q.type].structural) return '';
+      if(App._isMetaColumn(q) && !byIndex[i]) return ''; // hide unflagged identifier/date columns
+      const entry=byIndex[i];
+      let dot,icon,sub,go,attr='',cls='';
+      if(entry&&(entry.kind==='active'||entry.kind==='later')){
+        const c=entry.c, worst=c.concerns.some(x=>x.sev==='critical'||x.sev==='major');
+        dot=worst?'block':'flag'; icon='!';
+        sub=(entry.kind==='later'?'Set aside · ':'')+oneConcern(c);
+        go='<span class="qsl-go">Strengthen →</span>'; attr=`onclick="App.openStrengthLab(${i})"`;
+      } else if(entry&&entry.kind==='kept'){
+        dot='kept'; icon='='; sub='Kept as written'; go='<span class="qsl-go muted">Kept</span>'; cls='clean'; attr=`onclick="App.reviseReopen(${i},'${entry.c.ref}')"`;
       } else {
-        suggestBlock=`<div class="callout amber"><div>
-          <h4 style="margin:0 0 4px">Needs manual review</h4>
-          <p style="margin:0;font-size:14px">${e(sug.text)}</p></div></div>`;
+        dot='strong'; icon='✓'; sub='Looks strong'; go='<span class="qsl-go muted">Looks strong</span>'; cls='clean';
       }
+      return `<div class="qsl-qrow ${cls}" ${attr}>
+        <span class="qsl-st ${dot}">${icon}</span>
+        <div class="qsl-qx"><div class="qsl-ql">${e(q.t||'(no text)')}</div><div class="qsl-qc">${e(sub)}</div></div>
+        ${go}</div>`;
+    }).join('');
 
-      // Inline edit panel (Fix Myself / Fix with ReliCheck Intelligence). Both
-      // are deterministic: the only difference is what the textarea is seeded with.
-      let editPanel='';
-      if(editing){
-        const draft=state.reviseDrafts[ref]!=null?state.reviseDrafts[ref]:(q.t||'');
-        const lead=editing.mode==='assist'
-          ? 'ReliCheck Intelligence loaded its rule-based suggestion below. Edit the wording, then apply.'
-          : 'Revise the wording yourself, then apply.';
-        editPanel=`<div class="field" style="margin-top:10px"><label>${editing.mode==='assist'?'Fix with ReliCheck Intelligence':'Fix myself'}</label>
-          <p class="muted" style="font-size:12.5px;margin:0 0 6px">${e(lead)}</p>
-          <textarea rows="3" oninput="App.reviseDraft('${ref}',this.value)">${e(draft)}</textarea>
-          <div class="btn-row" style="margin-top:8px">
-            <button class="btn sm primary" onclick="App.reviseFixApply(${idx},'${ref}')">Apply revision</button>
-            <button class="btn sm" onclick="App.reviseFixCancel('${ref}')">Cancel</button>
-          </div></div>`;
-      }
-
-      const actions = editing ? '' : `<div class="btn-row" style="margin-top:10px;flex-wrap:wrap;gap:8px">
-        ${sug.kind==='rewrite'?`<button class="btn sm primary" onclick="App.reviseAcceptSuggestion(${idx},'${ref}')">Accept ReliCheck suggestion</button>`:''}
-        <button class="btn sm" onclick="App.reviseKeep(${idx},'${ref}')">Keep original</button>
-        <button class="btn sm" onclick="App.reviseFixOpen(${idx},'${ref}','self')">Fix myself</button>
-        <button class="btn sm" onclick="App.reviseFixOpen(${idx},'${ref}','assist')">Fix with ReliCheck Intelligence</button>
-        <button class="btn sm" onclick="App.reviseLater(${idx},'${ref}')">Mark for later</button>
-      </div>`;
-
-      return `<div class="card pad" style="margin-bottom:14px">
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:10px">
-          <span class="qn" style="width:24px;height:24px">${idx+1}</span>
-          <span class="badge gray qbadge">${typeLabel(q.type)}</span>
-          <span class="badge ${worst}">${worst==='red'?'needs revision':'caution'}</span>
-        </div>
-        <div class="field" style="margin-bottom:10px"><label>Original question</label>
-          <p style="font-size:15px;font-weight:600;margin:2px 0 0">${e(q.t||'(no text)')}</p></div>
-        <div class="field" style="margin-bottom:10px"><label>ReliCheck concern</label>
-          <ul style="margin:4px 0 0;padding-left:18px;font-size:13.5px;color:var(--ink-2)">${concernList}</ul></div>
-        ${suggestBlock}
-        ${editPanel}
-        ${actions}
-      </div>`;
-    };
-
-    const decidedRow=(c,label)=>`<div class="row">
-      <div class="grow"><h4>${e(c.q.t||'(no text)')}</h4>
-        <div class="sub">${label} · ${c.concerns.length} concern${c.concerns.length===1?'':'s'}</div></div>
-      <button class="btn sm" onclick="App.reviseReopen(${c.index},'${c.ref}')">Reopen</button>
-    </div>`;
-
-    const cards = active.length
-      ? active.map(reviewCard).join('')
-      : `<div class="callout green"><div class="ci">${SVG.check}</div><div><h4>Nothing left to revise</h4>
-          <p>No questions are flagged at the moderate level or above${later.length?', and your set-aside items are recorded below':''}. You can re-run the Build Check to confirm the score, or move on to preview.</p></div></div>`;
-
-    const laterBlock = later.length
-      ? `<h2 class="sec">Marked for later (${later.length})</h2><div class="card">${later.map(c=>decidedRow(c,'Marked for later')).join('')}</div>` : '';
+    const firstActive=active.length?active[0].index:-1;
+    const ringP=total!=null?Math.round(total/50*100):0;
+    const sub=active.length
+      ? `${active.length} of your ${meaningful.length} questions can be stronger. Work through them one at a time.`
+      : 'Every question has been reviewed. Nice work.';
 
     return `<div class="screen">
       <div class="eyebrow">Step 4 · Revise</div>
-      <h1 class="title">Question review</h1>
-      <p class="lede">${active.length?`${active.length} question${active.length===1?'':'s'} to look at.`:''} For each item: accept ReliCheck's suggestion, fix it yourself, fix it with ReliCheck Intelligence, or set it aside for later. The list recomputes from your survey as you go, so resolved items drop off automatically.</p>
-      ${state.sdsiStale?`<div class="callout amber" style="margin-bottom:16px"><div class="ci">${SVG.info}</div><div><h4>Survey changed</h4><p style="margin:0">Re-run SDSI to update your Build Check.</p></div>
-        <div style="margin-left:auto"><button class="btn sm primary" onclick="App.runSdsi()">Re-run SDSI</button></div></div>`:''}
-      ${cards}
-      ${laterBlock}
+      <h1 class="title">Strengthen your questions</h1>
+      <p class="lede">Open any flagged question to strengthen it, one at a time. ReliCheck shows what it noticed, why it matters, and a way to fix it. Your score updates as you go.</p>
+      ${state.sdsiStale?`<div class="callout amber" style="margin-bottom:16px"><div class="ci">${SVG.info}</div><div><h4>Survey changed</h4><p style="margin:0">Re-run the Build Check to refresh your saved score.</p></div>
+        <div style="margin-left:auto"><button class="btn sm primary" onclick="App.runSdsi()">Re-run Build Check</button></div></div>`:''}
+      <div class="card" style="margin-bottom:16px"><div class="qsl-scorecard">
+        <div class="qsl-ring" style="--p:${ringP}"><b>${total!=null?total.toFixed(1):'—'}</b></div>
+        <div class="qsl-sx">
+          <h2>SDSI ${total!=null?total.toFixed(1):'—'} / 50${band?` · <span class="badge ${bandCls}">${e(band)}</span>`:''}</h2>
+          <p>${sub}</p>
+        </div>
+        ${active.length?`<button class="btn primary" onclick="App.openStrengthLab(${firstActive})">Strengthen my questions ${SVG.arrow}</button>`:''}
+      </div></div>
+      <div class="card">${rows}</div>
       <div class="btn-row" style="margin-top:18px">
         <button class="btn" onclick="App.go('sdsi')">← Build Check</button>
         <div class="spacer"></div>
@@ -2733,24 +3373,56 @@ const Screens = {
   },
 
   preview(){
-    const s=state.survey||MOCK.builtSurvey;
-    const q=s.questions[0]||{t:'How satisfied are you with your role overall?',type:'Likert (5-pt)'};
-    const opts=['Strongly disagree','Disagree','Neutral','Agree','Strongly agree']
-      .map(o=>`<label style="display:flex;gap:10px;align-items:center;padding:12px 14px;border:1.5px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer"><span style="width:16px;height:16px;border-radius:50%;border:2px solid var(--line)"></span>${o}</label>`).join('');
+    const e=escapeHtml;
+    const s=state.survey;
+    const qs=(s&&s.questions)||[];
+    if(!qs.length){
+      return `<div class="screen">
+        <div class="eyebrow">Step 5 · Preview</div>
+        <h1 class="title">Respondent preview</h1>
+        <p class="lede">This is exactly what respondents will see, as a single page.</p>
+        <div class="callout amber" style="margin-bottom:18px"><div class="ci">${SVG.info}</div><div><h4>No questions yet</h4>
+          <p style="margin:0">Add or import your questions in Build, then preview the whole survey here.</p>
+          <div style="margin-top:10px"><button class="btn sm" onclick="App.go('build')">← Go to Build</button></div></div></div>
+        <div class="btn-row"><button class="btn" onclick="App.go('revise')">← Revise</button></div>
+      </div>`;
+    }
+    const structuralTypes=['Section Text','Page Break','Thank-you Message'];
+    const title=e((s&&s.title)||state.study.name||'Untitled survey');
+    // Render the ENTIRE survey as one scrollable page — the real respondent form
+    // is single-page, so the preview shows every question at once (no pagination).
+    let n=0;
+    const rows=qs.map(q=>{
+      if(q.type==='Page Break') return `<div class="pv-break">Page break</div>`;
+      if(structuralTypes.includes(q.type)){
+        return `<div class="pv-section"><div class="pv-section-t">${e(q.t||'')}</div></div>`;
+      }
+      n++;
+      const req=q.required?` <span style="color:var(--accent)" title="Required">*</span>`:'';
+      return `<div class="pv-q">
+        <div class="pv-q-stem"><span class="pv-q-n">${n}.</span> ${e(q.t||'(untitled question)')}${req}</div>
+        <div class="pv-q-body">${qPreview(q)}</div>
+      </div>`;
+    }).join('');
+    const nQ=qs.filter(q=>!structuralTypes.includes(q.type)).length;
     return `<div class="screen">
       <div class="eyebrow">Step 5 · Preview</div>
       <h1 class="title">Respondent preview</h1>
-      <p class="lede">Exactly what respondents will see across devices. Step through the flow before you publish.</p>
-      <div class="card pad" style="max-width:620px;margin:0 auto">
-        <div class="faint" style="font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">Question 1 of ${s.questions.length}</div>
-        <h3 style="font-size:21px;font-weight:700;margin:10px 0 18px;letter-spacing:-0.01em">${q.t}</h3>
-        ${opts}
-        <div class="btn-row" style="margin-top:18px"><div class="spacer"></div><button class="btn blue" onclick="App.stub('Next question')">Next →</button></div>
+      <p class="lede">The whole survey on one page, exactly as respondents will see it. ${nQ} question${nQ===1?'':'s'}.</p>
+      <div class="pv-form">
+        <div class="pv-form-head">
+          <h2 style="margin:0;font-size:20px;font-weight:800;letter-spacing:-0.02em">${title}</h2>
+          ${state.study.purpose?`<p class="muted" style="margin:6px 0 0;font-size:13.5px">${e(state.study.purpose)}</p>`:''}
+        </div>
+        <div class="pv-form-body">${rows}</div>
+        <div class="pv-form-foot">
+          <button class="btn primary" disabled style="opacity:.7;cursor:default">Submit response</button>
+          <span class="muted" style="font-size:12.5px;margin-left:12px">Preview only. Responses are not recorded here.</span>
+        </div>
       </div>
-      <div class="btn-row" style="max-width:620px;margin-left:auto;margin-right:auto">
+      <div class="btn-row" style="margin-top:18px">
         <button class="btn" onclick="App.go('revise')">← Revise</button>
         <div class="spacer"></div>
-        <button class="btn" onclick="App.stub('Preview on mobile')">Mobile view</button>
         <button class="btn primary lg" onclick="App.runSiri()">Continue to readiness review ${SVG.arrow}</button>
       </div>
     </div>`;
@@ -2766,7 +3438,7 @@ const Screens = {
       review: {cls:'amber',badge:'Needs review',     line:'The Launch Check is out of date. Re-run SIRI to confirm readiness.'},
       ready:  {cls:'green',badge:'Ready to publish', line:'The Launch Check passed with no unresolved blockers.'}
     }[g.status];
-    const score = r ? `<span class="muted" style="font-size:13.5px">SIRI ${r.totalPoints.toFixed(1)} / 100 · ${e(r.verdict)}</span>` : '';
+    const score = r ? `<span class="muted" style="font-size:13.5px">${ r.total!=null ? ('Total '+r.total.toFixed(1)+' / 100 · '+e(r.total_band)) : ('SIRI '+r.siri.toFixed(1)+' / 50') }</span>` : '';
 
     // Blocker / reason rows, each routed back through the Phase 2E fix routing.
     let reasonRows='';
@@ -2809,6 +3481,21 @@ const Screens = {
         </div>`
       : '';
 
+    // Acknowledged override: a user may publish past a HARD blocker, but only
+    // after explicitly checking that they understand the risk. Cautions never
+    // reach here (they are not blockers); this shows only for status 'blocked'.
+    const overrideBlock = (g.status==='blocked')
+      ? `<div class="card pad" style="margin-bottom:18px;border-color:rgba(194,73,47,.3)">
+          <h2 class="sec" style="margin-top:0">Publish without resolving</h2>
+          <p class="muted" style="font-size:14px;margin:0 0 12px">You can publish with the issues above unresolved. The warnings stay on record, and you are responsible for anything missing, such as a documented consent or privacy notice. Resolving them first is strongly recommended.</p>
+          <label style="display:flex;gap:9px;align-items:flex-start;font-size:14px;cursor:pointer;margin-bottom:14px">
+            <input type="checkbox" ${state.publishOverride?'checked':''} onchange="App.setPublishOverride(this.checked)" style="margin-top:3px;width:16px;height:16px">
+            <span>I understand this survey has unresolved launch issues and I choose to publish anyway.</span>
+          </label>
+          <button class="btn primary lg" onclick="App.publishNow(true)" ${state.publishOverride?'':'disabled style="opacity:.5;cursor:not-allowed"'} title="${state.publishOverride?'':'Check the box above to publish anyway'}">Publish anyway ${SVG.arrow}</button>
+        </div>`
+      : '';
+
     return `<div class="screen">
       <div class="eyebrow">Step 8 · Publish Readiness</div>
       <h1 class="title">Publish readiness</h1>
@@ -2827,6 +3514,7 @@ const Screens = {
       ${sdsiWarn}
       ${reasonRows ? `<h2 class="sec">${g.status==='blocked'&&g.blockers?'Required before publishing':'What to do'}</h2>${reasonRows}` : ''}
       ${readyBlock}
+      ${overrideBlock}
 
       <div class="btn-row">
         <button class="btn" onclick="App.go('siri')">← SIRI Launch Check</button>
@@ -2835,7 +3523,9 @@ const Screens = {
           ? (ds && ds.link_key
               ? `<button class="btn primary lg" onclick="App.go('deploy')">View deploy screen ${SVG.arrow}</button>`
               : `<button class="btn primary lg" onclick="App.publishNow()">Generate survey link ${SVG.arrow}</button>`)
-          : `<button class="btn lg" disabled title="Resolve the Launch Check first" style="opacity:.5;cursor:not-allowed">Publish ${SVG.arrow}</button>`}
+          : (g.status==='blocked'
+              ? `<button class="btn" onclick="App.runSiri()">Re-run SIRI</button>`
+              : `<button class="btn lg" disabled title="Re-run the Launch Check first" style="opacity:.5;cursor:not-allowed">Publish ${SVG.arrow}</button>`)}
       </div>
     </div>`;
   },
@@ -2843,7 +3533,7 @@ const Screens = {
   deploy(){
     const e=escapeHtml;
     const ds=state.deploymentSettings;
-    const ch=(ico,h,p,act)=>`<div class="card dest" onclick="App.stub('${act}')">
+    const ch=(ico,h,p,fn)=>`<div class="card dest" onclick="${fn}" style="cursor:pointer">
       <div class="ico">${icon(ico)}</div><h3 style="font-size:16px;font-weight:700">${h}</h3>
       <p class="muted" style="font-size:13px">${p}</p></div>`;
     const isOpen = !!(ds && ds.responses_open);
@@ -2873,15 +3563,15 @@ const Screens = {
       ${linkBanner}
       <h2 class="sec">Deploy</h2>
       <div class="grid g3">
-        ${ch('<path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/>','Share link','Email, Slack, or embed the survey link anywhere.','Share link')}
-        ${ch('<rect x="6" y="3" width="12" height="18" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/>','QR / mobile','Generate a QR code for in-person or on-site fielding.','QR code')}
-        ${ch('<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>','Invite panel','Send to a managed respondent list with reminders.','Invite panel')}
+        ${ch('<path d="M4 4h16v12H5.2L4 17.2z"/><path d="M8 9h8M8 12h5"/>','Share link','Email or embed the survey link anywhere.','App.shareLink()')}
+        ${ch('<rect x="6" y="3" width="12" height="18" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/>','QR / mobile','Generate a QR code for in-person or on-site fielding.','App.showQR()')}
+        ${ch('<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/>','Invite panel','Compose an email invite to a respondent list.','App.invitePanel()')}
       </div>
       <h2 class="sec">Export instrument</h2>
       <div class="grid g3">
-        ${ch('<path d="M14 3v5h5"/><path d="M7 3h7l5 5v13H7z"/><path d="M9 13h6M9 17h6"/>','Word / PDF','Print-ready instrument for offline use.','Export Word/PDF')}
-        ${ch('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h16"/>','CSV / Excel','Item bank + response schema for other tools.','Export CSV')}
-        ${ch('<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 1 2-2v-3"/>','API / Qualtrics','Push to an external survey platform.','Export to platform')}
+        ${ch('<path d="M14 3v5h5"/><path d="M7 3h7l5 5v13H7z"/><path d="M9 13h6M9 17h6"/>','Word / PDF','Print-ready instrument for offline use.','App.exportInstrumentDoc()')}
+        ${ch('<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 4v16M4 9h16"/>','CSV / Excel','Item bank export for other tools.','App.exportInstrumentCsv()')}
+        ${ch('<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 1 2-2v-3"/>','API / Qualtrics','Export a portable file to import elsewhere.','App.exportInstrumentJson()')}
       </div>
       <div class="btn-row">
         <button class="btn" onclick="App.go('publish')">← Publish</button>
@@ -2905,7 +3595,7 @@ const Screens = {
       </div>`;
 
     // Database mode is required to read stored responses.
-    if(!(PERSIST.on && state.projectId)){
+    if(!(PERSIST_REQUESTED && state.projectId)){
       return `<div class="screen">${header}
         <div class="callout amber" style="margin-bottom:22px"><div class="ci">${SVG.info}</div>
           <div><h4>Database mode required</h4><p style="margin:0">Open this project in database mode to view collected responses.</p></div></div>
@@ -3003,7 +3693,7 @@ const Screens = {
         ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','MM Studio','Mixed methods — qualitative themes + quantitative analysis together.',false,
           `window.location.href='/mmstudioV4.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
         ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','Qualitative Studio','Code responses, build themes, and develop evidence-supported qualitative interpretations.',false,
-          `window.location.href='/qual-studio-workspace.php'`,'Open')}
+          `window.location.href='/qual-studio-workspaceV3.php'`,'Open')}
       </div>
       <div class="btn-row">
         <button class="btn" onclick="App.go('retrieve')">← Responses</button>
@@ -3021,15 +3711,16 @@ const Screens = {
     const header = `
       <div class="eyebrow">RSSI · Dataset loader</div>
       <h1 class="title">RSSI dataset</h1>
-      <p class="lede">Your stored responses, loaded into an analysis-ready dataset for the ReliCheck Survey Strength Index. This step prepares the data only. No reliability score is calculated yet.</p>`;
+      <p class="lede">Load response data for the ReliCheck Survey Strength Index. Use your collected survey responses or upload a CSV / Excel file. This step prepares the data only — no reliability score is calculated yet.</p>`;
     const navRow = `
       <div class="btn-row">
         <button class="btn" onclick="App.go('analysis')">← Hand off</button>
         <div class="spacer"></div>
+        <button class="btn sm" onclick="App.openUploadDataset()">${SVG.import} Upload data</button>
         <button class="btn sm" onclick="App.refreshDataset()">Refresh</button>
       </div>`;
 
-    if(!(PERSIST.on && state.projectId)){
+    if(!(PERSIST_REQUESTED && state.projectId)){
       return `<div class="screen">${header}
         <div class="callout amber" style="margin-bottom:22px"><div class="ci">${SVG.info}</div>
           <div><h4>Database mode required</h4><p style="margin:0">Open this project in database mode to load its response dataset.</p></div></div>
@@ -3052,17 +3743,30 @@ const Screens = {
     const d=state.dataset;
     const c=d.counts||{}, resp=d.responses||{}, ft=d.fieldTypeSummary||{};
 
+    // Source banner: show when using an uploaded dataset vs collected responses.
+    const sourceBanner = d.linkedDatasetId
+      ? `<div class="callout" style="margin-bottom:18px;background:var(--accent-soft,#fff8f6);border-color:rgba(15,158,123,.18)"><div class="ci">${SVG.import}</div>
+          <div style="flex:1"><b>Using uploaded dataset:</b> ${e(d.datasetTitle||'Uploaded data')}
+            <span style="margin-left:10px"><button class="btn sm" onclick="App.openUploadDataset()" style="font-size:12px">Change</button></span></div></div>`
+      : (resp.total_n===0
+          ? `<div class="callout amber" style="margin-bottom:18px"><div class="ci">${SVG.info}</div>
+              <div><p style="margin:0 0 8px">No collected responses yet. You can upload a CSV or Excel file of existing response data to score with RSSI.</p>
+                <button class="btn sm" onclick="App.openUploadDataset()">${SVG.import} Upload data file</button></div></div>`
+          : '');
+
     // N-adequacy fence panel (the alpha-fence stance, shown plainly).
     const fenceClass = resp.too_few_responses ? 'amber' : '';
     const fenceNotes=(resp.fence_notes||[]).map(n=>`<li>${e(n)}</li>`).join('');
+    const fenceLabel = d.linkedDatasetId ? 'rows' : 'responses';
     const fence = `<div class="callout ${fenceClass}" style="margin-bottom:22px"><div class="ci">${SVG.info}</div>
       <div style="flex:1"><h4 style="margin:0 0 4px">Sample size check</h4>
-        <p style="margin:0 0 6px">Analyzable responses: <b>${e(String(resp.analyzable_n))}</b> of ${e(String(resp.total_n))} collected. Minimum for reliability claims: ${e(String(resp.min_n))}.</p>
+        <p style="margin:0 0 6px">Analyzable ${fenceLabel}: <b>${e(String(resp.analyzable_n))}</b> of ${e(String(resp.total_n))} total. Minimum for reliability claims: ${e(String(resp.min_n))}.</p>
         <ul style="margin:0;padding-left:18px">${fenceNotes}</ul></div></div>`;
 
     // Top-line counts.
+    const rowLabel = d.linkedDatasetId ? 'row' : 'response';
     const stats = `<div class="grid g4" style="margin-bottom:8px">
-      <div class="card stat"><div class="n">${e(String(resp.total_n))}</div><div class="l">response${resp.total_n===1?'':'s'}</div></div>
+      <div class="card stat"><div class="n">${e(String(resp.total_n))}</div><div class="l">${rowLabel}${resp.total_n===1?'':'s'}</div></div>
       <div class="card stat"><div class="n">${e(String(c.items_input||0))}</div><div class="l">input items</div></div>
       <div class="card stat"><div class="n">${e(String(c.constructs_mapped||0))}</div><div class="l">construct group${(c.constructs_mapped||0)===1?'':'s'}</div></div>
       <div class="card stat"><div class="n">${e(String(c.items_scorable||0))}</div><div class="l">scorable items</div></div>
@@ -3134,6 +3838,7 @@ const Screens = {
       :'';
 
     return `<div class="screen">${header}
+      ${sourceBanner}
       ${fence}
       ${stats}
       <h2 class="sec" style="margin:18px 0 10px">RSSI report</h2>
@@ -3459,10 +4164,15 @@ const Screens = {
    RENDER. Stepper rail + active screen
    ════════════════════════════════════════════════════════════════════ */
 function railView(){
-  // Map sub-routes (templates, pick-existing) back onto a stepper step.
+  // One rail, always the full development pipeline. The project mode controls
+  // routing (where an upload lands, where a reopened project opens), NOT which
+  // steps are visible — every project shows the complete pipeline.
+  const STEPS = STEPS_BUILD;
+  // Map sub-routes back onto a stepper step. The dataset screen lives under the
+  // final 'analysis' (RSSI / Studios) step.
   const routeStep = { templates:'start', 'pick-existing':'start', setup:'setup', build:'build',
-    sdsi:'sdsi', revise:'revise', preview:'preview', siri:'siri', publish:'publish', deploy:'deploy',
-    retrieve:'retrieve', analysis:'analysis', dataset:'analysis', start:'start' };
+        sdsi:'sdsi', revise:'revise', preview:'preview', siri:'siri', publish:'publish', deploy:'deploy',
+        retrieve:'retrieve', analysis:'analysis', dataset:'analysis', start:'start' };
   const active = routeStep[state.route]||'start';
   const order = STEPS.map(s=>s.id);
   const activeIdx = order.indexOf(active);
@@ -3500,43 +4210,64 @@ function render(){
   appEl.className = 'wrap' + (r === 'build' ? ' wrap-build' : '');
   appEl.innerHTML = banner + fn();
   App._focusAfterRender();
-  // Wire drag-and-drop on the survey file drop zone (only present on import/upload screen).
-  const dropZone = document.getElementById('surveyFileDrop');
-  if(dropZone){
-    dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.querySelector('.file-drop-inner').style.borderColor='var(--accent)'; });
-    dropZone.addEventListener('dragleave', ()=>{ dropZone.querySelector('.file-drop-inner').style.borderColor=''; });
-    dropZone.addEventListener('drop', e=>{ e.preventDefault(); const f=e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) App.handleSurveyFile(f); });
-  }
 }
 
-// Boot: in db mode, probe the server (templates-list doubles as an auth check)
-// and rehydrate the last project from localStorage so a page reload restores
-// the saved project. Any failure degrades gracefully to mock mode.
+// Boot: probe the server for auth + templates. Always lands on the start screen
+// so a page reload never drops the user into a stale project workspace.
+// Projects are re-opened intentionally via "Work on a Saved Survey" on the start screen.
 async function boot(){
   const _start = new URLSearchParams(location.search).get('start');
-  // ?start=choose forces the "How would you like to begin?" Start page even if a
-  // project is saved in localStorage (used by other studios linking here).
-  const _forceStart = (_start === 'choose');
+  // Consume the ?start hint ONCE, then strip it from the address bar so a later
+  // hard-reload returns to the Start screen instead of re-firing the same entry.
+  if(_start){ try { history.replaceState(null, '', location.pathname); } catch(e){} }
   if(PERSIST.on){
     try {
       const t=await DB.call('templates-list.php');
       state.remoteTemplates=t.templates;
-      let pid=null; if(!_forceStart){ try { pid=localStorage.getItem(LS_KEY); } catch(e){} }
-      if(pid){
-        try { const r=await DB.call('project-load.php?id='+encodeURIComponent(pid)); DB.hydrate(r); state.route='build'; state.reached.build=true; }
-        catch(e){ try{localStorage.removeItem(LS_KEY);}catch(_){} }
-      }
     } catch(e){ degrade(e.message); }
   }
   // Entry hint from the Survey Development System landing (survey-dev.php):
-  // ?start=scratch|import|existing|template|ai-build|ai-assist routes the
-  // user straight to that entry instead of the generic start picker.
-  const _validStart = ['scratch','import','existing','template','ai-build','ai-assist'];
+  // ?start=scratch|existing|template|ai-build|ai-assist routes the user straight
+  // to that entry. 'import' is intentionally NOT here: bringing in an existing
+  // survey is now the upload widget on the Start screen, not a paste screen.
+  const _validStart = ['scratch','existing','template','ai-build','ai-assist'];
   if(_start && _validStart.includes(_start)){ App.setEntry(_start); return; }
   render();
 }
 
 boot();
+</script>
+
+<script>
+(function(){
+  var btn  = document.getElementById('devUserBtn');
+  var menu = document.getElementById('devUserMenu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', function() {
+    menu.classList.remove('open');
+    btn.setAttribute('aria-expanded', 'false');
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && menu.classList.contains('open')) {
+      menu.classList.remove('open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.focus();
+    }
+  });
+  var so = document.getElementById('devSignOut');
+  if (so) so.addEventListener('click', function(e) {
+    e.preventDefault();
+    fetch('/api/auth/logout.php', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).finally(function() { window.location.href = '/login.html'; });
+  });
+})();
 </script>
 </body>
 </html>

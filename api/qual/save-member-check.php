@@ -11,6 +11,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 require_method('POST');
 check_origin();
 $user      = require_auth();
+release_session_lock();
 $pdo       = db();
 $uid       = (int)$user['id'];
 

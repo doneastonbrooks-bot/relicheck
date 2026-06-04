@@ -1,167 +1,146 @@
 /* SIRI Launch Check engine — behaviour tests (run: node launchcheck-engine.test.js)
-   Loads siri-readiness.js first so LaunchCheck reuses SiriReadiness.aggregate. */
-'use strict';
-global.window = global;
-require('./siri-readiness.js');
+   Tests the 50-point, five-domain whole-survey readiness model and the
+   Total Survey Strength (SDSI + SIRI = 100) combination + band cap.
+
+       SDSI = 50-pt item/question validity  (separate engine)
+       SIRI = 50-pt whole-survey readiness  (this engine)
+       Total = SDSI + SIRI = 100
+*/
 var LaunchCheck = require('./launchcheck-engine.js');
 
-var pass = 0, fail = 0, fails = [];
-function ok(cond, msg) { if (cond) { pass++; } else { fail++; fails.push(msg); } }
+var pass = 0, fail = 0;
+function ok(cond, msg) { if (cond) { pass++; } else { fail++; console.log('  FAIL: ' + msg); } }
+function domain(res, key) { return (res.domains || []).filter(function (d) { return d.key === key; })[0]; }
 
-// Documented consent block — used to isolate OTHER behaviour from the 2D consent blocker.
-var DOC = { consent: { documented: true, statement: 'Responses are voluntary and confidential; we use them only to improve onboarding.' } };
-function withDoc(over) { return Object.assign({}, DOC, over || {}); }
-
-function proj(over) {
+// ── builders ──────────────────────────────────────────────────────────────
+function likert(construct, prompt, extra) {
   return Object.assign({
-    purpose: 'Measure how supported new hires feel in their first 90 days so we can improve onboarding.',
-    population: 'New hires in their first 90 days',
-    mode: 'Online',
-    constructs: [{ name: 'Support', definition: 'Perceived availability of help, resources, and guidance from managers and peers.' }],
-    items: [],
-    sections: [{ id: 's1' }]
-  }, over || {});
+    type: 'Likert (5-pt)',
+    prompt: prompt || 'I am treated with respect at work.',
+    options: ['Strongly disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly agree'],
+    construct: construct, required: false, section: 'Main',
+    settings: { points: 5, likertLow: 'Strongly disagree', likertHigh: 'Strongly agree' }
+  }, extra || {});
 }
-function mkItems(n, over) {
-  var arr = [];
-  for (var i = 0; i < n; i++) {
-    arr.push(Object.assign({
-      item_ref: 'q' + (i + 1), item_no: i + 1, type: 'Likert Scale',
-      prompt: 'I feel supported by my team in clear way number ' + (i + 1) + '.',
-      construct: 'Support', options: [], settings: { points: 5 }
-    }, over || {}));
-  }
-  return arr;
+function manyLikert(n, construct) {
+  var a = []; for (var i = 0; i < n; i++) a.push(likert(construct || (i % 2 ? 'Support' : 'Climate'), 'Scale item ' + i)); return a;
 }
-function domain(r, key) { return r.domains.filter(function (d) { return d.key === key; })[0]; }
-function lens(d, key) { return d.lenses.filter(function (l) { return l.key === key; })[0]; }
-function lensOf(r, dkey, lkey) { return lens(domain(r, dkey), lkey); }
+var CONSENT = { type: 'Consent', prompt: 'Your responses are voluntary and confidential and will be used only in aggregate.', options: ['I agree'] };
+function goodProject(extra) {
+  var items = [CONSENT];
+  for (var i = 0; i < 3; i++) items.push(likert('Climate', 'Climate item ' + i));
+  for (var j = 0; j < 3; j++) items.push(likert('Support', 'Support item ' + j));
+  return Object.assign({
+    title: 'Team Climate Pulse',
+    purpose: 'Measure team climate and managerial support to inform coaching decisions next quarter.',
+    population: 'All staff', planned_use: 'Identify teams needing support and track change over time.',
+    items: items, constructs: [{ name: 'Climate' }, { name: 'Support' }], sections: [{ id: 1, title: 'Main' }]
+  }, extra || {});
+}
 
-console.log('SIRI Launch Check engine tests\n');
+console.log('SIRI Launch Check engine tests (50-pt, 5-domain)\n');
 
-// 1. Max is 100; domain maxes are 50/35/15; per-lens weights sum correctly.
-var full = LaunchCheck.assess(proj({ items: mkItems(6) }));
-ok(full.maxPoints === 100, 'SIRI maxPoints is 100 (got ' + full.maxPoints + ')');
-ok(domain(full, 'validity').maxPoints === 50, 'Validity domain max is 50');
-ok(domain(full, 'reliability').maxPoints === 35, 'Reliability domain max is 35');
-ok(domain(full, 'administration').maxPoints === 15, 'Administration domain max is 15');
-['validity', 'reliability', 'administration'].forEach(function (k) {
-  var d = domain(full, k);
-  var w = d.lenses.reduce(function (a, l) { return a + l.weight; }, 0);
-  ok(w === d.maxPoints, 'Lens weights for ' + k + ' sum to ' + d.maxPoints + ' (got ' + w + ')');
-});
+// ── 1. Structure / contract ─────────────────────────────────────────────────
+var good = LaunchCheck.assess(goodProject());
+ok(good.max === 50, 'SIRI max is 50 (got ' + good.max + ')');
+ok(good.domains.length === 5, 'Five domains (got ' + good.domains.length + ')');
+ok(good.domains.every(function (d) { return d.max === 10; }), 'Each domain max is 10');
+var keys = good.domains.map(function (d) { return d.key; }).sort().join(',');
+ok(keys === 'coverage,deployment,purpose,scale,structure', 'Domain keys are the five expected (got ' + keys + ')');
+ok(good.domains.every(function (d) { return !/reliab/i.test(d.name); }), 'No reliability domain (RSSI owns reliability)');
+ok(Math.abs(good.siri - good.domains.reduce(function (a, d) { return a + d.points; }, 0)) < 0.05, 'SIRI = sum of domain points');
+ok(good.siri >= 0 && good.siri <= 50, 'SIRI within 0..50 (got ' + good.siri + ')');
 
-// 2. Empty / no-evidence survey scores LOW, not full (no default-to-full).
-var empty = LaunchCheck.assess({ purpose: '', population: '', mode: '', constructs: [], items: [], sections: [] });
-ok(empty.totalPoints < 30, 'Empty survey scores < 30 (got ' + empty.totalPoints + ')');
-ok(domain(empty, 'administration').totalPoints <= 5, 'Empty Administration <= 5 (got ' + domain(empty, 'administration').totalPoints + ')');
+// ── 2. A clean, well-specified survey scores at or near the top ──────────────
+ok(good.siri >= 48, 'Well-specified survey scores high (got ' + good.siri + ' / 50)');
+ok((good.flags || []).filter(function (f) { return f.severity === 'critical'; }).length === 0, 'Clean survey has no critical flags');
 
-// 3. A fully-specified survey scores strictly higher than the empty one.
-ok(full.totalPoints > empty.totalPoints, 'Fully specified scores higher than empty (' + full.totalPoints + ' > ' + empty.totalPoints + ')');
-ok(domain(full, 'validity').pct >= 70, 'Built survey Validity reaches at least moderate (got ' + domain(full, 'validity').pct + '%)');
-ok(domain(full, 'administration').totalPoints <= 9, 'Administration stays modest without launch fields (got ' + domain(full, 'administration').totalPoints + ')');
+// ── 3. Empty / blank survey scores low ───────────────────────────────────────
+var empty = LaunchCheck.assess({ purpose: '', population: '', planned_use: '', items: [], constructs: [], sections: [] });
+ok(empty.siri <= 30, 'Empty survey scores low (got ' + empty.siri + ' / 50)');
+ok(empty.siri < good.siri, 'Empty scores lower than well-specified (' + empty.siri + ' < ' + good.siri + ')');
+ok(domain(empty, 'purpose').points <= 1, 'Empty purpose domain near 0 (no purpose/audience/use)');
 
-// 4. ORTHOGONAL: a critical SDSI flag flips the verdict WITHOUT changing the number.
-//    (consent documented so the ONLY differing blocker is the SDSI flag.)
-var base = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC }));
-var gated = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC }), { sdsiResult: { flags: [{ severity: 'critical' }] } });
-ok(gated.totalPoints === base.totalPoints, 'Critical SDSI flag does not change the number (' + gated.totalPoints + ' === ' + base.totalPoints + ')');
-ok(base.blocked === false, 'Base survey (consent documented) is not blocked');
-ok(gated.blocked === true, 'Critical SDSI flag blocks the verdict');
-ok(gated.verdict === 'Blocked for review', 'Gated verdict reads "Blocked for review"');
+// ── 4. Domain behaviours ─────────────────────────────────────────────────────
+var noPurpose = LaunchCheck.assess(goodProject({ purpose: '', population: '', planned_use: '' }));
+ok(domain(noPurpose, 'purpose').points < domain(good, 'purpose').points, 'Missing purpose lowers the Purpose domain');
 
-// 5. Format neutrality: a pure open-ended survey is NOT penalised on scale lenses.
-var openSurvey = LaunchCheck.assess(proj({ items: mkItems(6, { type: 'Long Answer', settings: {}, options: [] }) }));
-ok(lensOf(openSurvey, 'reliability', 'scale_structure_readiness').score === 100, 'Open-ended: Scale Structure not penalised');
-ok(lensOf(openSurvey, 'reliability', 'response_scale_consistency').score === 100, 'Open-ended: Response Scale Consistency not penalised');
-ok(lensOf(openSurvey, 'validity', 'response_option_validity').score === 100, 'Open-ended: Response-Option Validity not penalised');
+// frequency stem on an agreement scale -> scale ding
+var freq = LaunchCheck.assess(goodProject({
+  items: [CONSENT].concat([
+    likert('Climate', 'How often does your manager give you useful feedback?'),
+    likert('Climate', 'Climate b'), likert('Climate', 'Climate c'),
+    likert('Support', 'Support a'), likert('Support', 'Support b'), likert('Support', 'Support c')
+  ])
+}));
+ok(domain(freq, 'scale').points < 10, 'Frequency stem on an agreement scale dings Scale (got ' + domain(freq, 'scale').points + ')');
 
-// 6. CONSENT IS NOW A HARD BLOCKER (Phase 2D), orthogonal to the number.
-var noConsent = LaunchCheck.assess(proj({ items: mkItems(6) }));
-ok(lensOf(noConsent, 'administration', 'consent_privacy').score === 0, 'Missing consent loses all Consent points');
-ok(noConsent.blocked === true, 'Missing consent now hard-blocks (2D)');
-ok(lensOf(noConsent, 'administration', 'consent_privacy').launchReady === false, 'Consent lens marked not launch-ready when undocumented');
-var docConsent = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC }));
-ok(lensOf(docConsent, 'administration', 'consent_privacy').score === 100, 'Documented consent earns full Consent points');
-ok(docConsent.blocked === false, 'Documented consent clears the block');
-var itemConsent = LaunchCheck.assess(proj({ items: [{ type: 'Consent', prompt: 'I agree to participate.', options: ['I agree'] }].concat(mkItems(6)) }));
-ok(lensOf(itemConsent, 'administration', 'consent_privacy').score === 100, 'A Consent item also earns full credit');
-ok(itemConsent.blocked === false, 'A Consent item also clears the block');
-ok(lensOf(docConsent, 'administration', 'consent_privacy').points === lensOf(itemConsent, 'administration', 'consent_privacy').points, 'Documented-field and Consent-item give identical Consent lens points');
+// mixed Likert lengths -> scale ding
+var mixed = LaunchCheck.assess(goodProject({
+  items: [CONSENT].concat([
+    likert('Climate', 'a'), likert('Climate', 'b'), likert('Climate', 'c'),
+    likert('Support', 'd', { settings: { points: 7, likertLow: 'Strongly disagree', likertHigh: 'Strongly agree' } }),
+    likert('Support', 'e'), likert('Support', 'f')
+  ])
+}));
+ok(domain(mixed, 'scale').points < 10, 'Mixed Likert scale lengths ding the Scale domain');
 
-// 6b. Partial consent (thin statement): scores 50 but still blocks (strict rule).
-var partialConsent = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: { consent: { documented: true, statement: 'short' } } }));
-ok(lensOf(partialConsent, 'administration', 'consent_privacy').score === 50, 'Partial consent scores 50 (got ' + lensOf(partialConsent, 'administration', 'consent_privacy').score + ')');
-ok(partialConsent.blocked === true, 'Partial consent does NOT clear the blocker');
+// required sensitive item with no decline path -> deployment CRITICAL
+var sensitive = LaunchCheck.assess(goodProject({
+  items: goodProject().items.concat([{ type: 'Single Choice', prompt: 'What is your race or ethnicity?', options: ['White', 'Black', 'Asian'], required: true, section: 'Demographics' }])
+}));
+ok(domain(sensitive, 'deployment').points === 0, 'Required sensitive item with no decline zeros Deployment (critical)');
+ok((sensitive.flags || []).some(function (f) { return f.severity === 'critical'; }), 'Required-sensitive emits a critical flag');
 
-// 7. Sensitive topic without a decline path blocks; with a decline option it does not.
-//    (consent documented so sensitive is the only varying blocker.)
-var raceNo = mkItems(6).concat([{ item_ref: 'qx', item_no: 7, type: 'Multiple Choice', prompt: 'What is your race?', construct: 'Support', options: ['A', 'B'] }]);
-var raceDecline = mkItems(6).concat([{ item_ref: 'qx', item_no: 7, type: 'Multiple Choice', prompt: 'What is your race?', construct: 'Support', options: ['A', 'B', 'Prefer not to answer'] }]);
-var sensitive = LaunchCheck.assess(proj({ items: raceNo, launchReadiness: DOC }));
-ok(sensitive.blocked === true, 'Sensitive topic with no decline path blocks');
-var sensitiveDecline = LaunchCheck.assess(proj({ items: raceDecline, launchReadiness: DOC }));
-ok(sensitiveDecline.blocked === false, 'Sensitive topic WITH a decline option does not block');
+// remove consent -> deployment lower
+var noConsent = LaunchCheck.assess(goodProject({ items: goodProject().items.slice(1) /* drop CONSENT */ }));
+ok(domain(noConsent, 'deployment').points < domain(good, 'deployment').points, 'Removing consent lowers Deployment readiness');
 
-// 8. No construct at all blocks the verdict.
-var noConstruct = LaunchCheck.assess(proj({ constructs: [], items: mkItems(6, { construct: '' }), launchReadiness: DOC }));
-ok(noConstruct.blocked === true, 'No construct defined blocks the verdict');
+// ── 5. Total = SDSI + SIRI, bands, and number never changes ─────────────────
+var t = LaunchCheck.assess(goodProject(), { sdsiResult: { total: 45, deployment_blocker_count: 0 } });
+ok(t.total_max === 100, 'Total max is 100');
+ok(Math.abs(t.total - (45 + t.siri)) < 0.05, 'Total = SDSI + SIRI (got ' + t.total + ')');
+ok(t.sdsi === 45, 'Total carries the SDSI sub-score');
 
-// 9. Determinism (with launch-readiness fields present).
-var lrFull = withDoc({
-  instructions: { provided: true, text: 'Please answer honestly; this takes about five minutes to complete.' },
-  access: { reviewed: true, languages: 'English, Spanish', plainLanguageAlt: true, accommodationContact: 'access@org.edu' },
-  fielding: { window: 'Jun 1 - Jun 14, 2026', channel: 'Email link', estMinutes: '5' },
-  dignity: { reviewed: true }, sensitive: { hasSensitive: false, declineProvided: false }
-});
-ok(JSON.stringify(LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: lrFull }))) ===
-   JSON.stringify(LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: lrFull }))), 'assess is deterministic with launch fields');
+function bandFor(sdsiTotal) { return LaunchCheck.assess(goodProject(), { sdsiResult: { total: sdsiTotal, deployment_blocker_count: 0 } }).total_band; }
+ok(bandFor(45) === 'Strong', '95 -> Strong (got ' + bandFor(45) + ')');
+ok(bandFor(35) === 'Good', '85 -> Good (got ' + bandFor(35) + ')');
+ok(bandFor(25) === 'Caution', '75 -> Caution (got ' + bandFor(25) + ')');
+ok(bandFor(15) === 'Weak', '65 -> Weak (got ' + bandFor(15) + ')');
+ok(bandFor(5) === 'Not ready', '55 -> Not ready (got ' + bandFor(5) + ')');
 
-// 10. SIRI is /100 with a 50-pt validity domain (own rubric, separate from SDSI's 50).
-ok(full.maxPoints === 100 && domain(full, 'validity').maxPoints === 50, 'SIRI is /100 with a 50-pt validity domain');
+// ── 6. Band cap: blockers cap the band, never the number ────────────────────
+// One SIRI critical (sensitive item) + strong numbers -> raw high, capped Caution.
+var capped1 = LaunchCheck.assess(
+  goodProject({ items: goodProject().items.concat([{ type: 'Single Choice', prompt: 'What is your race?', options: ['A', 'B'], required: true, section: 'Demographics' }]) }),
+  { sdsiResult: { total: 46, deployment_blocker_count: 0 } }
+);
+ok(capped1.deployment_blocker_count === 1, 'One SIRI critical counts as one deployment blocker');
+ok(capped1.total_raw_band === 'Good' || capped1.total_raw_band === 'Strong', 'Raw band is high before the cap (got ' + capped1.total_raw_band + ')');
+ok(capped1.total_band === 'Caution', '>=1 blocker caps the band to Caution (got ' + capped1.total_band + ')');
+ok(capped1.total_band_was_capped === true, 'Cap is flagged');
+ok(Math.abs(capped1.total - (46 + capped1.siri)) < 0.05, 'Capped band does NOT change the number');
 
-// ── Phase 2D additions ──────────────────────────────────────────────────────
+// Three blockers on a large survey (under 20%) -> capped Weak.
+var big = LaunchCheck.assess(
+  { title: 'Big', purpose: 'A clear and sufficiently detailed purpose statement for testing.', population: 'Staff', planned_use: 'Tracking', items: [CONSENT].concat(manyLikert(20)), constructs: [{ name: 'Climate' }, { name: 'Support' }], sections: [{ id: 1, title: 'Main' }] },
+  { sdsiResult: { total: 46, deployment_blocker_count: 3 } }
+);
+ok(big.deployment_blocker_count === 3, 'Three SDSI blockers carried through (got ' + big.deployment_blocker_count + ')');
+ok(big.total_band === 'Weak', '>=3 blockers (under 20%) cap to Weak (got ' + big.total_band + ')');
 
-// 11. Explicit instructions field beats item-based inference.
-var instrInferred = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC }));
-var instrExplicit = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ instructions: { provided: true, text: 'Answer each item honestly; there are no right or wrong answers.' } }) }));
-ok(lensOf(instrInferred, 'administration', 'respondent_instructions').score < 100, 'Without the field, instructions lens is below full (got ' + lensOf(instrInferred, 'administration', 'respondent_instructions').score + ')');
-ok(lensOf(instrExplicit, 'administration', 'respondent_instructions').score === 100, 'Documented instructions earn full credit');
+// Two blockers on a 6-item survey -> 33% -> Not ready.
+var pct20 = LaunchCheck.assess(goodProject(), { sdsiResult: { total: 46, deployment_blocker_count: 2 } });
+ok(pct20.total_band === 'Not ready', '>=20% of questions blocked -> Not ready (got ' + pct20.total_band + ')');
 
-// 12. Access cap lifts only when reviewed.
-var accOff = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC }));
-var accOn = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ access: { reviewed: true, languages: 'English, Spanish', plainLanguageAlt: true, accommodationContact: 'access@org.edu' } }) }));
-var accOffScore = lensOf(accOff, 'validity', 'access').score, accOnScore = lensOf(accOn, 'validity', 'access').score;
-ok(accOffScore <= 55, 'Access stays capped (<=55) when not reviewed (got ' + accOffScore + ')');
-ok(accOnScore > accOffScore && accOnScore <= 100, 'Access cap lifts when reviewed (' + accOnScore + ' > ' + accOffScore + ')');
+// ── 7. SIRI-only (no SDSI) returns a SIRI score but no Total ────────────────
+var siriOnly = LaunchCheck.assess(goodProject());
+ok(siriOnly.total == null, 'No Total when SDSI is not supplied');
+ok(siriOnly.siri != null, 'SIRI score present even without SDSI');
 
-// 13. Dignity cap lifts only when reviewed.
-var digOff = lensOf(LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: DOC })), 'validity', 'dignity_framing').score;
-var digOn = lensOf(LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ dignity: { reviewed: true } }) })), 'validity', 'dignity_framing').score;
-ok(digOff <= 60, 'Dignity capped (<=60) when not reviewed (got ' + digOff + ')');
-ok(digOn > digOff, 'Dignity cap lifts when reviewed (' + digOn + ' > ' + digOff + ')');
+// ── 8. Deterministic ────────────────────────────────────────────────────────
+ok(JSON.stringify(LaunchCheck.assess(goodProject(), { sdsiResult: { total: 40 } })) ===
+   JSON.stringify(LaunchCheck.assess(goodProject(), { sdsiResult: { total: 40 } })), 'assess is deterministic');
 
-// 14. Fielding gradation: 3 docs > 2 > 1 > mode-only.
-function fScore(f) { return lensOf(LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ fielding: f }) })), 'administration', 'fielding_plan').score; }
-var f3 = fScore({ window: 'Jun 1-14', channel: 'Email', estMinutes: '5' });
-var f2 = fScore({ window: 'Jun 1-14', channel: 'Email' });
-var f1 = fScore({ window: 'Jun 1-14' });
-var f0 = fScore({});
-ok(f3 === 100 && f2 === 70 && f1 === 50 && f0 === 40, 'Fielding gradation 100/70/50/40 (got ' + [f3, f2, f1, f0].join('/') + ')');
-
-// 15. Sensitive DECLARATION (no auto-detected prompts) triggers the blocker; decline clears it.
-var declNo = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ sensitive: { hasSensitive: true, declineProvided: false } }) }));
-ok(declNo.blocked === true, 'Declaring sensitive topics with no decline path blocks');
-ok(lensOf(declNo, 'administration', 'sensitive_safety').launchReady === false, 'Sensitive lens not launch-ready when declared without decline');
-var declYes = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: withDoc({ sensitive: { hasSensitive: true, declineProvided: true } }) }));
-ok(declYes.blocked === false, 'Providing a decline path clears the sensitive block');
-ok(lensOf(declYes, 'administration', 'sensitive_safety').score === 100, 'Sensitive lens full when decline provided');
-
-// 16. Fully documented launch readiness raises Administration substantially vs none.
-var fullyDoc = LaunchCheck.assess(proj({ items: mkItems(6), launchReadiness: lrFull }));
-ok(domain(fullyDoc, 'administration').totalPoints > domain(full, 'administration').totalPoints, 'Documented launch fields raise Administration (' + domain(fullyDoc, 'administration').totalPoints + ' > ' + domain(full, 'administration').totalPoints + ')');
-ok(fullyDoc.blocked === false, 'A fully documented survey is not blocked');
-
-console.log(pass + ' passed, ' + fail + ' failed');
-if (fail) { console.log('\nFailures:'); fails.forEach(function (f) { console.log('  ✗ ' + f); }); process.exit(1); }
-console.log('All SIRI Launch Check tests passed.');
+console.log('\n' + pass + ' passed, ' + fail + ' failed');
+process.exit(fail ? 1 : 0);

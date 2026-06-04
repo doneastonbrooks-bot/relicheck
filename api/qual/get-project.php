@@ -9,6 +9,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('GET');
 $user      = require_auth();
+release_session_lock();
 $pdo       = db();
 $uid       = (int)$user['id'];
 $projectId = (int)($_GET['project_id'] ?? 0);

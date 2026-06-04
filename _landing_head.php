@@ -35,7 +35,10 @@ $landing_favicon       = $landing_favicon       ?? '/logo-brand.svg';
   <meta name="robots" content="noindex,nofollow">
   <title><?= htmlspecialchars($landing_title) ?></title>
   <link rel="icon" href="<?= htmlspecialchars($landing_favicon) ?>">
-  <link rel="stylesheet" href="/landing.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,700&display=swap">
+  <link rel="stylesheet" href="/landing.css?v=<?= filemtime(__DIR__ . '/landing.css') ?>">
   <style>
     :root {
       --accent:      <?= htmlspecialchars($landing_accent) ?>;
@@ -47,33 +50,80 @@ $landing_favicon       = $landing_favicon       ?? '/logo-brand.svg';
 <body>
 
 <header class="lp-head">
-  <div style="display:flex;align-items:center;gap:18px;">
-    <?php if ($landing_logo !== ''): ?>
-      <a class="lp-brand" href="/app-2026v4.php" title="Back to ReliCheck">
-        <img src="<?= htmlspecialchars($landing_logo) ?>" alt="<?= htmlspecialchars($landing_logo_name) ?>" class="lp-brand-mark">
-        <?php if ($landing_logo_name !== ''): ?><span class="lp-brand-name"><?= htmlspecialchars($landing_logo_name) ?></span><?php endif; ?>
-      </a>
-    <?php else: ?>
-      <a class="lp-brand" href="/app-2026v4.php" title="ReliCheck home">
-        <img src="/logo-brand.svg" alt="ReliCheck" class="lp-brand-logo">
-      </a>
-    <?php endif; ?>
+  <div class="lp-head-left">
     <?php if ($landing_show_back): ?>
       <a class="lp-back-link" href="/app-2026v4.php">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 1L3 7l6 6"/></svg>
         All apps
+      </a>
+    <?php endif; ?>
+    <?php if (!empty($landing_logo)): ?>
+      <a class="lp-brand" href="#">
+        <img class="lp-brand-mark" src="<?= htmlspecialchars($landing_logo) ?>" alt="">
+        <span class="lp-brand-name"><?= htmlspecialchars($landing_logo_name) ?></span>
+      </a>
+    <?php else: ?>
+      <a class="lp-brand" href="/app-2026v4.php">
+        <img class="lp-brand-logo" src="/logo-brand.svg" alt="ReliCheck">
       </a>
     <?php endif; ?>
   </div>
   <div class="lp-head-right">
     <?php if ($landing_pill_label !== ''): ?>
       <span class="lp-app-pill">
-        <?php if ($landing_pill_mark !== ''): ?><img src="<?= htmlspecialchars($landing_pill_mark) ?>" alt=""><?php endif; ?>
+        <?php if (!empty($landing_pill_mark)): ?><img src="<?= htmlspecialchars($landing_pill_mark) ?>" alt=""><?php endif; ?>
         <?= htmlspecialchars($landing_pill_label) ?>
       </span>
     <?php endif; ?>
-    <a class="lp-user" href="#" title="<?= htmlspecialchars($landing_user_full) ?>"><?= htmlspecialchars($landing_user_initials) ?></a>
+    <div class="lp-user-wrap">
+      <button class="lp-user" id="lpUserBtn" aria-haspopup="menu" aria-expanded="false" title="<?= htmlspecialchars($landing_user_full) ?>">
+        <?= htmlspecialchars($landing_user_initials ?: 'U') ?>
+      </button>
+      <div class="lp-user-menu" id="lpUserMenu" role="menu">
+        <div class="lp-menu-profile">
+          <div class="lp-menu-avatar"><?= htmlspecialchars($landing_user_initials ?: 'U') ?></div>
+          <span class="lp-menu-name"><?= htmlspecialchars($landing_user_full) ?></span>
+        </div>
+        <div class="lp-menu-divider"></div>
+        <a class="lp-menu-item" href="/account.php" role="menuitem">My account</a>
+        <a class="lp-menu-item" href="/projects.php" role="menuitem">Projects</a>
+        <div class="lp-menu-divider"></div>
+        <a class="lp-menu-item" href="#" role="menuitem" id="lpSignOut">Sign out</a>
+      </div>
+    </div>
   </div>
 </header>
+
+<script>
+(function(){
+  var btn = document.getElementById('lpUserBtn');
+  var menu = document.getElementById('lpUserMenu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    var open = menu.classList.toggle('lp-open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', function() {
+    menu.classList.remove('lp-open');
+    btn.setAttribute('aria-expanded', 'false');
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && menu.classList.contains('lp-open')) {
+      menu.classList.remove('lp-open');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.focus();
+    }
+  });
+  var so = document.getElementById('lpSignOut');
+  if (so) so.addEventListener('click', function(e) {
+    e.preventDefault();
+    fetch('/api/auth/logout.php', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).finally(function() { window.location.href = '/login.html'; });
+  });
+})();
+</script>
 
 <main class="lp-page<?= !empty($landing_page_narrow) ? ' narrow' : '' ?>">

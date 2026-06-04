@@ -10,6 +10,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('POST');
 $user = require_auth();
+release_session_lock();
 $pdo  = db();
 $uid  = (int)$user['id'];
 $body = read_json_body();
@@ -19,7 +20,8 @@ if ($projectId <= 0) fail('bad_input', 'Missing project_id.');
 qual_require_project($pdo, $uid, $projectId);
 
 $fields = ['title','research_question','purpose','data_type','analysis_approach',
-           'researcher_stance_memo','notes'];
+           'researcher_stance_memo','notes',
+           'cl_analysis_purpose','cl_population_context','cl_analyst_positionality','cl_potential_misuse'];
 $sets = []; $params = [':id' => $projectId];
 foreach ($fields as $f) {
     if (array_key_exists($f, $body)) {

@@ -24,7 +24,7 @@ if (in_array($status, ['draft', 'active', 'archived'], true)) {
 }
 
 $stmt = $pdo->prepare(
-    'SELECT p.id, p.title, p.status, p.source, p.response_mode, p.settings, p.updated_at,
+    'SELECT p.id, p.title, p.status, p.source, p.response_mode, p.settings, p.updated_at, p.dataset_id,
             (SELECT COUNT(*) FROM survey_items i WHERE i.project_id = p.id) AS item_count,
             (SELECT COUNT(*) FROM survey_dev_response_sessions ss WHERE ss.project_id = p.id) AS response_count,
             s.total AS siri_total
@@ -46,6 +46,7 @@ $projects = array_map(function ($r) {
         'mode'       => $r['response_mode'],
         'items'          => (int)$r['item_count'],
         'response_count' => (int)$r['response_count'],
+        'dataset_id'     => $r['dataset_id'] !== null ? (int)$r['dataset_id'] : null,
         'tier'           => isset($st['tier']) ? (string)$st['tier'] : null,
         'siri'           => $r['siri_total'] !== null ? (float)$r['siri_total'] : null,
         'updated_at'     => $r['updated_at'],

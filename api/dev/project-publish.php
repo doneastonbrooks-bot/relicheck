@@ -24,6 +24,11 @@ $body = read_json_body();
 $projectId = isset($body['project_id']) ? (int)$body['project_id'] : 0;
 $project = sds_require_project($pdo, (int)$user['id'], $projectId);
 
+// "Publish anyway": the client sends override:true when the user has explicitly
+// acknowledged publishing past unresolved launch blockers. It waives the SIRI gate
+// below, and is recorded on the deployment so the override is never silent.
+$override = !empty($body['override']);
+
 // ReliCheck Basic (settings.tier = 'basic') is a low-stakes, free entry product
 // capped at 25 responses. It shows its Basic SIRI score for guidance and as an
 // upgrade hook, NOT as a hard launch gate — and it intentionally has no
@@ -33,8 +38,9 @@ $project = sds_require_project($pdo, (int)$user['id'], $projectId);
 $__settings = json_decode((string)($project['settings'] ?? ''), true) ?: [];
 $isBasic = (($__settings['tier'] ?? '') === 'basic');
 
-if (!$isBasic) {
-    // Verify SIRI passed before generating a link.
+if (!$isBasic && !$override) {
+    // Verify SIRI passed before generating a link (unless the user is publishing
+    // anyway via an acknowledged override, handled above).
     $siriRow = $pdo->prepare('SELECT blocked FROM siri_reviews WHERE project_id = :id');
     $siriRow->execute([':id' => $projectId]);
     $siri = $siriRow->fetch(PDO::FETCH_ASSOC);
@@ -81,6 +87,7 @@ if ($linkKey === '') {
 $ds['link_key']       = $linkKey;
 $ds['published_at']   = date('Y-m-d H:i:s');
 $ds['responses_open'] = false; // Phase 3C will flip this to true
+if ($override) $ds['published_with_override'] = true; // acknowledged publish past blockers
 
 $dsJson = json_encode($ds, JSON_UNESCAPED_UNICODE);
 

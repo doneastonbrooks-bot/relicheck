@@ -5,6 +5,56 @@
 declare(strict_types=1);
 
 /**
+ * Add Contextual Lens columns to qual tables if they don't exist yet.
+ * Idempotent — checks SHOW COLUMNS before each ALTER.
+ */
+function qual_ensure_cl_columns(PDO $pdo): void
+{
+    static $done = false;
+    if ($done) return;
+    $done = true;
+
+    $additions = [
+        'qual_projects' => [
+            'cl_analysis_purpose'      => 'TEXT NULL',
+            'cl_population_context'    => 'TEXT NULL',
+            'cl_analyst_positionality' => 'TEXT NULL',
+            'cl_potential_misuse'      => 'TEXT NULL',
+        ],
+        'qual_codes' => [
+            'cl_context'               => 'TEXT NULL',
+            'cl_structural_framing'    => 'TEXT NULL',
+            'cl_misinterpretation_risk'=> 'TEXT NULL',
+        ],
+        'qual_themes' => [
+            'cl_context'               => 'TEXT NULL',
+            'cl_group_variation'       => 'TEXT NULL',
+            'cl_pattern_type'          => 'TEXT NULL',
+            'cl_counter_story'         => 'TEXT NULL',
+            'cl_structural_framing'    => 'TEXT NULL',
+            'cl_action_caution'        => 'TEXT NULL',
+        ],
+    ];
+
+    foreach ($additions as $table => $cols) {
+        try {
+            $existing = $pdo->query("SHOW COLUMNS FROM `{$table}`")->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Throwable $e) {
+            continue; // table may not exist yet
+        }
+        foreach ($cols as $col => $def) {
+            if (!in_array($col, $existing, true)) {
+                try {
+                    $pdo->exec("ALTER TABLE `{$table}` ADD COLUMN `{$col}` {$def}");
+                } catch (Throwable $e) {
+                    error_log("qual_ensure_cl_columns [{$table}.{$col}]: " . $e->getMessage());
+                }
+            }
+        }
+    }
+}
+
+/**
  * Create Qual Studio tables if they don't exist yet.
  * Idempotent — safe to call on every request.
  */
@@ -32,6 +82,7 @@ function qual_ensure_schema(PDO $pdo): void
 function qual_require_project(PDO $pdo, int $uid, int $projectId): array
 {
     qual_ensure_schema($pdo);
+    qual_ensure_cl_columns($pdo);
     $s = $pdo->prepare(
         "SELECT * FROM qual_projects WHERE id = :id AND user_id = :uid AND status <> 'archived' LIMIT 1"
     );
@@ -50,6 +101,7 @@ function qual_require_project(PDO $pdo, int $uid, int $projectId): array
 function qual_check_access(PDO $pdo, int $uid, int $projectId): array
 {
     qual_ensure_schema($pdo);
+    qual_ensure_cl_columns($pdo);
 
     // Owner path (fast, most common)
     $s = $pdo->prepare(
@@ -130,40 +182,61 @@ function qual_materialize_segments(PDO $pdo, int $projectId, int $documentId, in
     if (is_string($rawRows)) $rawRows = json_decode($rawRows, true);
     if (!is_array($colMeta) || !is_array($rawRows)) return 0;
 
-    // Identify open-text columns using same heuristic as MM link-dataset.php
+    // Identify open-text columns.
+    // Explicit qual_role (set by Column Setup in Qual Studio) takes precedence.
+    // Fallback: analysis_type='open_ended'|'narrative' from the upload widget.
+    // Legacy datasets only carry type='open'; apply the avgLen/distinct heuristic.
     $columns = array_values($colMeta);
     $openIdx = [];
     foreach ($columns as $i => $col) {
-        $type = $col['analysis_type'] ?? $col['type'] ?? '';
-        if ($type !== 'open') continue;
-        // Heuristic: avg length > 20 AND distinct values > 12 = free text
+        $qualRole     = $col['qual_role'] ?? null;
+        if ($qualRole === 'skip' || $qualRole === 'participant_id' || $qualRole === 'participant_info') continue;
+
+        $analysisType = $col['analysis_type'] ?? '';
+        $legacyType   = $col['type'] ?? '';
+        $isExplicit   = $qualRole === 'open_ended';
+        $isCanonical  = in_array($analysisType, ['open_ended', 'narrative'], true);
+        $isLegacy     = !$isExplicit && !$isCanonical && $legacyType === 'open';
+        if (!$isExplicit && !$isCanonical && !$isLegacy) continue;
+
         $texts    = array_column($rawRows, $i);
         $nonEmpty = array_filter($texts, fn($v) => trim((string)$v) !== '');
         if (!count($nonEmpty)) continue;
-        $avgLen   = array_sum(array_map('strlen', $nonEmpty)) / count($nonEmpty);
-        $distinct = count(array_unique($nonEmpty));
-        if ($avgLen > 20 && $distinct > 12) {
-            $openIdx[] = ['idx' => $i, 'name' => $col['name'] ?? ('col_' . $i)];
+
+        if ($isLegacy) {
+            // Heuristic guard: avg length > 20 AND distinct values > 12 = free text.
+            $avgLen   = array_sum(array_map('strlen', $nonEmpty)) / count($nonEmpty);
+            $distinct = count(array_unique($nonEmpty));
+            if (!($avgLen > 20 && $distinct > 12)) continue;
         }
+
+        $openIdx[] = ['idx' => $i, 'name' => $col['name'] ?? ('col_' . $i)];
     }
     if (!$openIdx) return 0;
 
-    // Find participant_id column (first column named id/respondent/participant)
+    // Find participant_id column: explicit qual_role first, then name heuristic.
     $pidIdx = null;
     foreach ($columns as $i => $col) {
-        $name = strtolower($col['name'] ?? '');
-        if (in_array($name, ['id', 'respondent_id', 'participant_id', 'respondent', 'response_id'], true)) {
-            $pidIdx = $i;
-            break;
+        if (($col['qual_role'] ?? '') === 'participant_id') { $pidIdx = $i; break; }
+    }
+    if ($pidIdx === null) {
+        foreach ($columns as $i => $col) {
+            $name = strtolower($col['name'] ?? '');
+            if (in_array($name, ['id', 'respondent_id', 'participant_id', 'respondent', 'response_id'], true)) {
+                $pidIdx = $i;
+                break;
+            }
         }
     }
 
-    // Build metadata column list (non-open, non-id columns = demographics)
+    // Build metadata column list: participant_info role, or any non-open non-id non-skipped column.
     $metaCols = [];
     foreach ($columns as $i => $col) {
         if ($i === $pidIdx) continue;
+        $qualRole = $col['qual_role'] ?? null;
+        if ($qualRole === 'skip' || $qualRole === 'open_ended') continue;
         $type = $col['analysis_type'] ?? $col['type'] ?? '';
-        if ($type === 'open') continue;
+        if ($qualRole === null && in_array($type, ['open_ended', 'narrative', 'open'], true)) continue;
         $metaCols[$i] = $col['name'] ?? ('col_' . $i);
     }
 

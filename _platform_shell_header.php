@@ -111,9 +111,75 @@ if ($shell_project_id === null) {
     </button>
 
     <div class="tb-rssi" id="tbRssi" hidden></div>
-    <span class="avatar" aria-label="<?= htmlspecialchars($shell_user_full) ?>"><?= htmlspecialchars($shell_user_initials) ?></span>
+
+    <div class="psh-aw">
+      <button class="avatar psh-avatar-btn" id="pshUserBtn" aria-haspopup="menu" aria-expanded="false" title="<?= htmlspecialchars($shell_user_full) ?>"><?= htmlspecialchars($shell_user_initials) ?></button>
+      <div class="psh-menu" id="pshUserMenu" role="menu">
+        <?php if ($shell_user_initials !== ''): ?>
+        <div class="psh-menu-profile">
+          <div class="psh-menu-avatar"><?= htmlspecialchars($shell_user_initials) ?></div>
+          <span class="psh-menu-name"><?= htmlspecialchars($shell_user_full) ?></span>
+        </div>
+        <div class="psh-menu-div"></div>
+        <?php endif; ?>
+        <a class="psh-menu-item" href="/account.php" role="menuitem">My account</a>
+        <a class="psh-menu-item" href="/projects.php" role="menuitem">Projects</a>
+        <div class="psh-menu-div"></div>
+        <a class="psh-menu-item" href="#" role="menuitem" id="pshSignOut">Sign out</a>
+      </div>
+    </div>
   </div>
 </header>
+<style>
+.psh-aw { position: relative; display: inline-flex; }
+button.avatar, button.psh-avatar-btn { cursor: pointer; appearance: none; -webkit-appearance: none; padding: 0; font-family: inherit; border: 1px solid rgba(15,19,34,.08); line-height: 1; }
+.psh-menu {
+  position: absolute; top: calc(100% + 10px); right: 0;
+  min-width: 200px; background: #fff;
+  border: 1px solid rgba(15,23,42,.10); border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(15,23,42,.12); padding: 4px 0;
+  opacity: 0; pointer-events: none;
+  transform: translateY(-6px) scale(.97);
+  transition: opacity .13s, transform .13s;
+  transform-origin: top right; z-index: 300;
+}
+.psh-menu.open { opacity: 1; pointer-events: auto; transform: none; }
+.psh-menu-profile { display: flex; align-items: center; gap: 10px; padding: 12px 14px 10px; }
+.psh-menu-avatar { width: 32px; height: 32px; border-radius: 50%; background: #e8edf5; color: #2a2f3a; font-size: 12px; font-weight: 700; display: grid; place-items: center; flex: none; }
+.psh-menu-name { font-size: 13px; font-weight: 600; color: #15171a; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; }
+.psh-menu-div { height: 1px; background: rgba(15,23,42,.08); margin: 3px 0; }
+.psh-menu-item { display: block; width: 100%; padding: 9px 14px; font-size: 14px; color: #15171a; font-weight: 500; text-decoration: none; background: none; border: none; text-align: left; cursor: pointer; transition: background .1s; box-sizing: border-box; }
+.psh-menu-item:hover { background: #f5f6f8; }
+</style>
+<script>
+(function(){
+  var btn  = document.getElementById('pshUserBtn');
+  var menu = document.getElementById('pshUserMenu');
+  if (!btn || !menu) return;
+  btn.addEventListener('click', function(e){
+    e.stopPropagation();
+    var open = menu.classList.toggle('open');
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', function(){
+    menu.classList.remove('open');
+    btn.setAttribute('aria-expanded','false');
+  });
+  document.addEventListener('keydown', function(e){
+    if (e.key==='Escape' && menu.classList.contains('open')){
+      menu.classList.remove('open');
+      btn.setAttribute('aria-expanded','false');
+      btn.focus();
+    }
+  });
+  var so = document.getElementById('pshSignOut');
+  if (so) so.addEventListener('click', function(e){
+    e.preventDefault();
+    fetch('/api/auth/logout.php',{method:'POST',credentials:'same-origin',headers:{'X-Requested-With':'XMLHttpRequest'}})
+      .finally(function(){ window.location.href='/login.html'; });
+  });
+})();
+</script>
 <script>
 // Shared RSSI topbar stub — call loadRssiStub(surveyProjectId) from any studio
 // page to fetch and display the RSSI badge for that survey project.

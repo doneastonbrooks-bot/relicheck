@@ -11,6 +11,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('POST');
 $user = require_auth();
+release_session_lock();
 $pdo  = db();
 $uid  = (int)$user['id'];
 $body = read_json_body();
@@ -23,6 +24,24 @@ if ($projectId <= 0 || $themeId <= 0 || $segmentId <= 0) {
     fail('bad_input', 'project_id, theme_id, and segment_id required.');
 }
 qual_require_project($pdo, $uid, $projectId);
+
+// Ensure table exists (may be missing on long-running PHP-FPM workers from before V3)
+try {
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS qual_theme_quotes (
+            id          BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            project_id  BIGINT UNSIGNED NOT NULL,
+            theme_id    BIGINT UNSIGNED NOT NULL,
+            segment_id  BIGINT UNSIGNED NOT NULL,
+            note        TEXT NULL,
+            added_by    BIGINT UNSIGNED NOT NULL,
+            created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uq_qtq_theme_seg (theme_id, segment_id),
+            KEY idx_qtq_proj  (project_id),
+            KEY idx_qtq_theme (theme_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+} catch (Throwable $e) { /* already exists or creation failed */ }
 
 // Verify theme and segment belong to project
 $t = $pdo->prepare('SELECT id, name FROM qual_themes   WHERE id=:id AND project_id=:p LIMIT 1');

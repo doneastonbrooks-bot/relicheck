@@ -12,38 +12,45 @@
 
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';
+require_once __DIR__ . '/api/_qual_studio.php';
 
 start_session_secure();
 $uid = current_user_id();
 if (!$uid) {
     $qs = !empty($_SERVER['QUERY_STRING']) ? '?' . $_SERVER['QUERY_STRING'] : '';
-    header('Location: /login.html?return=' . urlencode('/RENAME-ME.php' . $qs));
+    header('Location: /login.html?return=' . urlencode('/qual-studio-workspaceV3.php' . $qs));
     exit;
 }
 $user = current_user();
 if (!$user) { $_SESSION = []; session_destroy(); header('Location: /login.html'); exit; }
 
 $pdo = db();
+qual_ensure_schema($pdo);
 
 // ─── PROJECT LOAD ────────────────────────────────────────────────────────────
-// Uncomment and adapt once you have a project table for this studio.
-// $projectId  = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
-// $projectRow = null;
-// if ($projectId > 0) {
-//     $s = $pdo->prepare('SELECT * FROM YOUR_TABLE WHERE id=:id AND user_id=:u LIMIT 1');
-//     $s->execute([':id' => $projectId, ':u' => $uid]);
-//     $projectRow = $s->fetch(PDO::FETCH_ASSOC);
-//     if (!$projectRow) $projectId = 0;
-// }
-$projectId  = 0;
+$projectId  = isset($_GET['project_id']) ? max(0, (int)$_GET['project_id']) : 0;
 $projectRow = null;
+if ($projectId > 0) {
+    try {
+        $s = $pdo->prepare(
+            "SELECT * FROM qual_projects WHERE id=:id AND user_id=:u AND status<>'archived' LIMIT 1"
+        );
+        $s->execute([':id' => $projectId, ':u' => $uid]);
+        $projectRow = $s->fetch(PDO::FETCH_ASSOC);
+        if (!$projectRow) $projectId = 0;
+    } catch (Throwable $e) { $projectId = 0; }
+}
 
-$datasetId = isset($_GET['dataset_id']) ? max(0, (int)$_GET['dataset_id']) : 0;
+$datasetId = $projectRow['dataset_id'] ?? (isset($_GET['dataset_id']) ? max(0, (int)$_GET['dataset_id']) : 0);
 
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
 
 $user_full = $user['name'] ?? $user['email'] ?? 'You';
 $initials  = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $user_full) ?: 'U', 0, 2));
+
+$_validSteps = ['start','setup','upload','datamap','cleaning','familiarization',
+                'coding','codebook','dual','categories','themes','quotes','trustworthiness','report'];
+$_initialStep = isset($_GET['step']) && in_array($_GET['step'], $_validSteps, true) ? $_GET['step'] : null;
 
 // The BOOT object is JSON-encoded into the page and read by the app JS.
 // Add any other fields your app needs here.
@@ -52,11 +59,11 @@ $BOOT = [
     'project'      => $projectRow,
     'projectLabel' => $projectRow ? ($projectRow['title'] ?? '') : '',
     'projectLive'  => $datasetId > 0,
-    'projectsUrl'  => '/RENAME-ME-projects.php',  // "All projects" link in the header
-    'projectType'  => 'analysis',                  // TODO: set to rssi | survey | qual | mm | analysis
+    'projectsUrl'  => '/qual-studio.php',
+    'projectType'  => 'qual',
     'datasetId'    => $datasetId,
     'initials'     => $initials,
-    // 'initialStep' => 'start',                  // optional: step to open on load
+    'initialStep'  => $_initialStep,
 ];
 
 // ─── END CONFIG ──────────────────────────────────────────────────────────────
@@ -113,6 +120,19 @@ body { font-family: var(--font); color: var(--ink); font-size: 14px; line-height
 .step[data-done='1']   .sn { background: var(--green-soft); color: var(--green); font-size: 0; }
 .step[data-done='1']   .sn::after { content: '✓'; font-size: 12px; }
 .step[data-done='1']::after { content: '✓'; margin-left: auto; font-size: 12px; font-weight: 700; color: var(--green); }
+.rail-foot { padding: 10px 16px 12px; border-top: 1px solid var(--line-2); margin-top: 4px; display: flex; flex-direction: column; gap: 7px; }
+.rail-save-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 7px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); font: inherit; font-size: 12px; font-weight: 700;
+  color: var(--ink-2); cursor: pointer; width: 100%;
+  transition: border-color .12s, color .12s, background .12s;
+}
+.rail-save-btn:hover:not(:disabled) { border-color: var(--acc); color: var(--acc); background: var(--acc-soft); }
+.rail-save-btn.saved { border-color: var(--green); color: var(--green); background: var(--green-soft); pointer-events: none; }
+.rail-save-btn:disabled { opacity: .6; cursor: default; }
+.rail-save-status { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; }
+.rail-save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex: none; }
 
 /* Stage (main content) */
 .stage  { display: flex; flex-direction: column; overflow: hidden; }
@@ -134,6 +154,9 @@ body { font-family: var(--font); color: var(--ink); font-size: 14px; line-height
 .cb-k .i { width:16px;height:16px;border-radius:5px;display:grid;place-items:center;font-size:10px;color:#fff;background:var(--acc) }
 .cb-t { font-size:13px;line-height:1.55;color:var(--ink-2) }
 .cb-t b { color:var(--ink);font-weight:700 }
+.comp-why { background:var(--acc-soft);border:1px solid rgba(30,92,58,.2);border-radius:12px;padding:13px 14px }
+.comp-why .cb-k { color:var(--acc-deep) }
+.comp-why .cb-t { color:var(--acc-deep) }
 .notes-area { width:100%;min-height:200px;border:1px solid var(--line);border-radius:12px;padding:12px;font-family:inherit;font-size:13px;resize:vertical;color:var(--ink) }
 .ai-prompt { border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;color:var(--ink-3);background:var(--bg);margin-bottom:12px }
 .ai-suggest { display:flex;flex-direction:column;gap:8px }
@@ -276,17 +299,50 @@ body.companion-collapsed .comp-collapsed-tab { display:flex;flex-direction:colum
 
     <!-- Left step rail — add <button class="step"> for each step -->
     <nav class="rail" id="rail">
-      <div class="rail-h">Steps</div>
+      <div class="rail-h"><?= $projectRow ? htmlspecialchars(mb_strimwidth($projectRow['title'] ?? 'Project', 0, 26, '…')) : 'Steps' ?></div>
       <button class="step" data-step="start">
         <span class="sn">01</span> Start
       </button>
-      <button class="step" data-step="overview">
-        <span class="sn">02</span> Overview
+      <button class="step" data-step="setup">
+        <span class="sn">02</span> Project Setup
       </button>
-      <button class="step" data-step="varmap">
-        <span class="sn">03</span> Variable Map
+      <button class="step" data-step="upload">
+        <span class="sn">03</span> Data Entry / Upload
       </button>
-      <!-- Add more steps here following the same pattern -->
+      <button class="step" data-step="datamap">
+        <span class="sn">04</span> Column Setup
+      </button>
+      <button class="step" data-step="cleaning">
+        <span class="sn">05</span> Data Cleaning
+      </button>
+      <button class="step" data-step="familiarization">
+        <span class="sn">06</span> Familiarization
+      </button>
+      <button class="step" data-step="coding">
+        <span class="sn">07</span> Coding Workspace
+      </button>
+      <button class="step" data-step="codebook">
+        <span class="sn">08</span> Codebook Builder
+      </button>
+      <button class="step" data-step="dual">
+        <span class="sn">09</span> Dual Coder
+      </button>
+      <button class="step" data-step="categories">
+        <span class="sn">10</span> Category Builder
+      </button>
+      <button class="step" data-step="themes">
+        <span class="sn">11</span> Theme Builder
+      </button>
+      <button class="step" data-step="quotes">
+        <span class="sn">12</span> Quote Finder
+      </button>
+      <button class="step" data-step="trustworthiness">
+        <span class="sn">13</span> Trustworthiness
+      </button>
+      <button class="step" data-step="report">
+        <span class="sn">14</span> Report / Export
+      </button>
+      <div class="rail-foot" id="railFoot"></div>
     </nav>
 
     <!-- Main content area -->
@@ -331,6 +387,9 @@ body.companion-collapsed .comp-collapsed-tab { display:flex;flex-direction:colum
 <!-- Variable map dependencies -->
 <script src="/apps/studio/type-taxonomy.js?v=<?= _tpl_qsv('/apps/studio/type-taxonomy.js') ?>"></script>
 <script src="/apps/studio/data-map.js?v=<?= _tpl_qsv('/apps/studio/data-map.js') ?>"></script>
+
+<!-- Contextual Lens shared component -->
+<script src="/apps/studio/contextual-lens.js?v=<?= _tpl_qsv('/apps/studio/contextual-lens.js') ?>"></script>
 
 <!-- App-specific JS — rename alongside this file -->
 <script src="/apps/studio/qual-studio-workspaceV3.js?v=<?= _tpl_qsv('/apps/studio/qual-studio-workspaceV3.js') ?>" defer></script>

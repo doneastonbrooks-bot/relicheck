@@ -1,0 +1,37 @@
+Respondent ID,Start Date,Department,Tenure,Role Level,My manager provides helpful feedback on my work.,My manager supports my professional development.,I feel comfortable raising concerns with my manager.,I feel like I belong on my team.,My colleagues value my contributions.,I feel accepted for who I am at work.,My workload is manageable.,I have enough time to complete my work well.,I rarely feel overwhelmed by competing demands.,I understand what is expected of me in my role.,My responsibilities are clearly defined.,I know how my work contributes to team goals.,What would most improve your day-to-day experience at work?
+1,2026-01-08,Engineering,3-5 years,Individual Contributor,4,5,4,5,4,5,3,3,2,5,4,5,Better tooling and fewer context switches
+2,2026-01-08,Operations,1-3 years,Individual Contributor,3,3,3,4,4,4,2,2,2,4,4,4,More clarity on project priorities
+3,2026-01-08,HR,5+ years,Manager,5,5,5,5,5,5,4,4,4,5,5,5,
+4,2026-01-09,Engineering,Less than 1 year,Individual Contributor,4,4,3,3,3,4,2,2,1,4,3,4,More onboarding support
+5,2026-01-09,Sales,1-3 years,Individual Contributor,3,3,2,4,3,3,2,2,2,3,3,3,Clearer sales targets
+6,2026-01-09,Finance,3-5 years,Manager,5,4,5,4,5,4,4,3,3,5,5,5,
+7,2026-01-10,Operations,5+ years,Senior Manager,4,5,5,5,5,5,3,3,3,5,5,5,More cross-team collaboration
+8,2026-01-10,Engineering,1-3 years,Individual Contributor,3,4,3,4,4,4,2,2,2,4,4,4,Quieter workspace
+9,2026-01-10,HR,1-3 years,Individual Contributor,4,4,4,5,5,5,4,4,3,5,4,5,
+10,2026-01-11,Sales,5+ years,Manager,5,5,4,4,4,4,3,3,2,5,4,4,Better CRM tools
+11,2026-01-11,Engineering,3-5 years,Individual Contributor,4,3,4,4,3,4,3,2,2,4,4,5,Fewer unnecessary meetings
+12,2026-01-11,Finance,1-3 years,Individual Contributor,3,3,3,3,4,3,3,3,3,4,3,4,
+13,2026-01-12,Operations,Less than 1 year,Individual Contributor,2,3,2,3,3,3,2,2,1,3,3,3,Clearer onboarding checklist
+14,2026-01-12,Engineering,5+ years,Senior Manager,5,5,5,5,5,5,4,4,4,5,5,5,
+15,2026-01-12,HR,3-5 years,Manager,5,5,5,5,5,5,4,4,4,5,5,5,More budget for learning programs
+16,2026-01-13,Sales,1-3 years,Individual Contributor,3,3,3,4,4,4,2,2,2,4,3,4,More product training
+17,2026-01-13,Engineering,Less than 1 year,Individual Contributor,3,3,2,3,3,3,2,1,1,3,3,4,Pair programming sessions
+18,2026-01-13,Finance,5+ years,Manager,4,4,5,4,4,4,4,3,3,5,4,5,
+19,2026-01-14,Operations,1-3 years,Individual Contributor,3,3,3,4,3,4,3,3,2,4,4,4,More team recognition
+20,2026-01-14,Engineering,3-5 years,Individual Contributor,4,4,4,5,4,5,3,3,2,5,4,5,
+21,2026-01-14,HR,Less than 1 year,Individual Contributor,4,4,3,4,4,4,3,3,3,4,4,4,Mentorship program
+22,2026-01-15,Sales,5+ years,Senior Manager,5,5,5,5,5,5,3,3,3,5,5,5,Faster deal approval process
+23,2026-01-15,Engineering,1-3 years,Individual Contributor,4,3,3,4,4,4,2,2,2,4,4,4,
+24,2026-01-15,Finance,3-5 years,Individual Contributor,3,4,3,3,4,3,3,3,2,4,4,4,Better expense reporting tools
+25,2026-01-16,Operations,5+ years,Manager,4,4,4,4,4,5,4,3,3,5,4,5,
+26,2026-01-16,Engineering,3-5 years,Individual Contributor,5,5,4,5,4,5,3,2,2,5,5,5,More open source contribution time
+27,2026-01-16,HR,1-3 years,Manager,5,5,5,5,5,5,4,4,4,5,5,5,
+28,2026-01-17,Sales,Less than 1 year,Individual Contributor,2,2,2,3,3,3,2,2,2,3,3,3,More structured onboarding
+29,2026-01-17,Engineering,5+ years,Individual Contributor,4,4,4,5,4,5,3,3,3,5,4,5,
+30,2026-01-17,Finance,1-3 years,Individual Contributor,3,3,3,4,3,3,3,3,2,4,3,4,Clearer promotion criteria
+31,2026-01-18,Operations,3-5 years,Individual Contributor,4,4,3,4,4,4,3,3,2,4,4,5,
+32,2026-01-18,Engineering,1-3 years,Individual Contributor,3,3,3,4,3,4,2,2,2,4,3,4,More code review feedback
+33,2026-01-18,HR,5+ years,Senior Manager,5,5,5,5,5,5,4,4,4,5,5,5,
+34,2026-01-19,Sales,3-5 years,Manager,4,4,4,4,4,4,3,3,3,5,4,5,Better territory alignment
+35,2026-01-19,Engineering,Less than 1 year,Individual Contributor,3,4,3,3,4,3,2,2,1,4,3,4,
+36,2026-01-19,Finance,5+ years,Senior Manager,5,5,5,4,5,5,4,4,3,5,5,5,More strategic finance involvement

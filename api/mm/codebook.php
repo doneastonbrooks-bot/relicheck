@@ -24,6 +24,12 @@ $user = require_auth();
 $pdo  = db();
 $uid  = (int)$user['id'];
 
+// This endpoint can make multi-second AI calls. Free the session lock now (we
+// only read the session, never write it) so other requests in the same browser
+// session (e.g. loading another studio step) don't block for the whole run.
+// See release_session_lock() in _session.php.
+release_session_lock();
+
 // ---- Detect which Phase 179 columns are present --------------------------
 function mm_codebook_cols(PDO $pdo): array
 {

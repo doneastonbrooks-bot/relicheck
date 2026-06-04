@@ -96,6 +96,200 @@ function rssi_field_type_from_analysis(string $analysisType, ?int $constructId):
     }
 }
 
+// ── Uploaded-dataset path ────────────────────────────────────────────────────
+// When the project has a linked uploaded dataset, build the normalized dataset
+// from the datasets table (column_meta + data) instead of from internal
+// response sessions. The output shape is identical so the RSSI engine,
+// dataset screen, and rssi-run.php all work unchanged.
+$linkedDatasetId = isset($project['dataset_id']) && $project['dataset_id'] !== null
+    ? (int)$project['dataset_id'] : null;
+
+if ($linkedDatasetId !== null) {
+    $dsStmt = $pdo->prepare(
+        'SELECT title, column_meta, data, row_count FROM datasets WHERE id = :id AND owner_id = :uid LIMIT 1'
+    );
+    $dsStmt->execute([':id' => $linkedDatasetId, ':uid' => (int)$user['id']]);
+    $dsRow = $dsStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$dsRow) fail('dataset_not_found', 'Linked dataset not found or you do not own it.', 404);
+
+    $cm       = $dsRow['column_meta'];
+    if (is_string($cm))   $cm       = json_decode($cm, true);
+    $dataRows = $dsRow['data'];
+    if (is_string($dataRows)) $dataRows = json_decode($dataRows, true);
+    if (!is_array($cm))       $cm       = [];
+    if (!is_array($dataRows)) $dataRows = [];
+
+    // Legacy dataset type → RSSI fieldType (for datasets without analysis_type).
+    $LEGACY_DS_TYPE = [
+        'likert'      => 'numeric_scale',
+        'numeric'     => 'numeric_scale',
+        'criterion'   => 'numeric_scale',
+        'demographic' => 'categorical',
+        'single'      => 'categorical',
+        'multi'       => 'categorical',
+        'binary'      => 'binary',
+        'open'        => 'open_text',
+        'identifier'  => 'structural',
+        'ignore'      => 'structural',
+    ];
+
+    // Assign synthetic integer construct ids to construct name strings so the
+    // output shape matches the internal-responses path (which uses DB ids).
+    $constructNameToId = [];
+    foreach ($cm as $col) {
+        $cname = trim((string)($col['construct'] ?? ''));
+        if ($cname !== '' && !isset($constructNameToId[$cname])) {
+            $constructNameToId[$cname] = count($constructNameToId) + 1;
+        }
+    }
+
+    // Build items from column_meta.
+    $items = [];
+    foreach ($cm as $ci => $col) {
+        $analysisType = isset($col['analysis_type']) && $col['analysis_type'] !== ''
+            ? (string)$col['analysis_type'] : null;
+        $cname        = trim((string)($col['construct'] ?? ''));
+        $constructId  = ($cname !== '' && isset($constructNameToId[$cname]))
+            ? $constructNameToId[$cname] : null;
+        if ($analysisType !== null) {
+            $fieldType = rssi_field_type_from_analysis($analysisType, $constructId);
+        } else {
+            $legacyType = strtolower(trim((string)($col['type'] ?? '')));
+            $fieldType  = $LEGACY_DS_TYPE[$legacyType] ?? 'open_text';
+        }
+        $items[$ci] = [
+            'id'                => $ci,
+            'label'             => (string)($col['name'] ?? ('Column ' . ($ci + 1))),
+            'type'              => (string)($col['type'] ?? 'open'),
+            'analysisType'      => $analysisType,
+            'fieldType'         => $fieldType,
+            'structural'        => $fieldType === 'structural',
+            'scorable'          => in_array($fieldType, ['numeric_scale', 'binary'], true),
+            'reverseScored'     => !empty($col['reverse']),
+            'includeInAnalysis' => true,
+            'constructId'       => $constructId,
+            'construct'         => $cname,
+            'options'           => is_array($col['options'] ?? null) ? $col['options'] : [],
+            'scale'             => null,
+            'answered'          => 0,
+            'missing'           => 0,
+            'values'            => [],
+        ];
+    }
+
+    // Build sessions and attach values from data rows.
+    $sessions    = [];
+    $totalN      = 0;
+    $analyzableN = 0;
+    foreach ($dataRows as $ri => $row) {
+        if (!is_array($row)) continue;
+        $sessions[] = ['id' => $ri, 'submitted_at' => ''];
+        $totalN++;
+        $rowHasScorable = false;
+        foreach ($items as $ci => &$item) {
+            $val = isset($row[$ci]) ? trim((string)$row[$ci]) : '';
+            if ($val === '') {
+                $item['missing']++;
+            } else {
+                $item['answered']++;
+                $item['values'][] = ['sessionId' => $ri, 'raw' => $val, 'resolved' => $val];
+                if ($item['scorable']) $rowHasScorable = true;
+            }
+        }
+        unset($item);
+        if ($rowHasScorable) $analyzableN++;
+    }
+
+    // Build constructs from synthetic name map.
+    $constructById = [];
+    foreach ($constructNameToId as $cname => $cid) {
+        $constructById[$cid] = [
+            'id'           => $cid,
+            'name'         => $cname,
+            'definition'   => '',
+            'itemIds'      => [],
+            'itemCount'    => 0,
+            'scorableCount'=> 0,
+            'enoughItems'  => false,
+            'note'         => '',
+        ];
+    }
+    foreach ($items as $ci => $item) {
+        if ($item['structural'] || $item['constructId'] === null) continue;
+        $cid = $item['constructId'];
+        $constructById[$cid]['itemIds'][]   = $ci;
+        $constructById[$cid]['itemCount']++;
+        if ($item['scorable']) $constructById[$cid]['scorableCount']++;
+    }
+    $constructs = array_values(array_map(function ($con) use ($RSSI_MIN_ITEMS_PER_CONSTRUCT) {
+        $enough = $con['scorableCount'] >= $RSSI_MIN_ITEMS_PER_CONSTRUCT;
+        return array_merge($con, [
+            'enoughItems' => $enough,
+            'note' => $enough ? '' :
+                'Not enough scorable items for an internal-consistency claim. RSSI will report this construct as not enough evidence rather than forcing a reliability number.',
+        ]);
+    }, $constructById));
+
+    // Shared output: fence, counts, field-type summary.
+    $tooFew     = $analyzableN < $RSSI_MIN_N;
+    $fenceNotes = [];
+    if ($totalN === 0) {
+        $fenceNotes[] = 'No rows in the uploaded dataset. Check the file and re-upload.';
+    } elseif ($tooFew) {
+        $fenceNotes[] = 'Only ' . $analyzableN . ' analyzable row' . ($analyzableN === 1 ? '' : 's')
+            . ' (threshold is ' . $RSSI_MIN_N . '). RSSI should withhold reliability claims rather than force a score from too little data.';
+    } else {
+        $fenceNotes[] = $analyzableN . ' analyzable rows meet the minimum of ' . $RSSI_MIN_N . ' for reliability analysis.';
+    }
+    $hasConstructMappings = !empty($constructs) && array_sum(array_column($constructs, 'itemCount')) > 0;
+    if (!$hasConstructMappings) {
+        $fenceNotes[] = 'No column-to-construct mappings found. RSSI will fall back to whole-survey evidence where possible.';
+    }
+
+    $fieldTypeSummary = ['numeric_scale' => 0, 'categorical' => 0, 'binary' => 0, 'open_text' => 0, 'structural' => 0];
+    foreach ($items as $it) { $fieldTypeSummary[$it['fieldType']]++; }
+
+    $inputItems      = array_values(array_filter($items, fn($r) => !$r['structural']));
+    $unmappedItemIds = [];
+    foreach ($items as $ci => $it) {
+        if (!$it['structural'] && $it['constructId'] === null) $unmappedItemIds[] = $ci;
+    }
+
+    json_out([
+        'ok'              => true,
+        'phase'           => '4A',
+        'note'            => 'RSSI Dataset Loader (uploaded dataset). Normalized analysis-ready dataset only.',
+        'projectId'       => $projectId,
+        'linkedDatasetId' => $linkedDatasetId,
+        'datasetTitle'    => (string)$dsRow['title'],
+        'hasVarMeta'      => false,
+        'projectName'     => (string)($project['title'] ?? ''),
+        'responses' => [
+            'total_n'           => $totalN,
+            'analyzable_n'      => $analyzableN,
+            'min_n'             => $RSSI_MIN_N,
+            'too_few_responses' => $tooFew,
+            'fence_notes'       => $fenceNotes,
+        ],
+        'counts' => [
+            'sessions'          => $totalN,
+            'items_total'       => count($items),
+            'items_input'       => count($inputItems),
+            'items_scorable'    => count(array_filter($items, fn($r) => $r['scorable'])),
+            'constructs'        => count($constructs),
+            'constructs_mapped' => count(array_filter($constructs, fn($c) => $c['itemCount'] > 0)),
+            'items_unmapped'    => count($unmappedItemIds),
+        ],
+        'fieldTypeSummary' => $fieldTypeSummary,
+        'sessions'         => $sessions,
+        'items'            => array_values($items),
+        'constructs'       => $constructs,
+        'unmappedItemIds'  => $unmappedItemIds,
+    ]);
+}
+
+// ── Internal-responses path (no linked dataset) ──────────────────────────────
+
 // Load variable_metadata for this project (survey type, item-linked rows only).
 $vmStmt = $pdo->prepare(
     'SELECT survey_item_id, analysis_type, construct_id, reverse_scored, include_in_analysis
@@ -318,12 +512,14 @@ $inputItems = array_values(array_filter($items, fn($r) => !$r['structural']));
 
 // ── Emit the normalized dataset (no mock; live data only) ───────────────────
 json_out([
-    'ok'           => true,
-    'phase'        => '4A',
-    'note'         => 'RSSI Dataset Loader. Normalized analysis-ready dataset only. No RSSI score, no Cronbach alpha, no reliability statistic is computed here.',
-    'projectId'    => $projectId,
-    'hasVarMeta'   => $hasVarMeta,   // true = canonical RE types used; false = legacy display-type fallback
-    'projectName' => (string)($project['title'] ?? ''),
+    'ok'              => true,
+    'phase'           => '4A',
+    'note'            => 'RSSI Dataset Loader. Normalized analysis-ready dataset only. No RSSI score, no Cronbach alpha, no reliability statistic is computed here.',
+    'projectId'       => $projectId,
+    'linkedDatasetId' => null,
+    'datasetTitle'    => null,
+    'hasVarMeta'      => $hasVarMeta,   // true = canonical RE types used; false = legacy display-type fallback
+    'projectName'     => (string)($project['title'] ?? ''),
     'responses' => [
         'total_n'           => $totalN,
         'analyzable_n'      => $analyzableN,

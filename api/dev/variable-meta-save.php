@@ -186,8 +186,10 @@ json_out(['ok' => true, 'saved' => count($normalised), 'variables' => $saved]);
 function vm_require_owner(PDO $pdo, int $userId, int $projectId, string $projectType): void
 {
     $tables = [
-        'survey' => ['survey_projects', 'user_id'],
-        'mm'     => ['mm_projects',     'user_id'],
+        'survey'   => ['survey_projects', 'user_id'],
+        'mm'       => ['mm_projects',     'user_id'],
+        'qual'     => ['qual_projects',   'user_id'],
+        'analysis' => ['rc_projects',     'user_id'],
     ];
     if (!isset($tables[$projectType])) {
         fail('bad_input', "Unknown project_type '$projectType'.");

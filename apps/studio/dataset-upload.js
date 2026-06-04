@@ -14,7 +14,7 @@
 // ctx = { kind, projectId, projectType, title, onLoaded(null, projectId) }
 //   kind        — 'descriptive' | 'inferential' | 'mm' | (future slug)
 //   projectId   — existing project to link into (0/null = create new)
-//   projectType — 'analysis' | 'mm'
+//   projectType — 'analysis' | 'mm' | 'rssi' | 'survey' | 'qual'
 //   title       — default dataset title (pre-fills title field)
 //   onLoaded    — called as onLoaded(null, projectId) when ready
 (function () {
@@ -71,6 +71,16 @@
       /* Embed (inline, no modal) */
       '.du-embed-actions{margin-top:16px}',
       '.du-embed-submit{width:100%}',
+      /* openSaved modal */
+      '.au-title{font-size:20px;font-weight:800;color:#1c2238;margin:0 0 4px}',
+      '.au-sub{font-size:13px;color:#7b8fad;margin:0 0 14px}',
+      '.au-stage{display:flex;flex-direction:column;gap:8px}',
+      '.au-row{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;padding:12px 16px;border:1px solid #e5e8ef;border-radius:10px;background:#fff;cursor:pointer;font-family:inherit;transition:border-color .12s,box-shadow .12s}',
+      '.au-row:hover{border-color:#5b6fad;box-shadow:0 0 0 3px rgba(91,111,173,.1)}',
+      '.au-row:disabled{opacity:.6;cursor:default}',
+      '.au-row-title{font-size:14px;font-weight:700;color:#1c2238}',
+      '.au-row-meta{font-size:12px;color:#7b8fad}',
+      '.au-sample{color:#9ba8be;font-size:13px;margin:0}',
     ].join('');
     document.head.appendChild(s);
   }
@@ -201,7 +211,35 @@
   }
 
   function stripQualtricsHeader(parsed) {
+    // Qualtrics has 3 header rows: question text (used as headers), ImportId row, Values row.
     return { headers: parsed.headers, rows: parsed.rows.slice(2) };
+  }
+
+  // SurveyMonkey exports have 2 header rows: row 0 = question text, row 1 = sub-question / option.
+  // The real data starts at row 2. To avoid false positives on CSVs that just happen to have
+  // "Respondent ID" or "Start Date" columns, we require at least one row-1 value that matches
+  // a known SurveyMonkey sub-question label ("Response", "Open-Ended Response", etc.).
+  function detectSurveyMonkey(parsed) {
+    if (parsed.rows.length < 2) return false;
+    var hasSmMeta = parsed.headers.some(function (h) {
+      return /respondent.?id|start.?date|end.?date|ip.?address|email.?address|first.?name|last.?name/i.test(String(h));
+    });
+    if (!hasSmMeta) return false;
+    // The sub-question row must contain at least one recognisable SurveyMonkey label.
+    var subRow = parsed.rows[0] || [];
+    return subRow.some(function (v) {
+      return /^(response|open.?ended.?response|open\s*ended|other.*please.*specify|please\s*specify|column\s*\d+)$/i.test(String(v).trim());
+    });
+  }
+
+  function stripSurveyMonkeyHeader(parsed) {
+    // Merge row 0 (question) + row 1 (sub-question) into combined headers, skip both as data rows.
+    var subRow = parsed.rows[0] || [];
+    var combined = parsed.headers.map(function (h, i) {
+      var sub = String(subRow[i] || '').trim();
+      return sub && sub !== h ? h + ' - ' + sub : h;
+    });
+    return { headers: combined, rows: parsed.rows.slice(2) };
   }
 
   // ── SheetJS (lazy) ───────────────────────────────────────────────────────────
@@ -312,9 +350,94 @@
   }
 
   function attach(datasetId, title, ctx) {
-    // Standalone apps that return datasetId directly (rssi, qual).
+    // Standalone apps that return datasetId directly (no project record).
     if (ctx.projectType === 'rssi') {
       return Promise.resolve(datasetId);
+    }
+    // Analysis Studio — create a project if none exists, then link the dataset.
+    if (ctx.projectType === 'analysis') {
+      var apid = ctx.projectId ? +ctx.projectId : 0;
+      var doAnalysisLink = function (projectId) {
+        return fetch('/api/analysis/link-dataset.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId, dataset_id: datasetId }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { if (!d || !d.ok) throw new Error('Link failed.'); return projectId; });
+      };
+      if (apid > 0) return doAnalysisLink(apid);
+      // No project yet — create one, link the dataset, then open the workspace.
+      var isInferential = ctx.kind === 'inferential';
+      var defaultTitle = isInferential ? 'Inferential Analysis' : 'Descriptive Analysis';
+      return fetch('/api/analysis/create-project.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title || defaultTitle, kind: ctx.kind || 'descriptive' }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.project_id) throw new Error('Could not create project.');
+          return doAnalysisLink(+d.project_id).then(function (pid) {
+            var wsUrl = isInferential
+              ? '/inferential-statistics-workspace.php?project_id='
+              : '/descriptive-analysis-workspace.php?project_id=';
+            window.location.replace(wsUrl + pid);
+            return pid;
+          });
+        });
+    }
+    // Survey dev projects — link dataset to survey_projects.
+    // Mirrors MM/qual: creates a project if none exists, then links.
+    if (ctx.projectType === 'survey') {
+      var spid = ctx.projectId ? +ctx.projectId : 0;
+      var doSurveyLink = function (projectId) {
+        return fetch('/api/dev/link-dataset.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId, dataset_id: datasetId }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { if (!d || !d.ok) throw new Error('Link failed.'); return projectId; });
+      };
+      if (spid > 0) return doSurveyLink(spid);
+      // source:'upload' marks this as an analyze-journey project (uploaded existing
+      // response data), so the Survey Development System shows the short
+      // Upload -> Variable Map -> RSSI rail instead of the full build pipeline.
+      return fetch('/api/dev/project-create.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title || 'Uploaded survey data', source: 'upload' }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.project || !d.project.id) throw new Error('Could not create project.');
+          return doSurveyLink(+d.project.id);
+        });
+    }
+    // Qual Studio — create a project if none exists, then link the dataset.
+    if (ctx.projectType === 'qual') {
+      var pid = ctx.projectId ? +ctx.projectId : 0;
+      var doLink = function (projectId) {
+        return fetch('/api/qual/link-dataset.php', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ project_id: projectId, dataset_id: datasetId }),
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (d) { if (!d || !d.ok) throw new Error('Link failed.'); return projectId; });
+      };
+      if (pid > 0) return doLink(pid);
+      return fetch('/api/qual/create-project.php', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: title || 'Qualitative Analysis', analysis_approach: 'thematic' }),
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || !d.ok || !d.project_id) throw new Error('Could not create project.');
+          return doLink(+d.project_id);
+        });
     }
     // MM with an existing project — link dataset to it.
     if (ctx.projectId && ctx.projectType === 'mm') {
@@ -346,7 +469,9 @@
             .then(function (d2) { if (!d2 || !d2.ok) throw new Error('Link failed.'); return pid; });
         });
     }
-    return Promise.reject(new Error('Unknown projectType: ' + (ctx.projectType || 'none')));
+    return Promise.reject(new Error(
+      'Unknown projectType "' + (ctx.projectType || '') + '". Supported: rssi, survey, qual, mm, analysis.'
+    ));
   }
 
   // ── Drop zone (shared between open() and embed()) ────────────────────────────
@@ -466,12 +591,16 @@
       parseFile(chosenFile)
         .then(function (parsed) {
           if (detectQualtrics(parsed)) parsed = stripQualtricsHeader(parsed);
+          else if (detectSurveyMonkey(parsed)) parsed = stripSurveyMonkeyHeader(parsed);
           if (!parsed.headers.length || !parsed.rows.length) throw new Error('No data rows found. Check the file format.');
           const ctxWithDesc = Object.assign({}, ctx, { description: descEl.value.trim() });
           return persistAndAttach(parsed, title, chosenFormat, ctxWithDesc);
         })
         .then(function (projectId) {
           close();
+          // Analysis attach() navigates to the workspace itself; skip the studio's
+          // own onLoaded so it does not double-navigate.
+          if (ctx.projectType === 'analysis') return;
           if (ctx.onLoaded) ctx.onLoaded(null, projectId);
         })
         .catch(function (err) {
@@ -535,6 +664,7 @@
       parseFile(chosenFile)
         .then(function (parsed) {
           if (detectQualtrics(parsed)) parsed = stripQualtricsHeader(parsed);
+          else if (detectSurveyMonkey(parsed)) parsed = stripSurveyMonkeyHeader(parsed);
           if (!parsed.headers.length || !parsed.rows.length) throw new Error('No data rows found.');
           const title = chosenFile.name.replace(/\.[^.]+$/, '');
           return persistAndAttach(parsed, title, chosenFormat, ctx);

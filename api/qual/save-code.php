@@ -12,6 +12,7 @@ require_once __DIR__ . '/../_qual_studio.php';
 
 require_method('POST');
 $user = require_auth();
+release_session_lock();
 $pdo  = db();
 $uid  = (int)$user['id'];
 $body = read_json_body();
@@ -33,33 +34,43 @@ if ($codeId > 0) {
 
     $pdo->prepare(
         'UPDATE qual_codes SET name=:n, definition=:d, include_when=:i, exclude_when=:e,
-         example_quote=:q, status=:s WHERE id=:id AND project_id=:p'
+         example_quote=:q, status=:s,
+         cl_context=:cl_ctx, cl_structural_framing=:cl_sf, cl_misinterpretation_risk=:cl_mir
+         WHERE id=:id AND project_id=:p'
     )->execute([
-        ':n'  => $name,
-        ':d'  => trim((string)($body['definition']   ?? '')) ?: null,
-        ':i'  => trim((string)($body['include_when'] ?? '')) ?: null,
-        ':e'  => trim((string)($body['exclude_when'] ?? '')) ?: null,
-        ':q'  => trim((string)($body['example_quote']?? '')) ?: null,
-        ':s'  => in_array($body['status'] ?? '', ['draft','reviewed','approved','retired'], true)
-                 ? $body['status'] : 'draft',
-        ':id' => $codeId,
-        ':p'  => $projectId,
+        ':n'      => $name,
+        ':d'      => trim((string)($body['definition']            ?? '')) ?: null,
+        ':i'      => trim((string)($body['include_when']          ?? '')) ?: null,
+        ':e'      => trim((string)($body['exclude_when']          ?? '')) ?: null,
+        ':q'      => trim((string)($body['example_quote']         ?? '')) ?: null,
+        ':s'      => in_array($body['status'] ?? '', ['draft','reviewed','approved','retired'], true)
+                     ? $body['status'] : 'draft',
+        ':cl_ctx' => trim((string)($body['cl_context']            ?? '')) ?: null,
+        ':cl_sf'  => trim((string)($body['cl_structural_framing'] ?? '')) ?: null,
+        ':cl_mir' => trim((string)($body['cl_misinterpretation_risk'] ?? '')) ?: null,
+        ':id'     => $codeId,
+        ':p'      => $projectId,
     ]);
     qual_audit($pdo, $projectId, $uid, 'code_updated', 'code', $codeId, $name);
     json_out(['ok' => true, 'code_id' => $codeId]);
 } else {
     // Create
     $pdo->prepare(
-        'INSERT INTO qual_codes (project_id,name,definition,include_when,exclude_when,example_quote,status,created_by_type)
-         VALUES (:p,:n,:d,:i,:e,:q,:s,"human")'
+        'INSERT INTO qual_codes
+         (project_id,name,definition,include_when,exclude_when,example_quote,status,created_by_type,
+          cl_context,cl_structural_framing,cl_misinterpretation_risk)
+         VALUES (:p,:n,:d,:i,:e,:q,:s,"human",:cl_ctx,:cl_sf,:cl_mir)'
     )->execute([
-        ':p' => $projectId,
-        ':n' => $name,
-        ':d' => trim((string)($body['definition']   ?? '')) ?: null,
-        ':i' => trim((string)($body['include_when'] ?? '')) ?: null,
-        ':e' => trim((string)($body['exclude_when'] ?? '')) ?: null,
-        ':q' => trim((string)($body['example_quote']?? '')) ?: null,
-        ':s' => 'draft',
+        ':p'      => $projectId,
+        ':n'      => $name,
+        ':d'      => trim((string)($body['definition']            ?? '')) ?: null,
+        ':i'      => trim((string)($body['include_when']          ?? '')) ?: null,
+        ':e'      => trim((string)($body['exclude_when']          ?? '')) ?: null,
+        ':q'      => trim((string)($body['example_quote']         ?? '')) ?: null,
+        ':s'      => 'draft',
+        ':cl_ctx' => trim((string)($body['cl_context']            ?? '')) ?: null,
+        ':cl_sf'  => trim((string)($body['cl_structural_framing'] ?? '')) ?: null,
+        ':cl_mir' => trim((string)($body['cl_misinterpretation_risk'] ?? '')) ?: null,
     ]);
     $codeId = (int)$pdo->lastInsertId();
     qual_audit($pdo, $projectId, $uid, 'code_created', 'code', $codeId, $name);

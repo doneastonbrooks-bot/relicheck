@@ -1,569 +1,257 @@
 /* ════════════════════════════════════════════════════════════════════════
-   SIRI — Launch Check engine (deterministic, calibrated 100-point readiness)
+   SIRI — Launch Check engine (deterministic, 50-point whole-survey readiness)
    ────────────────────────────────────────────────────────────────────────
-   SIRI ("Survey Instrument Readiness Index") is the user-facing 100-point
-   PRE-LAUNCH gate the Survey Development System shows once a survey is built:
-   the "is this ready to send out" companion to the SDSI Build Check (the
-   50-point "improve as you build" score). SDSI helps improve the survey while
-   you build it; SIRI checks the completed survey before launch.
+   SIRI ("Survey Instrument Readiness Index") reviews the survey AS A WHOLE
+   INSTRUMENT before deployment. It is the companion to SDSI (the 50-point
+   item/question-level validity score). It does NOT re-judge individual
+   questions (that is SDSI) and it does NOT compute response reliability (that
+   is RSSI, after data are collected).
 
-   This engine is SIRI v1: it scores the ACTUAL BUILT SURVEY deterministically
-   from project data, the same no-AI way BuildCheck does. It is SEPARATE from
-   the judgment-driven domain aggregators (validity/reliability/administration-
-   readiness.js), which score saved per-lens flag reviews and DEFAULT MISSING
-   REVIEWS TO FULL POINTS — that would inflate a Launch Check for a survey that
-   has had no reviews. Here, MISSING LAUNCH-READINESS EVIDENCE LOSES POINTS and
-   is reported as an advisory gap; it never earns silent full credit.
+       SDSI = 50-point item/question-level validity score
+       SIRI = 50-point whole-survey readiness score
+       Total Survey Strength = SDSI + SIRI = 100
 
-   THREE DOMAINS (point budgets sum to 100) — same weights as the real engine:
+   FIVE DOMAINS, each worth 10 points:
+       1. Survey Purpose & Alignment
+       2. Construct Coverage
+       3. Survey Structure & Flow
+       4. Scale & Measurement Design
+       5. Deployment Readiness & Evidence Use
 
-       VALIDITY (50)
-         Construct Definition          8
-         Purpose Alignment             7
-         Dimension / Domain Coverage   8
-         Item-to-Construct Alignment   7
-         Response-Option Validity      4
-         Dignity / Framing             8   (capped baseline — see below)
-         Access                        8   (capped baseline — see below)
-       RELIABILITY (35)
-         Scale Structure Readiness     8
-         Item Clarity / Wording        8
-         Response Scale Consistency    7
-         Redundancy Balance            6
-         Administration Consistency    6
-       ADMINISTRATION (15)
-         Respondent Instructions       4
-         Consent / Privacy             4
-         Fielding Plan & Timing        3
-         Sensitive-Topic & Safety      2
-         Completion Burden & Logistics 2
+   Each survey starts with 50 SIRI points. Each issue subtracts from its domain
+   by severity (Critical -10, High -6, Medium -3, Low -1). Domains floor at 0;
+   SIRI floors at 0. SIRI = sum of the five domain scores.
 
-   SDSI BOUNDARY: SIRI is NOT the SDSI score. It may reference SDSI STATUS as
-   one readiness input (a `critical` Build Check flag holds the launch gate),
-   but it never reuses the SDSI number and never mutates SDSI.
-
-   CAPPED BASELINES: Dignity/Framing and Access cannot be fully verified before
-   the dedicated review workflow ships, so they are capped below full credit and
-   only adjusted downward by a deterministic wording / reading-load scan. They
-   rise to a full rubric in a later sub-phase.
-
-   ORTHOGONAL LAUNCH GATE: a blocker on any lens flips the verdict to
-   "Blocked for review" WITHOUT changing the number. Scores are computed purely
-   from evidence; blockers only set `launchReady:false`. Blockers v1: zero
-   answerable items, no construct defined at all, a `critical` SDSI flag, and a
-   detected sensitive topic with no decline path. (Missing consent is advisory
-   in v1 — it loses points but does not block, because the builder offers no
-   consent field to resolve it yet.)
-
-   PRE-LAUNCH ONLY: SIRI evaluates whether the instrument is ready to collect
-   interpretable data. It does not evaluate response data — that is RSSI, after
-   data collection.
+   Total band (on SDSI + SIRI):
+       90-100 Strong / 80-89 Good / 70-79 Caution / 60-69 Weak / 0-59 Not ready
+   A Critical deployment blocker caps the readiness BAND (never the number),
+   mirroring SDSI: >=1 -> at most Caution, >=3 -> at most Weak, >=20% -> Not ready.
    ════════════════════════════════════════════════════════════════════════ */
 (function (root) {
   'use strict';
 
-  // Item-type vocabulary (the QTYPES keys the builder actually stores).
   var STRUCTURAL_TYPES = {
     'Section Text': true, 'Instructions': true, 'Consent': true,
-    'Page Break': true, 'Thank-you Message': true
+    'Page Break': true, 'Thank-you Message': true, 'information': true
   };
-  var SCALED_TYPES = { 'Likert Scale': true, 'Rating Scale': true, 'NPS': true, 'Slider': true };
-  var CHOICE_TYPES = {
-    'Multiple Choice': true, 'Checkboxes': true, 'Multiple Answers / Checkboxes': true,
-    'Dropdown': true, 'Ranking': true, 'Yes/No': true, 'True/False': true, 'Demographic': true
-  };
+  var SCALED_TYPES = { 'Likert Scale': true, 'Likert (5-pt)': true, 'Likert (7-pt)': true, 'Rating Scale': true, 'NPS': true, 'Slider': true };
+  var OPEN_TYPES = { 'Open-Ended': true, 'Short Answer': true, 'Long Answer': true, 'Comment Box': true, 'open_text': true };
 
-  var DEMERIT = { critical: 1.0, major: 0.85, moderate: 0.6, minor: 0.3 };
+  var SEV = { critical: 10, high: 6, medium: 3, low: 1 };
 
-  function clamp(s) { return Math.min(100, Math.max(0, s)); }
+  var DOMAINS = [
+    { key: 'purpose',    name: 'Survey Purpose & Alignment' },
+    { key: 'coverage',   name: 'Construct Coverage' },
+    { key: 'structure',  name: 'Survey Structure & Flow' },
+    { key: 'scale',      name: 'Scale & Measurement Design' },
+    { key: 'deployment', name: 'Deployment Readiness & Evidence Use' }
+  ];
+
+  function clamp10(x) { return Math.min(10, Math.max(0, x)); }
   function round1(n) { return Math.round(n * 10) / 10; }
   function lc(s) { return String(s == null ? '' : s).toLowerCase(); }
-  function words(s) { return lc(s).split(/[^a-z0-9']+/).filter(Boolean); }
-  function worst(arr) { var d = 0; arr.forEach(function (v) { if (v > d) d = v; }); return d; }
 
-  var LEADING_WORDS = ['obviously', 'clearly', 'surely', 'everyone knows', "don't you agree", "isn't it", "wouldn't you", 'as you know'];
-  var ABSOLUTE_WORDS = ['always', 'never', 'every ', 'all of', 'none of', 'completely', 'totally', 'rarely'];
-  var LOADED_WORDS = ['failure', 'foolish', 'irresponsible', 'lazy', 'stupid', 'crazy', 'suffer', 'unfortunately', 'at-risk', 'behind', 'neglect'];
-  // Topics whose disclosure can expose or harm a respondent if asked without a
-  // clear purpose and a decline path. Word-boundary regex (not loose substring,
-  // so "orientation" in "program orientation" does not trip "sexual orientation").
-  var SENSITIVE_RE = new RegExp('\\b(' + [
-    'race', 'races', 'racial', 'ethnic', 'ethnicity', 'religion', 'religious',
-    'income', 'salary', 'salaries', 'wage', 'wages', 'disability', 'disabilities',
-    'health', 'medical', 'diagnosis', 'mental health', 'sexual orientation',
-    'sexuality', 'gender identity', 'immigration', 'immigrant', 'immigrants',
-    'undocumented', 'legal status', 'citizenship', 'criminal', 'arrest', 'arrested',
-    'abuse', 'social security', 'ssn', 'pregnant', 'pregnancy'
-  ].join('|') + ')\\b', 'i');
-  var DECLINE_RE = /prefer not|decline to|rather not|no answer|not to say/i;
+  var SENSITIVE_RE = /\b(age|sex)\b|\b(race|ethnic|gender|sexual orientation|disab|income|salary|wage|religio|citizen|immigr|national|marital|health|medical|pregnan|veteran)/i;
+  var CONSENT_RE = /consent|privacy|voluntary|confidential|anonym|your responses (will|are)|will be used|how (we|your data) (use|is used)|prefer not to|optional and help|data (is|are|will be) (stored|used|kept)/i;
+  var FREQ_RE = /\bhow (often|frequently|regularly)\b|\bfrequency\b/i;
+  var NA_RE = /not applicable|^n\/a$|does not apply/i;
 
-  // Generic 0–100 band shared by lenses and domains.
-  function band(pct) {
-    if (pct >= 90) return { key: 'strong', label: 'Strong' };
-    if (pct >= 80) return { key: 'good', label: 'Good' };
-    if (pct >= 70) return { key: 'moderate', label: 'Moderate' };
-    if (pct >= 60) return { key: 'significant', label: 'Significant' };
-    return { key: 'high', label: 'High risk' };
-  }
-
-  // ── Shared context ────────────────────────────────────────────────────────
-  function buildContext(project, opts) {
-    project = project || {};
-    opts = opts || {};
+  function buildContext(project) {
     var items = project.items || [];
     var ans = items.filter(function (it) { return !STRUCTURAL_TYPES[it.type]; });
-    var constructs = (project.constructs || []).filter(function (c) { return String(c.name || '').trim() !== ''; });
+    var structural = items.filter(function (it) { return STRUCTURAL_TYPES[it.type]; });
     var scaled = ans.filter(function (it) { return SCALED_TYPES[it.type]; });
-    var scaleItems = ans.filter(function (it) { return SCALED_TYPES[it.type] || CHOICE_TYPES[it.type]; });
+    var open = ans.filter(function (it) { return OPEN_TYPES[it.type]; });
 
     var byConstruct = {};
-    constructs.forEach(function (c) { byConstruct[c.name] = { all: 0, scaled: 0 }; });
-    var unmapped = 0;
     ans.forEach(function (it) {
+      if (!SCALED_TYPES[it.type]) return;
       var cn = String(it.construct || '').trim();
-      if (cn && byConstruct[cn]) {
-        byConstruct[cn].all += 1;
-        if (SCALED_TYPES[it.type]) byConstruct[cn].scaled += 1;
-      } else { unmapped += 1; }
+      if (cn) { byConstruct[cn] = byConstruct[cn] || { scaled: 0 }; byConstruct[cn].scaled += 1; }
     });
+    var unmappedScaled = scaled.filter(function (it) { return String(it.construct || '').trim() === ''; }).length;
 
-    // Mixed Likert lengths (a within-instrument consistency signal).
-    var likertPoints = {};
-    ans.forEach(function (it) {
-      if (it.type === 'Likert Scale') { var p = parseInt((it.settings || {}).points, 10); if (p) likertPoints[p] = 1; }
-    });
-
-    // Structural evidence the builder can actually carry today.
-    var hasConsent = items.some(function (it) { return it.type === 'Consent'; });
-    var hasInstructions = items.some(function (it) {
-      return it.type === 'Section Text' || it.type === 'Instructions' || it.type === 'Consent';
-    });
-
-    // Phase 2D — explicit launch-readiness fields the user documents (settings.launchReadiness).
-    // Each lens prefers these; the item-based inference above stays as a fallback.
     var lr = project.launchReadiness || {};
-    var lrC = lr.consent || {}, lrI = lr.instructions || {}, lrA = lr.access || {},
-        lrF = lr.fielding || {}, lrD = lr.dignity || {}, lrS = lr.sensitive || {};
-    var consentText = String(lrC.statement || '').trim();
-    var consentDocumented = lrC.documented === true && consentText.length >= 20;
-    var consentPartial = !consentDocumented && (lrC.documented === true || consentText.length >= 20);
-    var instrText = String(lrI.text || '').trim();
-    var instrProvided = lrI.provided === true && instrText.length >= 20;
-    var accessReviewed = lrA.reviewed === true;
-    var fWindow = String(lrF.window || '').trim();
-    var fChannel = String(lrF.channel || '').trim();
-    var fMin = parseInt(lrF.estMinutes, 10); fMin = (fMin > 0) ? fMin : 0;
-    var fieldingParts = (fWindow ? 1 : 0) + (fChannel ? 1 : 0) + (fMin ? 1 : 0);
-    var dignityReviewed = lrD.reviewed === true;
-    var sensitiveDeclared = lrS.hasSensitive === true;
-    var declineProvided = lrS.declineProvided === true;
+    var consentItem = structural.some(function (it) { return CONSENT_RE.test(lc(it.prompt)); });
+    var hasConsent = consentItem || !!(lr.consent && (lr.consent.documented || CONSENT_RE.test(lc(lr.consent.statement))));
 
-    // Sensitive-topic detection + whether any decline path exists.
-    var sensitiveItems = ans.filter(function (it) {
-      return SENSITIVE_RE.test(String(it.prompt || ''));
+    var requiredSensitiveNoDecline = 0;
+    ans.forEach(function (it) {
+      var low = lc(it.prompt);
+      if (!SENSITIVE_RE.test(low)) return;
+      var opts = (it.options || []).map(lc);
+      var hasDecline = opts.some(function (o) { return /prefer not|rather not/.test(o); });
+      if (it.required && !hasDecline) requiredSensitiveNoDecline += 1;
     });
-    var hasPreferNot = ans.some(function (it) {
-      return (it.options || []).some(function (o) { return DECLINE_RE.test(String(o)); });
-    });
-    var declinePath = hasConsent || hasPreferNot || declineProvided;
-
-    var sdsi = opts.sdsiResult || null;
-    var sdsiCritical = !!(sdsi && (sdsi.flags || []).some(function (f) { return f.severity === 'critical'; }));
 
     return {
       project: project, items: items, ans: ans, N: ans.length,
-      constructs: constructs, numC: constructs.length, hasConstructs: constructs.length > 0,
-      scaled: scaled, scaleItems: scaleItems, byConstruct: byConstruct, unmapped: unmapped,
-      mixedLikert: Object.keys(likertPoints).length > 1,
-      sections: project.sections || [], purpose: String(project.purpose || '').trim(),
-      population: String(project.population || '').trim(), mode: String(project.mode || '').trim(),
-      hasConsent: hasConsent, hasInstructions: hasInstructions,
-      sensitiveItems: sensitiveItems, declinePath: declinePath,
-      // launch-readiness predicates
-      lrAccess: lrA, lrFielding: lrF,
-      consentDocumented: consentDocumented, consentPartial: consentPartial,
-      instrProvided: instrProvided, accessReviewed: accessReviewed,
-      fieldingParts: fieldingParts, dignityReviewed: dignityReviewed,
-      sensitiveDeclared: sensitiveDeclared, declineProvided: declineProvided,
-      sdsi: sdsi, sdsiCritical: sdsiCritical
+      scaled: scaled, open: open, structural: structural,
+      byConstruct: byConstruct, unmappedScaled: unmappedScaled,
+      sections: (project.sections || []),
+      purpose: String(project.purpose || '').trim(),
+      audience: String(project.population || project.audience || '').trim(),
+      plannedUse: String(project.planned_use || project.plannedUse || project.intended_use || '').trim(),
+      title: String(project.title || '').trim(),
+      hasConsent: hasConsent,
+      requiredSensitiveNoDecline: requiredSensitiveNoDecline
     };
   }
 
-  function note(sev, lens, msg) { return { sev: sev, lens: lens, msg: msg }; }
+  function scoreDomain(flags) {
+    var s = 10;
+    flags.forEach(function (fl) { s -= (SEV[fl.severity] || 0); });
+    return { points: clamp10(s), flags: flags };
+  }
+  function f(severity, message, suggestion) { return { severity: severity, message: message, suggestion: suggestion || '' }; }
 
-  /* ════════════════════════ VALIDITY (50) ════════════════════════ */
+  // ── Domain 1: Survey Purpose & Alignment ──────────────────────────────────
+  function dPurpose(ctx) {
+    var fl = [];
+    if (!ctx.purpose) fl.push(f('high', 'No survey purpose or research question is recorded.', 'Add a one or two sentence purpose stating what you want to learn and which decision it informs.'));
+    else if (ctx.purpose.length < 25) fl.push(f('medium', 'The purpose statement is very brief.', 'Expand it so every section can be checked against a clear goal.'));
+    if (!ctx.audience) fl.push(f('medium', 'No intended audience is recorded.', 'Name who will answer so wording and reading level can fit them.'));
+    if (!ctx.plannedUse) fl.push(f('low', 'No planned use for the results is recorded.', 'State how the results will be used so items can be aligned to it.'));
+    return scoreDomain(fl);
+  }
 
-  function lensConstructDefinition(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (!ctx.hasConstructs) {
-      out.notes.push(note('warn', 'Construct Definition', 'No construct is defined, so it is unclear what the survey measures. Define at least one construct.'));
-      return 0;
+  // ── Domain 2: Construct Coverage ──────────────────────────────────────────
+  function dCoverage(ctx) {
+    var fl = [];
+    var names = Object.keys(ctx.byConstruct);
+    if (ctx.scaled.length === 0) {
+      if (ctx.N > 0 && names.length === 0) fl.push(f('low', 'No measurement constructs are defined.', 'Name what the survey measures so coverage can be judged.'));
+      return scoreDomain(fl);
     }
-    var s = 100, undef = 0, thin = 0;
-    ctx.constructs.forEach(function (c) {
-      var def = String(c.definition || '').trim();
-      if (def === '') undef += 1; else if (def.length < 20) thin += 1;
-    });
-    s -= Math.round(undef * (60 / ctx.numC));
-    s -= Math.round(thin * (25 / ctx.numC));
-    if (undef > 0) out.notes.push(note('warn', 'Construct Definition', undef + ' of ' + ctx.numC + ' construct' + (ctx.numC === 1 ? '' : 's') + ' have no definition. Define each in one plain sentence.'));
-    return clamp(s);
+    var multi = names.filter(function (n) { return ctx.byConstruct[n].scaled >= 3; }).length;
+    var thin = names.filter(function (n) { return ctx.byConstruct[n].scaled > 0 && ctx.byConstruct[n].scaled < 3; }).length;
+    if (multi === 0) fl.push(f('medium', 'No construct is measured by three or more items, so no construct is covered with enough depth.', 'Build at least one multi-item scale (three or more items) per key construct.'));
+    if (thin > 0) fl.push(f('low', thin + ' construct' + (thin === 1 ? '' : 's') + ' rely on only one or two items.', 'Add items so each construct is measured from a few angles.'));
+    if (ctx.unmappedScaled > 0) fl.push(f('medium', ctx.unmappedScaled + ' scaled item' + (ctx.unmappedScaled === 1 ? ' is' : 's are') + ' not mapped to any construct.', 'Assign each scaled item to the construct it measures.'));
+    return scoreDomain(fl);
   }
 
-  function lensPurposeAlignment(ctx, out) {
-    if (ctx.purpose === '') {
-      out.notes.push(note('warn', 'Purpose Alignment', 'No purpose is recorded, so items cannot be checked against an intended use.'));
-      return 0;
-    }
-    var s = 100;
-    if (ctx.purpose.length < 25) s -= 35;
-    if (!ctx.hasConstructs) s -= 25;
-    if (ctx.N === 0) s -= 20;
-    if (ctx.population === '') { s -= 15; out.notes.push(note('warn', 'Purpose Alignment', 'No target audience is recorded. Naming who answers helps fit wording and reading level.')); }
-    return clamp(s);
-  }
-
-  function lensDimensionCoverage(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (!ctx.hasConstructs) return 30;
-    var s = 100, thin = 0;
-    ctx.constructs.forEach(function (c) {
-      var n = ctx.byConstruct[c.name].all;
-      if (n === 0) thin += (40 / ctx.numC);
-      else if (n === 1) thin += (25 / ctx.numC);
-      else if (n === 2) thin += (12 / ctx.numC);
-    });
-    s -= Math.round(thin);
-    if (ctx.unmapped > 0) s -= Math.min(40, Math.round(40 * ctx.unmapped / ctx.N));
-    return clamp(s);
-  }
-
-  function lensItemConstructAlignment(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (!ctx.hasConstructs) return 25;
-    var s = 100;
-    if (ctx.unmapped > 0) {
-      s -= Math.round(70 * ctx.unmapped / ctx.N);
-      out.notes.push(note('warn', 'Item-to-Construct Alignment', ctx.unmapped + ' of ' + ctx.N + ' items are not mapped to a construct. Map each item or remove it.'));
-    }
-    return clamp(s);
-  }
-
-  function lensResponseOptionValidity(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (ctx.scaleItems.length === 0) return 100; // pure open/numeric: nothing to assess
-    var demerit = 0;
-    ctx.scaleItems.forEach(function (it) {
-      var f = [];
-      if (CHOICE_TYPES[it.type] && it.type !== 'Yes/No' && it.type !== 'True/False' && (it.options || []).length < 2) f.push(DEMERIT.moderate);
-      if ((it.type === 'Rating Scale' || it.type === 'Slider') && !(it.settings || {}).max) f.push(DEMERIT.minor);
-      demerit += worst(f);
-    });
-    var s = 100 * (1 - demerit / ctx.scaleItems.length);
-    if (ctx.mixedLikert) s -= 12;
-    return clamp(s);
-  }
-
-  // Wording-scan demerit shared by Dignity (loaded/leading) and the capped
-  // baselines. Returns demerit-per-item in [0..1].
-  function wordingDemerit(ctx) {
-    if (ctx.N === 0) return 0;
-    var sum = 0;
-    ctx.ans.forEach(function (it) {
-      var low = lc(it.prompt), f = [];
-      if (LOADED_WORDS.some(function (w) { return low.indexOf(w) !== -1; })) f.push(DEMERIT.moderate);
-      if (LEADING_WORDS.some(function (w) { return low.indexOf(w) !== -1; })) f.push(DEMERIT.moderate);
-      if (ABSOLUTE_WORDS.some(function (w) { return low.indexOf(w) !== -1; })) f.push(DEMERIT.minor);
-      sum += worst(f);
-    });
-    return sum / ctx.N;
-  }
-
-  function lensDignityFraming(ctx, out) {
-    var demerit = Math.round(45 * wordingDemerit(ctx));
-    if (ctx.N === 0) return ctx.dignityReviewed ? 100 : 50;
-    // Attesting a dignity/framing review lifts the cap; otherwise it stays capped.
-    var s = (ctx.dignityReviewed ? 100 : 60) - demerit;
-    if (!ctx.dignityReviewed) out.notes.push(note('info', 'Dignity / Framing', 'A dignity and framing review has not been recorded, so this lens is capped. Confirm it in Launch Readiness to lift the cap.'));
-    if (demerit > 0) out.notes.push(note('warn', 'Dignity / Framing', 'Some items use loaded, leading, or absolute wording. Rephrase neutrally and respectfully.'));
-    return clamp(s);
-  }
-
-  function lensAccess(ctx, out) {
-    var penalty = 0, longCount = 0;
-    ctx.ans.forEach(function (it) {
-      if (String(it.prompt || '').length > 200) { penalty += 1; longCount += 1; }
-      if (it.type === 'Slider') penalty += 0.5; // pointer/fine-motor dependence
-    });
-    var penaltyPct = ctx.N > 0 ? Math.round(25 * (penalty / ctx.N)) : 0;
-    var s;
-    if (ctx.accessReviewed) {
-      // Reviewed: lift the cap. Baseline 75, plus credit for documented supports.
-      var a = ctx.lrAccess || {}, credit = 0;
-      var langs = String(a.languages || '');
-      if (langs.indexOf(',') !== -1 || langs.trim().split(/\s+/).length >= 2) credit += 10;
-      if (a.plainLanguageAlt === true) credit += 10;
-      if (String(a.accommodationContact || '').trim() !== '') credit += 10;
-      s = Math.min(100, 75 + credit) - penaltyPct;
-    } else {
-      // Not reviewed: stays capped at the pre-2D baseline.
-      s = (ctx.N === 0 ? 50 : 55) - penaltyPct;
-      out.notes.push(note('info', 'Access', 'An accessibility review has not been recorded, so this lens is capped. Document languages, a plain-language option, and an accommodation contact in Launch Readiness to lift the cap.'));
-    }
-    if (longCount > 0) out.notes.push(note('warn', 'Access', longCount + ' item' + (longCount === 1 ? '' : 's') + ' read long, which raises reading load. Tighten to one clear sentence.'));
-    return clamp(s);
-  }
-
-  /* ════════════════════════ RELIABILITY (35) ════════════════════════ */
-
-  function lensScaleStructure(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (ctx.scaled.length === 0) return 100; // format-neutral
-    var s = 100;
-    if (!ctx.hasConstructs) {
-      out.notes.push(note('warn', 'Scale Structure Readiness', 'There are scaled items but no construct grouping them, so a reliable scale cannot be formed.'));
-      return clamp(s - 50);
-    }
-    var thin = 0, anyMulti = false;
-    ctx.constructs.forEach(function (c) {
-      var n = ctx.byConstruct[c.name].scaled;
-      if (n >= 3) anyMulti = true;
-      else if (n === 2) thin += 10;
-      else if (n === 1) thin += 18;
-    });
-    s -= Math.min(thin, 45);
-    if (!anyMulti) s -= 20;
-    return clamp(s);
-  }
-
-  function lensItemClarity(ctx, out) {
-    if (ctx.N === 0) return 0;
-    var demerit = 0, issues = 0;
-    ctx.ans.forEach(function (it) {
-      var prompt = String(it.prompt || '').trim(), f = [];
-      if (prompt === '') { f.push(DEMERIT.major); }
-      else {
-        var low = lc(prompt), w = words(prompt);
-        if (/\b(and|or)\b/.test(low) && !CHOICE_TYPES[it.type] && low.split(/\b(?:and|or)\b/).length === 2 && prompt.length > 30) f.push(DEMERIT.moderate);
-        if (prompt.length > 200) f.push(DEMERIT.minor);
-        if (w.length > 0 && w.length < 3) f.push(DEMERIT.minor);
-      }
-      var d = worst(f); if (d > 0) issues += 1;
-      demerit += d;
-    });
-    if (issues > 0) out.notes.push(note('warn', 'Item Clarity / Wording', issues + ' item' + (issues === 1 ? '' : 's') + ' may be unclear (empty, double-barreled, very long, or fragmentary).'));
-    return clamp(100 * (1 - demerit / ctx.N));
-  }
-
-  function lensResponseScaleConsistency(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (ctx.scaleItems.length === 0) return 100;
-    var s = 100, miss = 0;
-    ctx.scaleItems.forEach(function (it) {
-      if ((it.type === 'Rating Scale' || it.type === 'Slider')) {
-        var st = it.settings || {};
-        if (!st.max || st.min == null) miss += 1;
-      }
-    });
-    if (ctx.mixedLikert) { s -= 12; out.notes.push(note('warn', 'Response Scale Consistency', 'Likert questions use different scale lengths. Use one consistent length so responses compare cleanly.')); }
-    if (miss > 0) s -= Math.min(30, Math.round(30 * miss / ctx.scaleItems.length));
-    return clamp(s);
-  }
-
-  function lensRedundancyBalance(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (!ctx.hasConstructs) return 50;
-    var s = 100, single = 0, heavy = false;
-    ctx.constructs.forEach(function (c) {
-      var n = ctx.byConstruct[c.name].all;
-      if (n === 1) single += 1;
-      if (n > 8) heavy = true;
-    });
-    s -= Math.min(45, single * 15);
-    if (heavy) s -= 10;
-    return clamp(s);
-  }
-
-  function lensAdminConsistency(ctx, out) {
-    if (ctx.N === 0) return 0;
-    if (ctx.scaled.length === 0) return 100;
-    var s = 100;
-    if (ctx.mixedLikert) s -= 20;
-    if (ctx.mode === '') { s -= 15; out.notes.push(note('info', 'Administration Consistency for Reliability', 'No response mode is recorded, so consistent administration cannot be confirmed.')); }
-    return clamp(s);
-  }
-
-  /* ════════════════════════ ADMINISTRATION (15) ════════════════════════ */
-
-  function lensRespondentInstructions(ctx, out) {
-    if (ctx.instrProvided || ctx.hasInstructions) return 100;
-    out.notes.push(note('warn', 'Respondent Instructions & Guidance', 'No respondent instructions were found. Add them in Launch Readiness so respondents know what to do.'));
-    if (ctx.purpose !== '' && ctx.population !== '') return 40;
-    if (ctx.purpose !== '' || ctx.population !== '') return 20;
-    return 0;
-  }
-
-  function lensConsentPrivacy(ctx, out) {
-    if (ctx.consentDocumented || ctx.hasConsent) return 100;
-    if (ctx.consentPartial) {
-      out.notes.push(note('warn', 'Consent, Privacy & Use Transparency', 'Consent/privacy is started but not fully documented. Complete the statement and attestation in Launch Readiness.'));
-      return 50;
-    }
-    out.notes.push(note('warn', 'Consent, Privacy & Use Transparency', 'Consent/privacy documentation is required before launch readiness can be granted. Complete the Consent & Privacy field in Launch Readiness.'));
-    return 0;
-  }
-
-  function lensFieldingPlan(ctx, out) {
-    if (ctx.fieldingParts === 3) return 100;
-    if (ctx.fieldingParts === 2) return 70;
-    if (ctx.fieldingParts === 1) return 50;
-    out.notes.push(note('info', 'Fielding Plan & Timing', 'Fielding window, channel, and estimated time are not documented. Add them in Launch Readiness.'));
-    if (ctx.mode !== '') return 40;
-    return 0;
-  }
-
-  function lensSensitiveSafety(ctx, out) {
-    var anySensitive = ctx.sensitiveItems.length > 0 || ctx.sensitiveDeclared;
-    if (!anySensitive) return 100; // nothing to gate
-    if (ctx.declinePath) return 100;
-    out.notes.push(note('warn', 'Sensitive-Topic & Safety Readiness', 'This survey touches sensitive topics without a clear decline path. Provide a decline option (for example "Prefer not to answer") or confirm one in Launch Readiness.'));
-    return 0;
-  }
-
-  function lensCompletionBurden(ctx, out) {
+  // ── Domain 3: Survey Structure & Flow ─────────────────────────────────────
+  function dStructure(ctx) {
+    var fl = [];
     var n = ctx.N;
-    if (n === 0) return 0;
-    var s;
-    if (n >= 6 && n <= 30) s = 100;
-    else if (n >= 4) s = 80;
-    else if (n > 30 && n <= 40) s = 70;
-    else if (n > 40) s = 40;
-    else s = 50; // n < 4
-    if (n > 15 && ctx.sections.length <= 1) s -= 10;
-    return clamp(s);
-  }
-
-  // Lens registry per domain: [key, name, weight, scorer].
-  var VALIDITY = [
-    ['construct_definition', 'Construct Definition', 8, lensConstructDefinition],
-    ['purpose_alignment', 'Purpose Alignment', 7, lensPurposeAlignment],
-    ['dimension_coverage', 'Dimension / Domain Coverage', 8, lensDimensionCoverage],
-    ['item_construct_alignment', 'Item-to-Construct Alignment', 7, lensItemConstructAlignment],
-    ['response_option_validity', 'Response-Option Validity', 4, lensResponseOptionValidity],
-    ['dignity_framing', 'Dignity / Framing', 8, lensDignityFraming],
-    ['access', 'Access', 8, lensAccess]
-  ];
-  var RELIABILITY = [
-    ['scale_structure_readiness', 'Scale Structure Readiness', 8, lensScaleStructure],
-    ['item_clarity', 'Item Clarity / Wording Consistency', 8, lensItemClarity],
-    ['response_scale_consistency', 'Response Scale Consistency', 7, lensResponseScaleConsistency],
-    ['redundancy_balance', 'Redundancy Balance', 6, lensRedundancyBalance],
-    ['administration_consistency', 'Administration Consistency for Reliability', 6, lensAdminConsistency]
-  ];
-  var ADMINISTRATION = [
-    ['respondent_instructions', 'Respondent Instructions & Guidance', 4, lensRespondentInstructions],
-    ['consent_privacy', 'Consent, Privacy & Use Transparency', 4, lensConsentPrivacy],
-    ['fielding_plan', 'Fielding Plan & Timing', 3, lensFieldingPlan],
-    ['sensitive_safety', 'Sensitive-Topic & Safety Readiness', 2, lensSensitiveSafety],
-    ['completion_burden', 'Completion Burden & Launch Logistics', 2, lensCompletionBurden]
-  ];
-
-  // Build one domain summary in the shape SiriReadiness.aggregate consumes.
-  function buildDomain(key, name, subtitle, defs, ctx, out, gate) {
-    var lenses = defs.map(function (d) {
-      var score = clamp(d[3](ctx, out));
-      var launchReady = gate(d[0]) !== false;
-      return {
-        key: d[0], name: d[1], weight: d[2], score: Math.round(score),
-        points: round1((score / 100) * d[2]), band: band(score), launchReady: launchReady
-      };
+    if (n === 0) { fl.push(f('high', 'The survey has no answerable questions.', 'Add questions before assessing readiness.')); return scoreDomain(fl); }
+    if (n < 4) fl.push(f('medium', 'The survey is very short (' + n + ' questions) for a full instrument.', 'Add items so the purpose is covered with enough depth.'));
+    else if (n > 40) fl.push(f('medium', 'The survey is long (' + n + ' questions); respondent fatigue is likely.', 'Trim to the items that serve the purpose, or split into waves.'));
+    if (n > 8 && ctx.sections.length <= 1) fl.push(f('low', 'A multi-question survey is presented without sections.', 'Group related questions into clearly paced sections.'));
+    if (n >= 5 && (ctx.open.length / n) > 0.5) fl.push(f('medium', 'More than half the questions are open-ended, a heavy writing burden.', 'Convert some to closed questions to lower burden.'));
+    var interleaved = ctx.ans.some(function (it, i) {
+      if (!SENSITIVE_RE.test(lc(it.prompt))) return false;
+      var sec = lc(it.section || '');
+      return ctx.ans.slice(i + 1).some(function (j) { return !SENSITIVE_RE.test(lc(j.prompt)) && lc(j.section || '') !== sec; });
     });
-    var totalPoints = round1(lenses.reduce(function (a, l) { return a + l.points; }, 0));
-    var maxPoints = lenses.reduce(function (a, l) { return a + l.weight; }, 0);
-    var pct = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 1000) / 10 : 0;
-    var blocked = lenses.some(function (l) { return !l.launchReady; });
-    var evidence = {
-      acceptedFlags: lenses.filter(function (l) { return l.score < 100; }).length,
-      dismissedFlags: 0,
-      blockers: lenses.filter(function (l) { return !l.launchReady; }).length,
-      warnings: lenses.filter(function (l) { return l.launchReady && l.score < 80; }).length
-    };
-    return {
-      key: key, name: name, subtitle: subtitle, max: maxPoints,
-      totalPoints: totalPoints, maxPoints: maxPoints, pct: pct,
-      band: band(pct), blocked: blocked, verdict: blocked ? 'Blocked for review' : band(pct).label,
-      lenses: lenses, evidence: evidence
-    };
+    if (interleaved) fl.push(f('medium', 'Demographic questions are interleaved with the main items instead of grouped.', 'Place demographics in their own section, usually at the end.'));
+    return scoreDomain(fl);
   }
 
-  // Local fallback summation — identical math to SiriReadiness.aggregate so the
-  // engine never throws if siri-readiness.js is not loaded.
-  function localAggregate(domains) {
-    var totalPoints = round1(domains.reduce(function (a, d) { return a + (d.totalPoints || 0); }, 0));
-    var maxPoints = domains.reduce(function (a, d) { return a + (d.maxPoints || 0); }, 0);
-    var pct = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 1000) / 10 : 0;
-    var blocked = domains.some(function (d) { return d.blocked; });
-    var b = band(pct);
-    var evidence = domains.reduce(function (acc, d) {
-      var e = d.evidence || {};
-      acc.acceptedFlags += e.acceptedFlags || 0; acc.dismissedFlags += e.dismissedFlags || 0;
-      acc.blockers += e.blockers || 0; acc.warnings += e.warnings || 0; return acc;
-    }, { acceptedFlags: 0, dismissedFlags: 0, blockers: 0, warnings: 0 });
-    return {
-      domains: domains, totalPoints: totalPoints, maxPoints: maxPoints, pct: pct,
-      band: b, blocked: blocked, verdict: blocked ? 'Blocked for review' : b.label,
-      evidence: evidence,
-      domainsBlocked: domains.filter(function (d) { return d.blocked; }).length,
-      lensesBlocked: domains.reduce(function (a, d) { return a + d.lenses.filter(function (l) { return !l.launchReady; }).length; }, 0)
-    };
+  // ── Domain 4: Scale & Measurement Design ──────────────────────────────────
+  function dScale(ctx) {
+    var fl = [];
+    if (ctx.scaled.length === 0) return scoreDomain(fl);
+    var pts = {};
+    ctx.scaled.forEach(function (it) { var p = parseInt((it.settings || {}).points, 10); if (p) pts[p] = 1; });
+    if (Object.keys(pts).length > 1) fl.push(f('medium', 'Likert questions use different scale lengths across the survey.', 'Use one consistent Likert length so responses compare cleanly.'));
+    var mismatch = ctx.scaled.filter(function (it) {
+      var anchors = lc((it.settings || {}).likertLow + ' ' + (it.settings || {}).likertHigh);
+      var agree = anchors.indexOf('agree') !== -1 || anchors.trim() === '';
+      return FREQ_RE.test(lc(it.prompt)) && agree;
+    }).length;
+    if (mismatch > 0) fl.push(f('medium', mismatch + ' item' + (mismatch === 1 ? '' : 's') + ' ask about frequency but use an agreement scale.', 'Match the scale to the stem (use a frequency scale for "how often" items).'));
+    var condNoNA = ctx.scaled.filter(function (it) {
+      var low = lc(it.prompt);
+      var conditional = /\b(supervisor|manager|my team|my department)\b/.test(low);
+      var hasNA = (it.options || []).some(function (o) { return NA_RE.test(lc(o)); });
+      return conditional && !hasNA;
+    }).length;
+    if (condNoNA >= 1) fl.push(f('low', 'Some questions assume a condition (e.g. having a supervisor) without a "Not applicable" option.', 'Add a "Not applicable" option where the question may not apply.'));
+    return scoreDomain(fl);
+  }
+
+  // ── Domain 5: Deployment Readiness & Evidence Use ─────────────────────────
+  function dDeployment(ctx) {
+    var fl = [];
+    if (ctx.requiredSensitiveNoDecline > 0) fl.push(f('critical', ctx.requiredSensitiveNoDecline + ' required sensitive question' + (ctx.requiredSensitiveNoDecline === 1 ? '' : 's') + ' offer no way to decline and no stated purpose.', 'Make sensitive questions optional, add "Prefer not to answer", and state why the data is collected.'));
+    if (!ctx.hasConsent) fl.push(f(ctx.requiredSensitiveNoDecline > 0 ? 'medium' : 'high', 'No consent or privacy statement is provided.', 'Add a short notice on what is collected, why, how it is stored, and that participation is voluntary.'));
+    if (!ctx.plannedUse) fl.push(f('medium', 'No planned use or analysis is documented, so readiness for analysis cannot be confirmed.', 'State how the results will be analyzed and used.'));
+    return scoreDomain(fl);
+  }
+
+  function totalBandFromKey(k) {
+    return { notready: { key: 'notready', label: 'Not ready' }, weak: { key: 'weak', label: 'Weak' },
+      caution: { key: 'caution', label: 'Caution' }, good: { key: 'good', label: 'Good' }, strong: { key: 'strong', label: 'Strong' } }[k];
+  }
+  function totalBand(total) {
+    if (total >= 90) return totalBandFromKey('strong');
+    if (total >= 80) return totalBandFromKey('good');
+    if (total >= 70) return totalBandFromKey('caution');
+    if (total >= 60) return totalBandFromKey('weak');
+    return totalBandFromKey('notready');
   }
 
   function assessLaunch(project, opts) {
-    var ctx = buildContext(project, opts);
-    var out = { notes: [] };
+    project = project || {}; opts = opts || {};
+    var ctx = buildContext(project);
 
-    // Orthogonal launch gate — flips launchReady WITHOUT touching any score.
-    var blockedKeys = {};
-    if (ctx.N === 0) { blockedKeys.purpose_alignment = true; blockedKeys.completion_burden = true; }
-    if (ctx.N > 0 && !ctx.hasConstructs) blockedKeys.construct_definition = true;
-    if ((ctx.sensitiveItems.length > 0 || ctx.sensitiveDeclared) && !ctx.declinePath) blockedKeys.sensitive_safety = true;
-    // Phase 2D: now that a consent/privacy field exists, undocumented consent
-    // hard-blocks launch (number unchanged; verdict held until documented).
-    if (!ctx.consentDocumented && !ctx.hasConsent) blockedKeys.consent_privacy = true;
-    if (ctx.sdsiCritical) {
-      blockedKeys.purpose_alignment = true;
-      out.notes.push(note('warn', 'Purpose Alignment', 'The Build Check found a critical design issue. Resolve it before launch; the launch verdict is held until it is.'));
+    var scorers = { purpose: dPurpose, coverage: dCoverage, structure: dStructure, scale: dScale, deployment: dDeployment };
+    var allFlags = [];
+    var domains = DOMAINS.map(function (d) {
+      var out = scorers[d.key](ctx);
+      out.flags.forEach(function (fl) { allFlags.push({ domain: d.name, domainKey: d.key, severity: fl.severity, message: fl.message, suggestion: fl.suggestion }); });
+      return { key: d.key, name: d.name, points: round1(out.points), max: 10, warn: out.points < 10, flagCount: out.flags.length };
+    });
+
+    var siri = round1(domains.reduce(function (a, d) { return a + d.points; }, 0));
+    var siriPct = Math.round((siri / 50) * 100);
+    var siriCriticals = allFlags.filter(function (fl) { return fl.severity === 'critical'; }).length;
+
+    var sdsi = (opts.sdsiResult && opts.sdsiResult.total != null) ? opts.sdsiResult.total
+             : (opts.sdsiScore != null ? opts.sdsiScore : null);
+
+    var result = {
+      siri: siri, max: 50, pct: siriPct,
+      domains: domains, flags: allFlags,
+      totalPoints: siri, maxPoints: 50, blocked: false,
+      notes: allFlags.map(function (fl) { return { sev: (fl.severity === 'critical' || fl.severity === 'high') ? 'warn' : 'info', lens: fl.domain, msg: fl.message }; })
+    };
+
+    if (sdsi != null) {
+      var total = round1(sdsi + siri);
+      var raw = totalBand(total);
+      var sdsiBlockers = (opts.sdsiResult && opts.sdsiResult.deployment_blocker_count != null) ? opts.sdsiResult.deployment_blocker_count : 0;
+      var blockers = sdsiBlockers + siriCriticals;
+      var scored = ctx.N || 1;
+      var ORDER = ['notready', 'weak', 'caution', 'good', 'strong'];
+      var cap = null, headline = '';
+      if (blockers >= 1) { cap = 'caution'; headline = blockers + ' deployment blocker' + (blockers === 1 ? '' : 's') + ' detected.'; }
+      if (blockers >= 3) { cap = 'weak'; }
+      if ((blockers / scored) >= 0.20) { cap = 'notready'; headline = Math.round((blockers / scored) * 100) + '% of questions contain critical deployment blockers.'; }
+      var display = raw, wasCapped = false;
+      if (cap && ORDER.indexOf(raw.key) > ORDER.indexOf(cap)) { display = totalBandFromKey(cap); wasCapped = true; }
+
+      result.sdsi = sdsi;
+      result.total = total; result.total_max = 100;
+      result.total_raw_band = raw.label;
+      result.total_band = display.label; result.total_band_key = display.key;
+      result.total_band_was_capped = wasCapped;
+      result.deployment_blocker_count = blockers;
+      result.blocker_headline = headline;
+      result.total_band_cap_reason = wasCapped
+        ? ('The total score is ' + raw.label + ', but readiness is capped at ' + display.label + ' because ' + blockers + ' critical deployment blocker' + (blockers === 1 ? ' was' : 's were') + ' detected.')
+        : '';
     }
-    function gate(key) { return blockedKeys[key] ? false : true; }
-
-    var validity = buildDomain('validity', 'Survey Design Strength Index / SDSI', 'Validity Readiness', VALIDITY, ctx, out, gate);
-    var reliability = buildDomain('reliability', 'Reliability Readiness', '', RELIABILITY, ctx, out, gate);
-    var administration = buildDomain('administration', 'Administration Readiness', '', ADMINISTRATION, ctx, out, gate);
-
-    var agg = (root.SiriReadiness && root.SiriReadiness.aggregate) || localAggregate;
-    var result = agg([validity, reliability, administration]);
-
-    // Deployment / compliance checklist derived from the same evidence.
-    result.checklist = [
-      { t: 'Consent / privacy documented', ok: ctx.consentDocumented || ctx.hasConsent },
-      { t: 'Respondent instructions provided', ok: ctx.instrProvided || ctx.hasInstructions },
-      { t: 'Every item mapped to a construct', ok: ctx.hasConstructs && ctx.unmapped === 0 && ctx.N > 0 },
-      { t: 'Completion length within tolerance', ok: ctx.N >= 4 && ctx.N <= 40 },
-      { t: 'No undeclared sensitive topics', ok: !((ctx.sensitiveItems.length > 0 || ctx.sensitiveDeclared) && !ctx.declinePath) }
-    ];
-    // Advisory notes ("what to look at"), most severe first, de-duplicated.
-    var seen = {}, order = { warn: 0, info: 1 };
-    result.notes = out.notes.filter(function (n) {
-      var k = n.sev + '|' + n.lens + '|' + n.msg; if (seen[k]) return false; seen[k] = true; return true;
-    }).sort(function (a, b2) { return (order[a.sev] || 9) - (order[b2.sev] || 9); });
-
     return result;
   }
 
   root.LaunchCheck = {
     assess: assessLaunch,
-    VALIDITY: VALIDITY, RELIABILITY: RELIABILITY, ADMINISTRATION: ADMINISTRATION,
-    SCALED_TYPES: SCALED_TYPES, CHOICE_TYPES: CHOICE_TYPES, STRUCTURAL_TYPES: STRUCTURAL_TYPES
+    DOMAINS: DOMAINS,
+    SCALED_TYPES: SCALED_TYPES, STRUCTURAL_TYPES: STRUCTURAL_TYPES,
+    totalBand: totalBand
   };
 })(typeof window !== 'undefined' ? window : this);
 
