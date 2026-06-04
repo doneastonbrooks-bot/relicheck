@@ -82,6 +82,10 @@ $QUAL_HELP = [
     'report'          => ['what'=>'Assembles your themes, quotes, and trustworthiness into a shareable report.', 'measures'=>'A draft report you can refine and export to Word or Markdown.', 'use'=>'The final step — build and export here.'],
 ];
 
+// Honor ?step= deep links (e.g. the upload widget redirects to &step=datamap).
+$validStepIds = array_column($QUAL_STEPS, 'id');
+$initialStep  = (isset($_GET['step']) && in_array($_GET['step'], $validStepIds, true)) ? (string)$_GET['step'] : null;
+
 $BOOT = [
     'projectId'    => $projectId,
     'projectLabel' => $projLabel,
@@ -90,8 +94,8 @@ $BOOT = [
     'projectType'  => 'qual',
     'initials'     => $initials,
     'isSample'     => $projectId === 0,
-    // sample project list for the Start dropdown (prototype)
-    'projects'     => $projectId === 0 ? [] : [['id'=>$projectId,'title'=>$projLabel]],
+    'project'      => $projectRow ?: null,   // full qual_projects row for Setup pre-fill
+    'initialStep'  => $initialStep,
 ];
 $QUAL = ['steps' => $QUAL_STEPS, 'help' => $QUAL_HELP];
 
@@ -734,7 +738,7 @@ function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g
 function go(u){window.location.href=u;}
 let tT;function toast(m){const t=$("#toast");t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),1800);}
 
-const state={stepId:STEPS[0].id,completedThrough:0,notes:{}};
+const state={stepId:(BOOT.initialStep||STEPS[0].id),completedThrough:0,notes:{}};
 function buildSteps(){return STEPS.map((s,i)=>Object.assign({},s,{n:i+1,done:i<state.completedThrough}));}
 function steps(){return buildSteps();}
 function activeStep(){return steps().find(s=>s.id===state.stepId)||steps()[0];}
@@ -817,14 +821,15 @@ const SAMPLE={
 };
 
 /* ════════ STEP RENDERERS (sample data) ════════ */
+/* api helper (mirrors V3's api(): throws on !ok) */
+function qapi(path,opts){opts=opts||{};return fetch(path,Object.assign({credentials:'same-origin',headers:{'Content-Type':'application/json'}},opts)).then(r=>r.json()).then(d=>{if(!d.ok)throw new Error(d.message||d.error||'Request failed');return d;});}
+
+/* ── Step 1 · Start — real saved-project list (api/qual/list-projects.php) ── */
 function renderStart(s){
-  const loaded=BOOT.projectId>0;
   $("#centerInner").innerHTML=wsHead(s)+`
-    ${loaded?`<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Project</span>
-      <select class="proj-select" onchange="if(this.value)go('?project_id='+this.value)">
-        ${(BOOT.projects||[]).map(p=>`<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title)}</option>`).join('')||`<option selected>${esc(BOOT.projectLabel)}</option>`}
-      </select>
-      <button class="btn primary" style="margin-left:auto" onclick="stepBy(1)">Continue →</button></div>`:''}
+    <div class="panel"><div class="panel-h"><div><h3>Your saved projects</h3><div class="ph-sub">Open a qualitative study already in ReliCheck</div></div>
+      <a class="ov-link" href="/qual-studio.php" style="margin-left:auto">View all →</a></div>
+      <div class="panel-b" id="stProjBody"><div class="work-surface">Loading your projects…</div></div></div>
     <button class="begin-feature" onclick="qStartUpload()">
       <span class="bc-ico">⤓</span>
       <div><h4>Bring in your data</h4>
@@ -833,25 +838,61 @@ function renderStart(s){
     </button>
     <div class="begin-sec">Or start another way</div>
     <div class="begin-grid2">
-      <button class="begin-card2" onclick="go('/qual-studio.php')"><span class="bc-ico">▦</span><h4>Open a saved project</h4><p>Return to a qualitative study already in ReliCheck.</p><span class="bc-go">Open projects →</span></button>
-      <button class="begin-card2" onclick="stepBy(1)"><span class="bc-ico">✎</span><h4>Set up a new study</h4><p>Name the study and frame its research question first.</p><span class="bc-go">Project setup →</span></button>
+      <button class="begin-card2" onclick="go('/qual-studio.php')"><span class="bc-ico">▦</span><h4>All projects</h4><p>Go to your full qualitative projects list.</p><span class="bc-go">Open projects →</span></button>
+      <button class="begin-card2" onclick="goStep('setup')"><span class="bc-ico">✎</span><h4>Set up this study</h4><p>Name the study and frame its research question.</p><span class="bc-go">Project setup →</span></button>
       <button class="begin-card2" onclick="go('/mmstudioV4.php')"><span class="bc-ico">⇄</span><h4>Mixed methods?</h4><p>Pair this text with survey numbers in MM Studio.</p><span class="bc-go">Go to MM →</span></button>
     </div>`;
+  fetch('/api/qual/list-projects.php',{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='start')return;
+    const body=$("#stProjBody"); if(!body)return;
+    if(!d.ok||!d.projects||!d.projects.length){body.innerHTML='<div class="work-surface">No saved projects yet. Upload data to begin.</div>';return;}
+    const opts=d.projects.map(p=>{const m=[];if(p.seg_count)m.push(p.seg_count+' segments');if(p.code_count)m.push(p.code_count+' codes');return `<option value="${p.id}" ${p.id===BOOT.projectId?'selected':''}>${esc(p.title||'Untitled')}${m.length?' — '+esc(m.join(', ')):''}</option>`;}).join('');
+    body.innerHTML=`<div style="display:flex;gap:10px;align-items:center"><select class="ed-in" id="stProjSel" style="flex:1">${opts}</select><button class="btn primary" onclick="qOpenProject()">Open →</button></div>`;
+  }).catch(()=>{if(activeStep().id==='start'){const b=$("#stProjBody");if(b)b.innerHTML='<div class="work-surface">Could not load projects.</div>';}});
 }
+function qOpenProject(){const sel=$("#stProjSel");if(sel&&sel.value)go('?project_id='+sel.value);}
+
+/* ── Step 2 · Setup — real project metadata + project-level Contextual Lens ── */
 function renderSetup(s){
+  const p=BOOT.project||{};
+  const approaches=[['thematic','Thematic Analysis'],['content','Content Analysis'],['framework','Framework Analysis'],['open_ended_survey','Open-Ended Survey Analysis'],['document','Document Analysis']];
+  const dtypes=[['open_ended_survey','Open-Ended Survey'],['interview','Interview Transcript'],['focus_group','Focus Group Transcript'],['document','Document / Field Notes']];
+  const sel=(id,cur,opts)=>`<select class="ed-in" id="${id}">${opts.map(o=>`<option value="${o[0]}" ${(cur||opts[0][0])===o[0]?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`;
+  const hasCL=(typeof ContextualLens!=='undefined');
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="panel"><div class="panel-h"><div><h3>Study details</h3><div class="ph-sub">These frame every coding decision</div></div></div>
+    <div class="panel"><div class="panel-h"><div><h3>Project information</h3><div class="ph-sub">These frame every coding decision</div></div></div>
       <div class="panel-b">
-        <label class="ed-l">Study title</label>
-        <input class="ed-in" value="Teacher Wellbeing Pulse">
+        <label class="ed-l">Project title</label>
+        <input class="ed-in" id="suTitle" value="${esc(p.title||BOOT.projectLabel||'')}" placeholder="e.g. Marketing Research Open-Ends">
+        <div class="form-grid" style="margin:14px 0 0">
+          <div><label class="ed-l">Analysis approach</label>${sel('suApproach',p.analysis_approach,approaches)}</div>
+          <div><label class="ed-l">Data type</label>${sel('suDatatype',p.data_type,dtypes)}</div>
+        </div>
         <label class="ed-l">Research question</label>
-        <textarea class="ed-in" rows="2">What helps and what hinders teachers in sustaining their work, in their own words?</textarea>
-        <label class="ed-l">Analysis approach</label>
-        <input class="ed-in" value="Reflexive thematic analysis (Braun &amp; Clarke)">
-        <div class="run-actions" style="margin-top:18px"><button class="btn primary" onclick="toast('Saved (prototype)')">Save details</button></div>
-      </div></div>`+navFooter();
+        <input class="ed-in" id="suRq" value="${esc(p.research_question||'')}" placeholder="What are participants saying about…">
+        <label class="ed-l">Purpose</label>
+        <input class="ed-in" id="suPurpose" value="${esc(p.purpose||'')}" placeholder="To inform the 2026 decision…">
+        <label class="ed-l">Researcher stance memo</label>
+        <textarea class="ed-in" id="suStance" rows="3" placeholder="What assumptions or roles might shape how you read this data?">${esc(p.researcher_stance_memo||'')}</textarea>
+      </div></div>
+    ${hasCL?ContextualLens.panel('project',p,'su_cl_'):''}
+    <div class="dm-save" style="position:static"><button class="btn primary" onclick="qSaveSetup()">Save setup</button><span class="dm-note" id="suMsg">Saves to your project.</span></div>`+navFooter();
 }
+function qSaveSetup(){
+  const msg=$("#suMsg");
+  const body={title:$("#suTitle").value.trim(),analysis_approach:$("#suApproach").value,data_type:$("#suDatatype").value,research_question:$("#suRq").value.trim(),purpose:$("#suPurpose").value.trim(),researcher_stance_memo:$("#suStance").value.trim()};
+  if(typeof ContextualLens!=='undefined')Object.assign(body,ContextualLens.gather('project','su_cl_'));
+  if(!body.title){if(msg){msg.style.color='#c0392b';msg.textContent='Title is required.';}return;}
+  if(msg){msg.style.color='';msg.textContent='Saving…';}
+  const req=BOOT.projectId
+    ?qapi('/api/qual/save-project.php',{method:'POST',body:JSON.stringify(Object.assign({project_id:BOOT.projectId},body))})
+    :qapi('/api/qual/create-project.php',{method:'POST',body:JSON.stringify(body)}).then(d=>{BOOT.projectId=d.project_id;history.replaceState({},'','?project_id='+d.project_id+'&step=setup');});
+  req.then(()=>{BOOT.project=Object.assign(BOOT.project||{},body);if(msg){msg.style.color='var(--mm-ink)';msg.textContent='Saved.';}toast('Setup saved');}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
+}
+
+/* ── Step 3 · Upload — real shared widget; show real linked state ── */
 function renderUpload(s){
+  const linked=BOOT.projectId>0;
   $("#centerInner").innerHTML=wsHead(s)+`
     <button class="begin-feature" onclick="qStartUpload()">
       <span class="bc-ico">⤓</span>
@@ -859,41 +900,88 @@ function renderUpload(s){
         <p>CSV, Excel, or a Qualtrics / Google Forms export. ReliCheck reads each open-ended column and splits responses into segments you can code.</p>
         <span class="bc-go">Choose a file →</span></div>
     </button>
-    <div class="begin-loaded"><span class="dot"></span><span class="bl-k">Loaded</span>
-      <span style="font-weight:600">teacher_pulse_2026.csv</span>
-      <span style="color:var(--text-3);margin-left:auto">214 responses · 480 open-ended segments</span></div>`+navFooter();
+    ${linked?`<div class="begin-loaded"><span class="dot"></span><span class="bl-k">Linked</span><span style="font-weight:600">${esc(BOOT.projectLabel)}</span><span style="color:var(--text-3);margin-left:auto" id="upMeta">Loading data summary…</span></div>`:''}`+navFooter();
+  if(linked){
+    fetch('/api/qual/get-project.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+      if(activeStep().id!=='upload')return;const el=$("#upMeta");if(!el)return;const st=(d&&d.stats)||{};
+      el.textContent=(st.doc_count||0)+' source'+((st.doc_count||0)!==1?'s':'')+' · '+(st.seg_count||0)+' segments';
+    }).catch(()=>{const el=$("#upMeta");if(el)el.textContent='';});
+  }
 }
+
+/* ── Step 4 · Column Setup — real get-variable-meta → save-column-roles ── */
+const QUAL_ROLES=[['open_ended','Code this','Open-ended response — each cell becomes a coded segment'],['participant_id','Participant ID','Links segments back to the same person across questions'],['participant_info','Participant context','Attaches to every segment as background (age, region, role, etc.)'],['skip','Skip','Exclude this column from the analysis entirely']];
+function qColDefaultRole(v){if(v.qual_role)return v.qual_role;const at=v.analysis_type||'';if(at==='open_ended'||at==='narrative')return 'open_ended';if(at==='identifier')return 'participant_id';return 'participant_info';}
 function renderColumnSetup(s){
-  const rows=SAMPLE.columns.map(c=>{
-    const tag=c.kind==='open'?'<span class="tt-status ok">Text to analyze</span>':c.kind==='group'?'<span class="ov-chip">Grouping</span>':'<span class="ov-chip">Identifier</span>';
-    return `<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${esc(c.role)}</td><td>${tag}</td></tr>`;
-  }).join('');
-  $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-cards">
-      <div class="dm-card"><div class="dm-card-k">Columns</div><div class="dm-card-v">5</div></div>
-      <div class="dm-card"><div class="dm-card-k">Open-ended</div><div class="dm-card-v">2</div></div>
-      <div class="dm-card"><div class="dm-card-k">Grouping</div><div class="dm-card-v">2</div></div>
-      <div class="dm-card"><div class="dm-card-k">Segments</div><div class="dm-card-v">480</div></div>
-    </div>
-    <div class="panel"><div class="panel-h"><div><h3>Confirm what each column is</h3><div class="ph-sub">ReliCheck analyzes the text columns; grouping columns describe the respondent</div></div></div>
-      <div class="panel-b"><div class="dx-scroll"><table class="dx-table">
-        <thead><tr><th class="l">Column</th><th class="l">Detected role</th><th class="l">Use</th></tr></thead>
-        <tbody>${rows}</tbody></table></div>
-        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" onclick="toast('Roles confirmed (prototype)')">Confirm columns</button><span class="dm-note">Two open-ended columns will be split into segments.</span></div>
-      </div></div>`+navFooter();
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet. Upload data from Start.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading columns…</div>`+navFooter();
+  fetch('/api/qual/get-variable-meta.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='datamap')return;
+    if(!d.ok||!d.variables||!d.variables.length){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No dataset linked yet. Go to <b>Data</b> first to upload.</div>`+navFooter();return;}
+    qColForm(s,d.variables);
+  }).catch(()=>{if(activeStep().id==='datamap')$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Could not load columns. Refresh and try again.</div>`+navFooter();});
 }
+function qColForm(s,variables){
+  const roleSel=(name,def)=>`<select class="ed-in qcol-role" data-col="${esc(name)}" style="max-width:230px">${QUAL_ROLES.map(r=>`<option value="${r[0]}" ${r[0]===def?'selected':''}>${esc(r[1])}</option>`).join('')}</select>`;
+  const rows=variables.map(v=>{const name=v.name||v.variable_name||'';const def=qColDefaultRole(v);const auto=def==='open_ended'?' <span class="tt-status ok">auto</span>':'';return `<tr><td class="dx-name">${esc(name)}${auto}</td><td>${roleSel(name,def)}</td></tr>`;}).join('');
+  const legend=QUAL_ROLES.map(r=>`<div class="dx-l" style="margin-bottom:10px"><div class="dx-l-k">${esc(r[1])}</div><div class="dx-l-t">${esc(r[2])}</div></div>`).join('');
+  $("#centerInner").innerHTML=wsHead(s)+`
+    <div class="panel"><div class="panel-h"><div><h3>Column roles</h3><div class="ph-sub">${variables.length} columns detected</div></div></div>
+      <div class="panel-b"><div class="dx-scroll" style="max-height:420px;overflow-y:auto"><table class="dx-table">
+        <thead><tr><th class="l">Column</th><th class="l">Role</th></tr></thead><tbody>${rows}</tbody></table></div>
+        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" id="qcsBtn" onclick="qSaveColumnRoles()">Confirm and build segments</button><span class="dm-note" id="qcsMsg">Mark each open-ended question as <b>Code this</b>.</span></div>
+      </div></div>
+    <div class="dx-layers">${legend}</div>`+navFooter();
+}
+function qSaveColumnRoles(){
+  const btn=$("#qcsBtn"),msg=$("#qcsMsg");
+  const sels=[].slice.call(document.querySelectorAll('.qcol-role'));
+  const columns=sels.map(x=>({name:x.getAttribute('data-col'),qual_role:x.value}));
+  if(!columns.filter(c=>c.qual_role==='open_ended').length){if(msg){msg.style.color='#c0392b';msg.innerHTML='Mark at least one column as <b>Code this</b> to create segments.';}return;}
+  if(btn){btn.disabled=true;btn.textContent='Building…';}
+  qapi('/api/qual/save-column-roles.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,columns:columns})}).then(r=>{
+    const n=r.seg_count||0;
+    if(btn){btn.disabled=false;btn.textContent='Confirm and build segments';}
+    if(msg){msg.style.color=n>0?'var(--mm-ink)':'#c0392b';msg.textContent=n>0?(n+' segment'+(n!==1?'s':'')+' created. Moving to Data Cleaning…'):'No segments created. Check that your open-ended columns have text.';}
+    if(n>0)setTimeout(()=>goStep('cleaning'),1400);
+  }).catch(e=>{if(btn){btn.disabled=false;btn.textContent='Confirm and build segments';}if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
+}
+
+/* ── Step 5 · Cleaning — real scan-pii / mask-pii ── */
+let qPii=null;
 function renderCleaning(s){
-  const rows=SAMPLE.pii.map(p=>`
-    <div class="dq-row"><div class="dq-ico">!</div>
-      <div class="dq-body"><div class="dq-name">${esc(p.kind)} · ${esc(p.found)}</div><div class="dq-risk">${esc(p.example)}</div></div>
-      <button class="btn" onclick="toast('Masked (prototype)')" style="padding:6px 13px;font-size:12.5px">Mask</button></div>`).join('');
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dq-card">${rows}</div>
-    <div class="run-actions"><button class="btn primary" onclick="toast('All personal information masked (prototype)')">Mask all flagged</button>
-      <button class="btn" onclick="toast('Re-scanned (prototype)')">Re-scan</button></div>
-    <div class="dx-layers" style="margin-top:18px"><div class="dx-l"><div class="dx-l-k">Why this matters</div>
-      <div class="dx-l-t">Masking personal details before anyone reads or co-codes the data protects respondents and keeps your study shareable.</div></div></div>`+navFooter();
+    <div class="panel"><div class="panel-b">
+      <div class="run-actions"><button class="btn primary" onclick="qScanPii()">Scan for personal information</button>
+        <button class="btn" onclick="goStep('familiarization')">Skip, continue →</button></div>
+      <div id="diBody" style="margin-top:14px"></div>
+    </div></div>`+navFooter();
 }
+function qScanPii(){
+  const body=$("#diBody");if(body)body.innerHTML='<div class="work-surface">Scanning segments…</div>';
+  fetch('/api/qual/scan-pii.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='cleaning')return;
+    if(!d.ok)throw new Error(d.message||'Scan failed.');
+    qPii=d;qRenderPii(d);
+  }).catch(e=>{if(activeStep().id==='cleaning'){const b=$("#diBody");if(b)b.innerHTML='<div class="work-surface">Scan error: '+esc(e.message)+'</div>';}});
+}
+function qRenderPii(d){
+  const body=$("#diBody");if(!body)return;
+  if(d.flag_count===0){body.innerHTML=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">Clean</div><div class="dx-l-t">No personal information detected in ${d.total_segments} segments.</div></div></div><div class="run-actions"><button class="btn primary" onclick="goStep('familiarization')">Continue to Familiarization →</button></div>`;return;}
+  const tl={email:'Email',phone:'Phone',ssn:'ID number',name_intro:'Name'};
+  const rows=d.flagged.map(f=>{const pats=f.patterns.map(p=>`<span class="tt-status rev" style="margin-right:5px">${esc(tl[p.type]||p.type)}: ${esc(p.match)}</span>`).join('');
+    return `<div id="qpii-${f.segment_id}" class="dq-row"><div class="dq-body"><div style="margin-bottom:4px">${pats}</div><div class="dq-risk" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(f.original)}</div></div>
+      <div style="display:flex;gap:6px;flex:none"><button class="btn" style="padding:5px 11px;font-size:12px" data-mask="${f.segment_id}">Mask</button><button class="btn" style="padding:5px 11px;font-size:12px" data-skip="${f.segment_id}">Skip</button></div></div>`;}).join('');
+  body.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px"><span class="dm-note">${d.flag_count} segment${d.flag_count!==1?'s':''} flagged of ${d.total_segments}</span>
+      <div class="run-actions"><button class="btn" onclick="qMaskAll()">Mask all</button><button class="btn primary" onclick="goStep('familiarization')">Continue →</button></div></div>
+    <div class="dq-card" id="qpiiList" style="max-height:360px;overflow-y:auto">${rows}</div>`;
+  const list=$("#qpiiList");
+  if(list)list.addEventListener('click',e=>{const m=e.target.closest('[data-mask]');const sk=e.target.closest('[data-skip]');if(m)qMaskSeg(+m.getAttribute('data-mask'),m);if(sk){const row=document.getElementById('qpii-'+sk.getAttribute('data-skip'));if(row)row.style.opacity='.4';}});
+}
+function qMaskSeg(sid,btn){if(btn){btn.disabled=true;btn.textContent='Masking…';}
+  qapi('/api/qual/mask-pii.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,segment_id:sid})}).then(r=>{const row=document.getElementById('qpii-'+sid);if(row)row.innerHTML='<div class="dq-body"><span class="tt-status ok">Masked</span> <span class="dq-risk">'+esc(r.masked_text)+'</span></div>';}).catch(e=>{if(btn){btn.disabled=false;btn.textContent='Mask';}toast('Could not mask: '+e.message);});}
+function qMaskAll(){if(qPii&&qPii.flagged)qPii.flagged.forEach(f=>qMaskSeg(f.segment_id,null));}
 function renderFamiliarization(s){
   const chips=SAMPLE.concepts.map(c=>`<span class="ov-chip">${esc(c.label)} · ${c.n}</span>`).join(' ');
   $("#centerInner").innerHTML=wsHead(s)+`
