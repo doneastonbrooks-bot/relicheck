@@ -268,7 +268,7 @@ $BOOT = [
   --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",sans-serif;
   --font-display:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;
   /* Layout */
-  --sidebar-w:264px; --topbar-h:64px; --companion:308px;
+  --sidebar-w:300px; --topbar-h:76px; --companion:308px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -404,9 +404,9 @@ button{font-family:inherit;cursor:pointer}
 .btn-str{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--indigo);background:var(--indigo-light);border:1px solid rgba(85,82,246,.15);border-radius:999px;padding:7px 13px;cursor:pointer;transition:all .13s;}
 .btn-str:hover{background:rgba(85,82,246,.14);} .btn-str svg{width:12px;height:12px;}
 /* ── Report drawer ── */
-.rpt-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.18);z-index:60;}
+.rpt-scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.18);z-index:63;}
 .rpt-scrim.open{display:block;}
-.rpt-drawer{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--surface);box-shadow:-12px 0 40px rgba(0,0,0,.1);z-index:61;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);}
+.rpt-drawer{position:fixed;top:0;right:0;bottom:0;width:480px;background:var(--surface);box-shadow:-12px 0 40px rgba(0,0,0,.1);z-index:64;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .28s cubic-bezier(.32,.72,0,1);}
 .rpt-drawer.open{transform:translateX(0);}
 .rpt-head{display:flex;align-items:center;gap:12px;padding:18px 22px 16px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .rpt-head h2{font-size:15px;font-weight:700;letter-spacing:-.2px;flex:1;}
@@ -427,16 +427,20 @@ button{font-family:inherit;cursor:pointer}
 .btn-export,.btn-export-report{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--indigo);color:#fff;border:none;font-family:inherit;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:999px;cursor:pointer;transition:background .13s;box-shadow:0 1px 4px rgba(85,82,246,.3);}
 .btn-export:hover,.btn-export-report:hover{background:var(--indigo-dark);}
 /* ── Coach pull tab ── */
-.coach-tab-btn,.coach-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:55;display:flex;align-items:center;justify-content:center;width:22px;height:110px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;cursor:pointer;box-shadow:-2px 0 8px rgba(0,0,0,.06);transition:width .15s,background .15s;}
+.coach-tab-btn,.coach-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:63;display:flex;align-items:center;justify-content:center;width:22px;height:110px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;cursor:pointer;box-shadow:-2px 0 8px rgba(0,0,0,.06);transition:width .15s,background .15s,right .26s cubic-bezier(.32,.72,0,1);}
 .coach-tab-btn:hover,.coach-tab:hover{width:26px;background:var(--indigo-light);}
 .coach-tab-lbl,.coach-tab-label{writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--text-3);user-select:none;white-space:nowrap;transition:color .15s;}
-body.coach-open .coach-tab-btn,body.coach-open .coach-tab{background:var(--indigo-light);border-color:rgba(85,82,246,.2);}
+/* when the panel is open the tab rides its left edge so it never gets covered */
+body.coach-open .coach-tab-btn,body.coach-open .coach-tab{right:var(--companion);background:var(--indigo-light);border-color:rgba(85,82,246,.2);}
+/* hide the Coach tab while the Report drawer is out (it would overlap the drawer edge) */
+body.report-open .coach-tab-btn,body.report-open .coach-tab{opacity:0;pointer-events:none;}
 body.coach-open .coach-tab-lbl,body.coach-open .coach-tab-label{color:var(--indigo);}
 /* ── Companion / Coach panel ── */
 .companion{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:fixed;top:0;right:0;bottom:0;width:var(--companion);z-index:62;box-shadow:-12px 0 40px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);}
 body.coach-open .companion{transform:translateX(0);}
 .comp-head{display:flex;align-items:center;gap:10px;padding:16px 18px 14px;border-bottom:1px solid var(--border);}
 .comp-head .ch-ico{width:28px;height:28px;border-radius:8px;background:var(--indigo-light);color:var(--indigo);display:grid;place-items:center;font-size:15px;flex:none;}
+.comp-head .ch-ico svg{width:14px;height:14px;}
 .comp-head h3{font-size:13px;font-weight:600;color:var(--text);} .comp-head .ch-sub{font-size:11px;color:var(--text-3);}
 .comp-toggle{margin-left:auto;width:24px;height:24px;border-radius:6px;border:none;background:transparent;color:var(--text-3);display:grid;place-items:center;flex:none;cursor:pointer;font-size:16px;transition:background .12s,color .12s;}
 .comp-toggle:hover{background:var(--bg);color:var(--text);}
@@ -462,6 +466,28 @@ body.coach-open .companion{transform:translateX(0);}
 body.companion-collapsed .comp-body,body.companion-collapsed .comp-tabs{display:none;}
 body.companion-collapsed .comp-head{justify-content:center;padding:14px 6px;}
 body.companion-collapsed .comp-toggle{margin-left:0;}
+/* ── Coach content (prototype style) ── */
+.coach-context-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:var(--indigo);background:var(--indigo-light);padding:4px 10px;border-radius:999px;margin-bottom:14px;letter-spacing:.01em;}
+.coach-context-chip svg{width:10px;height:10px;}
+.coach-section{margin-bottom:18px;}
+.coach-section-label{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);margin-bottom:8px;}
+.coach-tip{font-size:13.5px;line-height:1.65;color:var(--text-2);}
+.coach-tip strong,.coach-tip b{color:var(--text);font-weight:600;}
+.coach-divider{height:1px;background:var(--border);margin:16px 0;}
+.coach-prompt-list{display:flex;flex-direction:column;gap:6px;}
+.coach-prompt{text-align:left;background:var(--bg);border:1px solid transparent;border-radius:10px;padding:10px 13px;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--text-2);cursor:pointer;line-height:1.4;transition:all .12s;}
+.coach-prompt:hover{background:var(--indigo-light);color:var(--indigo);border-color:rgba(85,82,246,.15);}
+.coach-prompt.active{background:var(--indigo-light);color:var(--indigo);border-color:rgba(85,82,246,.15);font-weight:600;}
+.coach-answer{background:var(--indigo-light);border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.65;color:var(--text);margin-top:10px;display:none;}
+.coach-answer.visible{display:block;}
+.comp-foot{padding:12px 16px;border-top:1px solid var(--border);flex-shrink:0;}
+.coach-input-row{display:flex;gap:8px;align-items:center;}
+.coach-input{flex:1;font-family:inherit;font-size:13px;color:var(--text);background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 12px;outline:none;transition:border-color .15s;}
+.coach-input:focus{border-color:var(--indigo);box-shadow:0 0 0 3px rgba(85,82,246,.08);}
+.coach-input::placeholder{color:var(--text-3);}
+.coach-send{width:32px;height:32px;border-radius:999px;background:var(--indigo);border:none;color:#fff;display:grid;place-items:center;cursor:pointer;flex-shrink:0;transition:background .12s;}
+.coach-send:hover{background:var(--indigo-dark);} .coach-send svg{width:13px;height:13px;}
+.coach-ai-label{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--text-3);margin-bottom:7px;text-align:center;}
 /* ── dx-* component classes (used by step renderers) ── */
 .dx-scroll{overflow-x:auto;margin:0 -4px;}
 .dx-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px;}
@@ -767,12 +793,19 @@ label .tt-hint{margin-left:6px;}
 <!-- Coach panel (slide-in) -->
 <aside class="companion" id="companion">
   <div class="comp-head">
-    <div class="ch-ico">✦</div>
-    <div><h3>ReliCheck Coach</h3><div class="ch-sub">Explain · Notes · Intelligence</div></div>
+    <div class="ch-ico"><svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M3 14c0-2.761 2.239-5 5-5s5 2.239 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg></div>
+    <div><h3>ReliCheck Coach</h3><div class="ch-sub" id="coachStepLabel">Guidance</div></div>
     <button class="comp-toggle" onclick="toggleCoach()" title="Close">✕</button>
   </div>
-  <div class="comp-tabs" id="compTabs"></div>
+  <div class="comp-tabs" id="compTabs" style="display:none"></div>
   <div class="comp-body" id="compBody"></div>
+  <div class="comp-foot">
+    <div class="coach-ai-label">✦ Ask ReliCheck Intelligence</div>
+    <div class="coach-input-row">
+      <input class="coach-input" type="text" id="coachInput" placeholder="Ask a question about this step..." onkeydown="handleCoachInput(event)">
+      <button class="coach-send" onclick="handleCoachSend()" title="Ask"><svg viewBox="0 0 16 16" fill="none"><line x1="3" y1="8" x2="13" y2="8" stroke="white" stroke-width="1.8" stroke-linecap="round"/><polyline points="9,4 13,8 9,12" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    </div>
+  </div>
 </aside>
 
 <!-- Report drawer -->
@@ -3053,22 +3086,70 @@ function renderPalette(){
     html+=g.items.map(it=>`<div class="pal-item ${it.strand} ${cur&&it.name===cur.name?'active':''}" onclick="${it.action||("selPal('"+it.name.replace(/'/g,"\\'")+"')")}"><span class="pdot"></span>${it.name}</div>`).join("");});}
   $("#palette").innerHTML=html;
 }
-function renderCompanion(){
-  const d=DESIGNS[state.design]; const s=activeStep(); const tool=currentTool(s);
-  $("#compTabs").innerHTML=["explain","notes","intelligence"].map(t=>`<div class="comp-tab ${state.compTab===t?'active':''}" onclick="setCompTab('${t}')">${t==="intelligence"?"Intelligence":t[0].toUpperCase()+t.slice(1)}</div>`).join("");
-  const b=$("#compBody");
-  if(state.compTab==="notes"){b.innerHTML=`<div class="comp-block"><div class="cb-k"><span class="i">✎</span> Notes for this step</div><textarea class="notes-area" placeholder="Jot decisions for ${esc(s.title)}…" oninput="state.notes[state.stepId]=this.value">${esc(state.notes[state.stepId]||"")}</textarea></div>`;return;}
-  if(state.compTab==="intelligence"){const here=tool?tool.name:s.title;
-    b.innerHTML=`<div class="comp-block"><div class="cb-k" style="color:var(--accent-ink)"><span class="i">✦</span> ReliCheck Intelligence</div><div class="ai-prompt">Ask about <b>${esc(here)}</b>, or pick a suggestion.</div><div class="ai-suggest"><button class="ai-chip" onclick="aiAnswer('plain')">Explain this step in plain language</button><button class="ai-chip" onclick="aiAnswer('write')">Draft a sentence for my report</button><button class="ai-chip" onclick="aiAnswer('next')">What should I do next?</button></div><div id="aiOut"></div></div>`;return;}
-  const ctx=s.pivot?`<b>${esc(s.title)}.</b> ${esc(s.lede)}`:`You are on <b>${esc(s.title)}</b>, ${s.strand==='neutral'?'a shared step':'the '+s.strand.toUpperCase()+' strand'}.`;
-  const lead=toolCoachBlock(helpKey(s));
-  b.innerHTML=lead+`<div class="comp-block comp-why"><div class="cb-k">✦ Why this order</div><div class="cb-t">${d.why}</div></div>
-    <div class="comp-block"><div class="cb-k"><span class="i">i</span> On this screen</div><div class="cb-t">${ctx}</div></div>
-    <div class="comp-block"><div class="cb-k"><span class="i">⚖</span> Both strands, fairly</div><div class="cb-t">Quantitative gets <b>Instrument Quality</b>; qualitative gets <b>Trustworthiness</b>. Each strand carries its own credibility check.</div></div>`;
+// Coach content (prototype style): context chip, Guidance tip, divider,
+// Common questions with click-to-reveal answers. Content is drawn from the
+// existing per-step AHELP so it works across all pipeline steps. The footer
+// ask box is the labeled ReliCheck Intelligence secondary (manual-first).
+function coachData(s){
+  const d=DESIGNS[state.design];
+  const h=AHELP[helpKey(s)];
+  const strip=t=>String(t==null?'':t).replace(/<[^>]+>/g,'').replace(/\s+/g,' ').trim();
+  // Guidance tip: the step's "what it is" paragraph, else the step lede.
+  const tip = (h&&h.what) ? h.what : esc(s.lede||('This step is part of the '+(d?d.short:'')+' workflow.'));
+  // Common questions mapped to the existing help fields (all plain-language).
+  const qs=[], ans=[];
+  if(h){
+    if(h.measures){qs.push('What does this step give me?'); ans.push(strip(h.measures));}
+    if(h.use){qs.push('When should I use it?'); ans.push(strip(h.use));}
+    if(h.example){qs.push('How do I read the result?'); ans.push(strip(h.example));}
+  }
+  if(d&&d.why){qs.push('Why is this step in this order?'); ans.push(strip(d.why));}
+  if(!qs.length){qs.push('What am I doing on this step?'); ans.push(strip(s.lede||'Work through this step, then continue.'));}
+  return {tip:tip, qs:qs, ans:ans};
 }
-function aiAnswer(kind){const s=activeStep();const name=(currentTool(s)||{}).name||s.title;
-  let txt=kind==="plain"?`${name}: ${s.lede}`:kind==="write"?`This step contributes to the ${DESIGNS[state.design].short} report; run it, then save the result to your findings.`:s.pivot?`Carry the selected items into the next phase, then build the joint display.`:`Save this to your report, then continue to the next step.`;
-  $("#aiOut").innerHTML=`<div class="ai-answer">${esc(txt)}</div>`;}
+let coachAns=[];
+function renderCompanion(){
+  const s=activeStep(); const ss=steps();
+  const sub=document.getElementById('coachStepLabel');
+  if(sub) sub.textContent='Step '+s.n+' guidance';
+  const cd=coachData(s); coachAns=cd.ans;
+  const prompts=cd.qs.map((q,i)=>`<button class="coach-prompt" onclick="showCoachAnswer(${i})">${esc(q)}</button>`).join('');
+  $("#compBody").innerHTML=`
+    <div class="coach-context-chip">
+      <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/><line x1="6" y1="5" x2="6" y2="8.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="3.5" r=".6" fill="currentColor"/></svg>
+      Step ${s.n} of ${ss.length}
+    </div>
+    <div class="coach-section">
+      <div class="coach-section-label">Guidance</div>
+      <div class="coach-tip">${cd.tip}</div>
+    </div>
+    <div class="coach-divider"></div>
+    <div class="coach-section">
+      <div class="coach-section-label">Common questions</div>
+      <div class="coach-prompt-list">${prompts}</div>
+      <div class="coach-answer" id="coachAnswer"></div>
+    </div>`;
+}
+function coachType(el,text){
+  el.textContent=''; el.classList.add('visible');
+  let pos=0; clearInterval(window._coachTyper);
+  window._coachTyper=setInterval(function(){ if(pos<text.length){el.textContent+=text[pos++];} else {clearInterval(window._coachTyper);} },10);
+}
+function showCoachAnswer(i){
+  const ans=document.getElementById('coachAnswer');
+  document.querySelectorAll('.coach-prompt').forEach((p,idx)=>p.classList.toggle('active',idx===i));
+  if(ans) coachType(ans, coachAns[i]||'');
+}
+function handleCoachInput(e){ if(e.key==='Enter') handleCoachSend(); }
+function handleCoachSend(){
+  const input=document.getElementById('coachInput'); if(!input) return;
+  const val=input.value.trim(); if(!val) return;
+  if(typeof toast==='function') toast('Working with ReliCheck Intelligence…');
+  const ans=document.getElementById('coachAnswer'); const s=activeStep();
+  document.querySelectorAll('.coach-prompt').forEach(p=>p.classList.remove('active'));
+  if(ans) coachType(ans, "In the full build, ReliCheck Intelligence answers from your own data and design. For now, the common questions above cover "+(s.title||'this step')+", and you can carry anything useful into your Researcher's Notes.");
+  input.value='';
+}
 function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function alignPalette(){}
 function render(){renderSwitch();renderRail();renderCenter();appendReportSave();renderPalette();renderCompanion();alignPalette();mmRenderTopbarSteps();mmRenderSidebar();}
@@ -3128,7 +3209,16 @@ function stepBy(dir){const s=steps();const i=s.findIndex(x=>x.id===activeStep().
 function selPal(name){state.toolSel=name;renderCenter();renderPalette();renderCompanion();$(".center").scrollTop=0;alignPalette();toast("Loaded: "+name);}
 function setCompTab(t){state.compTab=t;renderCompanion();}
 function toggleCompanion(){document.body.classList.toggle('companion-collapsed');}
-function toggleCoach(){document.body.classList.toggle('coach-open');}
+function toggleCoach(){
+  const opening=!document.body.classList.contains('coach-open');
+  if(opening){ // close the report drawer first so the two never overlap
+    document.getElementById('rptDrawer').classList.remove('open');
+    document.getElementById('rptScrim').classList.remove('open');
+    document.body.classList.remove('report-open');
+  }
+  document.body.classList.toggle('coach-open',opening);
+  if(opening) renderCompanion();
+}
 window.addEventListener('resize',()=>{$(".center").scrollTop=0;alignPalette();});
 
 function openEdit(){
@@ -3250,8 +3340,11 @@ function mmUpdateReportCount(){
   if(b2) b2.textContent=n+(n===1?' finding':' findings');
 }
 function toggleRptDrawer(){
-  document.getElementById('rptDrawer').classList.toggle('open');
-  document.getElementById('rptScrim').classList.toggle('open');
+  const opening=!document.getElementById('rptDrawer').classList.contains('open');
+  if(opening) document.body.classList.remove('coach-open'); // never both right-side drawers at once
+  document.getElementById('rptDrawer').classList.toggle('open',opening);
+  document.getElementById('rptScrim').classList.toggle('open',opening);
+  document.body.classList.toggle('report-open',opening);
 }
 function mmAddFinding(finding){
   mmReportFindings.push(finding);
