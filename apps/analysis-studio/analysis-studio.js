@@ -2384,6 +2384,160 @@
   }
 
 
+  // ── REPORT (clean, structured — replaces the snapshot dump) ─────────────────
+  // Parses each saved analysis down to its variables + stats table (dropping
+  // the Setup form/controls), assembles a real document, and layers in a
+  // ReliCheck Intelligence narrative. Studio-styled; one-click PDF via pdfmake.
+  var rep = { items:[], sample:{n:0,k:0}, ai:null, aiError:null };
+
+  function repExtract(item){
+    var div = document.createElement('div');
+    div.innerHTML = (item && item.result && item.result.html) || '';
+    var vars = [];
+    Array.prototype.forEach.call(div.querySelectorAll('select'), function(sel){
+      var opt = sel.options && sel.options[sel.selectedIndex];
+      var t = opt ? opt.textContent.trim() : '';
+      t = t.replace(/\s*\(n=\d+\)\s*$/,'').replace(/\s*\(\d+\s+(groups|levels|categories)\)\s*$/,'');
+      if (t && t.charAt(0) !== '—' && vars.indexOf(t) < 0) vars.push(t);
+    });
+    Array.prototype.forEach.call(div.querySelectorAll('select,button,.tt-segs,.run-actions,.tt-hint,.ph-sub,.as-help-bar,.tt-tabs,.tt-tab'), function(n){ n.remove(); });
+    var kv = [], tbl = div.querySelector('table');
+    if (tbl){
+      var rows = tbl.querySelectorAll('tr');
+      Array.prototype.forEach.call(rows, function(tr){
+        var tds = tr.querySelectorAll('td');
+        if (tds.length === 2){ var k = tds[0].textContent.trim(), v = tds[1].textContent.trim(); if (k && v) kv.push({k:k,v:v}); }
+      });
+      if (!kv.length){
+        var ths = tbl.querySelectorAll('th'), fr = tbl.querySelector('tbody tr') || rows[1];
+        if (fr){ var cs = fr.querySelectorAll('td'); Array.prototype.forEach.call(ths, function(th,i){ if (cs[i]){ var k2=th.textContent.trim(), v2=cs[i].textContent.trim(); if(k2&&v2) kv.push({k:k2,v:v2}); } }); }
+      }
+    }
+    return { vars: vars.join(' vs '), kv: kv.slice(0,8) };
+  }
+  function repKv(kv){ return kv.map(function(p){ return p.k + ': ' + p.v; }).join('  ·  '); }
+  function repDecision(kv){
+    var s = kv.map(function(p){ return p.k+' '+p.v; }).join(' ').toLowerCase();
+    if (/not significant|n\.s\.|p[:\s]*[=>]\s*\.?[1-9]/.test(s)) return {t:'n.s.', sig:false};
+    if (/significant|p[:\s]*<\s*\.?0|p[:\s]*[=:]\s*\.?0?0[0-4]/.test(s)) return {t:'significant', sig:true};
+    return {t:'', sig:null};
+  }
+
+  var REP_PDF = null;
+  function repLoadPdf(){
+    if (REP_PDF) return REP_PDF;
+    REP_PDF = new Promise(function(resolve, reject){
+      if (window.pdfMake && window.pdfMake.createPdf) return resolve();
+      var base = 'https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/';
+      var s1 = document.createElement('script'); s1.src = base + 'pdfmake.min.js';
+      s1.onload = function(){ var s2 = document.createElement('script'); s2.src = base + 'vfs_fonts.js'; s2.onload = function(){ resolve(); }; s2.onerror = function(){ reject(); }; document.head.appendChild(s2); };
+      s1.onerror = function(){ reject(); };
+      document.head.appendChild(s1);
+    });
+    return REP_PDF;
+  }
+  function repPdfDef(title){
+    var ai = rep.ai, items = rep.items, content = [];
+    var tests = []; items.forEach(function(it){ var l=titleFor(it.tool_key); if(tests.indexOf(l)<0) tests.push(l); });
+    content.push({ text: (ai&&ai.headline) ? ai.headline : (title+': Analysis Report'), style:'h1' });
+    content.push({ text: title + (rep.sample.n?'   ·   N = '+rep.sample.n:'') + '   ·   ' + items.length + ' analyses', style:'meta' });
+    if (ai && ai.overview) content.push({ text: ai.overview, style:'lead' });
+    content.push({ text:'Methods', style:'h2' });
+    content.push({ text: 'The following analyses were performed' + (rep.sample.n?' on a sample of '+rep.sample.n+' cases':'') + ': ' + tests.join(', ') + '.', margin:[0,0,0,4] });
+    content.push({ text:'Results', style:'h2' });
+    var body = [[{text:'Analysis',style:'th'},{text:'Variables',style:'th'},{text:'Key result',style:'th'},{text:'Decision',style:'th'}]];
+    items.forEach(function(it){ var c=repExtract(it), d=repDecision(c.kv); body.push([
+      {text:titleFor(it.tool_key),bold:true},{text:c.vars||'—',color:'#3a4050'},{text:repKv(c.kv)||'—',color:'#3a4050'},
+      {text:d.t||'—',color:d.sig?'#1f9e44':'#5f6368',bold:!!d.t} ]); });
+    content.push({ table:{headerRows:1,widths:['20%','24%','*','auto'],body:body}, layout:{hLineColor:function(){return '#e5e8ef';},vLineColor:function(){return '#e5e8ef';},hLineWidth:function(i){return i===1?1:0.5;},vLineWidth:function(){return 0.5;},paddingTop:function(){return 5;},paddingBottom:function(){return 5;}}, margin:[0,2,0,10] });
+    if (ai && ai.synthesis){ content.push({text:'Interpretation',style:'h2'}); content.push({text:'ReliCheck Intelligence',style:'aitag'}); ai.synthesis.split(/\n+/).forEach(function(p){ if(p.trim()) content.push({text:p.trim(),margin:[0,0,0,8]}); }); }
+    var lims = (ai&&ai.limitations&&ai.limitations.length)?ai.limitations:['These results describe the sample analyzed and may not generalize beyond it.','Statistical significance does not establish causation.','When several tests are run together, some can reach significance by chance.'];
+    content.push({text:'Limitations',style:'h2'}); content.push({ul:lims,margin:[0,0,0,4]});
+    return { info:{title:title+' Report',author:'ReliCheck'}, pageMargins:[48,54,48,56], content:content,
+      styles:{ h1:{fontSize:20,bold:true,margin:[0,0,0,3]}, meta:{fontSize:9,color:'#777',margin:[0,0,0,16]}, lead:{fontSize:12,margin:[0,0,0,12]}, h2:{fontSize:14,bold:true,margin:[0,16,0,6]}, th:{fontSize:8.5,bold:true,color:'#5a6070'}, aitag:{fontSize:8,bold:true,color:'#1d4ed8',margin:[0,0,0,6]} },
+      defaultStyle:{fontSize:10.5,lineHeight:1.3,color:'#1a1d23'},
+      footer:function(cur,tot){ return {columns:[{text:title,fontSize:8,color:'#aaa',margin:[48,0,0,0]},{text:cur+' / '+tot,alignment:'right',fontSize:8,color:'#aaa',margin:[0,0,48,0]}]}; } };
+  }
+
+  AS.renderReport = function(host, BOOT){
+    BOOT = BOOT || {};
+    var pid = BOOT.projectId || 0, title = BOOT.projectLabel || 'Analysis Project', kind = BOOT.slug || 'inferential';
+    var eyebrow = kind === 'descriptive' ? 'Descriptive Analysis' : 'Inferential Analysis';
+    host.innerHTML = header(eyebrow, 'Report', 'Your saved analyses, assembled into a readable report.')
+      + '<div id="asRepBody"><div class="placeholder">Loading…</div></div>';
+    var bodyEl = host.querySelector('#asRepBody');
+    if (!pid){ bodyEl.innerHTML = '<div class="placeholder">Save your data to a project first, then click <strong>Save to report</strong> on any analysis step.</div>'; return; }
+
+    function fetchJSON(url,opts){ return fetch(url, Object.assign({credentials:'same-origin',headers:{Accept:'application/json'}},opts||{})).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;}); }
+
+    function aiNarrative(then){
+      if (kind !== 'inferential'){ rep.ai = null; then(); return; }
+      var analyses = rep.items.map(function(it){ var c=repExtract(it); return { test:titleFor(it.tool_key), variables:c.vars, stats:repKv(c.kv), finding:repKv(c.kv) }; });
+      fetch('/api/analysis/ai-inferential-report.php?project_id='+pid, { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ project_id:pid, analyses:analyses, sample:rep.sample }) })
+        .then(function(r){ return r.json().catch(function(){return null;}); })
+        .then(function(d){ rep.ai = (d&&d.ok)?d.report:null; rep.aiError = (d&&!d.ok)?(d.message||d.error||'narrative unavailable'):null; then(); })
+        .catch(function(){ rep.ai=null; rep.aiError='network error'; then(); });
+    }
+
+    function draw(){
+      var ai = rep.ai, items = rep.items;
+      var tests=[]; items.forEach(function(it){ var l=titleFor(it.tool_key); if(tests.indexOf(l)<0) tests.push(l); });
+      var h = '<div class="rep-actions" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">'
+        + '<button class="btn primary" id="asRepPdf">Download PDF</button>'
+        + '<button class="btn" id="asRepPrint">Print</button>'
+        + '<button class="btn" id="asRepWord">Word</button>'
+        + (ai? '<button class="btn" id="asRepRegen" style="margin-left:auto">Regenerate narrative</button>':'')
+        + '</div>';
+      h += '<div class="panel"><div class="panel-b" id="asRepDoc">';
+      h += '<div class="ws-header" style="border:0;padding:0;margin-bottom:10px"><h1 class="title" style="margin:0">'+esc(ai&&ai.headline?ai.headline:title+': Analysis Report')+'</h1>'
+        + '<p class="lede" style="margin-top:4px;color:var(--ink-3)">'+esc(title)+(rep.sample.n?'  ·  N = '+rep.sample.n:'')+'  ·  '+items.length+' analys'+(items.length===1?'is':'es')+'</p></div>';
+      if (ai && ai.overview) h += '<p style="font-size:15px;margin:0 0 14px">'+esc(ai.overview)+'</p>';
+      h += '<div class="ov-sec">Methods</div><p style="margin:4px 0 14px">The following analys'+(items.length===1?'is was':'es were')+' performed'+(rep.sample.n?' on a sample of '+rep.sample.n+' cases':'')+': '+tests.map(esc).join(', ')+'.</p>';
+      h += '<div class="ov-sec">Results</div><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Analysis</th><th class="l">Variables</th><th class="l">Key result</th><th class="l">Decision</th></tr></thead><tbody>';
+      items.forEach(function(it){ var c=repExtract(it), d=repDecision(c.kv);
+        h += '<tr><td class="dx-name">'+esc(titleFor(it.tool_key))+'</td><td>'+esc(c.vars||'—')+'</td><td class="dx-interp">'+esc(repKv(c.kv)||'—')+'</td>'
+          + '<td>'+(d.t?'<span class="tt-status '+(d.sig?'ok':'rev')+'">'+esc(d.t)+'</span>':'—')+'</td>'
+          + '<td style="text-align:right"><button class="btn" data-rep-del="'+esc(String(it.id))+'" style="padding:3px 9px;font-size:12px">Remove</button></td></tr>';
+      });
+      h += '</tbody></table></div>';
+      if (ai && ai.synthesis){ h += '<div class="ov-sec" style="margin-top:18px">Interpretation <span style="font-size:10px;color:var(--acc-deep,#1d4ed8);font-weight:700">RELICHECK INTELLIGENCE</span></div>'; ai.synthesis.split(/\n+/).forEach(function(p){ if(p.trim()) h += '<p style="margin:6px 0">'+esc(p.trim())+'</p>'; }); }
+      var lims = (ai&&ai.limitations&&ai.limitations.length)?ai.limitations:['These results describe the sample analyzed and may not generalize beyond it.','Statistical significance does not establish causation.','When several tests are run together, some can reach significance by chance.'];
+      h += '<div class="ov-sec" style="margin-top:18px">Limitations</div><ul style="margin:4px 0">'+lims.map(function(l){return '<li>'+esc(l)+'</li>';}).join('')+'</ul>';
+      if (!ai && kind==='inferential') h += '<p class="save-note" style="margin-top:12px">Narrative unavailable'+(rep.aiError?' ('+esc(rep.aiError)+')':'')+'. The exact numbers above are complete.</p>';
+      h += '</div></div>';
+      bodyEl.innerHTML = h;
+
+      var pdfBtn = document.getElementById('asRepPdf');
+      if (pdfBtn) pdfBtn.addEventListener('click', function(){ var o=pdfBtn.textContent; pdfBtn.disabled=true; pdfBtn.textContent='Preparing PDF…';
+        repLoadPdf().then(function(){ window.pdfMake.createPdf(repPdfDef(title)).download((title||'analysis').replace(/[^\w]+/g,'_')+'_report.pdf'); pdfBtn.disabled=false; pdfBtn.textContent=o; })
+          .catch(function(){ pdfBtn.disabled=false; pdfBtn.textContent=o; alert('Could not load the PDF generator. Use Print, then Save as PDF.'); window.print(); }); });
+      var prBtn = document.getElementById('asRepPrint'); if (prBtn) prBtn.addEventListener('click', function(){ window.print(); });
+      var wdBtn = document.getElementById('asRepWord'); if (wdBtn) wdBtn.addEventListener('click', function(){
+        var docEl=document.getElementById('asRepDoc'); if(!docEl) return;
+        var css='<style>body{font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#15171a}h1{font-size:20pt}table{border-collapse:collapse;width:100%;font-size:10pt}th,td{border:1px solid #ccc;padding:5px 8px;text-align:left}.ov-sec{font-weight:bold;font-size:13pt;margin:14pt 0 4pt}.tt-status{font-weight:bold}</style>';
+        var doc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'+css+'</head><body>'+docEl.innerHTML+'</body></html>';
+        var blob=new Blob(['﻿'+doc],{type:'application/msword'}); var a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=(title||'analysis').replace(/[^\w]+/g,'_')+'_report.doc'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(a.href);},1500); });
+      var rg = document.getElementById('asRepRegen'); if (rg) rg.addEventListener('click', function(){ rg.disabled=true; rg.textContent='Regenerating…'; aiNarrative(function(){ draw(); }); });
+      bodyEl.querySelectorAll('[data-rep-del]').forEach(function(b){ b.addEventListener('click', function(){
+        if (!window.confirm('Remove this analysis from the report?')) return;
+        fetch('/api/analysis/results.php', { method:'DELETE', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ id:+b.getAttribute('data-rep-del') }) })
+          .then(function(){ load(); }); }); });
+    }
+
+    function load(){
+      Promise.all([ fetchJSON('/api/analysis/results.php?project_id='+pid), fetchJSON('/api/analysis/dataset.php?project_id='+pid) ])
+        .then(function(res){
+          var rd=res[0], dd=res[1];
+          rep.items = (rd && Array.isArray(rd.results)) ? rd.results : [];
+          var ds = dd && (dd.dataset || dd.data || dd);
+          if (ds){ rep.sample.n = ds.rowCount||ds.n||ds.analyzable_n||0; rep.sample.k = (ds.variables&&ds.variables.length)||0; }
+          if (!rep.items.length){ bodyEl.innerHTML = '<div class="placeholder">No saved analyses yet. Run a step and click <strong>Save to report</strong>, then come back.</div>'; return; }
+          aiNarrative(draw);
+        });
+    }
+    load();
+  };
+
   // Delegated: any "How to use this" button (in a work step or the Overview)
   // opens its help modal.
   document.addEventListener('click', function(e){

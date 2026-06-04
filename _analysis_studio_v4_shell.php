@@ -575,6 +575,13 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     go(); alert('Tip: use Download Word, then in Google Docs choose File ▸ Open to import it.');
   }
   function renderReport(host){
+    // Clean structured report engine lives in analysis-studio.js (studio-styled,
+    // parses results down to variables + stats, adds a ReliCheck Intelligence
+    // narrative, one-click PDF). Fall back to the legacy snapshot view only if
+    // that engine is unavailable.
+    if (window.AnalysisStudio && window.AnalysisStudio.renderReport) {
+      return window.AnalysisStudio.renderReport(host, BOOT);
+    }
     host.innerHTML = '<div class="ws-header"><div class="eyebrow">'+esc(BOOT.name)+'</div><h1 class="title">Report</h1>'
       + '<p class="lede">Your saved analyses, assembled. Print or save as PDF.</p></div><div id="repBody"><div class="placeholder">Loading…</div></div>';
     const body = host.querySelector('#repBody');
