@@ -79,25 +79,28 @@ function mm_t_critical(float $df, float $alpha_upper): float {
     return ($lo + $hi) / 2.0;
 }
 
-// ── Run the test ──────────────────────────────────────────────────────────
-$r = stats_t_test($vals1, $vals2);
-if (!($r['ok'] ?? false)) fail('stats_error', $r['error'] ?? 'Could not run t-test.');
-
-$t  = (float)$r['statistic'];
-$df = (float)$r['df1'];
-$p  = (float)$r['p_value'];
-$dEff = $r['effect_size'];
-
+// ── Run the test (Welch directly — stats_t_test expects (values,groups) not two arrays) ─
 $d1 = mm_tt_desc($group1, $vals1, $miss1);
 $d2 = mm_tt_desc($group2, $vals2, $miss2);
+$va = $d1['sd'] ** 2; $vb = $d2['sd'] ** 2;
+if ($va == 0.0 && $vb == 0.0) fail('stats_error', 'No variance in either group — every value is identical.');
+$se = sqrt($va / $n1 + $vb / $n2);
+if ($se == 0.0) fail('stats_error', 'Standard error is zero.');
+$t  = ($d1['mean'] - $d2['mean']) / $se;
+// Welch–Satterthwaite df
+$df = (($va / $n1 + $vb / $n2) ** 2)
+    / ((($va / $n1) ** 2) / max($n1 - 1, 1) + (($vb / $n2) ** 2) / max($n2 - 1, 1));
+$p  = stats_t_pvalue($t, $df);
+// Pooled-SD Cohen's d
+$sp   = sqrt((($n1 - 1) * $va + ($n2 - 1) * $vb) / max($n1 + $n2 - 2, 1));
+$dEff = $sp > 0.0 ? ($d1['mean'] - $d2['mean']) / $sp : null;
 
 // CI for mean difference
 $alpha  = 1.0 - $confidence;
 $tCrit  = mm_t_critical($df, $alpha / 2.0);
-$seDiff = sqrt($d1['sd'] ** 2 / $n1 + $d2['sd'] ** 2 / $n2);
 $diff   = $d1['mean'] - $d2['mean'];
-$ciLo   = round($diff - $tCrit * $seDiff, 4);
-$ciHi   = round($diff + $tCrit * $seDiff, 4);
+$ciLo   = round($diff - $tCrit * $se, 4);
+$ciHi   = round($diff + $tCrit * $se, 4);
 $pStr   = stats_format_p($p);
 $sig    = $p < 0.05;
 
