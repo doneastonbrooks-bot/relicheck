@@ -991,21 +991,97 @@ function renderFamiliarization(s){
     <div class="panel"><div class="panel-h"><div><h3>Recurring concepts</h3><div class="ph-sub">✦ Surfaced by ReliCheck Intelligence from your corpus</div></div></div>
       <div class="panel-b">${chips}<div class="dm-note" style="margin-top:10px">These are starting points, not codes. You decide which become part of the codebook.</div></div></div>`+navFooter();
 }
+/* ── Step 7 · Coding Workspace — real segments + codes (chunk 2) ── */
+const qcw={codes:null,segments:[],uncodedOnly:false,search:''};
+function qLoadCodes(){
+  if(qcw.codes)return Promise.resolve(qcw.codes);
+  return fetch('/api/qual/get-codes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{qcw.codes=(d&&d.ok&&d.codes)?d.codes:[];return qcw.codes;}).catch(()=>{qcw.codes=[];return qcw.codes;});
+}
 function renderCoding(s){
-  const segs=SAMPLE.segments.map(seg=>{
-    const codes=seg.codes.map(c=>`<span class="code-chip">${esc(c)} <span class="x" onclick="toast('Removed (prototype)')">✕</span></span>`).join('');
-    return `<div class="seg-card"><div class="seg-meta">${esc(seg.ref)}</div><div class="seg-text">${esc(seg.text)}</div>
-      <div>${codes}<button class="btn" style="padding:5px 11px;font-size:12px" onclick="toast('Code picker (prototype)')">＋ Add code</button>
-      <button class="btn-str" style="margin-left:6px" onclick="toast('ReliCheck Intelligence suggested 2 codes (prototype)')">✦ Suggest codes</button></div></div>`;
-  }).join('');
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-cards">
-      <div class="dm-card"><div class="dm-card-k">Segments</div><div class="dm-card-v">480</div></div>
-      <div class="dm-card"><div class="dm-card-k">Coded</div><div class="dm-card-v">312</div></div>
-      <div class="dm-card"><div class="dm-card-k">Remaining</div><div class="dm-card-v">168</div></div>
-      <div class="dm-card"><div class="dm-card-k">Codes</div><div class="dm-card-v">8</div></div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <input class="ed-in" id="segSearch" style="flex:1;min-width:180px" placeholder="Search segments…">
+      <button class="btn primary" id="fAll" onclick="qcwFilter(false)">All</button>
+      <button class="btn" id="fUn" onclick="qcwFilter(true)">Uncoded only</button>
+      <button class="btn" onclick="goStep('codebook')">Manage codebook</button>
     </div>
-    <div class="seg-scroll">${segs}</div>`+navFooter();
+    <div class="dm-note" id="segCounts" style="margin-bottom:10px">Loading…</div>
+    <div id="segList" class="seg-scroll"><div class="work-surface">Loading segments…</div></div>`+navFooter();
+  const srch=$("#segSearch"); if(srch)srch.addEventListener('input',function(){qcw.search=this.value;qcwRenderList();});
+  const list=$("#segList"); if(list)list.addEventListener('click',qcwListClick);
+  qLoadCodes().then(qcwLoad);
+}
+function qcwFilter(un){qcw.uncodedOnly=un;const a=$("#fAll"),u=$("#fUn");if(a)a.className='btn'+(un?'':' primary');if(u)u.className='btn'+(un?' primary':'');qcwLoad();}
+function qcwLoad(){
+  const qs='project_id='+BOOT.projectId+'&limit=200'+(qcw.uncodedOnly?'&uncoded=1':'');
+  return fetch('/api/qual/get-segments.php?'+qs,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='coding')return;
+    qcw.segments=(d&&d.segments)||[]; qcwRenderList(d&&d.total);
+  }).catch(()=>{if(activeStep().id==='coding'){const l=$("#segList");if(l)l.innerHTML='<div class="work-surface">Could not load segments.</div>';}});
+}
+function qcwRenderList(total){
+  const list=$("#segList"); if(!list)return;
+  const q=qcw.search.toLowerCase();
+  const filtered=q?qcw.segments.filter(x=>(x.raw_text||'').toLowerCase().indexOf(q)!==-1):qcw.segments;
+  const coded=filtered.filter(x=>x.code_count>0).length, uncoded=filtered.length-coded;
+  const counts=$("#segCounts"); if(counts)counts.textContent=filtered.length+' shown'+(total&&total>qcw.segments.length?' of '+total:'')+' · '+coded+' coded · '+uncoded+' uncoded';
+  list.innerHTML=filtered.length?filtered.map(qcwSegCard).join(''):'<div class="work-surface">No segments '+(qcw.uncodedOnly?'left to code.':'found.')+'</div>';
+}
+function qcwChips(seg){return (seg.codes||[]).map(c=>`<span class="code-chip">${esc(c.name)}<span class="x chip-x" data-seg="${seg.id}" data-code="${c.id}">✕</span></span>`).join('');}
+function qcwSegCard(seg){
+  const meta=seg.metadata_json||{};
+  const metaItems=Object.keys(meta).slice(0,4).map(k=>`<span class="ov-chip" style="font-size:11px">${esc(k)}: ${esc(String(meta[k]))}</span>`).join('');
+  const pid=seg.participant_id?`<span class="ov-chip" style="font-size:11px">ID: ${esc(seg.participant_id)}</span>`:'';
+  const q=seg.question_ref?`<span class="seg-meta" style="margin:0">${esc(seg.question_ref)}</span>`:'';
+  const flag=seg.code_count===0?'<span class="tt-status rev">Uncoded</span>':(seg.code_count>=4?'<span class="tt-status rev">Over-coded</span>':'');
+  const picker=(qcw.codes&&qcw.codes.length)?qcw.codes.map(c=>`<button class="picker-item" data-seg="${seg.id}" data-code="${c.id}" data-name="${esc(c.name)}" style="display:block;width:100%;text-align:left;padding:7px 12px;border:none;background:none;cursor:pointer;font:inherit;font-size:13px">${esc(c.name)}</button>`).join(''):'<div class="dm-note" style="padding:8px 12px">No codes yet.</div>';
+  return `<div class="seg-card" id="seg-${seg.id}">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">${pid}${q}${metaItems}</div>
+    <div class="seg-text">${esc(seg.raw_text)}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="chips-${seg.id}">${qcwChips(seg)}</div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <div style="position:relative" id="pw-${seg.id}">
+        <button class="btn add-code-btn" data-seg="${seg.id}" style="padding:4px 12px;font-size:12px">+ Add code</button>
+        <div id="picker-${seg.id}" style="display:none;position:absolute;top:100%;left:0;z-index:100;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow-md);min-width:190px;max-height:220px;overflow-y:auto">${picker}
+          <div style="border-top:1px solid var(--border);padding:6px 8px"><button class="picker-new-btn" data-seg="${seg.id}" style="display:block;width:100%;text-align:left;padding:6px 8px;border:none;background:none;cursor:pointer;font:inherit;font-size:12.5px;font-weight:700;color:var(--indigo)">+ New code</button></div>
+        </div>
+      </div>
+      <button class="btn ai-suggest-btn" data-seg="${seg.id}" style="padding:4px 12px;font-size:12px">✦ Suggest codes</button>
+      ${flag}
+    </div>
+    <div id="aip-${seg.id}" style="display:none;margin-top:8px"></div>
+  </div>`;
+}
+function qcwListClick(e){
+  const addBtn=e.target.closest('.add-code-btn'), item=e.target.closest('.picker-item'), newBtn=e.target.closest('.picker-new-btn'), rm=e.target.closest('.chip-x'), sug=e.target.closest('.ai-suggest-btn'), applyAi=e.target.closest('.ai-apply-btn'), dismissAi=e.target.closest('.ai-dismiss-btn');
+  if(addBtn){const sid=addBtn.getAttribute('data-seg');document.querySelectorAll('[id^="picker-"]').forEach(p=>{if(p.id!=='picker-'+sid)p.style.display='none';});const pk=document.getElementById('picker-'+sid);if(pk)pk.style.display=pk.style.display==='none'?'block':'none';}
+  if(item){const sid=+item.getAttribute('data-seg'),cid=+item.getAttribute('data-code'),nm=item.getAttribute('data-name');const pk=document.getElementById('picker-'+sid);if(pk)pk.style.display='none';qcwApply(sid,cid,nm);}
+  if(newBtn){const sid=+newBtn.getAttribute('data-seg');const name=prompt('New code name:');if(!name||!name.trim())return;qapi('/api/qual/save-code.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,name:name.trim()})}).then(r=>{qcw.codes.push({id:r.code_id,name:name.trim()});qcwApply(sid,r.code_id,name.trim());}).catch(ex=>toast('Error: '+ex.message));}
+  if(rm){const sid=+rm.getAttribute('data-seg'),cid=+rm.getAttribute('data-code');qapi('/api/qual/remove-code.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,segment_id:sid,code_id:cid})}).then(()=>{const seg=qcw.segments.find(x=>x.id===sid);if(seg){seg.codes=seg.codes.filter(c=>c.id!==cid);seg.code_count=seg.codes.length;}const ch=document.getElementById('chips-'+sid);if(ch&&seg)ch.innerHTML=qcwChips(seg);}).catch(ex=>toast('Error: '+ex.message));}
+  if(sug){const sid=+sug.getAttribute('data-seg');const panel=document.getElementById('aip-'+sid);if(!panel)return;if(panel.style.display!=='none'&&panel.innerHTML!==''){panel.style.display='none';return;}panel.style.display='block';panel.innerHTML='<div class="dm-note" style="padding:8px 0">ReliCheck Intelligence is analyzing this segment…</div>';sug.disabled=true;qapi('/api/qual/suggest-codes.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,segment_id:sid})}).then(r=>{sug.disabled=false;qcwRenderSug(panel,sid,r.suggestions||[]);}).catch(ex=>{sug.disabled=false;panel.innerHTML='<div class="dm-note" style="padding:8px 0;color:#c0392b">Could not get suggestions: '+esc(ex.message)+'</div>';});}
+  if(applyAi){const sid=+applyAi.getAttribute('data-seg'),nm=applyAi.getAttribute('data-name');const exist=qcw.codes.find(c=>(c.name||'').toLowerCase()===nm.toLowerCase());const row=applyAi.closest('.ai-sug-row');if(exist){qcwApply(sid,exist.id,exist.name);if(row)row.style.opacity='.4';}else{qapi('/api/qual/save-code.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,name:nm})}).then(r=>{qcw.codes.push({id:r.code_id,name:nm});qcwApply(sid,r.code_id,nm);if(row)row.style.opacity='.4';}).catch(e2=>toast('Error: '+e2.message));}}
+  if(dismissAi){const row=dismissAi.closest('.ai-sug-row');if(row)row.style.opacity='.4';}
+}
+function qcwApply(sid,cid,cname){
+  qapi('/api/qual/apply-code.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,segment_id:sid,code_id:cid})}).then(()=>{
+    const seg=qcw.segments.find(x=>x.id===sid);
+    if(seg&&!seg.codes.find(c=>c.id===cid)){seg.codes.push({id:cid,name:cname});seg.code_count=seg.codes.length;}
+    const ch=document.getElementById('chips-'+sid);if(ch&&seg)ch.innerHTML=qcwChips(seg);
+  }).catch(e=>toast('Could not apply code: '+e.message));
+}
+function qcwRenderSug(panel,sid,suggestions){
+  if(!suggestions.length){panel.innerHTML='<div class="dm-note" style="padding:8px 0">No suggestions. Add more codes to the codebook first.</div>';return;}
+  const ci={high:'●●●',medium:'●●○',low:'●○○'};
+  const rows=suggestions.map(x=>{
+    const badge=x.is_existing?'<span class="tt-status ok">in codebook</span>':'<span class="ov-chip" style="font-size:10px">new</span>';
+    return `<div class="ai-sug-row" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px"><span style="font-size:14px;font-weight:700">${esc(x.name)}</span>${badge}<span class="strand-chip qual">${esc(x.evidence_type||'')}</span><span class="dm-note">${ci[x.confidence]||''}</span></div>
+      <div class="dm-note" style="margin-bottom:8px;line-height:1.45">${esc(x.rationale||'')}</div>
+      <div style="display:flex;gap:8px"><button class="btn primary ai-apply-btn" data-seg="${sid}" data-name="${esc(x.name)}" style="font-size:12px;padding:5px 12px">Apply</button><button class="btn ai-dismiss-btn" style="font-size:12px;padding:5px 10px">Dismiss</button></div>
+    </div>`;
+  }).join('');
+  panel.innerHTML=`<div style="padding:10px 0"><div class="dx-l-k" style="margin-bottom:10px">✦ ReliCheck Intelligence suggestions</div>${rows}</div>`;
 }
 function renderCodebook(s){
   const rows=SAMPLE.codes.map(c=>`<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${esc(c.def)}</td><td>${c.n}</td></tr>`).join('');
