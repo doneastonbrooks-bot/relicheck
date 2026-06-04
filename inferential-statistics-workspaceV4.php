@@ -622,6 +622,23 @@ label .tt-hint{margin-left:6px;}
 .mode-card-ai.amber .mc-cta{color:#d97706;}
 .mode-card-ai.emerald .mc-cta{color:#059669;}
 .mode-card-ai:hover .mc-cta{gap:7px;}
+/* ── Decision boxes (Mode step) — Descriptive studio's option-card design, sized compact ── */
+.option-card{position:relative;overflow:hidden;width:100%;text-align:left;font-family:inherit;border-radius:20px;padding:26px 30px;border:1px solid rgba(0,0,0,.06);box-shadow:0 12px 36px rgba(0,0,0,.06);cursor:pointer;transition:transform .18s,box-shadow .18s;display:block;}
+.option-card:hover{transform:translateY(-3px);box-shadow:0 20px 52px rgba(0,0,0,.10);}
+.option-card.self{margin-bottom:6px;background:radial-gradient(circle at 90% 90%,rgba(66,133,244,.18),transparent 42%),linear-gradient(135deg,#fff 0%,#f6f9ff 48%,#eaf2ff 100%);}
+.option-card.auto{background:radial-gradient(circle at 90% 90%,rgba(238,137,20,.18),transparent 42%),linear-gradient(135deg,#fff 0%,#fff8ef 48%,#ffeacc 100%);}
+.option-card.report{background:radial-gradient(circle at 90% 90%,rgba(31,141,79,.15),transparent 42%),linear-gradient(135deg,#fff 0%,#f4fbf7 48%,#e1f5e9 100%);}
+.option-card[disabled]{opacity:.5;cursor:default;box-shadow:none;}
+.option-card[disabled]:hover{transform:none;box-shadow:0 12px 36px rgba(0,0,0,.06);}
+.option-icon{width:52px;height:52px;border-radius:15px;display:grid;place-items:center;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.7);box-shadow:0 10px 24px rgba(0,0,0,.07);font-size:23px;flex-shrink:0;}
+.option-number-bg{position:absolute;right:28px;top:12px;font-family:var(--font-display);font-size:96px;line-height:1;font-weight:700;letter-spacing:-.08em;opacity:.09;color:#111827;pointer-events:none;}
+.option-step{font-size:13px;font-weight:700;letter-spacing:.02em;margin-bottom:6px;}
+.option-title{font-size:26px;line-height:1.05;font-weight:800;letter-spacing:-.03em;color:#111827;margin:0 0 8px;}
+.option-copy{max-width:520px;font-size:14.5px;line-height:1.45;color:#5f6368;margin:0 0 12px;}
+.option-cta{font-size:14px;font-weight:700;text-decoration:none;}
+.option-card.self .option-step,.option-card.self .option-cta{color:#3267e3;}
+.option-card.auto .option-step,.option-card.auto .option-cta{color:#e88412;}
+.option-card.report .option-step,.option-card.report .option-cta{color:#228552;}
 </style>
 <link rel="stylesheet" href="/apps/analysis-studio/analysis-studio.css?v=<?= _isv4('/apps/analysis-studio/analysis-studio.css') ?>">
 <script src="/apps/studio/studio-header.js?v=<?= _isv4('/apps/studio/studio-header.js') ?>"></script>
@@ -836,24 +853,40 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const rows = has ? (state.dataset.rowCount || 0) : 0;
     const src = has ? esc(state.dataset.source || BOOT.projectLabel) : '';
     host.innerHTML = (has ? '<div style="display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--bg);border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--text-2);width:fit-content;margin-bottom:22px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none"></span><b style="color:var(--text)">'+src+'</b><span>&middot;&nbsp;'+rows+' rows loaded</span></div>' : '')
-      + '<div class="mode-hero"><h1 class="mode-hero-title">' + (has ? 'Your data is ready.' : 'Bring in your data first.') + '</h1>'
-      + '<p class="mode-hero-sub">' + (has ? 'Choose how you want to work with it &mdash; step by step, or let ReliCheck Intelligence take the wheel.' : 'Upload a file on Step 1, then come back to choose your approach.') + '</p></div>'
-      + '<button class="mode-card-main" id="mdSelf">'
-      + '<div class="mc-ico">📊</div><div class="mc-body"><div class="mc-title">Self analyze</div>'
-      + '<div class="mc-desc">Step through t-Tests, ANOVA, Correlation, Regression, and more at your own pace. You decide what runs and what goes in your report.</div></div>'
-      + '<span class="mc-arrow">→</span></button>'
-      + '<p class="mode-ai-lbl"><span>Or let ReliCheck Intelligence do it</span></p>'
-      + '<div class="mode-grid">'
-      + '<button class="mode-card-ai amber" id="mdAuto"' + (has ? '' : ' disabled') + '>'
-      + '<div class="mc-ico">✨</div><div class="mc-title">Auto analyze</div>'
-      + '<div class="mc-desc">' + (has ? 'Run the recommended tests instantly. Review the results before export.' : 'Load your data on Step 1 to unlock this.') + '</div>'
-      + (has ? '<div class="mc-cta">Open analyzer →</div>' : '') + '</button>'
-      + '<button class="mode-card-ai emerald" id="mdReport"' + (has ? '' : ' disabled') + '>'
-      + '<div class="mc-ico">📋</div><div class="mc-title">Auto report</div>'
-      + '<div class="mc-desc">' + (has ? 'Turn your results into a clear, plain-language report.' : 'Load your data on Step 1 to unlock this.') + '</div>'
-      + (has ? '<div class="mc-cta">Generate report →</div>' : '') + '</button>'
+      + '<button class="option-card self" id="mdSelf" style="display:flex;flex-direction:column;justify-content:flex-start;">'
+      + '<div class="option-number-bg">01</div>'
+      + '<div style="display:flex;gap:20px;align-items:flex-start;position:relative;z-index:1;">'
+      + '<div class="option-icon">&#9776;</div>'
+      + '<div style="flex:1;">'
+      + '<div class="option-step">Your pace · full control</div>'
+      + '<div class="option-title">Self analyze</div>'
+      + '</div></div>'
+      + '<div class="option-copy">Step through t-Tests, ANOVA, Correlation, Regression, and more at your own pace. You decide what runs and what goes in your report.</div>'
+      + '</button>'
+      + '<p style="text-align:center;font-size:14px;color:var(--text-3);margin:32px 0;font-weight:600;">+ Or let ReliCheck Intelligence do it</p>'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:8px;">'
+      + '<button class="option-card auto" id="mdAuto"' + (has ? '' : ' disabled style="opacity:.5;cursor:default;"') + '>'
+      + '<div class="option-number-bg">02</div>'
+      + '<div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:24px;position:relative;z-index:1;">'
+      + '<div class="option-icon">⚡</div>'
+      + '<div style="flex:1;">'
+      + '<div class="option-step" style="background:rgba(232, 132, 18, .15);padding:4px 10px;border-radius:999px;display:inline-block;">Instant Results</div>'
+      + '</div></div>'
+      + '<div class="option-title">Auto analyze</div>'
+      + '<div class="option-copy">' + (has ? 'Every recommended test runs at once. Results appear instantly, ready to print or save as PDF.' : 'Load your data on Step 1 to unlock this.') + '</div>'
+      + (has ? '<a class="option-cta">Open analyzer →</a>' : '') + '</button>'
+      + '<button class="option-card report" id="mdReport"' + (has ? '' : ' disabled style="opacity:.5;cursor:default;"') + '>'
+      + '<div class="option-number-bg">03</div>'
+      + '<div style="display:flex;gap:18px;align-items:flex-start;margin-bottom:24px;position:relative;z-index:1;">'
+      + '<div class="option-icon">✦</div>'
+      + '<div style="flex:1;">'
+      + '<div class="option-step" style="background:rgba(31, 141, 79, .15);padding:4px 10px;border-radius:999px;display:inline-block;">Ai Written</div>'
+      + '</div></div>'
+      + '<div class="option-title">Auto report</div>'
+      + '<div class="option-copy">' + (has ? 'ReliCheck Intelligence writes a plain-language report from your data — ready to print or save as PDF.' : 'Load your data on Step 1 to unlock this.') + '</div>'
+      + (has ? '<a class="option-cta">Generate report →</a>' : '') + '</button>'
       + '</div>';
-    const sf = document.getElementById('mdSelf');   if (sf) sf.addEventListener('click', function(){ state.stepId='overview'; render(); });
+    const sf = document.getElementById('mdSelf');   if (sf) sf.addEventListener('click', function(){ state.stepId='datamap'; render(); });
     const au = document.getElementById('mdAuto');   if (au && has) au.addEventListener('click', function(){ state.autoMode='auto'; render(); });
     const rp = document.getElementById('mdReport'); if (rp && has) rp.addEventListener('click', function(){ state.autoMode='report'; render(); });
   }
