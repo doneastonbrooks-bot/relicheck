@@ -3377,7 +3377,7 @@ function toggleDesignMenu(e){if(e)e.stopPropagation();$("#designPick").classList
 function pickDesign(k){$("#designPick").classList.remove('open');if(k!==state.design)setDesign(k);}
 document.addEventListener('click',e=>{const p=$("#designPick");if(p&&!p.contains(e.target))p.classList.remove('open');});
 function goStep(id){state.stepId=id;state.toolSel=null;render();$(".center").scrollTop=0;mmUpdateNotes();}
-function stepBy(dir){const s=steps();const i=s.findIndex(x=>x.id===activeStep().id);const ni=Math.max(0,Math.min(s.length-1,i+dir));state.stepId=s[ni].id;state.toolSel=null;if(dir>0&&ni+1>state.completedThrough)state.completedThrough=ni;render();$(".center").scrollTop=0;}
+function stepBy(dir){const s=steps();const i=s.findIndex(x=>x.id===activeStep().id);const ni=Math.max(0,Math.min(s.length-1,i+dir));state.stepId=s[ni].id;state.toolSel=null;if(dir>0&&ni+1>state.completedThrough)state.completedThrough=ni;render();$(".center").scrollTop=0;mmUpdateNotes();}
 function selPal(name){state.toolSel=name;render();const c=document.querySelector('.center');if(c)c.scrollTop=0;}
 function setCompTab(t){state.compTab=t;renderCompanion();}
 function toggleCompanion(){document.body.classList.toggle('companion-collapsed');}
