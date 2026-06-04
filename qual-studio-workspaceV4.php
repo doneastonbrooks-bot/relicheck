@@ -932,10 +932,20 @@ function renderFamiliarization(s){
         <div class="dm-save" style="position:static;margin-top:10px"><button class="btn primary" onclick="qfamSaveMemo()">Save memo</button><span class="dm-note" id="famMsg"></span></div></div></div>
     <div class="panel"><div class="panel-h"><div><h3>Linguistic concept scan <span class="dm-note" style="font-weight:500">optional</span></h3><div class="ph-sub">Form your own impressions first. When you choose to, you can ask ReliCheck Intelligence to surface recurring concepts — it runs only when you click, never on its own.</div></div></div>
       <div class="panel-b"><div id="scanBody"><button class="btn" onclick="qfamScan(true)">✦ Ask ReliCheck Intelligence to scan</button><div class="dm-note" style="margin-top:8px">Analyzes a sample of your responses; takes 15–30 seconds. These are starting points, not codes — you decide what matters.</div></div></div></div>`+navFooter();
-  fetch('/api/qual/get-project.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
-    if(activeStep().id!=='familiarization')return;const st=(d&&d.stats)||{};const el=$("#famStats");if(!el)return;
-    el.innerHTML=[['Segments',st.seg_count],['Data sources',st.doc_count],['Total words',st.total_words],['Avg words/seg',st.avg_words],['Codes',st.code_count]].map(x=>`<div class="dm-card"><div class="dm-card-k">${x[0]}</div><div class="dm-card-v">${Number(x[1]||0).toLocaleString()}</div></div>`).join('');
-  }).catch(()=>{});
+  // Stats — robust: never gets stuck on "Loading"; surfaces the real error if any.
+  (function(){
+    const fail=msg=>{const el=$("#famStats");if(el&&activeStep().id==='familiarization')el.innerHTML='<div class="dm-card"><div class="dm-card-k">Stats unavailable</div><div class="dm-card-v" style="font-size:11px;font-weight:600;word-break:break-word">'+esc(String(msg).slice(0,180))+'</div></div>';};
+    fetch('/api/qual/get-project.php?project_id='+BOOT.projectId,{credentials:'same-origin'})
+      .then(r=>r.text())
+      .then(txt=>{
+        if(activeStep().id!=='familiarization')return;
+        const el=$("#famStats");if(!el)return;
+        let d=null; try{d=JSON.parse(txt);}catch(_){ fail(txt||'Empty response'); return; }
+        const st=(d&&d.stats)||{};
+        el.innerHTML=[['Segments',st.seg_count],['Data sources',st.doc_count],['Total words',st.total_words],['Avg words/seg',st.avg_words],['Codes',st.code_count]].map(x=>`<div class="dm-card"><div class="dm-card-k">${x[0]}</div><div class="dm-card-v">${Number(x[1]||0).toLocaleString()}</div></div>`).join('');
+      })
+      .catch(e=>fail((e&&e.message)||e));
+  })();
   // No auto-run of the AI scan — human first, AI only on the user's click.
 }
 function qfamSaveMemo(){
