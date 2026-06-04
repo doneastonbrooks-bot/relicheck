@@ -2361,6 +2361,60 @@ function renderBook(s){
   const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">Why this matters</div><div class="dx-l-t">A codebook makes your qualitative analysis transparent and repeatable: each code carries a clear definition, rules for when it applies and when it does not, and the evidence behind it, so another reader could code the same way.</div></div></div>`;
   $("#centerInner").innerHTML=bkHead(s)+helpBar('l_book')+picker+editor+bkEvidencePanel()+layers+bkNav();
 }
+/* ============ Theme by Group (l_bygroup) — how each theme distributes across the
+   groups the quantitative side compared. Built from categories.php (theme list) +
+   coded-responses.php (each coded response carries group_value), tallied into a
+   theme × group coverage matrix. No new endpoint; degrades to overall coverage
+   when the qualitative responses carry no group value. ============ */
+const bg={loaded:false,busy:false,err:'',themes:[],groups:[],matrix:{},totals:{},nByTheme:{}};
+function bgHead(s){return `<div class="ws-header"><div class="eyebrow">Theme by group · how themes split across groups <span class="strand-chip qual">QUAL</span></div><h1 class="title">${esc(s.title)}</h1><p class="lede">${esc(s.lede)}</p></div>`;}
+function bgMsg(s,msg){$("#centerInner").innerHTML=bgHead(s)+helpBar('l_bygroup')+`<div class="work-surface" style="border-radius:16px">${esc(msg)}</div>`+navFooter();}
+function bgLoad(){
+  bg.busy=true;
+  fetch('/api/mm/categories.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(j=>{
+    if(!j||!j.ok){bg.err=(j&&(j.message||j.error))||'Could not load themes.';bg.busy=false;renderByGroup(activeStep());return;}
+    const themes=(j.categories||[]).filter(c=>(c.coded_count||0)>0);
+    bg.themes=themes;
+    if(!themes.length){bg.loaded=true;bg.busy=false;renderByGroup(activeStep());return;}
+    Promise.all(themes.map(t=>fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+t.id+'&limit=1000',{credentials:'same-origin'}).then(r=>r.json()).catch(()=>null)))
+      .then(results=>{
+        const groupsSet={}, matrix={}, nByTheme={};
+        results.forEach((res,i)=>{
+          const tid=themes[i].id; matrix[tid]={}; nByTheme[tid]=0;
+          const rows=(res&&res.ok&&res.responses)?res.responses:[];
+          rows.forEach(r=>{
+            const g=(r.group_value&&String(r.group_value).trim()!=='')?String(r.group_value):'(no group)';
+            groupsSet[g]=true; matrix[tid][g]=(matrix[tid][g]||0)+1; nByTheme[tid]++;
+          });
+        });
+        const groups=Object.keys(groupsSet).sort();
+        const totals={}; groups.forEach(g=>totals[g]=0);
+        themes.forEach(t=>groups.forEach(g=>{totals[g]+=(matrix[t.id][g]||0);}));
+        bg.groups=groups; bg.matrix=matrix; bg.totals=totals; bg.nByTheme=nByTheme;
+        bg.loaded=true; bg.busy=false; renderByGroup(activeStep());
+      }).catch(()=>{bg.err='Could not load coded responses.';bg.busy=false;renderByGroup(activeStep());});
+  }).catch(()=>{bg.err='Could not load your data.';bg.busy=false;renderByGroup(activeStep());});
+}
+function renderByGroup(s){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){$("#centerInner").innerHTML=bgHead(s)+helpBar('l_bygroup')+`<p class="lede">Connect a project to see how themes distribute across groups.</p>`+navFooter();return;}
+  if(bg.err){bgMsg(s,bg.err);return;}
+  if(!bg.loaded){ if(!bg.busy)bgLoad(); bgMsg(s,'Loading themes and group coverage…'); return; }
+  if(!bg.themes.length){$("#centerInner").innerHTML=bgHead(s)+helpBar('l_bygroup')+`<div class="th-empty"><h3>No coded themes yet</h3><p>Tag responses on the Qualitative Themes step first, then return here to see how each theme distributes across your groups.</p></div>`+navFooter();return;}
+  const groups=bg.groups;
+  const onlyNoGroup=(groups.length===1 && groups[0]==='(no group)');
+  const note=onlyNoGroup?`<div class="dm-note" style="margin-bottom:12px">Your qualitative responses do not carry a group value yet, so a per-group split is not available — showing overall theme coverage. To break themes down by group, attach a grouping value to the open-ended responses in the Data Map.</div>`:'';
+  const ths=groups.map(g=>`<th>${esc(g)}</th>`).join('');
+  const rowsHtml=bg.themes.map(t=>{
+    const row=bg.matrix[t.id]||{}; const n=bg.nByTheme[t.id]||0;
+    const cells=groups.map(g=>{const c=row[g]||0; const pct=n?Math.round(100*c/n):0; return `<td>${c}${c?` <span style="color:var(--ink-3);font-size:11.5px">(${pct}%)</span>`:''}</td>`;}).join('');
+    return `<tr><td class="dx-name">${esc(t.name)}</td>${cells}<td style="text-align:right;font-weight:650">${n}</td></tr>`;
+  }).join('');
+  const grand=Object.values(bg.nByTheme).reduce((a,b)=>a+b,0);
+  const totalRow=`<tr class="dx-total"><td class="dx-name">All tagged responses</td>${groups.map(g=>`<td>${bg.totals[g]||0}</td>`).join('')}<td style="text-align:right">${grand}</td></tr>`;
+  const table=`<div class="panel"><div class="panel-h"><div><h3>Theme coverage by group</h3><div class="ph-sub">Tagged responses per group, by theme (percent is within the theme)</div></div></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table"><thead><tr><th class="l">Theme</th>${ths}<th style="text-align:right">Total</th></tr></thead><tbody>${rowsHtml}${totalRow}</tbody></table></div></div>`;
+  const layers=`<div class="dx-layers"><div class="dx-l"><div class="dx-l-k">What this shows</div><div class="dx-l-t">Each theme's tagged responses split across your groups — the qualitative parallel to the group comparisons on the quantitative side.</div></div><div class="dx-l dx-q"><div class="dx-l-k">Mixed methods use</div><div class="dx-l-t">Where a theme concentrates in one group, check whether the quantitative results show that same group standing out. Agreement strengthens the finding; a mismatch is worth explaining.</div></div></div>`;
+  $("#centerInner").innerHTML=bgHead(s)+helpBar('l_bygroup')+note+table+layers+navFooter();
+}
 /* ============ Joint Displays (joint) — quant + qual side by side per theme ============
    Native table on joint-display.php GET (frequency + statistical result on the
    quant side; sentiment + representative quote on the qual side). AI picks the
@@ -3077,6 +3131,7 @@ function renderCenter(){
   if(s.id==='l_trust'){ return renderTrust(s); }
   if(s.id==='l_themes'){ return renderThemes(s); }
   if(s.id==='l_book'){ return renderBook(s); }
+  if(s.id==='l_bygroup'){ return renderByGroup(s); }
   if(s.id==='q_build'){ const tb=(currentTool(s)||{}).name||''; return (tb==='T-Test'||tb==='Effect Sizes')?renderMeasureTest(s):renderReliability(s); }
   if(s.id==='joint'){ return renderJoint(s); }
   if(s.id==='explain'){ return renderExplain(s); }

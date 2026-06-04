@@ -177,15 +177,15 @@ $DESIGNS = [
   'convergent'=>['short'=>'Convergent Parallel','lead'=>'both','leadLabel'=>'Equal',
     'why'=>'You chose <b>Convergent Parallel</b>: the quantitative and qualitative strands run as equals, then meet to compare where they agree and differ.',
     'flow'=>[['quan','QUAN'],['qual','QUAL'],['both','Merge']],
-    'mid'=>['q_desc','q_inf','l_trust','l_themes','l_bygroup','@merge','joint','converge','meta']],
+    'mid'=>['q_desc','q_inf','l_themes','l_book','l_bygroup','l_trust','@merge','joint','converge','meta']],
   'explanatory'=>['short'=>'Explanatory Sequential','lead'=>'quan','leadLabel'=>'QUAN first',
     'why'=>'You chose <b>Explanatory Sequential</b>: the numbers come first, then qualitative work explains them. Use the pivot to mark which results most need explaining.',
     'flow'=>[['quan','QUAN'],['both','explain'],['qual','QUAL']],
-    'mid'=>['q_desc','q_inf','@explain','qual_sampling','l_themes','l_book','explain_map','joint','converge']],
+    'mid'=>['q_desc','q_inf','@explain','qual_sampling','l_themes','l_book','l_trust','explain_map','joint','converge']],
   'exploratory'=>['short'=>'Exploratory Sequential','lead'=>'qual','leadLabel'=>'QUAL first',
     'why'=>'You chose <b>Exploratory Sequential</b>: themes come first and shape what you later measure. Use the Qual → Quant pivot to turn themes into measures.',
     'flow'=>[['qual','QUAL'],['both','build'],['quan','QUAN']],
-    'mid'=>['l_trust','l_themes','l_book','@q2q','q_build','q_desc','joint','converge','meta']],
+    'mid'=>['l_themes','l_book','l_trust','@q2q','q_build','q_desc','joint','converge','meta']],
 ];
 $DESIGN_ORDER = ['convergent','explanatory','exploratory'];
 $DESIGN_DEFAULT = 'explanatory';
