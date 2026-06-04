@@ -39,7 +39,7 @@ if ($projectId > 0) {
 }
 $workspaceUrl = $projectKind === 'descriptive'
   ? '/descriptive-analysis-workspace.php?project_id=' . $projectId
-  : '/inferential-statistics-workspace.php?project_id=' . $projectId;
+  : '/inferential-statistics-workspaceV4.php?project_id=' . $projectId;
 ?><!doctype html>
 <html lang="en">
 <head>
