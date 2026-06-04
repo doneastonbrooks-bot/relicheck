@@ -433,7 +433,7 @@ button{font-family:inherit;cursor:pointer}
 body.coach-open .coach-tab-btn,body.coach-open .coach-tab{background:var(--indigo-light);border-color:rgba(85,82,246,.2);}
 body.coach-open .coach-tab-lbl,body.coach-open .coach-tab-label{color:var(--indigo);}
 /* ── Companion / Coach panel ── */
-.companion{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:fixed;top:var(--topbar-h);right:0;bottom:0;width:var(--companion);z-index:49;transform:translateX(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);}
+.companion{background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;position:fixed;top:0;right:0;bottom:0;width:var(--companion);z-index:62;box-shadow:-12px 0 40px rgba(0,0,0,.1);transform:translateX(100%);transition:transform .26s cubic-bezier(.32,.72,0,1);}
 body.coach-open .companion{transform:translateX(0);}
 .comp-head{display:flex;align-items:center;gap:10px;padding:16px 18px 14px;border-bottom:1px solid var(--border);}
 .comp-head .ch-ico{width:28px;height:28px;border-radius:8px;background:var(--indigo-light);color:var(--indigo);display:grid;place-items:center;font-size:15px;flex:none;}
