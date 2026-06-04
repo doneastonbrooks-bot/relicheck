@@ -930,13 +930,13 @@ function renderFamiliarization(s){
       <div class="panel-b"><div class="dm-note" style="margin-bottom:10px">Before coding, what stands out? What surprises you? What patterns, tensions, or questions do you notice?</div>
         <textarea class="ed-in" id="famMemo" rows="4" placeholder="I noticed several responses mentioned…"></textarea>
         <div class="dm-save" style="position:static;margin-top:10px"><button class="btn primary" onclick="qfamSaveMemo()">Save memo</button><span class="dm-note" id="famMsg"></span></div></div></div>
-    <div class="panel"><div class="panel-h"><div><h3>Linguistic concept scan</h3><div class="ph-sub">✦ ReliCheck Intelligence surfaces recurring concepts before you code</div></div></div>
-      <div class="panel-b"><div id="scanBody"><button class="btn primary" onclick="qfamScan(true)">Run concept scan</button><div class="dm-note" style="margin-top:8px">Analyzes a sample of your responses; takes 15–30 seconds.</div></div></div></div>`+navFooter();
+    <div class="panel"><div class="panel-h"><div><h3>Linguistic concept scan <span class="dm-note" style="font-weight:500">optional</span></h3><div class="ph-sub">Form your own impressions first. When you choose to, you can ask ReliCheck Intelligence to surface recurring concepts — it runs only when you click, never on its own.</div></div></div>
+      <div class="panel-b"><div id="scanBody"><button class="btn" onclick="qfamScan(true)">✦ Ask ReliCheck Intelligence to scan</button><div class="dm-note" style="margin-top:8px">Analyzes a sample of your responses; takes 15–30 seconds. These are starting points, not codes — you decide what matters.</div></div></div></div>`+navFooter();
   fetch('/api/qual/get-project.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
     if(activeStep().id!=='familiarization')return;const st=(d&&d.stats)||{};const el=$("#famStats");if(!el)return;
     el.innerHTML=[['Segments',st.seg_count],['Data sources',st.doc_count],['Total words',st.total_words],['Avg words/seg',st.avg_words],['Codes',st.code_count]].map(x=>`<div class="dm-card"><div class="dm-card-k">${x[0]}</div><div class="dm-card-v">${Number(x[1]||0).toLocaleString()}</div></div>`).join('');
   }).catch(()=>{});
-  qapi('/api/qual/concept-scan.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,force:false})}).then(r=>{if(activeStep().id==='familiarization'&&r.from_cache)qfamRenderScan(r);}).catch(()=>{});
+  // No auto-run of the AI scan — human first, AI only on the user's click.
 }
 function qfamSaveMemo(){
   const body=($("#famMemo").value||'').trim();const msg=$("#famMsg");
@@ -1453,7 +1453,7 @@ function qrepPage(d){
   const p=d.project||{},stats=d.stats||{},themes=d.themes||[],checks=d.member_checks||[];
   const approach=APPROACH_LABELS[p.analysis_approach]||p.analysis_approach||'';
   const pid=BOOT.projectId;
-  const topBar=`<div class="run-actions" style="margin-bottom:20px"><button class="btn primary" onclick="window.print()">Print / Save as PDF</button><a class="btn" href="/api/qual/export-coded.php?project_id=${pid}">Download coded segments (.csv)</a><button class="btn" onclick="qrepJson(this)">Download themes (.json)</button></div>`;
+  const topBar=`<div class="run-actions" style="margin-bottom:20px"><button class="btn primary" onclick="window.print()">Print / Save as PDF</button><button class="btn" onclick="qrepJson(this)">Download themes (.json)</button></div>`;
   const header=`<div class="panel"><div class="panel-b">
     <div class="dx-l-k">Qualitative Analysis Report</div>
     <h2 style="margin:6px 0;font-size:24px;font-weight:700">${esc(p.title||'Untitled Project')}</h2>
@@ -1491,10 +1491,17 @@ function qrepPage(d){
       ${checks.length?`<div style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto">${checks.map(c=>`<div class="seg-card" style="margin-bottom:0"><div style="font-weight:700;margin-bottom:3px">${esc(c.finding||'')}</div>${c.notes?`<div class="dm-note" style="margin-top:4px">${esc(c.notes).replace(/\n/g,'<br>')}</div>`:''}<div class="dm-note" style="margin-top:6px">${c.who?esc(c.who)+' · ':''}${esc(c.date||'')}${c.method?' · '+esc(c.method):''}</div></div>`).join('')}</div>`:'<div class="dm-note" style="font-style:italic">No member checks recorded.</div>'}
       ${d.audit_count?`<div class="dm-note" style="margin-top:10px">${d.audit_count} action${d.audit_count!==1?'s':''} logged in the audit trail.</div>`:''}
     </div></div>`;
-  const exportSec=`<h3 style="font-size:18px;font-weight:700;margin:24px 0 14px;border-bottom:2px solid var(--indigo-light);padding-bottom:10px">Export &amp; handoff</h3>
-    <div class="panel"><div class="panel-b"><div style="font-weight:700;margin-bottom:6px">MM Studio — Joint display handoff</div><p class="dm-note" style="margin-bottom:10px">Download the coded segments CSV and bring it into MM Studio as the qualitative strand.</p><a class="btn" href="/api/qual/export-coded.php?project_id=${pid}">Download coded segments (.csv)</a></div></div>
-    <div class="panel"><div class="panel-b"><div style="font-weight:700;margin-bottom:6px">RSSI — Open-ended evidence</div><p class="dm-note" style="margin-bottom:10px">Reference your themes as qualitative evidence alongside the RSSI reliability score.</p><a class="btn" href="/rssi-app.php" target="_blank" rel="noopener">Open RSSI →</a></div></div>`;
+  const exportSec=`<h3 style="font-size:18px;font-weight:700;margin:24px 0 14px;border-bottom:2px solid var(--indigo-light);padding-bottom:10px">Send to MM Studio</h3>
+    <div class="panel"><div class="panel-b"><div style="font-weight:700;margin-bottom:6px">Use this analysis as the qualitative strand in MM Studio</div><p class="dm-note" style="margin-bottom:10px">Saves your coded outcome (segments, codes, and themes) as a project. It appears on your projects page and opens directly in MM Studio for joint-display integration — no file download or re-upload.</p><div class="run-actions"><button class="btn primary" onclick="qrepSaveToMM(this)">Save outcome for MM Studio</button><a id="mmOpenLink" class="btn" style="display:none" href="#" target="_blank" rel="noopener">Open in MM Studio →</a></div></div></div>`;
   $("#centerInner").innerHTML=wsHead(s)+topBar+`<div id="repPrintable">${header}${summary}${themeSec}${trustSec}${exportSec}</div>`+navFooter();
+}
+function qrepSaveToMM(btn){
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  qapi('/api/qual/save-to-mm.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>{
+    if(btn){btn.disabled=false;btn.textContent='Saved to MM Studio ✓';}
+    toast('Saved to MM Studio — find it on your projects page');
+    const open=$("#mmOpenLink");if(open&&r.mm_project_id){open.href='/mmstudioV4.php?project_id='+r.mm_project_id;open.style.display='inline-flex';}
+  }).catch(e=>{if(btn){btn.disabled=false;btn.textContent='Save outcome for MM Studio';}toast('Could not save: '+e.message);});
 }
 function qrepJson(btn){
   if(btn){btn.disabled=true;btn.textContent='Loading…';}
