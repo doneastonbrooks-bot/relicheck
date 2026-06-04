@@ -36,7 +36,7 @@ include __DIR__ . '/_landing_head.php';
   <h1 class="sl-h1 rv rv-d1"><span class="thin">Test the claim,</span><br>not the hunch.</h1>
   <p class="sl-body rv rv-d2">Inferential statistics let you say something beyond the sample in front of you. Inferential Studio guides you from research question to hypothesis test to effect size, so every claim you make is grounded in evidence you can explain.</p>
   <div class="sl-actions rv rv-d3">
-    <a href="/inferential-statistics-workspace.php?v4=1" class="sl-btn-a">Open Inferential Studio</a>
+    <a href="/inferential-statistics-workspaceV4.php" class="sl-btn-a">Open Inferential Studio</a>
   </div>
   <div class="sl-scroll rv" style="transition-delay:.5s">Scroll</div>
 </section>
@@ -89,7 +89,7 @@ include __DIR__ . '/_landing_head.php';
 
 <section class="sl-cta">
   <h2 class="sl-cta-h rv">A finding worth reporting<br><em>is a finding worth testing.</em></h2>
-  <div class="rv rv-d1"><a href="/inferential-statistics-workspace.php?v4=1" class="sl-cta-btn">Open Inferential Studio</a></div>
+  <div class="rv rv-d1"><a href="/inferential-statistics-workspaceV4.php" class="sl-cta-btn">Open Inferential Studio</a></div>
 </section>
 
 <script>

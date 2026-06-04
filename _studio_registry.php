@@ -65,13 +65,13 @@ return [
     'accent_deep'    => '#1741b6',
     'accent_soft'    => '#eff2ff',
     'primary_action' => 'Open Inferential Studio',
-    'primary_route'  => '/inferential-statistics-workspace.php?v4=1',
+    'primary_route'  => '/inferential-statistics-workspaceV4.php',
     'sample'         => [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
     'route'  => '/studio-is.php',
-    'direct' => '/inferential-statistics-workspace.php?v4=1',
+    'direct' => '/inferential-statistics-workspaceV4.php',
   ],
   'qual' => [
     'slug'           => 'qual',

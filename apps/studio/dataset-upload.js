@@ -380,8 +380,8 @@
           if (!d || !d.ok || !d.project_id) throw new Error('Could not create project.');
           return doAnalysisLink(+d.project_id).then(function (pid) {
             var wsUrl = isInferential
-              ? '/inferential-statistics-workspace.php?project_id='
-              : '/descriptive-analysis-workspace.php?project_id=';
+              ? '/inferential-statistics-workspaceV4.php?project_id='
+              : '/descriptive-analysis-workspaceV4.php?project_id=';
             window.location.replace(wsUrl + pid);
             return pid;
           });

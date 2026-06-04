@@ -323,7 +323,7 @@ include __DIR__ . '/_landing_head.php';
           <div class="prj-menu-div"></div>
           <div class="prj-menu-label">Research Studios</div>
           <a class="prj-menu-item" href="/descriptive-analysis-workspace.php"><span class="prj-menu-dot" style="background:#0e7490"></span>Descriptive Studio</a>
-          <a class="prj-menu-item" href="/inferential-statistics-workspace.php?v4=1"><span class="prj-menu-dot" style="background:#1d4ed8"></span>Inferential Studio</a>
+          <a class="prj-menu-item" href="/inferential-statistics-workspaceV4.php"><span class="prj-menu-dot" style="background:#1d4ed8"></span>Inferential Studio</a>
           <a class="prj-menu-item" href="/qual-studio-workspaceV3.php"><span class="prj-menu-dot" style="background:#1e5c3a"></span>Qual Studio</a>
           <a class="prj-menu-item" href="/mmstudioV4.php"><span class="prj-menu-dot" style="background:#6d4ad8"></span>MM Studio</a>
           <a class="prj-menu-item" href="/text-analyzer.php"><span class="prj-menu-dot" style="background:#D97706"></span>Text Analyzer</a>
