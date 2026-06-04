@@ -813,7 +813,7 @@ label .tt-hint{margin-left:6px;}
 <div class="rpt-drawer" id="rptDrawer">
   <div class="rpt-head">
     <h2>Report</h2>
-    <span class="rpt-badge" id="rptBadgeDrawer">0 findings</span>
+    <span class="rpt-badge" id="rptBadgeDrawer">0 sections</span>
     <button class="rpt-close-btn" onclick="toggleRptDrawer()">✕</button>
   </div>
   <div class="rpt-body" id="rptBody">
@@ -823,7 +823,7 @@ label .tt-hint{margin-left:6px;}
     </div>
   </div>
   <div class="rpt-foot">
-    <button class="btn-export" onclick="if(BOOT.projectId)go('/mmstudioV4.php?project_id='+BOOT.projectId+'#report');else toast('Open a project to export the report.')">
+    <button class="btn-export" onclick="mmExportReport()">
       <svg viewBox="0 0 16 16" fill="none"><path d="M3 10v3h10v-3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="2" x2="8" y2="10" stroke="white" stroke-width="1.5" stroke-linecap="round"/><polyline points="5,7 8,10 11,7" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Export Report
     </button>
@@ -3184,7 +3184,7 @@ function saveAreaToReport(s){
       const combined=(cur?cur.trim()+'\n\n':'')+entry;
       return fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_section',section_key:'findings',body_text:combined})});
     }).then(function(r){return r.json();}).then(function(j){
-      if(j&&j.ok){ if(btn)btn.textContent='Saved to report ✓'; if(note)note.textContent='Added to the Findings section. Open the Report step to see it.'; if(typeof toast==='function')toast('Saved to report'); }
+      if(j&&j.ok){ if(btn)btn.textContent='Saved to report ✓'; if(note)note.textContent='Added to the Findings section. Open the Report step to see it.'; if(typeof toast==='function')toast('Saved to report'); if(document.getElementById('rptDrawer')&&document.getElementById('rptDrawer').classList.contains('open')) mmLoadReport(); }
       else { throw 0; }
     }).catch(function(){ if(btn){btn.disabled=false;btn.textContent='＋ Save to report';} if(note)note.textContent='Could not save — please try again.'; });
 }
@@ -3330,14 +3330,17 @@ function mmSaveProject(){
   },2200);
 }
 
-// Report drawer
-const mmReportFindings=[];
+// ── Report drawer — live view of the real saved report (api/mm/report.php) ──
+// The drawer reads the project's stored report sections on open, so "what's
+// inside" is the actual report, not an ephemeral list. Filled sections show as
+// cards; clicking one (or Export) jumps to the Report Builder step.
+const mmReport={loaded:false,sections:[],hasTable:true};
 function mmUpdateReportCount(){
-  const n=mmReportFindings.length;
+  const n=mmReport.sections.length;
   const b1=document.getElementById('rptCountBadge');
   const b2=document.getElementById('rptBadgeDrawer');
   if(b1){b1.style.display=n>0?'inline':'none';b1.textContent=n;}
-  if(b2) b2.textContent=n+(n===1?' finding':' findings');
+  if(b2) b2.textContent=n+(n===1?' section':' sections');
 }
 function toggleRptDrawer(){
   const opening=!document.getElementById('rptDrawer').classList.contains('open');
@@ -3345,38 +3348,61 @@ function toggleRptDrawer(){
   document.getElementById('rptDrawer').classList.toggle('open',opening);
   document.getElementById('rptScrim').classList.toggle('open',opening);
   document.body.classList.toggle('report-open',opening);
+  if(opening) mmLoadReport();
 }
-function mmAddFinding(finding){
-  mmReportFindings.push(finding);
-  mmRenderReportFindings();
-  mmUpdateReportCount();
+function mmReportMsg(msg){
+  const empty=document.getElementById('rptEmpty'), body=document.getElementById('rptBody');
+  if(body) body.querySelectorAll('.rpt-finding').forEach(function(el){el.remove();});
+  if(empty){ empty.style.display='flex'; const p=empty.querySelector('p'); if(p&&msg) p.textContent=msg; }
 }
-function mmRemoveFinding(id){
-  const i=mmReportFindings.findIndex(function(f){return f.id===id;});
-  if(i>-1) mmReportFindings.splice(i,1);
-  mmRenderReportFindings();
-  mmUpdateReportCount();
+function mmLoadReport(){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){ mmReport.sections=[]; mmUpdateReportCount(); mmReportMsg('Open a project to build and view its report.'); return; }
+  mmReportMsg('Loading your report…');
+  fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin',headers:{Accept:'application/json'}})
+    .then(function(r){return r.json();}).then(function(j){
+      if(!j||!j.ok){ mmReport.sections=[]; mmUpdateReportCount(); mmReportMsg('Could not load the report.'); return; }
+      mmReport.hasTable=j.has_table!==false; mmReport.loaded=true;
+      mmReport.sections=(j.rows||[]).filter(function(r){return String(r.body_text||'').trim()!=='';});
+      mmUpdateReportCount(); mmRenderReport();
+    }).catch(function(){ mmReport.sections=[]; mmUpdateReportCount(); mmReportMsg('Could not load the report.'); });
 }
-function mmRenderReportFindings(){
-  const body=document.getElementById('rptBody');
-  const empty=document.getElementById('rptEmpty');
+function mmRenderReport(){
+  const body=document.getElementById('rptBody'), empty=document.getElementById('rptEmpty');
   if(!body) return;
   body.querySelectorAll('.rpt-finding').forEach(function(el){el.remove();});
-  if(mmReportFindings.length===0){if(empty)empty.style.display='flex';return;}
+  if(!mmReport.sections.length){ mmReportMsg('No report content yet. Use “Save to report” on an analysis, add a note, or build sections in the Report step.'); return; }
   if(empty) empty.style.display='none';
-  mmReportFindings.forEach(function(f){
-    const el=document.createElement('div'); el.className='rpt-finding';
-    el.innerHTML=`<button class="rpt-rm" onclick="mmRemoveFinding(${f.id})">✕</button>
-      <div class="rpt-step-tag">${esc(f.step)}</div>
-      <div class="rpt-finding-title">${esc(f.title)}</div>
-      <div class="rpt-finding-body">${esc(f.body)}</div>`;
+  mmReport.sections.forEach(function(sec){
+    const raw=String(sec.body_text||'').trim();
+    const preview=raw.length>260?raw.slice(0,257)+'…':raw;
+    const el=document.createElement('div'); el.className='rpt-finding'; el.style.cursor='pointer';
+    el.title='Open in the Report Builder';
+    el.addEventListener('click',function(){ toggleRptDrawer(); goStep('report'); });
+    el.innerHTML=`<div class="rpt-step-tag">${esc(sec.title||sec.section_key)}</div>
+      <div class="rpt-finding-body">${esc(preview)}</div>`;
     body.appendChild(el);
   });
 }
+function mmExportReport(){
+  if(!(BOOT.projectId&&BOOT.projectId>0)){ toast('Open a project to export the report.'); return; }
+  toggleRptDrawer(); goStep('report');
+}
+// Researcher's Notes "Add to Report" now persists to the real report's Findings
+// section (server), so the note is part of the actual report and survives reloads.
 function mmSaveNoteToReport(){
   const ta=document.getElementById('researcherNotes'); if(!ta||!ta.value.trim()) return;
   const act=activeStep();
-  mmAddFinding({step:'Step '+act.n+' · Researcher\'s Note',title:act.label,body:ta.value.trim(),id:Date.now()});
+  if(!(BOOT.projectId&&BOOT.projectId>0)){ toast('Open a project to save notes to its report.'); return; }
+  const entry='Note ('+act.label+'): '+ta.value.trim();
+  fetch('/api/mm/report.php?project_id='+BOOT.projectId,{credentials:'same-origin',headers:{Accept:'application/json'}})
+    .then(function(r){return r.json();}).then(function(j){
+      let cur=''; if(j&&j.ok&&Array.isArray(j.rows)){ const row=j.rows.find(function(x){return x.section_key==='findings';}); if(row) cur=row.body_text||''; }
+      const combined=(cur?cur.trim()+'\n\n':'')+entry;
+      return fetch('/api/mm/report.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,action:'save_section',section_key:'findings',body_text:combined})});
+    }).then(function(r){return r.json();}).then(function(j){
+      if(j&&j.ok){ if(typeof toast==='function')toast('Note added to report'); if(document.getElementById('rptDrawer').classList.contains('open')) mmLoadReport(); }
+      else { throw 0; }
+    }).catch(function(){ if(typeof toast==='function')toast('Could not save the note to the report.'); });
   const btn=document.getElementById('btnNoteRpt'); if(!btn) return;
   btn.style.color='var(--mm)';
   btn.innerHTML='<svg viewBox="0 0 12 12" fill="none"><polyline points="1,6 4.5,10 11,2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg> Added';
