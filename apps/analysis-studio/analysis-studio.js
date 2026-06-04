@@ -1933,7 +1933,7 @@
         var m1=means[i2],m2=means[j],v1=vars_[i2],v2=vars_[j],n1=ns[i2],n2=ns[j];
         var se=Math.sqrt(v1/n1+v2/n2),t=(m1-m2)/(se||1e-12);
         var dfN=Math.pow(v1/n1+v2/n2,2),dfD=(v1*v1)/(n1*n1*(n1-1))+(v2*v2)/(n2*n2*(n2-1));
-        var df=dfD?dfN/dfD:(n1+n2-2),pr=tPValueNP(Math.abs(t),df)*2>1?1:tPValueNP(Math.abs(t),df)*2;
+        var df=dfD?dfN/dfD:(n1+n2-2),pr=Math.min(1,tPValueNP(Math.abs(t),df)); // tPValueNP is already two-tailed
         var diff=m1-m2,tCrit=tCriticalNP(0.05,df),pooled=Math.sqrt(((n1-1)*v1+(n2-1)*v2)/(n1+n2-2));
         pairs.push({a:levels[i2],b:levels[j],t:t,df:df,p_raw:pr,diff:diff,ciLow:diff-tCrit*se,ciHi:diff+tCrit*se,d:(m1-m2)/(pooled||1e-12)});
       }}
