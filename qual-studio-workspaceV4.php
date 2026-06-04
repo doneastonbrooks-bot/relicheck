@@ -594,11 +594,8 @@ label .tt-hint{margin-left:6px;}
 #mmDmContainer .rdm-con{width:116px;font-size:11.5px;padding:4px 6px;}
 #mmDmContainer .rdm-analyses{max-width:148px;font-size:10.5px;line-height:1.45;}
 #mmDmContainer .rdm-tog{font-size:11px;}
-/* ── Qual V4 overrides — fit 14 steps in the top rail ── */
-.topbar-steps{gap:0;}
-.tb-connector{width:18px;}
-.tb-node{width:24px;height:24px;}
-.tb-step.active .tb-node{width:26px;height:26px;}
+/* ── Qual V4 overrides ── */
+/* Step rail uses MM Studio's default node + connector spacing (no tightening). */
 /* Workstation canvas: one solid white (not MM's faint gray). Panels keep their
    white fill + hairline border + soft shadow, so cards still read. */
 .main,.center{background:var(--surface);}
