@@ -2285,7 +2285,14 @@ function renderThemes(s){
   }
   const d=th.base,themes=d.entries||[],total=d.total_responses||0;
   if(!themes.length){
-    const body=`<div class="th-empty"><h3>No themes yet</h3><p>${total?('Build the themes that run through your '+total+' open-ended responses — add them yourself, or let ReliCheck Intelligence propose a starting set you can edit.'):'No open-ended responses are linked to this project yet. Add qualitative data first.'}</p>${total?`<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px"><input id="thNewName" class="ed-in" style="max-width:300px" placeholder="Name a theme"><button class="btn primary" onclick="thAdd()">+ Add theme</button></div><div class="dm-note" style="margin-bottom:8px">or</div><button class="btn" ${th.building?'disabled':''} onclick="thBuild()">${th.building?'Discovering…':'✦ Discover themes with ReliCheck Intelligence'}</button>`:''}</div>`;
+    let body;
+    if(total){
+      // There ARE open-ended responses; just no themes built yet.
+      body=`<div class="th-empty"><h3>No themes yet</h3><p>Build the themes that run through your ${total} open-ended responses — add them yourself, or let ReliCheck Intelligence propose a starting set you can edit.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px"><input id="thNewName" class="ed-in" style="max-width:300px" placeholder="Name a theme"><button class="btn primary" onclick="thAdd()">+ Add theme</button></div><div class="dm-note" style="margin-bottom:8px">or</div><button class="btn" ${th.building?'disabled':''} onclick="thBuild()">${th.building?'Discovering…':'✦ Discover themes with ReliCheck Intelligence'}</button></div>`;
+    } else {
+      // No open-ended responses are linked — tell the user exactly where they come from.
+      body=`<div class="th-empty"><h3>No qualitative data yet</h3><p>This step codes open-ended (free-text) responses — but none are linked to this project. Open-ended responses come from the text columns in your dataset that you mark as <b>Open-ended</b> in the Data Map.</p><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:4px"><button class="btn primary" onclick="goStep('data_map')">Open the Data Map →</button><button class="btn" onclick="mmStartUpload()">Upload data</button></div><div class="dm-note" style="margin:12px auto 0;max-width:540px">In the Data Map, set each free-text question's type to <b>Open-ended</b> and save — its responses then appear here to code. If your dataset has no text questions, upload one that does.</div></div>`;
+    }
     $("#centerInner").innerHTML=thHead(s)+helpBar('l_themes')+body+thNav();return;
   }
   const coded=themes.reduce((a,t)=>a+(t.coded_count||0),0);
