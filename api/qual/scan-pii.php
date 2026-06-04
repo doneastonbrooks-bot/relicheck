@@ -30,7 +30,10 @@ $patterns = [
     'email'  => '/\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/',
     'phone'  => '/\b(?:\+?1[-.\s]?)?\(?[2-9]\d{2}\)?[-.\s]\d{3}[-.\s]\d{4}\b/',
     'ssn'    => '/\b\d{3}-\d{2}-\d{4}\b/',
-    'name_intro' => '/\b(?:my name is|i am|i\'m)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i',
+    // Case-insensitivity scoped to the trigger phrase only (?i:...); the name
+    // itself must be genuinely Capitalized, else "I'm shopping around" etc. would
+    // false-positive (the old global /i flag defeated the [A-Z] requirement).
+    'name_intro' => '/\b(?i:my name is|i am|i\'m)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/',
 ];
 
 $flagged = [];
