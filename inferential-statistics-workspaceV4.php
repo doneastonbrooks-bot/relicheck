@@ -566,6 +566,28 @@ label .tt-hint{margin-left:6px;}
   .main,.center{overflow:visible!important;padding:0!important;}
   .dx-scroll,.as-chart-wrap{max-height:none!important;overflow:visible!important;}
 }
+/* ── Decision point (step 2) — mode chooser, mirrors the Descriptive studio ── */
+.dp-card{position:relative;display:block;width:100%;text-align:left;border:none;border-radius:20px;padding:28px 30px;overflow:hidden;cursor:pointer;color:#fff;font-family:inherit;box-shadow:0 6px 22px rgba(20,28,45,.10);transition:transform .14s,box-shadow .14s;}
+.dp-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(20,28,45,.18);}
+.dp-self{display:flex;align-items:center;gap:22px;margin-bottom:20px;min-height:138px;background:linear-gradient(120deg,#2554d8 0%,#3f6ae8 55%,#5b6cf0 100%);}
+.dp-self .dp-ico{width:56px;height:56px;border-radius:15px;background:rgba(255,255,255,.18);display:grid;place-items:center;flex:none;}
+.dp-self .dp-ico svg{width:24px;height:24px;color:#fff;}
+.dp-body{display:flex;flex-direction:column;min-width:0;}
+.dp-eyebrow{display:block;font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;opacity:.72;margin-bottom:7px;}
+.dp-title{display:block;font-family:var(--font-display);font-size:25px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px;}
+.dp-desc{display:block;font-size:14.5px;line-height:1.55;opacity:.92;max-width:64ch;}
+.dp-num{position:absolute;top:4px;right:24px;font-family:var(--font-display);font-size:104px;font-weight:800;line-height:1;opacity:.14;pointer-events:none;}
+.dp-arrow{position:absolute;top:50%;right:30px;transform:translateY(-50%);font-size:24px;opacity:.85;}
+.dp-divider{display:flex;align-items:center;gap:14px;margin:22px 0;color:var(--text-3);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;}
+.dp-divider::before,.dp-divider::after{content:"";flex:1;height:1px;background:var(--border);}
+.dp-grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+@media(max-width:780px){.dp-grid2{grid-template-columns:1fr;}}
+.dp-auto{min-height:206px;background:linear-gradient(125deg,#e6a017 0%,#df7c1a 100%);}
+.dp-report{min-height:206px;background:linear-gradient(125deg,#1f9460 0%,#147a4c 100%);}
+.dp-auto .dp-title,.dp-report .dp-title{margin-top:12px;}
+.dp-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);padding:4px 11px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
+.dp-go{display:inline-block;margin-top:16px;font-size:14px;font-weight:800;}
+.dp-nav{display:flex;align-items:center;justify-content:space-between;margin-top:26px;}
 </style>
 <link rel="stylesheet" href="/apps/analysis-studio/analysis-studio.css?v=<?= _isv4('/apps/analysis-studio/analysis-studio.css') ?>">
 <script src="/apps/studio/studio-header.js?v=<?= _isv4('/apps/studio/studio-header.js') ?>"></script>
@@ -786,32 +808,35 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       return;
     }
     const choose =
-      '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>'+esc(BOOT.name)+' <span class="strand-chip quan">QUAN</span></div>'
-      + '<h1 class="title">Your data is in. How do you want to proceed?</h1>'
-      + '<p class="lede">Run the recommended tests automatically, or step through the analysis yourself.</p></div>'
-      + '<button class="begin-feature" id="ovAuto"><span class="bc-ico">&#9889;</span>'
-      + '<div><h4>Auto analyze</h4><p>Run the recommended inferential tests on your data and see the results instantly. No setup.</p>'
-      + '<span class="bc-go">Auto analyze &rarr;</span></div></button>'
-      + '<div class="begin-grid2" style="grid-template-columns:repeat(2,1fr);margin-bottom:22px">'
-      + '<button class="begin-card2" id="ovReport"><span class="bc-ico">&#9636;</span><h4>Auto report</h4><p>The same tests plus a written ReliCheck Intelligence report you can print or save as PDF.</p></button>'
-      + '<button class="begin-card2" id="ovSelf"><span class="bc-ico">&#9776;</span><h4>Self analyze</h4><p>Map your variables and run each test yourself, step by step, with full control.</p></button>'
-      + '</div>';
-    const vars = ds.variables || [];
-    const isNum = function(v){ return /likert|numeric/.test((v.types||[]).join(',').toLowerCase()); };
-    const valid = function(v){ return (v.values||[]).filter(function(x){ return x!=='' && x!=null; }).length; };
-    const stat = function(n,l){ return '<div><div style="font-size:26px;font-weight:700;line-height:1">'+n+'</div><div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px">'+l+'</div></div>'; };
-    const rows = vars.map(function(v){ const n=valid(v), total=(v.values||[]).length;
-      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td class="l">'+esc((v.types||['—'])[0])+'</td><td>'+n+'</td><td>'+(total-n)+'</td></tr>'; }).join('');
-    host.innerHTML = choose
-      + '<div class="ov-sec" style="margin:26px 0 12px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-3)">Your dataset</div>'
-      + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
-      + '<div style="display:flex;gap:34px;flex-wrap:wrap">' + stat(ds.rowCount||0,'Rows') + stat(vars.length,'Variables') + stat(vars.filter(isNum).length,'Numeric') + '</div>'
-      + '<p style="margin:14px 0 0;color:var(--text-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'
-      + '<div class="panel"><div class="panel-h"><h3>Variables</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
-      + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>';
-    const auto = document.getElementById('ovAuto'); if (auto) auto.addEventListener('click', function(){ state.autoMode='auto'; render(); });
-    const rep  = document.getElementById('ovReport'); if (rep) rep.addEventListener('click', function(){ state.autoMode='report'; render(); });
-    const self = document.getElementById('ovSelf'); if (self) self.addEventListener('click', function(){ state.stepId='datamap'; render(); });
+      '<div class="ws-header" style="margin-bottom:24px"><h1 class="page-title" style="font-size:40px;letter-spacing:-1px">Your data is ready.</h1>'
+      + '<p class="lede" style="margin-bottom:0;max-width:700px">Choose how you want to work with it &mdash; step by step, or let ReliCheck Intelligence take the wheel.</p></div>'
+      + '<button class="dp-card dp-self" id="ovSelf">'
+      +   '<span class="dp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span>'
+      +   '<span class="dp-body"><span class="dp-eyebrow">Your pace &middot; Full control</span>'
+      +     '<span class="dp-title">Self analyze</span>'
+      +     '<span class="dp-desc">Step through t-Tests, ANOVA, Correlation, Regression, and more at your own pace. You decide what runs and what goes in your report.</span></span>'
+      +   '<span class="dp-num">01</span><span class="dp-arrow">&rarr;</span>'
+      + '</button>'
+      + '<div class="dp-divider">&#10022; Or let ReliCheck Intelligence do it</div>'
+      + '<div class="dp-grid2">'
+      +   '<button class="dp-card dp-auto" id="ovAuto"><span class="dp-num">02</span><span class="dp-badge">&#9889; Instant results</span>'
+      +     '<span class="dp-title">Auto analyze</span>'
+      +     '<span class="dp-desc">Every recommended test runs at once. Results appear instantly, ready to print or save as PDF.</span>'
+      +     '<span class="dp-go">Open analyzer &rarr;</span></button>'
+      +   '<button class="dp-card dp-report" id="ovReport"><span class="dp-num">03</span><span class="dp-badge">&#10022; AI written</span>'
+      +     '<span class="dp-title">Auto report</span>'
+      +     '<span class="dp-desc">ReliCheck Intelligence writes a plain-language report from your data &mdash; ready to print or save as PDF.</span>'
+      +     '<span class="dp-go">Generate report &rarr;</span></button>'
+      + '</div>'
+      + '<div class="dp-nav"><button class="btn" id="ovStart">&larr; Start</button>'
+      +   '<button class="btn primary" id="ovFwd">Variable Map &rarr;</button></div>';
+    host.innerHTML = choose;
+    const byId = function(id){ return document.getElementById(id); };
+    if (byId('ovSelf'))   byId('ovSelf').addEventListener('click', function(){ state.stepId='datamap'; render(); });
+    if (byId('ovAuto'))   byId('ovAuto').addEventListener('click', function(){ state.autoMode='auto'; render(); });
+    if (byId('ovReport')) byId('ovReport').addEventListener('click', function(){ state.autoMode='report'; render(); });
+    if (byId('ovStart'))  byId('ovStart').addEventListener('click', function(){ state.stepId='start'; render(); });
+    if (byId('ovFwd'))    byId('ovFwd').addEventListener('click', function(){ state.stepId='datamap'; render(); });
   }
 
   // Data Map step — shared DataMap component (apps/studio/data-map.js + type-taxonomy.js).
