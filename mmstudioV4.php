@@ -586,16 +586,16 @@ body.companion-collapsed .comp-collapsed-tab{display:flex;flex-direction:column;
 
 /* Topbar step rail */
 .tb-step{display:flex;align-items:center;cursor:pointer;position:relative;}
-.tb-node{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
-  font-size:11px;font-weight:600;background:var(--bg);color:var(--ink-3);
+.tb-node{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
+  font-size:10px;font-weight:600;background:var(--bg);color:var(--ink-3);
   border:1.5px solid var(--line);transition:all .15s;flex-shrink:0;position:relative;}
 .tb-step:hover .tb-node{border-color:var(--ink-3);color:var(--ink-2);}
-.tb-step.tb-done .tb-node{background:var(--green-soft);color:var(--mm);border-color:transparent;font-size:12px;}
+.tb-step.tb-done .tb-node{background:var(--green-soft);color:var(--mm);border-color:transparent;font-size:10px;}
 .tb-step.tb-active .tb-node{background:var(--btn);color:#fff;border-color:transparent;
-  box-shadow:0 1px 6px rgba(109,74,216,.4);width:28px;height:28px;}
-.tb-lbl{position:absolute;top:calc(100% + 5px);left:50%;transform:translateX(-50%);
-  font-size:10px;font-weight:600;color:var(--btn);white-space:nowrap;pointer-events:none;}
-.tb-conn{width:32px;height:1.5px;background:var(--line);flex-shrink:0;}
+  box-shadow:0 1px 6px rgba(109,74,216,.4);width:24px;height:24px;}
+.tb-lbl{position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);
+  font-size:9.5px;font-weight:600;color:var(--btn);white-space:nowrap;pointer-events:none;}
+.tb-conn{width:14px;height:1.5px;background:var(--line);flex-shrink:0;}
 .tb-conn.tb-done{background:var(--mm);opacity:.4;}
 
 /* ── Simplified sidebar ── */
@@ -3236,8 +3236,8 @@ function mmRenderSidebar(){
   const desc=document.getElementById('sbDesignDesc');
   if(pill){
     pill.innerHTML=DESIGN_ORDER.map(k=>{
-      const d=DESIGNS[k];
-      return `<button class="sb-dpill-btn ${k===state.design?'active':''}" onclick="setDesign('${k}')">${d.short}</button>`;
+      const lbl=k.charAt(0).toUpperCase()+k.slice(1);
+      return `<button class="sb-dpill-btn ${k===state.design?'active':''}" onclick="setDesign('${k}')" title="${DESIGNS[k].short}">${lbl}</button>`;
     }).join('');
   }
   if(desc) desc.textContent = MM_DESIGN_DESC[state.design]||'';
