@@ -2241,7 +2241,7 @@ function renderCodeWorkspace(s){
 
 function thFetch(){return fetch('/api/mm/codebook.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json());}
 function thQuotesFetch(cid){return fetch('/api/mm/coded-responses.php?project_id='+BOOT.projectId+'&category_id='+cid+'&limit=8',{credentials:'same-origin'}).then(r=>r.json());}
-function thBuildReq(force){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto',force:!!force})}).then(r=>r.json());}
+function thBuildReq(force){return fetch('/api/mm/build.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId,mode:'auto',discover_only:true,force:!!force})}).then(r=>r.json());}
 function thCodeReq(){return fetch('/api/mm/code-existing.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
 function thCodeAiReq(){return fetch('/api/mm/code-existing-semantic.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}
 function thClearReq(){return fetch('/api/mm/clear-tags.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({project_id:BOOT.projectId})}).then(r=>r.json());}

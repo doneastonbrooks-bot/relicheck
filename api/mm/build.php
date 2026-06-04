@@ -34,6 +34,11 @@ release_session_lock();
 $body            = read_json_body();
 $projectId       = (int)($body['project_id'] ?? 0);
 $mode            = clean_string((string)($body['mode'] ?? 'hybrid'), 16);
+// discover_only: run Pass 1 (discover + save the category set) and return,
+// skipping the long batched Pass 2 coding. Coding is a separate explicit action
+// ("Tag responses with ReliCheck Intelligence"), so the Discover button should
+// not block the request through the full coding run.
+$discoverOnly    = !empty($body['discover_only']);
 $targetClusters  = (int)($body['target_clusters'] ?? 6);
 $rawCategories   = $body['user_categories'] ?? [];
 $outcomeFocus    = clean_string((string)($body['outcome_focus'] ?? ''), 200);
@@ -260,6 +265,35 @@ try {
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) $pdo->rollBack();
     fail('mm_build_failed', 'Could not save categories: ' . $e->getMessage(), 500);
+}
+
+// Discover-only: the category set is saved; return now rather than blocking the
+// request through Pass 2's batched coding (which is what made "Discover" appear
+// to hang). The user codes next via "Tag responses with ReliCheck Intelligence".
+if ($discoverOnly) {
+    $catOut = [];
+    $catLookupD = $pdo->prepare(
+        'SELECT c.id, c.name, c.description, c.confidence, c.source_mode,
+                (SELECT COUNT(*) FROM mm_coded_responses cr WHERE cr.category_id = c.id) AS coded_count
+         FROM mm_theme_categories c WHERE c.project_id = :p ORDER BY c.position ASC, c.id ASC'
+    );
+    $catLookupD->execute([':p' => $projectId]);
+    foreach ($catLookupD->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $catOut[] = [
+            'id' => (int)$r['id'], 'name' => (string)$r['name'],
+            'description' => (string)($r['description'] ?? ''), 'confidence' => (string)$r['confidence'],
+            'source_mode' => (string)$r['source_mode'], 'coded_count' => (int)$r['coded_count'],
+        ];
+    }
+    json_out([
+        'ok'              => true,
+        'mode'            => $mode,
+        'discover_only'   => true,
+        'total_responses' => $totalCount,
+        'sample_size'     => count($sample),
+        'categories'      => $catOut,
+        'summary'         => 'Discovered ' . count($catOut) . ' themes. Tag responses next to code them.',
+    ]);
 }
 
 // ----- Pass 2: Coding (full set, batched) -----
