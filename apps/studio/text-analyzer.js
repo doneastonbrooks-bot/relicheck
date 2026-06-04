@@ -736,7 +736,7 @@
       + '<div class="ta-open-grid">'
       + '<div class="ta-og-label">Open in a studio</div>'
       + '<div class="ta-og-cards">'
-      + studioOpenCard('/qual-studio-workspaceV3.php' + dsParam, 'Qualitative Studio', 'Code themes, build a codebook, and validate findings.')
+      + studioOpenCard('/qual-studio-workspaceV4.php' + dsParam, 'Qualitative Studio', 'Code themes, build a codebook, and validate findings.')
       + studioOpenCard('/mmstudioV4.php'              + dsParam, 'MM Studio',           'Connect these themes to survey scores and group comparisons.')
       + studioOpenCard('/studio-da.php'               + dsParam, 'Descriptive Studio',  'See theme frequency distributions and cross-tabs.')
       + studioOpenCard('/studio-is.php'               + dsParam, 'Inferential Studio',  'Test whether theme presence differs by group.')

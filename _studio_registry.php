@@ -45,13 +45,13 @@ return [
     'accent_deep'    => '#922b21',
     'accent_soft'    => '#fdecea',
     'primary_action' => 'Open Descriptive Studio',
-    'primary_route'  => '/descriptive-analysis-workspace.php',
+    'primary_route'  => '/descriptive-analysis-workspaceV4.php',
     'sample'         => [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
     'route'  => '/studio-da.php',
-    'direct' => '/descriptive-analysis-workspace.php',
+    'direct' => '/descriptive-analysis-workspaceV4.php',
   ],
   'is' => [
     'slug'           => 'is',
@@ -85,13 +85,13 @@ return [
     'accent_deep'    => '#174d30',
     'accent_soft'    => '#e8f5ee',
     'primary_action' => 'Open Qualitative Studio',
-    'primary_route'  => '/qual-studio-workspaceV3.php',
+    'primary_route'  => '/qual-studio-workspaceV4.php',
     'sample'         => [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 open-ended responses',
     ],
     'route'  => '/qual-studio.php',
-    'direct' => '/qual-studio-workspaceV3.php',
+    'direct' => '/qual-studio-workspaceV4.php',
   ],
   'mm' => [
     'slug'           => 'mm',

@@ -266,7 +266,7 @@ function lp_card(array $s, string $open_label): void {
     const endpoints = [
       { studio: 'mm',     label: 'MM Studio',                  url: '/api/mm/projects.php',        href: function(p){ return '/mmstudioV4.php?project_id=' + encodeURIComponent(p.id); } },
       { studio: 'survey', label: 'Survey Development System',  url: '/api/dev/project-list.php',   href: function(){ return '/develop.php?db=1'; } },
-      { studio: 'qual',   label: 'Qualitative Analysis Studio',url: '/api/qual/list-projects.php', href: function(p){ return '/qual-studio-workspaceV3.php?project_id=' + encodeURIComponent(p.id); } },
+      { studio: 'qual',   label: 'Qualitative Analysis Studio',url: '/api/qual/list-projects.php', href: function(p){ return '/qual-studio-workspaceV4.php?project_id=' + encodeURIComponent(p.id); } },
       { studio: '360',    label: '360 Studio',                 url: '/api/panels/list.php',        href: function(p){ return '/studio-360.php?project_id=' + encodeURIComponent(p.id); } },
     ];
     Promise.all(endpoints.map(function (e) {

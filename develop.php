@@ -3693,7 +3693,7 @@ const Screens = {
         ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','MM Studio','Mixed methods — qualitative themes + quantitative analysis together.',false,
           `window.location.href='/mmstudioV4.php${state.projectId?'?project_id='+encodeURIComponent(state.projectId):''}'`,'Open')}
         ${dest('<path d="M4 6h16M4 12h10M4 18h7"/>','Qualitative Studio','Code responses, build themes, and develop evidence-supported qualitative interpretations.',false,
-          `window.location.href='/qual-studio-workspaceV3.php'`,'Open')}
+          `window.location.href='/qual-studio-workspaceV4.php'`,'Open')}
       </div>
       <div class="btn-row">
         <button class="btn" onclick="App.go('retrieve')">← Responses</button>

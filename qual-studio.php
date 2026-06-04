@@ -111,9 +111,9 @@ include __DIR__ . '/_landing_head.php';
   <div class="sl-actions rv rv-d3">
     <?php if (count($recentProjects) > 0): ?>
       <a href="#recent" class="sl-btn-a">Continue a project</a>
-      <a href="/qual-studio-workspaceV3.php" class="sl-btn-b">Start new</a>
+      <a href="/qual-studio-workspaceV4.php" class="sl-btn-b">Start new</a>
     <?php else: ?>
-      <a href="/qual-studio-workspaceV3.php" class="sl-btn-a">Open Qualitative Studio</a>
+      <a href="/qual-studio-workspaceV4.php" class="sl-btn-a">Open Qualitative Studio</a>
     <?php endif; ?>
   </div>
 </section>
@@ -135,7 +135,7 @@ include __DIR__ . '/_landing_head.php';
             ];
             $label = $approachLabels[$p['analysis_approach']] ?? ucfirst($p['analysis_approach']);
         ?>
-        <a href="/qual-studio-workspaceV3.php?project_id=<?= (int)$p['id'] ?>" class="qs-proj-row">
+        <a href="/qual-studio-workspaceV4.php?project_id=<?= (int)$p['id'] ?>" class="qs-proj-row">
           <span class="qs-proj-dot"></span>
           <span class="qs-proj-name"><?= htmlspecialchars($p['title']) ?></span>
           <span class="qs-approach-chip"><?= htmlspecialchars($label) ?></span>
@@ -161,7 +161,7 @@ include __DIR__ . '/_landing_head.php';
         </div>
         <h3>Upload qualitative data</h3>
         <p>CSV, XLSX, or a ReliCheck survey project. The studio detects open-ended columns and brings each response in as a codeable unit.</p>
-        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn">Open studio</a>
+        <a href="/qual-studio-workspaceV4.php" class="qs-card-btn">Open studio</a>
       </div>
 
       <div class="qs-card rv rv-d2">
@@ -170,7 +170,7 @@ include __DIR__ . '/_landing_head.php';
         </div>
         <h3>Build a codebook</h3>
         <p>Define codes with clear inclusion and exclusion rules. A well-defined codebook is what separates credible qualitative analysis from impressionistic interpretation.</p>
-        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn outline">Open studio</a>
+        <a href="/qual-studio-workspaceV4.php" class="qs-card-btn outline">Open studio</a>
       </div>
 
       <div class="qs-card rv rv-d3">
@@ -179,7 +179,7 @@ include __DIR__ . '/_landing_head.php';
         </div>
         <h3>Review trustworthiness</h3>
         <p>Check credibility, dependability, confirmability, and reflexivity before any finding goes into a report. Not a score — a structured review.</p>
-        <a href="/qual-studio-workspaceV3.php" class="qs-card-btn outline">Open studio</a>
+        <a href="/qual-studio-workspaceV4.php" class="qs-card-btn outline">Open studio</a>
       </div>
     </div>
 

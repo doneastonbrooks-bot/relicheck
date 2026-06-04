@@ -216,7 +216,7 @@
       onLoaded: function (_err, projectId) {
         if (!BOOT.projectId || projectId !== BOOT.projectId) {
           // New project created — redirect so the URL carries the project_id.
-          window.location.href = '/qual-studio-workspaceV3.php?project_id=' + projectId + '&step=overview';
+          window.location.href = '/qual-studio-workspaceV4.php?project_id=' + projectId + '&step=overview';
           return;
         }
         // Existing project re-linked — reload data (updates seg_count via loadProjectData).

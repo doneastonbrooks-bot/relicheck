@@ -8,7 +8,7 @@
 //   App-specific JS (studio-app-template.js) calls StudioHeader.init() + StudioFooter.init() on boot.
 //   Companion panel (right column) has three tabs: Guidance | Notes | Intelligence.
 //
-// References: qual-studio-workspaceV3.php, mmstudioV4.php
+// References: qual-studio-workspaceV4.php, mmstudioV4.php
 
 require_once __DIR__ . '/api/_db.php';
 require_once __DIR__ . '/api/_session.php';

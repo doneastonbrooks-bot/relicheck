@@ -322,9 +322,9 @@ include __DIR__ . '/_landing_head.php';
           <a class="prj-menu-item" href="/develop.php?db=1&start=choose"><span class="prj-menu-dot" style="background:#E07820"></span>Survey Development</a>
           <div class="prj-menu-div"></div>
           <div class="prj-menu-label">Research Studios</div>
-          <a class="prj-menu-item" href="/descriptive-analysis-workspace.php"><span class="prj-menu-dot" style="background:#0e7490"></span>Descriptive Studio</a>
+          <a class="prj-menu-item" href="/descriptive-analysis-workspaceV4.php"><span class="prj-menu-dot" style="background:#0e7490"></span>Descriptive Studio</a>
           <a class="prj-menu-item" href="/inferential-statistics-workspaceV4.php"><span class="prj-menu-dot" style="background:#1d4ed8"></span>Inferential Studio</a>
-          <a class="prj-menu-item" href="/qual-studio-workspaceV3.php"><span class="prj-menu-dot" style="background:#1e5c3a"></span>Qual Studio</a>
+          <a class="prj-menu-item" href="/qual-studio-workspaceV4.php"><span class="prj-menu-dot" style="background:#1e5c3a"></span>Qual Studio</a>
           <a class="prj-menu-item" href="/mmstudioV4.php"><span class="prj-menu-dot" style="background:#6d4ad8"></span>MM Studio</a>
           <a class="prj-menu-item" href="/text-analyzer.php"><span class="prj-menu-dot" style="background:#D97706"></span>Text Analyzer</a>
           <div class="prj-menu-div"></div>
@@ -380,7 +380,7 @@ include __DIR__ . '/_landing_head.php';
       key: 'qual', label: 'Qual Studio', accent: '#1e5c3a', icon: '/Qualitative%20Analysis.png',
       url: '/api/qual/list-projects.php',
       name:   function(p){ return p.title||'Untitled'; },
-      href:   function(p){ return '/qual-studio-workspaceV3.php?project_id='+p.id; },
+      href:   function(p){ return '/qual-studio-workspaceV4.php?project_id='+p.id; },
       status: function(p){ return p.status||'active'; },
       meta:   function(p){ var c=[]; if(p.seg_count) c.push(p.seg_count+' segments'); if(p.code_count) c.push(p.code_count+' codes'); return c.join(' · '); },
       list:   function(d){ return (d&&d.ok&&d.projects)?d.projects:[]; },
