@@ -1299,50 +1299,113 @@ function qcatUnassign(codeId){qapi('/api/qual/assign-code-category.php',{method:
 function qcatEdit(id){const cat=catw.categories.find(c=>String(c.id)===String(id));if(!cat)return;const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};set('catEditId',cat.id);set('catName',cat.name);set('catDesc',cat.description);const t=$("#catFormTitle");if(t)t.textContent='Edit: '+cat.name;const b=$("#catSave");if(b)b.textContent='Save changes';const c=$("#catCancel");if(c)c.style.display='';const n=$("#catName");if(n)n.scrollIntoView({behavior:'smooth',block:'center'});}
 function qcatClear(){['catName','catDesc'].forEach(i=>{const el=$('#'+i);if(el)el.value='';});const e=$("#catEditId");if(e)e.value='';const t=$("#catFormTitle");if(t)t.textContent='Add a category';const b=$("#catSave");if(b)b.textContent='Add category';const c=$("#catCancel");if(c)c.style.display='none';}
 function qcatSave(){const msg=$("#catMsg");const name=($("#catName").value||'').trim();const desc=($("#catDesc").value||'').trim();const editId=+($("#catEditId").value||0);if(!name){if(msg){msg.style.color='#c0392b';msg.textContent='Name is required.';}return;}if(msg){msg.style.color='';msg.textContent='Saving…';}const body={project_id:BOOT.projectId,name:name,description:desc};if(editId)body.id=editId;qapi('/api/qual/save-category.php',{method:'POST',body:JSON.stringify(body)}).then(()=>{qcatClear();qcatLoad();}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});}
+/* ── Step 11 · Theme Builder — themes + categories + theme Contextual Lens (chunk 3) ── */
+const thw={themes:[],allCategories:[]};
 function renderThemes(s){
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading themes…</div>`+navFooter();
+  qthLoad();
+}
+function qthLoad(){
+  return fetch('/api/qual/get-themes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='themes')return;
+    thw.themes=(d&&d.themes)||[]; thw.allCategories=(d&&d.all_categories)||[];
+    qthPage();
+  }).catch(()=>{if(activeStep().id==='themes')$("#centerInner").innerHTML=wsHead(activeStep())+`<div class="work-surface" style="border-radius:16px">Could not load themes.</div>`+navFooter();});
+}
+function qthPage(){
+  const s=activeStep();
+  const noCats=!thw.allCategories.length;
+  const cards=thw.themes.map(t=>{
+    const catTags=t.categories&&t.categories.length?t.categories.map(c=>`<span class="code-chip">${esc(c.name)}</span>`).join(''):'<span class="dm-note">No categories linked</span>';
+    const availCats=thw.allCategories.map(cat=>{const linked=(t.categories||[]).some(tc=>String(tc.id)===String(cat.id));return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;cursor:pointer"><input type="checkbox" data-theme="${t.id}" data-cat="${cat.id}" ${linked?'checked':''} onchange="qthLink(this)"> ${esc(cat.name)}</label>`;}).join('');
+    return `<div class="cat-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px"><div style="font-size:15px;font-weight:700">${esc(t.name)}</div><button class="btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="qthEdit('${esc(String(t.id))}')">Edit</button></div>
+      <div style="padding:12px 14px;background:var(--indigo-light);border-radius:10px;margin-bottom:10px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:4px">Finding</div><div style="font-size:14px;color:var(--indigo);line-height:1.55;font-style:italic">"${esc(t.interpretive_claim||'')}"</div></div>
+      <div class="dx-l-k" style="margin-bottom:6px">Supporting categories</div><div style="margin-bottom:10px">${catTags}</div>
+      ${thw.allCategories.length?`<details style="font-size:13px"><summary style="cursor:pointer;color:var(--indigo);font-weight:600">Link categories…</summary><div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">${availCats}</div></details>`:''}
+    </div>`;
+  }).join('');
   const hasCL=(typeof ContextualLens!=='undefined');
-  const cards=SAMPLE.themes.map((t,i)=>`
-    <div class="panel"><div class="panel-b">
-      <div style="display:flex;align-items:flex-start;gap:14px">
-        <div style="flex:1;min-width:0">
-          <div style="font-size:15.5px;font-weight:700;letter-spacing:-.15px;margin-bottom:8px">${esc(t.name)}</div>
-          <div class="th-bar"><i style="width:${t.cov}%"></i></div>
-          <div style="display:flex;gap:14px;margin-top:8px;align-items:center">
-            <span class="th-cov">${t.cov}% coverage</span>
-            <span class="th-sent"><b class="pos">${t.pos}%</b> + · <b class="neu">${t.neu}%</b> ~ · <b class="neg">${t.neg}%</b> −</span>
-            <span class="th-sent">${t.n} segments</span>
-          </div>
-        </div>
-        <button class="btn-str" onclick="qSaveSampleToReport('${esc(t.name)}')">＋ Save to report</button>
-      </div>
-      ${hasCL?ContextualLens.panel('theme',{},'cl_t'+i+'_'):''}
-      ${hasCL?`<div class="run-actions" style="margin-top:10px"><button class="btn" style="padding:6px 13px;font-size:12.5px" onclick="qSaveLens(${i},'${esc(t.name)}')">Save reading</button></div>`:''}
-    </div></div>`).join('');
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-note" style="margin-bottom:16px">Four themes carry the analysis. Coverage is the share of respondents whose segments touch the theme; sentiment is the mix within it. Use the <b>Contextual Lens</b> on each theme to read it in context before you write it up.</div>
-    ${cards}`+navFooter();
+    ${noCats?'<div class="work-surface" style="margin-bottom:18px">No categories yet. Group codes in the Category Builder (step 10) first.</div>':''}
+    <div>${cards}</div>
+    <div class="panel"><div class="panel-h"><div><h3 id="thFormTitle">Add a theme</h3><div class="ph-sub">Themes are interpretive claims, not topic labels</div></div></div>
+      <div class="panel-b">
+        <label class="ed-l">Theme name</label>
+        <input class="ed-in" id="thName" placeholder="e.g. Sizing inconsistency erodes trust">
+        <label class="ed-l">Interpretive claim — state a finding, not a label</label>
+        <textarea class="ed-in" id="thClaim" rows="3" placeholder="Respondents repeatedly described…"></textarea>
+        <label class="ed-l">Notes (optional)</label>
+        <textarea class="ed-in" id="thNotes" rows="2" placeholder="Consider whether this overlaps with…"></textarea>
+        ${hasCL?ContextualLens.panel('theme',null,'th_cl_'):''}
+        <input type="hidden" id="thEditId">
+        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" id="thSave" onclick="qthSave()">Add theme</button><button class="btn" id="thCancel" style="display:none" onclick="qthClear()">Cancel</button><span class="dm-note" id="thMsg"></span></div>
+      </div></div>`+navFooter();
 }
-// Contextual Lens (reuses the shared apps/studio/contextual-lens.js): gather the
-// six theme-level dimensions and fold them into the theme's reading. Prototype
-// confirms the capture; wiring saves to /api/qual/save-theme.php at build time.
-function qSaveLens(i,name){
-  if(typeof ContextualLens==='undefined')return;
-  const g=ContextualLens.gather('theme','cl_t'+i+'_');
-  const filled=Object.keys(g).filter(k=>g[k]).length;
-  toast(filled?('Contextual Lens saved for "'+name+'" — '+filled+' field'+(filled>1?'s':'')+' (prototype)'):'Add a reading first.');
+function qthLink(cb){cb.disabled=true;qapi('/api/qual/link-theme-category.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,theme_id:+cb.getAttribute('data-theme'),category_id:+cb.getAttribute('data-cat'),action:cb.checked?'add':'remove'})}).then(()=>qthLoad()).catch(ex=>{cb.disabled=false;toast('Error: '+ex.message);});}
+function qthEdit(id){const t=thw.themes.find(x=>String(x.id)===String(id));if(!t)return;const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};set('thEditId',t.id);set('thName',t.name);set('thClaim',t.interpretive_claim);set('thNotes',t.notes);if(typeof ContextualLens!=='undefined')ContextualLens.populate('theme',t,'th_cl_');const ti=$("#thFormTitle");if(ti)ti.textContent='Edit: '+t.name;const b=$("#thSave");if(b)b.textContent='Save changes';const c=$("#thCancel");if(c)c.style.display='';const n=$("#thName");if(n)n.scrollIntoView({behavior:'smooth',block:'center'});}
+function qthClear(){['thName','thClaim','thNotes'].forEach(i=>{const el=$('#'+i);if(el)el.value='';});const e=$("#thEditId");if(e)e.value='';if(typeof ContextualLens!=='undefined')ContextualLens.populate('theme',{},'th_cl_');const t=$("#thFormTitle");if(t)t.textContent='Add a theme';const b=$("#thSave");if(b)b.textContent='Add theme';const c=$("#thCancel");if(c)c.style.display='none';}
+function qthSave(){
+  const msg=$("#thMsg");const name=($("#thName").value||'').trim();const claim=($("#thClaim").value||'').trim();const notes=($("#thNotes").value||'').trim();const editId=+($("#thEditId").value||0);
+  if(!name){if(msg){msg.style.color='#c0392b';msg.textContent='Theme name is required.';}return;}
+  if(!claim){if(msg){msg.style.color='#c0392b';msg.textContent='An interpretive claim is required.';}return;}
+  if(msg){msg.style.color='';msg.textContent='Saving…';}
+  const body={project_id:BOOT.projectId,name:name,interpretive_claim:claim,notes:notes};
+  if(editId)body.id=editId;
+  if(typeof ContextualLens!=='undefined')Object.assign(body,ContextualLens.gather('theme','th_cl_'));
+  qapi('/api/qual/save-theme.php',{method:'POST',body:JSON.stringify(body)}).then(()=>{qthClear();qthLoad();}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
 }
+
+/* ── Step 12 · Quote Finder — pin exemplar quotes per theme (chunk 3) ── */
+const qfw={themes:[],theme:null,segments:[],pinnedIds:[]};
 function renderQuotes(s){
-  let html=wsHead(s);
-  SAMPLE.themes.forEach(t=>{
-    const qs=SAMPLE.quotes[t.name];
-    if(!qs) return;
-    const quotes=qs.map(q=>`<div class="th-quote"><div class="th-quote-t">“${esc(q.t)}”</div><div class="th-quote-m"><span>${esc(q.m)}</span><span>· pinned</span></div></div>`).join('');
-    html+=`<div class="ws-tool-head" style="margin-top:18px"><span class="ws-dot qual"></span><h4>${esc(t.name)}</h4><span class="ws-tag">${qs.length} pinned</span></div>
-      <div class="th-quotes">${quotes}</div>`;
-  });
-  html+=`<div class="dx-next"><div class="dx-next-k">↳ Tip</div><div class="dx-next-t">Pin <b>one or two</b> vivid quotes per theme. More than that dilutes the evidence.</div></div>`;
-  $("#centerInner").innerHTML=html+navFooter();
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading quotes…</div>`+navFooter();
+  fetch('/api/qual/get-quotes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='quotes')return;
+    if(d&&d.themes&&d.themes.length===1){qfLoad(d.themes[0].id);}
+    else{qfw.themes=(d&&d.themes)||[];qfw.theme=null;qfPage();}
+  }).catch(()=>{if(activeStep().id==='quotes')$("#centerInner").innerHTML=wsHead(activeStep())+`<div class="work-surface" style="border-radius:16px">Could not load quotes.</div>`+navFooter();});
 }
+function qfLoad(themeId){
+  let qs='/api/qual/get-quotes.php?project_id='+BOOT.projectId;if(themeId)qs+='&theme_id='+themeId;
+  return fetch(qs,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='quotes')return;
+    qfw.themes=(d&&d.themes)||[];qfw.theme=(d&&d.theme)||null;qfw.segments=(d&&d.segments)||[];qfw.pinnedIds=(d&&d.pinned_ids)||[];
+    qfPage();
+  }).catch(()=>{if(activeStep().id==='quotes'){const b=$("#qfBody");if(b)b.innerHTML='<div class="work-surface">Could not load quotes.</div>';}});
+}
+function qfSegCard(seg,isPinned){
+  let meta=seg.metadata_json||{};if(typeof meta==='string'){try{meta=JSON.parse(meta);}catch(_){meta={};}}
+  const metaItems=Object.keys(meta).slice(0,3).map(k=>`<span class="ov-chip" style="font-size:11px">${esc(k)}: ${esc(String(meta[k]))}</span>`).join('');
+  const codeTags=(seg.theme_codes||[]).map(c=>`<span class="code-chip">${esc(c.code_name)} → ${esc(c.cat_name)}</span>`).join('');
+  const pinBtn=isPinned?`<button class="btn primary" style="font-size:12px;padding:4px 12px" onclick="qfPin(${seg.id},'unpin',this)">★ Pinned — remove</button>`:`<button class="btn" style="font-size:12px;padding:4px 12px" onclick="qfPin(${seg.id},'pin',this)">☆ Pin as exemplar</button>`;
+  return `<div class="seg-card"${isPinned?' style="border-color:var(--indigo);background:var(--indigo-light)"':''}>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">${seg.participant_id?`<span class="ov-chip" style="font-size:11px">ID: ${esc(seg.participant_id)}</span>`:''}${metaItems}</div>
+    <div class="seg-text">${esc(seg.cleaned_text||seg.raw_text||'')}</div>
+    ${codeTags?`<div style="margin-bottom:8px;display:flex;gap:6px;flex-wrap:wrap">${codeTags}</div>`:''}
+    <div>${pinBtn}</div></div>`;
+}
+function qfPage(){
+  const s=activeStep();
+  if(!qfw.themes.length){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No themes yet. Build themes in the Theme Builder (step 11) first.</div>`+navFooter();return;}
+  const tabs=qfw.themes.map(t=>{const active=qfw.theme&&String(qfw.theme.id)===String(t.id);return `<button class="tt-tab ${active?'on':''}" onclick="qfLoad(${t.id})">${esc(t.name)}</button>`;}).join('');
+  let body='';
+  if(!qfw.theme){body='<div class="work-surface">Select a theme above to find exemplar quotes.</div>';}
+  else{
+    const t=qfw.theme;
+    body+=`<div style="padding:14px 18px;background:var(--indigo-light);border-radius:12px;margin-bottom:20px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:4px">Finding</div><div style="font-size:14.5px;color:var(--indigo);line-height:1.55;font-style:italic">"${esc(t.interpretive_claim||'')}"</div></div>`;
+    const pinned=qfw.segments.filter(x=>qfw.pinnedIds.indexOf(+x.id)!==-1);
+    if(pinned.length)body+=`<div style="margin-bottom:24px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:10px">★ Exemplar quotes (${pinned.length})</div><div style="display:flex;flex-direction:column;gap:10px">${pinned.map(x=>qfSegCard(x,true)).join('')}</div></div>`;
+    const unpinned=qfw.segments.filter(x=>qfw.pinnedIds.indexOf(+x.id)===-1);
+    if(!qfw.segments.length)body+='<div class="work-surface">No coded segments linked to this theme yet. Link this theme to categories (step 11) whose codes are applied to segments.</div>';
+    else if(unpinned.length)body+=`<div class="dx-l-k" style="margin-bottom:10px">Linked segments — ${unpinned.length} remaining</div><div class="seg-scroll">${unpinned.map(x=>qfSegCard(x,false)).join('')}</div>`;
+    else body+='<div class="dm-note">All linked segments are pinned as exemplars.</div>';
+  }
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="tt-tabs" style="margin-bottom:18px">${tabs}</div><div id="qfBody">${body}</div>`+navFooter();
+}
+function qfPin(segId,action,btn){if(!qfw.theme)return;if(btn)btn.disabled=true;qapi('/api/qual/save-quote.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,theme_id:qfw.theme.id,segment_id:segId,action:action})}).then(()=>qfLoad(qfw.theme.id)).catch(ex=>{if(btn)btn.disabled=false;toast('Error: '+ex.message);});}
 function renderTrustworthiness(s){
   const rows=SAMPLE.trust.map(t=>`<tr><td class="dx-name">${esc(t.k)}</td>
     <td>${t.status==='Pass'?'<span class="tt-status ok">Documented</span>':'<span class="tt-status rev">Review</span>'}</td>
