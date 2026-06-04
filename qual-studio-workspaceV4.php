@@ -1153,24 +1153,103 @@ function qcbSave(){
     .then(d=>{qcw.codes=(d&&d.ok&&d.codes)?d.codes:[];const tbl=$("#cbTable");if(tbl)tbl.innerHTML=qcbTable();qcbClear();if(msg){msg.style.color='var(--mm-ink)';msg.textContent=editId?'Code updated.':'Code added.';}})
     .catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
 }
+/* ── Step 9 · Dual Coder — invites + agreement (chunk 2, part 3) ── */
+const dcw={tab:'team',invite:null,disag:null,filter:'disagree'};
 function renderDual(s){
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  dcw.invite=null;dcw.disag=null;qdcPage(s);
+}
+function qdcPage(s){
+  const tab=(id,label)=>`<button class="tt-tab ${dcw.tab===id?'on':''}" onclick="dcw.tab='${id}';qdcPage(activeStep())">${label}</button>`;
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-cards">
-      <div class="dm-card"><div class="dm-card-k">Cohen's κ</div><div class="dm-card-v">0.78</div></div>
-      <div class="dm-card"><div class="dm-card-k">Agreement</div><div class="dm-card-v">86%</div></div>
-      <div class="dm-card"><div class="dm-card-k">Double-coded</div><div class="dm-card-v">96</div></div>
-      <div class="dm-card"><div class="dm-card-k">Disagreements</div><div class="dm-card-v">13</div></div>
-    </div>
-    <div class="panel"><div class="panel-h"><div><h3>Agreement by code</h3><div class="ph-sub">Where you and your second coder line up</div></div></div>
-      <div class="panel-b"><div class="dx-scroll"><table class="dx-table">
-        <thead><tr><th class="l">Code</th><th>Both applied</th><th>Only one</th><th class="l">Agreement</th></tr></thead>
-        <tbody>
-          <tr><td class="dx-name">Time pressure</td><td>38</td><td>4</td><td><span class="tt-status ok">Strong</span></td></tr>
-          <tr><td class="dx-name">Lack of training</td><td>15</td><td>6</td><td><span class="tt-status rev">Review</span></td></tr>
-          <tr><td class="dx-name">Feeling valued</td><td>16</td><td>1</td><td><span class="tt-status ok">Strong</span></td></tr>
-        </tbody></table></div>
-        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" onclick="toast('Invite link copied (prototype)')">Invite a second coder</button><span class="dm-note">κ = 0.78 is substantial agreement. Resolve the 13 disagreements to lift it.</span></div>
-      </div></div>`+navFooter();
+    <div class="tt-tabs">${tab('team','Team')}${tab('review','Disagreement Review')}</div>
+    <div id="dcPanel"><div class="work-surface">Loading…</div></div>`+navFooter();
+  if(dcw.tab==='team')qdcTeam();else qdcReview();
+}
+function qdcBar(pct,color){return `<div style="background:var(--bg);border-radius:999px;height:6px;overflow:hidden"><div style="height:6px;border-radius:999px;background:${color};width:${pct}%"></div></div><div class="dm-note" style="text-align:right;margin-top:4px">${pct}%</div>`;}
+function qdcTeam(){
+  const panel=$("#dcPanel");if(!panel)return;
+  if(dcw.invite){qdcTeamContent(dcw.invite);return;}
+  panel.innerHTML='<div class="work-surface">Loading team…</div>';
+  fetch('/api/qual/get-invites.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='dual'||dcw.tab!=='team')return;dcw.invite=d;qdcTeamContent(d);
+  }).catch(()=>{if(panel)panel.innerHTML='<div class="work-surface">Could not load team.</div>';});
+}
+function qdcTeamContent(d){
+  const panel=$("#dcPanel");if(!panel)return;
+  const total=d.total_segments||0, lead=d.lead||{}, invites=d.invites||[];
+  const active=invites.find(i=>i.status==='pending'||i.status==='accepted');
+  const leadPct=total>0?Math.round((lead.coded||0)/total*100):0;
+  let cards=`<div class="form-grid" style="margin-bottom:20px">
+    <div class="panel"><div class="panel-b"><div class="dx-l-k" style="color:var(--indigo)">Lead coder (you)</div><div style="font-size:15px;font-weight:700;margin:4px 0 6px">${esc(lead.name||'You')}</div><div class="dm-note" style="margin-bottom:8px">${lead.coded||0} of ${total} segments coded</div>${qdcBar(leadPct,'var(--indigo)')}</div></div>`;
+  if(active&&active.status==='accepted'){const scPct=total>0?Math.round((active.coded||0)/total*100):0;
+    cards+=`<div class="panel"><div class="panel-b"><div class="dx-l-k" style="color:var(--quan)">Second coder</div><div style="font-size:15px;font-weight:700;margin:4px 0 6px">${esc(active.coder_name||active.email)}</div><div class="dm-note" style="margin-bottom:8px">${active.coded||0} of ${total} segments coded</div>${qdcBar(scPct,'var(--quan)')}</div></div>`;
+  }else{
+    cards+=`<div class="panel" style="border-style:dashed"><div class="panel-b" style="text-align:center;color:var(--text-3)"><div style="font-size:28px;margin-bottom:6px">+</div><div style="font-weight:600;margin-bottom:4px">Second coder</div><div class="dm-note">Not yet assigned</div></div></div>`;
+  }
+  cards+='</div>';
+  let invSec='';
+  if(active){
+    const badge=active.status==='accepted'?'<span class="tt-status ok">accepted</span>':'<span class="tt-status rev">pending</span>';
+    invSec=`<div class="panel"><div class="panel-b"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px"><span style="font-weight:700">${esc(active.email)}</span>${badge}</div>`;
+    if(active.status==='pending'){invSec+=`<div class="dm-note" style="margin-bottom:10px">Share this link with the coder. They must log in to ReliCheck to accept it.</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><input class="ed-in" value="${esc(active.invite_url||'')}" readonly style="flex:1;font-family:monospace;font-size:12px"><button class="btn" onclick="qdcCopy('${esc(active.invite_url||'')}',this)">Copy link</button></div>`;}
+    invSec+=`<div class="run-actions" style="margin-top:14px"><button class="btn" onclick="qdcRevoke(${active.id})">Revoke invite</button>${active.status==='accepted'?'<button class="btn primary" onclick="dcw.tab=\'review\';qdcPage(activeStep())">View disagreements →</button>':''}</div></div></div>`;
+  }else{
+    invSec=`<div class="panel"><div class="panel-h"><div><h3>Invite a second coder</h3><div class="ph-sub">They code the same segments with your codebook</div></div></div>
+      <div class="panel-b"><div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap"><div style="flex:1;min-width:200px"><label class="ed-l">Email address</label><input class="ed-in" id="dcEmail" type="email" placeholder="colleague@example.com"></div><button class="btn primary" onclick="qdcInvite()">Generate invite link</button></div><div id="dcInviteResult" style="margin-top:14px"></div></div></div>`;
+  }
+  panel.innerHTML=cards+invSec;
+}
+function qdcCopy(url,btn){navigator.clipboard.writeText(url).catch(()=>{});if(btn){btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy link',2000);}}
+function qdcRevoke(id){
+  if(!confirm('Revoke this invite? The second coder will lose access.'))return;
+  qapi('/api/qual/revoke-invite.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,invite_id:id})}).then(()=>{dcw.invite=null;qdcTeam();}).catch(e=>toast('Error: '+e.message));
+}
+function qdcInvite(){
+  const email=($("#dcEmail").value||'').trim();if(!email){toast('Enter an email address.');return;}
+  const result=$("#dcInviteResult");
+  qapi('/api/qual/invite-coder.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,email:email})}).then(r=>{
+    if(result)result.innerHTML=`<div style="padding:12px 14px;background:var(--indigo-light);border-radius:10px"><div style="font-weight:700;margin-bottom:6px">Invite link generated</div><div style="display:flex;gap:8px;align-items:center"><input class="ed-in" value="${esc(r.invite_url||'')}" readonly style="flex:1;font-family:monospace;font-size:12px"><button class="btn" onclick="qdcCopy('${esc(r.invite_url||'')}',this)">Copy</button></div></div>`;
+    setTimeout(()=>{dcw.invite=null;qdcTeam();},1400);
+  }).catch(e=>{if(result)result.innerHTML='<div class="dm-note" style="color:#c0392b">'+esc(e.message)+'</div>';});
+}
+function qdcReview(){
+  const panel=$("#dcPanel");if(!panel)return;
+  if(dcw.disag){qdcReviewContent(dcw.disag);return;}
+  panel.innerHTML='<div class="work-surface">Comparing coder decisions…</div>';
+  fetch('/api/qual/get-disagreements.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='dual'||dcw.tab!=='review')return;dcw.disag=d;qdcReviewContent(d);
+  }).catch(()=>{if(panel)panel.innerHTML='<div class="work-surface">Could not load comparison.</div>';});
+}
+function qdcReviewContent(d){
+  const panel=$("#dcPanel");if(!panel)return;
+  if(!d.ready){panel.innerHTML=`<div class="work-surface" style="text-align:center"><b>No second coder yet</b><br><span class="dm-note">${esc(d.reason||'Invite a second coder in the Team tab.')}</span></div>`;return;}
+  const st=d.stats||{}, segs=d.segments||[];
+  const pct=st.agreement_pct, pctColor=pct==null?'var(--text-3)':pct>=75?'var(--mm-ink)':pct>=60?'#d97706':'#c0392b';
+  let html=`<div class="dm-cards" style="margin-bottom:18px">
+    <div class="dm-card"><div class="dm-card-k">Both coded</div><div class="dm-card-v">${st.both_coded||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Agreements</div><div class="dm-card-v">${st.agreements||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Disagreements</div><div class="dm-card-v">${st.disagreements||0}</div></div>
+    <div class="dm-card"><div class="dm-card-k">Agreement rate</div><div class="dm-card-v" style="color:${pctColor}">${pct!=null?pct+'%':'—'}</div></div>
+  </div>`;
+  if(!segs.length){panel.innerHTML=html+'<div class="work-surface">No segments coded by both coders yet.</div>';return;}
+  const fbtn=(f,label)=>`<button class="btn ${dcw.filter===f?'primary':''}" style="font-size:12.5px" onclick="dcw.filter='${f}';qdcReviewContent(dcw.disag)">${label}</button>`;
+  html+=`<div class="run-actions" style="margin-bottom:16px">${fbtn('disagree','Disagreements ('+(st.disagreements||0)+')')}${fbtn('agree','Agreements ('+(st.agreements||0)+')')}${fbtn('all','All ('+segs.length+')')}</div>`;
+  const filtered=segs.filter(x=>dcw.filter==='disagree'?!x.is_agreement:dcw.filter==='agree'?x.is_agreement:true);
+  html+='<div class="seg-scroll">'+filtered.map(x=>{
+    const meta=x.metadata_json||{};const metaItems=Object.keys(meta).slice(0,3).map(k=>`<span class="ov-chip" style="font-size:11px">${esc(k)}: ${esc(String(meta[k]))}</span>`).join('');
+    const badge=x.is_agreement?'<span class="tt-status ok">Agreement</span>':'<span class="tt-status rev">Disagreement</span>';
+    const leadCodes=((x.agreed||[]).concat(x.only_lead||[])).map(c=>`<span class="code-chip">${esc(c.name)}</span>`).join('')||'<span class="dm-note">No codes</span>';
+    const secCodes=((x.agreed||[]).concat(x.only_second||[])).map(c=>`<span class="code-chip" style="background:var(--quan-soft);color:var(--quan-ink)">${esc(c.name)}</span>`).join('')||'<span class="dm-note">No codes</span>';
+    return `<div class="seg-card"><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">${x.participant_id?`<span class="ov-chip" style="font-size:11px">ID: ${esc(x.participant_id)}</span>`:''}${metaItems}${badge}</div>
+      <div class="seg-text">${esc(x.text)}</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="dm-note" style="width:60px;flex:none;font-weight:700">Lead</span><div>${leadCodes}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="dm-note" style="width:60px;flex:none;font-weight:700;color:var(--quan-ink)">Second</span><div>${secCodes}</div></div>
+      </div></div>`;
+  }).join('')+'</div>';
+  panel.innerHTML=html;
 }
 function renderCategories(s){
   const cards=SAMPLE.categories.map(cat=>{
