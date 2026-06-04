@@ -2585,15 +2585,25 @@ function emCompose(){
     const tid=tsel?+tsel.value:0;
     const theme=em.themes.find(t=>t.id===tid);
     const note=nin?nin.value.trim():'';
+    const divChk=document.getElementById('em_div_'+it.id);
+    const ctx=((document.getElementById('em_ctx_'+it.id)||{}).value||'').trim();
+    const grp=((document.getElementById('em_grp_'+it.id)||{}).value||'').trim();
+    const ctr=((document.getElementById('em_ctr_'+it.id)||{}).value||'').trim();
+    const act=((document.getElementById('em_act_'+it.id)||{}).value||'').trim();
     lines.push(`${i+1}. ${r.plain}`);
     lines.push(theme?`   Explained by "${theme.name}"${note?': '+note:''}`:'   (not yet mapped to a theme)');
+    if(divChk&&divChk.checked) lines.push('   [!] Aggregate and experience diverge for this finding');
+    if(ctx) lines.push('   Context: '+ctx);
+    if(grp) lines.push('   Voice: '+grp);
+    if(ctr) lines.push('   Counter-Pattern: '+ctr);
+    if(act) lines.push('   Consequence: '+act);
   });
   return lines.join('\n');
 }
 function emSave(){
   if(!em.findings.length){toast('No staged findings to map');return;}
   const text=emCompose();
-  if(text.length>800){toast(`Map is ${text.length} characters; the limit is 800. Shorten your notes.`);return;}
+  if(text.length>2500){toast(`Map is ${text.length} characters; the limit is 2500. Shorten your notes.`);return;}
   em.saving=true;renderExplainMap(activeStep());
   const payload=em.noteId
     ?{project_id:BOOT.projectId,action:'update_note',note_id:em.noteId,body_text:text}
@@ -2620,6 +2630,21 @@ function renderExplainMap(s){
   if(!em.themes.length){$("#centerInner").innerHTML=emHead(s)+helpBar('explain_map')+`<div class="th-empty"><h3>No themes yet</h3><p>Build or discover your qualitative themes first, then return here to link each quantitative result to the theme that explains it.</p></div>`+emNav();return;}
   const opts=em.themes.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
   const rows=em.findings.map((it,i)=>{const r=qsReadFinding(it);
+    const clPanel=`<details style="border:1px solid #e0d4f5;border-radius:8px;margin-top:12px">
+      <summary style="padding:9px 13px;cursor:pointer;font-size:12.5px;font-weight:700;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:8px;user-select:none">
+        <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#6B3FA0;color:#fff;font-size:9px;font-weight:800;flex-shrink:0">CL</span>
+        Contextual Lens <span style="font-weight:400;color:var(--ink-3);font-size:11.5px">optional</span>
+      </summary>
+      <div style="padding:12px 14px 14px;border-top:1px solid #e0d4f5">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin-bottom:12px;cursor:pointer;color:var(--ink-2)">
+          <input type="checkbox" id="em_div_${it.id}"> Aggregate and experience diverge for this finding
+        </label>
+        <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Context<span style="display:block;font-weight:400;color:var(--ink-3)">What setting, history, role, condition, or environment shapes this finding?</span></label><textarea id="em_ctx_${it.id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+        <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Voice<span style="display:block;font-weight:400;color:var(--ink-3)">Whose experience is visible in this finding, and whose might be missing or underrepresented?</span></label><textarea id="em_grp_${it.id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+        <div style="margin-bottom:10px"><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Counter-Pattern<span style="display:block;font-weight:400;color:var(--ink-3)">What responses challenge, complicate, or contradict this joint finding?</span></label><textarea id="em_ctr_${it.id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+        <div><label style="display:block;font-size:12px;font-weight:700;margin-bottom:3px;color:var(--ink-2)">Consequence<span style="display:block;font-weight:400;color:var(--ink-3)">What could happen if this finding is used shallowly, incorrectly, or without context?</span></label><textarea id="em_act_${it.id}" style="width:100%;min-height:52px;padding:7px 10px;border:1px solid var(--line);border-radius:7px;font:inherit;font-size:12.5px;resize:vertical;box-sizing:border-box" placeholder="Optional"></textarea></div>
+      </div>
+    </details>`;
     return `<div class="panel"><div class="panel-b">
       <div style="font-size:14px;line-height:1.5"><span class="strand-chip quan" style="font-size:11px">${esc(r.src)}</span> ${esc(r.plain)}</div>
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px">
@@ -2627,6 +2652,7 @@ function renderExplainMap(s){
         <select id="em_t_${it.id}" class="ed-in" style="max-width:280px"><option value="">— choose a theme —</option>${opts}</select>
         <input id="em_n_${it.id}" class="ed-in" style="flex:1;min-width:200px" placeholder="How does this theme explain this result?">
       </div>
+      ${clPanel}
     </div></div>`;}).join('');
   const tableNote=em.hasTable?'':`<div class="dm-note" style="margin-bottom:12px">Saving needs a one-time database migration before it can persist; you can still draft the map here.</div>`;
   const saved=em.savedText?`<div class="panel"><div class="panel-h"><div><h3>Saved map</h3><div class="ph-sub">Carried into the report's Integration section</div></div></div><div class="panel-b"><pre style="white-space:pre-wrap;font:inherit;margin:0;color:var(--ink-2)">${esc(em.savedText)}</pre></div></div>`:'';
