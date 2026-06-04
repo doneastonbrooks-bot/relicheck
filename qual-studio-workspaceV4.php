@@ -1316,21 +1316,25 @@ function qthLoad(){
 function qthPage(){
   const s=activeStep();
   const noCats=!thw.allCategories.length;
+  const hasCL=(typeof ContextualLens!=='undefined');
   const cards=thw.themes.map(t=>{
     const catTags=t.categories&&t.categories.length?t.categories.map(c=>`<span class="code-chip">${esc(c.name)}</span>`).join(''):'<span class="dm-note">No categories linked</span>';
     const availCats=thw.allCategories.map(cat=>{const linked=(t.categories||[]).some(tc=>String(tc.id)===String(cat.id));return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:4px 0;cursor:pointer"><input type="checkbox" data-theme="${t.id}" data-cat="${cat.id}" ${linked?'checked':''} onchange="qthLink(this)"> ${esc(cat.name)}</label>`;}).join('');
+    // Contextual Lens lives ON the theme (its own panel + save), separate from the create form.
+    const cl=hasCL?`<div style="margin-top:12px;border-top:1px solid var(--border);padding-top:6px">${ContextualLens.panel('theme',t,'th_cl_'+t.id+'_')}<div class="run-actions" style="margin-top:8px"><button class="btn primary" style="padding:6px 13px;font-size:12.5px" onclick="qthSaveLens('${esc(String(t.id))}')">Save Contextual Lens</button><span class="dm-note">Optional interpretive layer for this theme.</span></div></div>`:'';
     return `<div class="cat-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px"><div style="font-size:15px;font-weight:700">${esc(t.name)}</div><button class="btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="qthEdit('${esc(String(t.id))}')">Edit</button></div>
       <div style="padding:12px 14px;background:var(--indigo-light);border-radius:10px;margin-bottom:10px"><div class="dx-l-k" style="color:var(--indigo);margin-bottom:4px">Finding</div><div style="font-size:14px;color:var(--indigo);line-height:1.55;font-style:italic">"${esc(t.interpretive_claim||'')}"</div></div>
       <div class="dx-l-k" style="margin-bottom:6px">Supporting categories</div><div style="margin-bottom:10px">${catTags}</div>
       ${thw.allCategories.length?`<details style="font-size:13px"><summary style="cursor:pointer;color:var(--indigo);font-weight:600">Link categories…</summary><div style="margin-top:10px;display:flex;flex-direction:column;gap:4px">${availCats}</div></details>`:''}
+      ${cl}
     </div>`;
   }).join('');
-  const hasCL=(typeof ContextualLens!=='undefined');
   $("#centerInner").innerHTML=wsHead(s)+`
     ${noCats?'<div class="work-surface" style="margin-bottom:18px">No categories yet. Group codes in the Category Builder (step 10) first.</div>':''}
+    ${thw.themes.length?'':'<div class="dm-note" style="margin-bottom:14px">No themes yet. Create one below — a Contextual Lens panel then appears on each theme card.</div>'}
     <div>${cards}</div>
-    <div class="panel"><div class="panel-h"><div><h3 id="thFormTitle">Add a theme</h3><div class="ph-sub">Themes are interpretive claims, not topic labels</div></div></div>
+    <div class="panel"><div class="panel-h"><div><h3 id="thFormTitle">Add a theme</h3><div class="ph-sub">Name it and state the finding. The Contextual Lens is added per theme, on its card above.</div></div></div>
       <div class="panel-b">
         <label class="ed-l">Theme name</label>
         <input class="ed-in" id="thName" placeholder="e.g. Sizing inconsistency erodes trust">
@@ -1338,14 +1342,13 @@ function qthPage(){
         <textarea class="ed-in" id="thClaim" rows="3" placeholder="Respondents repeatedly described…"></textarea>
         <label class="ed-l">Notes (optional)</label>
         <textarea class="ed-in" id="thNotes" rows="2" placeholder="Consider whether this overlaps with…"></textarea>
-        ${hasCL?ContextualLens.panel('theme',null,'th_cl_'):''}
         <input type="hidden" id="thEditId">
         <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" id="thSave" onclick="qthSave()">Add theme</button><button class="btn" id="thCancel" style="display:none" onclick="qthClear()">Cancel</button><span class="dm-note" id="thMsg"></span></div>
       </div></div>`+navFooter();
 }
 function qthLink(cb){cb.disabled=true;qapi('/api/qual/link-theme-category.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,theme_id:+cb.getAttribute('data-theme'),category_id:+cb.getAttribute('data-cat'),action:cb.checked?'add':'remove'})}).then(()=>qthLoad()).catch(ex=>{cb.disabled=false;toast('Error: '+ex.message);});}
-function qthEdit(id){const t=thw.themes.find(x=>String(x.id)===String(id));if(!t)return;const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};set('thEditId',t.id);set('thName',t.name);set('thClaim',t.interpretive_claim);set('thNotes',t.notes);if(typeof ContextualLens!=='undefined')ContextualLens.populate('theme',t,'th_cl_');const ti=$("#thFormTitle");if(ti)ti.textContent='Edit: '+t.name;const b=$("#thSave");if(b)b.textContent='Save changes';const c=$("#thCancel");if(c)c.style.display='';const n=$("#thName");if(n)n.scrollIntoView({behavior:'smooth',block:'center'});}
-function qthClear(){['thName','thClaim','thNotes'].forEach(i=>{const el=$('#'+i);if(el)el.value='';});const e=$("#thEditId");if(e)e.value='';if(typeof ContextualLens!=='undefined')ContextualLens.populate('theme',{},'th_cl_');const t=$("#thFormTitle");if(t)t.textContent='Add a theme';const b=$("#thSave");if(b)b.textContent='Add theme';const c=$("#thCancel");if(c)c.style.display='none';}
+function qthEdit(id){const t=thw.themes.find(x=>String(x.id)===String(id));if(!t)return;const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};set('thEditId',t.id);set('thName',t.name);set('thClaim',t.interpretive_claim);set('thNotes',t.notes);const ti=$("#thFormTitle");if(ti)ti.textContent='Edit: '+t.name;const b=$("#thSave");if(b)b.textContent='Save changes';const c=$("#thCancel");if(c)c.style.display='';const n=$("#thName");if(n)n.scrollIntoView({behavior:'smooth',block:'center'});}
+function qthClear(){['thName','thClaim','thNotes'].forEach(i=>{const el=$('#'+i);if(el)el.value='';});const e=$("#thEditId");if(e)e.value='';const t=$("#thFormTitle");if(t)t.textContent='Add a theme';const b=$("#thSave");if(b)b.textContent='Add theme';const c=$("#thCancel");if(c)c.style.display='none';}
 function qthSave(){
   const msg=$("#thMsg");const name=($("#thName").value||'').trim();const claim=($("#thClaim").value||'').trim();const notes=($("#thNotes").value||'').trim();const editId=+($("#thEditId").value||0);
   if(!name){if(msg){msg.style.color='#c0392b';msg.textContent='Theme name is required.';}return;}
@@ -1353,8 +1356,15 @@ function qthSave(){
   if(msg){msg.style.color='';msg.textContent='Saving…';}
   const body={project_id:BOOT.projectId,name:name,interpretive_claim:claim,notes:notes};
   if(editId)body.id=editId;
-  if(typeof ContextualLens!=='undefined')Object.assign(body,ContextualLens.gather('theme','th_cl_'));
   qapi('/api/qual/save-theme.php',{method:'POST',body:JSON.stringify(body)}).then(()=>{qthClear();qthLoad();}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
+}
+// Save the Contextual Lens for one existing theme (its own card), preserving the
+// theme's name/claim/notes. Separate from creating a theme — never asks for a name.
+function qthSaveLens(id){
+  const t=thw.themes.find(x=>String(x.id)===String(id));
+  if(!t||typeof ContextualLens==='undefined')return;
+  const body=Object.assign({project_id:BOOT.projectId,id:t.id,name:t.name,interpretive_claim:t.interpretive_claim,notes:t.notes||''},ContextualLens.gather('theme','th_cl_'+id+'_'));
+  qapi('/api/qual/save-theme.php',{method:'POST',body:JSON.stringify(body)}).then(()=>{toast('Contextual Lens saved for "'+t.name+'"');qthLoad();}).catch(e=>toast('Error: '+e.message));
 }
 
 /* ── Step 12 · Quote Finder — pin exemplar quotes per theme (chunk 3) ── */
