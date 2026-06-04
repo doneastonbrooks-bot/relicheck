@@ -77,10 +77,14 @@ foreach ($cm as $i => $c) {
         }
         $avgLen   = $lenCount > 0 ? ($lenSum / $lenCount) : 0;
         $distinct = count($set);
-        if ($avgLen > 20 && $distinct > 12) {
+        // A column explicitly typed 'open' is qualitative text — materialize it
+        // whenever it has any non-empty value. (The old avgLen>20 && distinct>12
+        // heuristic dropped short answers and small samples; type=='open' is an
+        // explicit classification, not a guess, so trust it.)
+        if ($lenCount > 0) {
             $openIdx[] = ['idx' => $i, 'name' => $name];
         } else {
-            // Short categorical (Race / Gender / Role / etc.). Track for group_value.
+            // Truly empty 'open' column. Track for group_value bookkeeping only.
             $categoricalIdx[] = ['idx' => $i, 'name' => $name, 'distinct' => $distinct];
         }
     } elseif ($type === 'likert' && $numericIdx === -1) {

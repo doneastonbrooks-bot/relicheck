@@ -108,8 +108,13 @@ if (isset($body['save']) && is_array($body['save'])) {
                         if (count($set) < 200) $set[$v] = true;
                         $lenSum += mb_strlen($v); $lenCount++;
                     }
-                    $avgLen = $lenCount > 0 ? ($lenSum / $lenCount) : 0;
-                    if ($avgLen > 20 && count($set) > 12) $openIdxM[] = ['idx' => $ci, 'name' => $cname];
+                    // Trust the user's confirmed classification: a column they
+                    // explicitly marked Open-ended is materialized as long as it
+                    // holds any non-empty text. The old avgLen>20 && distinct>12
+                    // heuristic belonged to auto-detection and silently dropped
+                    // short answers and small samples (<=12 respondents), leaving
+                    // the Qualitative Themes step empty despite a confirmed map.
+                    if ($lenCount > 0) $openIdxM[] = ['idx' => $ci, 'name' => $cname];
                 } elseif ($ctype === 'likert' && $numericIdxM === -1) {
                     $numericIdxM = $ci;
                 }
