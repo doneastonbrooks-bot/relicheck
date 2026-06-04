@@ -1083,14 +1083,75 @@ function qcwRenderSug(panel,sid,suggestions){
   }).join('');
   panel.innerHTML=`<div style="padding:10px 0"><div class="dx-l-k" style="margin-bottom:10px">✦ ReliCheck Intelligence suggestions</div>${rows}</div>`;
 }
+/* ── Step 8 · Codebook Builder — real get-codes / save-code (shares qcw.codes) ── */
 function renderCodebook(s){
-  const rows=SAMPLE.codes.map(c=>`<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${esc(c.def)}</td><td>${c.n}</td></tr>`).join('');
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading codebook…</div>`+navFooter();
+  fetch('/api/qual/get-codes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='codebook')return;
+    qcw.codes=(d&&d.ok&&d.codes)?d.codes:[];
+    qcbForm(s);
+  }).catch(()=>{if(activeStep().id==='codebook')$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Could not load codes.</div>`+navFooter();});
+}
+function qcbTable(){
+  const codes=qcw.codes||[];
+  if(!codes.length)return '<div class="work-surface">No codes yet. Add your first code below, or create codes while coding in step 7.</div>';
+  const rows=codes.map(c=>`<tr><td class="dx-name">${esc(c.name)}</td><td class="dx-interp">${c.definition?esc(c.definition):'<span class="ov-empty">No definition</span>'}</td><td>${c.application_count||0}</td><td><button class="btn" style="padding:4px 10px;font-size:12px" onclick="qcbEdit(${c.id})">Edit</button></td></tr>`).join('');
+  return `<div class="dx-scroll" style="max-height:360px;overflow-y:auto"><table class="dx-table"><thead><tr><th class="l">Code</th><th class="l">Definition</th><th>Applied</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function qcbForm(s){
+  const hasCL=(typeof ContextualLens!=='undefined');
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="panel"><div class="panel-h"><div><h3>Codebook</h3><div class="ph-sub">8 codes · each with a definition and applied count</div></div>
-      <button class="btn" style="margin-left:auto;padding:6px 12px;font-size:12.5px" onclick="toast('New code (prototype)')">＋ New code</button></div>
-      <div class="panel-b"><div class="dx-scroll"><table class="dx-table">
-        <thead><tr><th class="l">Code</th><th class="l">Definition</th><th>Applied</th></tr></thead>
-        <tbody>${rows}</tbody></table></div></div></div>`+navFooter();
+    <div class="panel"><div class="panel-h"><div><h3>Codebook</h3><div class="ph-sub">${(qcw.codes||[]).length} codes</div></div></div>
+      <div class="panel-b" id="cbTable">${qcbTable()}</div></div>
+    <div class="panel"><div class="panel-h"><div><h3 id="cbFormTitle">Add a new code</h3><div class="ph-sub">A clear definition keeps coding consistent across segments and coders</div></div></div>
+      <div class="panel-b">
+        <label class="ed-l">Code name</label>
+        <input class="ed-in" id="cbName" placeholder="e.g. Sizing issues">
+        <label class="ed-l">Definition</label>
+        <textarea class="ed-in" id="cbDef" rows="2" placeholder="Apply when a respondent describes…"></textarea>
+        <div class="form-grid" style="margin:14px 0 0">
+          <div><label class="ed-l">Include when</label><textarea class="ed-in" id="cbInclude" rows="2" placeholder="The response describes…"></textarea></div>
+          <div><label class="ed-l">Exclude when</label><textarea class="ed-in" id="cbExclude" rows="2" placeholder="The response is about something else…"></textarea></div>
+        </div>
+        <label class="ed-l">Example quote</label>
+        <input class="ed-in" id="cbQuote" placeholder="&quot;The band was so tight I returned it.&quot;">
+        ${hasCL?ContextualLens.panel('code',null,'cb_cl_'):''}
+        <input type="hidden" id="cbEditId">
+        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" id="cbSave" onclick="qcbSave()">Add code</button><button class="btn" id="cbCancel" style="display:none" onclick="qcbClear()">Cancel</button><span class="dm-note" id="cbMsg"></span></div>
+      </div></div>`+navFooter();
+}
+function qcbClear(){
+  ['cbName','cbDef','cbInclude','cbExclude','cbQuote'].forEach(id=>{const el=$('#'+id);if(el)el.value='';});
+  const eid=$("#cbEditId");if(eid)eid.value='';
+  const t=$("#cbFormTitle");if(t)t.textContent='Add a new code';
+  const b=$("#cbSave");if(b)b.textContent='Add code';
+  const c=$("#cbCancel");if(c)c.style.display='none';
+  if(typeof ContextualLens!=='undefined')ContextualLens.populate('code',{},'cb_cl_');
+}
+function qcbEdit(id){
+  const code=(qcw.codes||[]).find(c=>c.id===id);if(!code)return;
+  const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};
+  set('cbEditId',code.id);set('cbName',code.name);set('cbDef',code.definition);set('cbInclude',code.include_when);set('cbExclude',code.exclude_when);set('cbQuote',code.example_quote);
+  if(typeof ContextualLens!=='undefined')ContextualLens.populate('code',code,'cb_cl_');
+  const t=$("#cbFormTitle");if(t)t.textContent='Edit code: '+code.name;
+  const b=$("#cbSave");if(b)b.textContent='Save changes';
+  const c=$("#cbCancel");if(c)c.style.display='';
+  const panel=$("#cbName");if(panel)panel.scrollIntoView({behavior:'smooth',block:'center'});
+}
+function qcbSave(){
+  const msg=$("#cbMsg");
+  const name=$("#cbName").value.trim();
+  const editId=+($("#cbEditId").value||0);
+  if(!name){if(msg){msg.style.color='#c0392b';msg.textContent='Code name is required.';}return;}
+  if(msg){msg.style.color='';msg.textContent='Saving…';}
+  const body={project_id:BOOT.projectId,name:name,definition:$("#cbDef").value.trim(),include_when:$("#cbInclude").value.trim(),exclude_when:$("#cbExclude").value.trim(),example_quote:$("#cbQuote").value.trim()};
+  if(typeof ContextualLens!=='undefined')Object.assign(body,ContextualLens.gather('code','cb_cl_'));
+  if(editId)body.id=editId;
+  qapi('/api/qual/save-code.php',{method:'POST',body:JSON.stringify(body)})
+    .then(()=>fetch('/api/qual/get-codes.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()))
+    .then(d=>{qcw.codes=(d&&d.ok&&d.codes)?d.codes:[];const tbl=$("#cbTable");if(tbl)tbl.innerHTML=qcbTable();qcbClear();if(msg){msg.style.color='var(--mm-ink)';msg.textContent=editId?'Code updated.':'Code added.';}})
+    .catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});
 }
 function renderDual(s){
   $("#centerInner").innerHTML=wsHead(s)+`
