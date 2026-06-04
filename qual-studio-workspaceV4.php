@@ -293,6 +293,7 @@ button{font-family:inherit;cursor:pointer}
 .rpt-foot{padding:14px 22px;border-top:1px solid var(--border);flex-shrink:0;}
 .btn-export,.btn-export-report{width:100%;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--indigo);color:#fff;border:none;font-family:inherit;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:999px;cursor:pointer;transition:background .13s;box-shadow:0 1px 4px rgba(30,92,58,.3);}
 .btn-export:hover,.btn-export-report:hover{background:var(--indigo-dark);}
+.btn-export svg,.btn-export-report svg{width:14px;height:14px;flex-shrink:0;}
 /* ── Coach pull tab ── */
 .coach-tab-btn,.coach-tab{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:63;display:flex;align-items:center;justify-content:center;width:22px;height:110px;background:var(--surface);border:1px solid var(--border);border-right:none;border-radius:8px 0 0 8px;cursor:pointer;box-shadow:-2px 0 8px rgba(0,0,0,.06);transition:width .15s,background .15s,right .26s cubic-bezier(.32,.72,0,1);}
 .coach-tab-btn:hover,.coach-tab:hover{width:26px;background:var(--indigo-light);}
