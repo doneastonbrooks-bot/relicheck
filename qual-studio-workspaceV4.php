@@ -1251,16 +1251,54 @@ function qdcReviewContent(d){
   }).join('')+'</div>';
   panel.innerHTML=html;
 }
+/* ── Step 10 · Category Builder — group codes into categories (chunk 3) ── */
+const catw={categories:[],unassigned:[]};
 function renderCategories(s){
-  const cards=SAMPLE.categories.map(cat=>{
-    const codes=cat.codes.map(c=>`<span class="code-chip">${esc(c)}</span>`).join('');
-    return `<div class="cat-card"><h4>${esc(cat.name)}</h4><div class="cat-sub">${esc(cat.sub)}</div>${codes}</div>`;
+  if(!BOOT.projectId){$("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">No project loaded yet.</div>`+navFooter();return;}
+  $("#centerInner").innerHTML=wsHead(s)+`<div class="work-surface" style="border-radius:16px">Loading categories…</div>`+navFooter();
+  qcatLoad();
+}
+function qcatLoad(){
+  return fetch('/api/qual/get-categories.php?project_id='+BOOT.projectId,{credentials:'same-origin'}).then(r=>r.json()).then(d=>{
+    if(activeStep().id!=='categories')return;
+    catw.categories=(d&&d.categories)||[]; catw.unassigned=(d&&d.unassigned)||[];
+    qcatPage();
+  }).catch(()=>{if(activeStep().id==='categories')$("#centerInner").innerHTML=wsHead(activeStep())+`<div class="work-surface" style="border-radius:16px">Could not load categories.</div>`+navFooter();});
+}
+function qcatPage(){
+  const s=activeStep();
+  const hasCats=catw.categories.length>0;
+  let unHtml='';
+  if(catw.unassigned.length){
+    const catOpts=catw.categories.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('');
+    const items=catw.unassigned.map(c=>`<div class="dq-row"><div class="dq-body"><span class="code-chip" style="background:var(--bg);color:var(--text-2);border:1px solid var(--border)">${esc(c.name)}</span>${c.application_count?`<span class="dm-note" style="margin-left:6px">${c.application_count} applied</span>`:''}</div>${catw.categories.length?`<select class="ed-in" data-code="${c.id}" onchange="qcatAssign(this)" style="max-width:200px"><option value="">Assign to…</option>${catOpts}</select>`:'<span class="dm-note">Create a category first</span>'}</div>`).join('');
+    unHtml=`<div class="panel"><div class="panel-h"><div><h3>Unassigned codes</h3><div class="ph-sub">${catw.unassigned.length} not yet grouped</div></div></div><div class="panel-b"><div class="dq-card" style="max-height:280px;overflow-y:auto">${items}</div></div></div>`;
+  }else if(!hasCats){
+    unHtml='<div class="work-surface" style="margin-bottom:18px">No codes in the codebook yet. Build your codebook (step 8) before grouping codes into categories.</div>';
+  }
+  const cats=catw.categories.map(cat=>{
+    const chips=cat.codes.length?cat.codes.map(c=>`<span class="code-chip">${esc(c.name)}<span class="x" onclick="qcatUnassign(${c.id})">✕</span></span>`).join(''):'<span class="dm-note">No codes assigned</span>';
+    return `<div class="cat-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px"><div><h4>${esc(cat.name)}</h4>${cat.description?`<div class="cat-sub">${esc(cat.description)}</div>`:''}</div><button class="btn" style="padding:4px 10px;font-size:12px;flex-shrink:0" onclick="qcatEdit('${esc(String(cat.id))}')">Edit</button></div><div>${chips}</div></div>`;
   }).join('');
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-note" style="margin-bottom:14px">Three categories group your 8 codes. Drag-free: use each code's menu to move it. (Prototype shows the grouped result.)</div>
-    ${cards}
-    <div class="run-actions"><button class="btn" onclick="toast('New category (prototype)')">＋ New category</button></div>`+navFooter();
+    ${unHtml}
+    <div style="font-size:15px;font-weight:700;margin:4px 0 12px">Categories</div>
+    <div>${cats}</div>
+    <div class="panel"><div class="panel-h"><div><h3 id="catFormTitle">Add a category</h3><div class="ph-sub">Categories become the building blocks of themes</div></div></div>
+      <div class="panel-b">
+        <label class="ed-l">Category name</label>
+        <input class="ed-in" id="catName" placeholder="e.g. Product complaints">
+        <label class="ed-l">Description (optional)</label>
+        <input class="ed-in" id="catDesc" placeholder="What kind of codes belong here?">
+        <input type="hidden" id="catEditId">
+        <div class="dm-save" style="position:static;margin-top:14px"><button class="btn primary" id="catSave" onclick="qcatSave()">Add category</button><button class="btn" id="catCancel" style="display:none" onclick="qcatClear()">Cancel</button><span class="dm-note" id="catMsg"></span></div>
+      </div></div>`+navFooter();
 }
+function qcatAssign(sel){if(!sel.value)return;sel.disabled=true;qapi('/api/qual/assign-code-category.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,code_id:+sel.getAttribute('data-code'),category_id:+sel.value})}).then(()=>qcatLoad()).catch(ex=>{sel.disabled=false;toast('Error: '+ex.message);});}
+function qcatUnassign(codeId){qapi('/api/qual/assign-code-category.php',{method:'POST',body:JSON.stringify({project_id:BOOT.projectId,code_id:codeId,category_id:0})}).then(()=>qcatLoad()).catch(ex=>toast('Error: '+ex.message));}
+function qcatEdit(id){const cat=catw.categories.find(c=>String(c.id)===String(id));if(!cat)return;const set=(i,v)=>{const el=$('#'+i);if(el)el.value=v||'';};set('catEditId',cat.id);set('catName',cat.name);set('catDesc',cat.description);const t=$("#catFormTitle");if(t)t.textContent='Edit: '+cat.name;const b=$("#catSave");if(b)b.textContent='Save changes';const c=$("#catCancel");if(c)c.style.display='';const n=$("#catName");if(n)n.scrollIntoView({behavior:'smooth',block:'center'});}
+function qcatClear(){['catName','catDesc'].forEach(i=>{const el=$('#'+i);if(el)el.value='';});const e=$("#catEditId");if(e)e.value='';const t=$("#catFormTitle");if(t)t.textContent='Add a category';const b=$("#catSave");if(b)b.textContent='Add category';const c=$("#catCancel");if(c)c.style.display='none';}
+function qcatSave(){const msg=$("#catMsg");const name=($("#catName").value||'').trim();const desc=($("#catDesc").value||'').trim();const editId=+($("#catEditId").value||0);if(!name){if(msg){msg.style.color='#c0392b';msg.textContent='Name is required.';}return;}if(msg){msg.style.color='';msg.textContent='Saving…';}const body={project_id:BOOT.projectId,name:name,description:desc};if(editId)body.id=editId;qapi('/api/qual/save-category.php',{method:'POST',body:JSON.stringify(body)}).then(()=>{qcatClear();qcatLoad();}).catch(e=>{if(msg){msg.style.color='#c0392b';msg.textContent='Error: '+e.message;}});}
 function renderThemes(s){
   const hasCL=(typeof ContextualLens!=='undefined');
   const cards=SAMPLE.themes.map((t,i)=>`
