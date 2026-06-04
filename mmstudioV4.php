@@ -532,7 +532,7 @@ body.companion-collapsed .comp-toggle{margin-left:0;}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#fff;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;z-index:90;opacity:0;transition:.25s;pointer-events:none;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 /* ── Misc component ── */
-.ws-header{position:sticky;top:0;z-index:5;background:linear-gradient(180deg,var(--bg) 78%,rgba(245,245,247,0));padding-top:6px;margin-bottom:14px;}
+.ws-header{margin-bottom:14px;}
 .context-strip{display:flex;align-items:center;gap:10px;padding:9px 15px;background:var(--surface);border:1px solid var(--border);border-radius:999px;font-size:12.5px;color:var(--text-2);margin-bottom:14px;width:fit-content;}
 .context-strip .dot{width:8px;height:8px;border-radius:50%;background:var(--green);}
 .context-strip b{color:var(--text);font-weight:700;}
@@ -704,6 +704,19 @@ label .tt-hint{margin-left:6px;}
   background:var(--indigo-dark)!important;box-shadow:0 1px 3px rgba(85,82,246,.35)!important;transform:none!important;}
 /* soft purple (Save-to-report chip) keeps the tinted style but the same indigo */
 .btn-str{background:var(--indigo-light)!important;color:var(--indigo)!important;border-color:rgba(85,82,246,.15)!important;box-shadow:none!important;}
+/* ── Variable Map (DataMap component) — compact in MM so all columns fit at once.
+   Scoped to #mmDmContainer so other studios are unaffected; the shared component
+   file is untouched. ── */
+#mmDmContainer .rdm-tbl{font-size:12px;}
+#mmDmContainer .rdm-tbl th{padding:7px 8px;font-size:10px;}
+#mmDmContainer .rdm-tbl td{padding:6px 8px;}
+#mmDmContainer .rdm-vname,#mmDmContainer .rdm-vlabel{max-width:118px;}
+#mmDmContainer .rdm-vlabel{font-size:10.5px;}
+#mmDmContainer .rdm-chip{font-size:10.5px;padding:2px 6px;}
+#mmDmContainer .rdm-sel{min-width:102px;max-width:148px;font-size:11.5px;padding:4px 6px;}
+#mmDmContainer .rdm-con{width:116px;font-size:11.5px;padding:4px 6px;}
+#mmDmContainer .rdm-analyses{max-width:148px;font-size:10.5px;line-height:1.45;}
+#mmDmContainer .rdm-tog{font-size:11px;}
 </style>
 <script src="/apps/studio/dataset-upload.js?v=<?= filemtime(__DIR__.'/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= filemtime(__DIR__.'/apps/studio/studio-header.js') ?>"></script>
