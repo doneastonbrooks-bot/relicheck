@@ -48,27 +48,21 @@ $projLabel = $projectRow ? ($projectRow['title'] ?? 'Untitled study') : 'Teacher
 // ─── PIPELINE CONFIG ─────────────────────────────────────────────────────────
 // Single linear qualitative pipeline (no design branching). Inlined here for the
 // prototype; trivially extractable to a _qual_pipeline.php mirror of _mm_pipelines.php.
-$QUAL_PHASES = [
-    ['key' => 'prepare',  'label' => 'Prepare',             'desc' => 'Bring in your data, map the columns, and clean it before coding.'],
-    ['key' => 'code',     'label' => 'Familiarize & Code',  'desc' => 'Read the data, capture impressions, and apply codes consistently.'],
-    ['key' => 'meaning',  'label' => 'Build Meaning',        'desc' => 'Group codes into categories and themes, then gather quote evidence.'],
-    ['key' => 'validate', 'label' => 'Validate & Report',    'desc' => 'Document trustworthiness and assemble the report.'],
-];
 $QUAL_STEPS = [
-    ['id'=>'start',           'label'=>'Start',        'phase'=>'prepare',  'mode'=>'start',    'title'=>'Start',                'lede'=>'Bring in your qualitative data, or open a saved project to begin.'],
-    ['id'=>'setup',           'label'=>'Setup',        'phase'=>'prepare',  'mode'=>'form',     'title'=>'Project Setup',        'lede'=>'Name your study and frame the research question your analysis will answer.'],
-    ['id'=>'upload',          'label'=>'Data',         'phase'=>'prepare',  'mode'=>'upload',   'title'=>'Data Entry',           'lede'=>'Upload interview transcripts, open-ended survey responses, or documents to analyze.'],
-    ['id'=>'datamap',         'label'=>'Columns',      'phase'=>'prepare',  'mode'=>'datamap',  'title'=>'Column Setup',         'lede'=>'Tell ReliCheck which columns hold the text to analyze and which describe the respondent.'],
-    ['id'=>'cleaning',        'label'=>'Clean',        'phase'=>'prepare',  'mode'=>'work',     'title'=>'Data Cleaning',        'lede'=>'Review your text and mask any personal information before coding.'],
-    ['id'=>'familiarization', 'label'=>'Familiarize',  'phase'=>'code',     'mode'=>'work',     'title'=>'Familiarization',      'lede'=>'Read through the data and capture first impressions before formal coding.'],
-    ['id'=>'coding',          'label'=>'Code',         'phase'=>'code',     'mode'=>'work',     'title'=>'Coding Workspace',     'lede'=>'Work through each segment and apply codes that capture what it is about.'],
-    ['id'=>'codebook',        'label'=>'Codebook',     'phase'=>'code',     'mode'=>'work',     'title'=>'Codebook Builder',     'lede'=>'Define each code with a clear description and inclusion rules so coding stays consistent.'],
-    ['id'=>'dual',            'label'=>'Dual Coder',   'phase'=>'code',     'mode'=>'work',     'title'=>'Dual Coder',           'lede'=>'Invite a second coder and compare where you agree and disagree.'],
-    ['id'=>'categories',      'label'=>'Categories',   'phase'=>'meaning',  'mode'=>'work',     'title'=>'Category Builder',     'lede'=>'Group related codes into higher-level categories.'],
-    ['id'=>'themes',          'label'=>'Themes',       'phase'=>'meaning',  'mode'=>'work',     'title'=>'Theme Builder',        'lede'=>'Build themes from your categories and see how widely each is supported.'],
-    ['id'=>'quotes',          'label'=>'Quotes',       'phase'=>'meaning',  'mode'=>'work',     'title'=>'Quote Finder',         'lede'=>'Pin the most representative quotes to each theme as evidence.'],
-    ['id'=>'trustworthiness', 'label'=>'Trust',        'phase'=>'validate', 'mode'=>'output',   'title'=>'Trustworthiness',      'lede'=>'Document the steps that make your analysis credible and dependable.'],
-    ['id'=>'report',          'label'=>'Report',       'phase'=>'validate', 'mode'=>'output',   'title'=>'Report & Export',      'lede'=>'Assemble your themes, evidence, and trustworthiness into a shareable report.'],
+    ['id'=>'start',           'label'=>'Start',        'eyebrow'=>'New project',                   'mode'=>'start',  'title'=>'Start',            'lede'=>'Bring in your qualitative data, or open a saved project to begin.'],
+    ['id'=>'setup',           'label'=>'Setup',        'eyebrow'=>'Setup · frame the study',        'mode'=>'form',   'title'=>'Project Setup',    'lede'=>'Name your study and frame the research question your analysis will answer.'],
+    ['id'=>'upload',          'label'=>'Data',         'eyebrow'=>'Data · bring it in',             'mode'=>'upload', 'title'=>'Data Entry',       'lede'=>'Upload interview transcripts, open-ended survey responses, or documents to analyze.'],
+    ['id'=>'datamap',         'label'=>'Columns',      'eyebrow'=>'Data map · organize first',      'mode'=>'datamap','title'=>'Column Setup',     'lede'=>'Tell ReliCheck which columns hold the text to analyze and which describe the respondent.'],
+    ['id'=>'cleaning',        'label'=>'Clean',        'eyebrow'=>'Data quality · before you code', 'mode'=>'work',   'title'=>'Data Cleaning',    'lede'=>'Review your text and mask any personal information before coding.'],
+    ['id'=>'familiarization', 'label'=>'Familiarize',  'eyebrow'=>'Familiarization · read first',    'mode'=>'work',   'title'=>'Familiarization',  'lede'=>'Read through the data and capture first impressions before formal coding.'],
+    ['id'=>'coding',          'label'=>'Code',         'eyebrow'=>'Coding · the core pass',         'mode'=>'work',   'title'=>'Coding Workspace', 'lede'=>'Work through each segment and apply codes that capture what it is about.'],
+    ['id'=>'codebook',        'label'=>'Codebook',     'eyebrow'=>'Codebook · stay consistent',     'mode'=>'work',   'title'=>'Codebook Builder', 'lede'=>'Define each code with a clear description and inclusion rules so coding stays consistent.'],
+    ['id'=>'dual',            'label'=>'Dual Coder',   'eyebrow'=>'Reliability · second coder',     'mode'=>'work',   'title'=>'Dual Coder',       'lede'=>'Invite a second coder and compare where you agree and disagree.'],
+    ['id'=>'categories',      'label'=>'Categories',   'eyebrow'=>'Structure · group codes',        'mode'=>'work',   'title'=>'Category Builder', 'lede'=>'Group related codes into higher-level categories.'],
+    ['id'=>'themes',          'label'=>'Themes',       'eyebrow'=>'Findings · build themes',        'mode'=>'work',   'title'=>'Theme Builder',    'lede'=>'Build themes from your categories and see how widely each is supported.'],
+    ['id'=>'quotes',          'label'=>'Quotes',       'eyebrow'=>'Evidence · quotes by theme',     'mode'=>'work',   'title'=>'Quote Finder',     'lede'=>'Pin the most representative quotes to each theme as evidence.'],
+    ['id'=>'trustworthiness', 'label'=>'Trust',        'eyebrow'=>'Rigor · trustworthiness',        'mode'=>'output', 'title'=>'Trustworthiness',  'lede'=>'Document the steps that make your analysis credible and dependable.'],
+    ['id'=>'report',          'label'=>'Report',       'eyebrow'=>'Output · assemble the report',   'mode'=>'output', 'title'=>'Report & Export',  'lede'=>'Assemble your themes, evidence, and trustworthiness into a shareable report.'],
 ];
 // Coach guidance per step (what it is / what it gives you / when to use it).
 $QUAL_HELP = [
@@ -99,7 +93,7 @@ $BOOT = [
     // sample project list for the Start dropdown (prototype)
     'projects'     => $projectId === 0 ? [] : [['id'=>$projectId,'title'=>$projLabel]],
 ];
-$QUAL = ['phases' => $QUAL_PHASES, 'steps' => $QUAL_STEPS, 'help' => $QUAL_HELP];
+$QUAL = ['steps' => $QUAL_STEPS, 'help' => $QUAL_HELP];
 
 function _qsv4(string $path): string { $f = __DIR__ . $path; return is_file($f) ? (string)filemtime($f) : (string)time(); }
 header('Cache-Control: no-store, must-revalidate');
@@ -599,17 +593,11 @@ label .tt-hint{margin-left:6px;}
 #mmDmContainer .rdm-con{width:116px;font-size:11.5px;padding:4px 6px;}
 #mmDmContainer .rdm-analyses{max-width:148px;font-size:10.5px;line-height:1.45;}
 #mmDmContainer .rdm-tog{font-size:11px;}
-/* ── Qual V4 overrides — fit 14 steps in the top rail, phase map in sidebar ── */
+/* ── Qual V4 overrides — fit 14 steps in the top rail ── */
 .topbar-steps{gap:0;}
 .tb-connector{width:18px;}
 .tb-node{width:24px;height:24px;}
 .tb-step.active .tb-node{width:26px;height:26px;}
-.phase-map{display:flex;flex-direction:column;gap:3px;margin-bottom:4px;}
-.pm-item{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:12px;font-weight:600;color:var(--text-2);}
-.pm-item.on{background:var(--indigo-light);color:var(--indigo);}
-.pm-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex:none;}
-.pm-item.on .pm-dot{background:var(--indigo);}
-.pm-item.done .pm-dot{background:var(--green);}
 /* code chips */
 .code-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--qual-ink);background:var(--qual-soft);border:1px solid transparent;border-radius:999px;padding:4px 11px;margin:0 6px 6px 0;}
 .code-chip .x{color:var(--qual-ink);opacity:.5;font-weight:700;cursor:pointer;}
@@ -625,6 +613,7 @@ label .tt-hint{margin-left:6px;}
 <script src="/apps/studio/dataset-upload.js?v=<?= _qsv4('/apps/studio/dataset-upload.js') ?>"></script>
 <script src="/apps/studio/studio-header.js?v=<?= _qsv4('/apps/studio/studio-header.js') ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= _qsv4('/apps/studio/studio-footer.js') ?>"></script>
+<script src="/apps/studio/contextual-lens.js?v=<?= _qsv4('/apps/studio/contextual-lens.js') ?>"></script>
 </head>
 <body>
 <div class="app">
@@ -652,15 +641,9 @@ label .tt-hint{margin-left:6px;}
     </div>
   </header>
 
-  <!-- Sidebar (row 3, col 1): Workflow phase map + Researcher's Notes -->
+  <!-- Sidebar (row 3, col 1): Researcher's Notes (mirrors MM's sidebar) -->
   <aside class="sidebar" id="studioSidebar">
     <div class="sidebar-header">
-      <div class="sidebar-project-name">Workflow</div>
-      <div class="phase-map" id="sbPhaseMap"></div>
-      <div class="sidebar-design-desc" id="sbPhaseDesc"></div>
-
-      <div class="sidebar-divider"></div>
-
       <div class="sidebar-project-name">Researcher's Notes</div>
       <div class="notes-block">
         <div class="notes-block-head">
@@ -743,7 +726,7 @@ label .tt-hint{margin-left:6px;}
 <script>
 const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES) ?>;
 const QUAL = <?= json_encode($QUAL, JSON_UNESCAPED_SLASHES) ?>;
-const PHASES = QUAL.phases, STEPS = QUAL.steps, HELP = QUAL.help;
+const STEPS = QUAL.steps, HELP = QUAL.help;
 
 const $=s=>document.querySelector(s);
 function esc(s){return (s==null?"":String(s)).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
@@ -754,7 +737,6 @@ const state={stepId:STEPS[0].id,completedThrough:0,notes:{}};
 function buildSteps(){return STEPS.map((s,i)=>Object.assign({},s,{n:i+1,done:i<state.completedThrough}));}
 function steps(){return buildSteps();}
 function activeStep(){return steps().find(s=>s.id===state.stepId)||steps()[0];}
-function phaseLabel(key){const p=PHASES.find(p=>p.key===key);return p?p.label:'';}
 
 // Footer nav whose buttons name the prior step (Back) and the next step (Continue).
 function navFooter(){
@@ -766,7 +748,7 @@ function navFooter(){
   return '<div class="footer-nav">'+back+fwd+'</div>';
 }
 function wsHead(s){
-  return '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>Step '+s.n+' · '+esc(phaseLabel(s.phase))
+  return '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>'+esc(s.eyebrow||('Step '+s.n))
     +' <span class="strand-chip qual">QUAL</span></div>'
     +'<h1 class="title">'+esc(s.title)+'</h1><p class="lede">'+esc(s.lede)+'</p></div>';
 }
@@ -975,7 +957,8 @@ function renderCategories(s){
     <div class="run-actions"><button class="btn" onclick="toast('New category (prototype)')">＋ New category</button></div>`+navFooter();
 }
 function renderThemes(s){
-  const cards=SAMPLE.themes.map(t=>`
+  const hasCL=(typeof ContextualLens!=='undefined');
+  const cards=SAMPLE.themes.map((t,i)=>`
     <div class="panel"><div class="panel-b">
       <div style="display:flex;align-items:flex-start;gap:14px">
         <div style="flex:1;min-width:0">
@@ -988,10 +971,22 @@ function renderThemes(s){
           </div>
         </div>
         <button class="btn-str" onclick="qSaveSampleToReport('${esc(t.name)}')">＋ Save to report</button>
-      </div></div></div>`).join('');
+      </div>
+      ${hasCL?ContextualLens.panel('theme',{},'cl_t'+i+'_'):''}
+      ${hasCL?`<div class="run-actions" style="margin-top:10px"><button class="btn" style="padding:6px 13px;font-size:12.5px" onclick="qSaveLens(${i},'${esc(t.name)}')">Save reading</button></div>`:''}
+    </div></div>`).join('');
   $("#centerInner").innerHTML=wsHead(s)+`
-    <div class="dm-note" style="margin-bottom:16px">Four themes carry the analysis. Coverage is the share of respondents whose segments touch the theme; sentiment is the mix within it.</div>
+    <div class="dm-note" style="margin-bottom:16px">Four themes carry the analysis. Coverage is the share of respondents whose segments touch the theme; sentiment is the mix within it. Use the <b>Contextual Lens</b> on each theme to read it in context before you write it up.</div>
     ${cards}`+navFooter();
+}
+// Contextual Lens (reuses the shared apps/studio/contextual-lens.js): gather the
+// six theme-level dimensions and fold them into the theme's reading. Prototype
+// confirms the capture; wiring saves to /api/qual/save-theme.php at build time.
+function qSaveLens(i,name){
+  if(typeof ContextualLens==='undefined')return;
+  const g=ContextualLens.gather('theme','cl_t'+i+'_');
+  const filled=Object.keys(g).filter(k=>g[k]).length;
+  toast(filled?('Contextual Lens saved for "'+name+'" — '+filled+' field'+(filled>1?'s':'')+' (prototype)'):'Add a reading first.');
 }
 function renderQuotes(s){
   let html=wsHead(s);
@@ -1051,7 +1046,7 @@ function renderCenter(){
   (map[s.id]||renderStart)(s);
 }
 
-/* ════════ CHROME: topbar rail, sidebar phase map, coach ════════ */
+/* ════════ CHROME: topbar rail, coach ════════ */
 function renderTopbarSteps(){
   const el=$("#topbarSteps"); if(!el) return;
   const ss=steps(), act=activeStep(); let html='';
@@ -1065,21 +1060,6 @@ function renderTopbarSteps(){
   });
   el.innerHTML=html;
 }
-function renderSidebar(){
-  const act=activeStep();
-  const map=$("#sbPhaseMap"), desc=$("#sbPhaseDesc");
-  // which phases are done: a phase is done if all its steps are before completedThrough
-  if(map){
-    map.innerHTML=PHASES.map(p=>{
-      const on=p.key===act.phase;
-      const phaseSteps=steps().filter(s=>s.phase===p.key);
-      const done=phaseSteps.length>0 && phaseSteps.every(s=>s.done);
-      return `<div class="pm-item ${on?'on':''} ${done?'done':''}"><span class="pm-dot"></span>${esc(p.label)}</div>`;
-    }).join('');
-  }
-  if(desc){const p=PHASES.find(p=>p.key===act.phase); desc.textContent=p?p.desc:'';}
-}
-
 /* Coach (slide-in) */
 let coachAns=[];
 function coachData(s){
@@ -1089,7 +1069,7 @@ function coachData(s){
   const qs=[],ans=[];
   if(h.measures){qs.push('What does this step give me?');ans.push(strip(h.measures));}
   if(h.use){qs.push('When should I use it?');ans.push(strip(h.use));}
-  qs.push('Where am I in the workflow?');ans.push('You are in the '+phaseLabel(s.phase)+' phase, step '+s.n+' of '+steps().length+'.');
+  qs.push('Where am I overall?');ans.push('This is step '+s.n+' of '+steps().length+' in the qualitative analysis.');
   return {tip,qs,ans};
 }
 function renderCompanion(){
@@ -1182,7 +1162,7 @@ function qStartUpload(){
 }
 
 /* Master render */
-function render(){renderCenter();renderTopbarSteps();renderSidebar();renderCompanion();}
+function render(){renderCenter();renderTopbarSteps();renderCompanion();}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&document.body.classList.contains('coach-open'))toggleCoach();});
 
 /* ── Uniform studio header + footer (shared plug-ins) ── */
