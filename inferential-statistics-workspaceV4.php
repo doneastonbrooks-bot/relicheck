@@ -588,6 +588,40 @@ label .tt-hint{margin-left:6px;}
 .dp-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.22);padding:4px 11px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
 .dp-go{display:inline-block;margin-top:16px;font-size:14px;font-weight:800;}
 .dp-nav{display:flex;align-items:center;justify-content:space-between;margin-top:26px;}
+/* ── Mode step (shared with DA) ── */
+.mode-hero{margin-bottom:26px;}
+.mode-hero-title{font-size:38px;font-weight:800;letter-spacing:-.03em;color:var(--text);line-height:1.08;margin:0 0 8px;}
+.mode-hero-sub{font-size:15px;color:var(--text-2);margin:0;line-height:1.5;}
+.mode-card-main{display:flex;gap:20px;align-items:center;padding:24px 28px;border-radius:16px;cursor:pointer;transition:all .2s;margin-bottom:24px;text-align:left;width:100%;border:none;font-family:inherit;background:linear-gradient(135deg,#b8d8f0 0%,#d4e8f7 50%,#c5dff5 100%);color:var(--text);position:relative;overflow:hidden;}
+.mode-card-main::after{content:"01";position:absolute;right:36px;top:50%;transform:translateY(-50%);font-size:120px;font-weight:900;color:rgba(255,255,255,.08);line-height:1;pointer-events:none;letter-spacing:-.04em;}
+.mode-card-main:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(59,91,219,.35);}
+.mode-card-main .mc-ico{width:48px;height:48px;border-radius:12px;background:rgba(10,111,232,.25);display:grid;place-items:center;font-size:24px;flex:none;color:#0A6FE8;}
+.mode-card-main .mc-body{flex:1;min-width:0;}
+.mode-card-main .mc-title{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:0 0 8px;color:var(--text);}
+.mode-card-main .mc-desc{font-size:15px;color:rgba(255,255,255,.9);line-height:1.6;margin:0;max-width:60ch;}
+.mode-card-main .mc-arrow{font-size:18px;color:#0A6FE8;transition:all .15s;margin-left:8px;}
+.mode-card-main:hover .mc-arrow{transform:translateX(3px);}
+.mode-ai-lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-3);margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+.mode-ai-lbl::before,.mode-ai-lbl::after{content:'';flex:1;height:1px;background:var(--border);}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
+@media(max-width:620px){.mode-grid{grid-template-columns:1fr;}}
+.mode-card-ai{padding:22px 20px;border-radius:14px;cursor:pointer;transition:all .2s;text-align:left;border:none;font-family:inherit;position:relative;overflow:hidden;display:flex;flex-direction:column;}
+.mode-card-ai::after{display:none;}
+.mode-card-ai.amber{background:linear-gradient(135deg,#f5ddb8 0%,#f9e8d1 50%,#f7e0c0 100%);color:var(--text);}
+.mode-card-ai.emerald{background:linear-gradient(135deg,#b8ead9 0%,#d4f5e8 50%,#c5f0df 100%);color:var(--text);}
+.mode-card-ai:not(:disabled):hover{transform:translateY(-2px);}
+.mode-card-ai.amber:not(:disabled):hover{box-shadow:0 8px 24px rgba(245,158,11,.12);}
+.mode-card-ai.emerald:not(:disabled):hover{box-shadow:0 8px 24px rgba(16,185,129,.12);}
+.mode-card-ai:disabled{opacity:.45;cursor:default;}
+.mode-card-ai .mc-ico{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-size:22px;margin-bottom:12px;color:var(--text);}
+.mode-card-ai.amber .mc-ico{background:rgba(245,158,11,.2);color:#d97706;}
+.mode-card-ai.emerald .mc-ico{background:rgba(16,185,129,.2);color:#059669;}
+.mode-card-ai .mc-title{font-size:16px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px;color:var(--text);}
+.mode-card-ai .mc-desc{font-size:13px;color:var(--text-2);line-height:1.5;margin:0;}
+.mode-card-ai .mc-cta{margin-top:10px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:4px;transition:gap .15s;}
+.mode-card-ai.amber .mc-cta{color:#d97706;}
+.mode-card-ai.emerald .mc-cta{color:#059669;}
+.mode-card-ai:hover .mc-cta{gap:7px;}
 </style>
 <link rel="stylesheet" href="/apps/analysis-studio/analysis-studio.css?v=<?= _isv4('/apps/analysis-studio/analysis-studio.css') ?>">
 <script src="/apps/studio/studio-header.js?v=<?= _isv4('/apps/studio/studio-header.js') ?>"></script>
@@ -751,6 +785,7 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const host = document.getElementById('centerInner');
     const s = activeStep();
     if (s.mode==='start')    return renderStart(host);
+    if (s.mode==='mode')     return renderMode(host, s);
     if (s.mode==='overview') return renderOverview(host);
     if (s.mode==='datamap')  return renderDataMap(host);
     if (s.mode==='report')   return renderReport(host, s);
@@ -783,6 +818,46 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
     const pr = document.getElementById('stProjects'); if (pr) pr.addEventListener('click', openSaved);
   }
 
+  // Mode step: choose analysis approach (Self / Auto / Report)
+  function renderMode(host, s){
+    const has = !!state.dataset;
+    // Auto analyze / Auto report run the recommended tests right here on the Mode step.
+    if (has && state.autoMode) {
+      host.innerHTML = '<div style="margin-bottom:14px"><button class="btn" id="modeBack">&larr; Back to options</button></div><div id="autoHost"></div>';
+      const mb = document.getElementById('modeBack'); if (mb) mb.addEventListener('click', function(){ state.autoMode=null; render(); });
+      if (window.AnalysisStudio && window.AnalysisStudio.renderAutoInferential) {
+        window.AnalysisStudio.renderAutoInferential(document.getElementById('autoHost'),
+          { dataset: state.dataset, mode: state.autoMode, projectId: BOOT.projectId, projectTitle: BOOT.projectLabel });
+      } else {
+        document.getElementById('autoHost').innerHTML = '<div class="placeholder">Auto analysis engine is loading&hellip;</div>';
+      }
+      return;
+    }
+    const rows = has ? (state.dataset.rowCount || 0) : 0;
+    const src = has ? esc(state.dataset.source || BOOT.projectLabel) : '';
+    host.innerHTML = (has ? '<div style="display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--bg);border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--text-2);width:fit-content;margin-bottom:22px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none"></span><b style="color:var(--text)">'+src+'</b><span>&middot;&nbsp;'+rows+' rows loaded</span></div>' : '')
+      + '<div class="mode-hero"><h1 class="mode-hero-title">' + (has ? 'Your data is ready.' : 'Bring in your data first.') + '</h1>'
+      + '<p class="mode-hero-sub">' + (has ? 'Choose how you want to work with it &mdash; step by step, or let ReliCheck Intelligence take the wheel.' : 'Upload a file on Step 1, then come back to choose your approach.') + '</p></div>'
+      + '<button class="mode-card-main" id="mdSelf">'
+      + '<div class="mc-ico">📊</div><div class="mc-body"><div class="mc-title">Self analyze</div>'
+      + '<div class="mc-desc">Step through t-Tests, ANOVA, Correlation, Regression, and more at your own pace. You decide what runs and what goes in your report.</div></div>'
+      + '<span class="mc-arrow">→</span></button>'
+      + '<p class="mode-ai-lbl"><span>Or let ReliCheck Intelligence do it</span></p>'
+      + '<div class="mode-grid">'
+      + '<button class="mode-card-ai amber" id="mdAuto"' + (has ? '' : ' disabled') + '>'
+      + '<div class="mc-ico">✨</div><div class="mc-title">Auto analyze</div>'
+      + '<div class="mc-desc">' + (has ? 'Run the recommended tests instantly. Review the results before export.' : 'Load your data on Step 1 to unlock this.') + '</div>'
+      + (has ? '<div class="mc-cta">Open analyzer →</div>' : '') + '</button>'
+      + '<button class="mode-card-ai emerald" id="mdReport"' + (has ? '' : ' disabled') + '>'
+      + '<div class="mc-ico">📋</div><div class="mc-title">Auto report</div>'
+      + '<div class="mc-desc">' + (has ? 'Turn your results into a clear, plain-language report.' : 'Load your data on Step 1 to unlock this.') + '</div>'
+      + (has ? '<div class="mc-cta">Generate report →</div>' : '') + '</button>'
+      + '</div>';
+    const sf = document.getElementById('mdSelf');   if (sf) sf.addEventListener('click', function(){ state.stepId='overview'; render(); });
+    const au = document.getElementById('mdAuto');   if (au && has) au.addEventListener('click', function(){ state.autoMode='auto'; render(); });
+    const rp = document.getElementById('mdReport'); if (rp && has) rp.addEventListener('click', function(){ state.autoMode='report'; render(); });
+  }
+
   // Overview is the landing view once data is loaded.
   function renderOverview(host){
     const ds = state.dataset;
@@ -791,52 +866,24 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
         + '<div class="placeholder">No data yet. Go to <strong>Start</strong> to upload a file or open a saved project.</div>';
       return;
     }
-    // Decision point (step 2): after data is in, choose how to proceed.
-    // Auto analyze / Auto report run the recommended tests; Self analyze opens
-    // the full studio. Mirrors the Descriptive studio's entry options.
-    if (state.autoMode) {
-      host.innerHTML = '<div style="margin-bottom:14px"><button class="btn" id="ovBack">&larr; Back to options</button></div>'
-        + '<div id="autoHost"></div>';
-      const back = document.getElementById('ovBack');
-      if (back) back.addEventListener('click', function(){ state.autoMode=null; render(); });
-      if (window.AnalysisStudio && window.AnalysisStudio.renderAutoInferential) {
-        window.AnalysisStudio.renderAutoInferential(document.getElementById('autoHost'),
-          { dataset: ds, mode: state.autoMode, projectId: BOOT.projectId, projectTitle: BOOT.projectLabel });
-      } else {
-        document.getElementById('autoHost').innerHTML = '<div class="placeholder">Auto analysis engine is loading&hellip;</div>';
-      }
-      return;
-    }
-    const choose =
-      '<div class="ws-header" style="margin-bottom:24px"><h1 class="page-title" style="font-size:40px;letter-spacing:-1px">Your data is ready.</h1>'
-      + '<p class="lede" style="margin-bottom:0;max-width:700px">Choose how you want to work with it &mdash; step by step, or let ReliCheck Intelligence take the wheel.</p></div>'
-      + '<button class="dp-card dp-self" id="ovSelf">'
-      +   '<span class="dp-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></span>'
-      +   '<span class="dp-body"><span class="dp-eyebrow">Your pace &middot; Full control</span>'
-      +     '<span class="dp-title">Self analyze</span>'
-      +     '<span class="dp-desc">Step through t-Tests, ANOVA, Correlation, Regression, and more at your own pace. You decide what runs and what goes in your report.</span></span>'
-      +   '<span class="dp-num">01</span><span class="dp-arrow">&rarr;</span>'
-      + '</button>'
-      + '<div class="dp-divider">&#10022; Or let ReliCheck Intelligence do it</div>'
-      + '<div class="dp-grid2">'
-      +   '<button class="dp-card dp-auto" id="ovAuto"><span class="dp-num">02</span><span class="dp-badge">&#9889; Instant results</span>'
-      +     '<span class="dp-title">Auto analyze</span>'
-      +     '<span class="dp-desc">Every recommended test runs at once. Results appear instantly, ready to print or save as PDF.</span>'
-      +     '<span class="dp-go">Open analyzer &rarr;</span></button>'
-      +   '<button class="dp-card dp-report" id="ovReport"><span class="dp-num">03</span><span class="dp-badge">&#10022; AI written</span>'
-      +     '<span class="dp-title">Auto report</span>'
-      +     '<span class="dp-desc">ReliCheck Intelligence writes a plain-language report from your data &mdash; ready to print or save as PDF.</span>'
-      +     '<span class="dp-go">Generate report &rarr;</span></button>'
-      + '</div>'
-      + '<div class="dp-nav"><button class="btn" id="ovStart">&larr; Start</button>'
-      +   '<button class="btn primary" id="ovFwd">Variable Map &rarr;</button></div>';
-    host.innerHTML = choose;
-    const byId = function(id){ return document.getElementById(id); };
-    if (byId('ovSelf'))   byId('ovSelf').addEventListener('click', function(){ state.stepId='datamap'; render(); });
-    if (byId('ovAuto'))   byId('ovAuto').addEventListener('click', function(){ state.autoMode='auto'; render(); });
-    if (byId('ovReport')) byId('ovReport').addEventListener('click', function(){ state.autoMode='report'; render(); });
-    if (byId('ovStart'))  byId('ovStart').addEventListener('click', function(){ state.stepId='start'; render(); });
-    if (byId('ovFwd'))    byId('ovFwd').addEventListener('click', function(){ state.stepId='datamap'; render(); });
+    // Step 3 = overview of the data (the decision lives on the Mode step).
+    const vars = ds.variables || [];
+    const isNum = function(v){ return /likert|numeric/.test((v.types||[]).join(',').toLowerCase()); };
+    const valid = function(v){ return (v.values||[]).filter(function(x){ return x!=='' && x!=null; }).length; };
+    const stat = function(n,l){ return '<div><div style="font-size:26px;font-weight:700;line-height:1">'+n+'</div><div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:.05em;margin-top:3px">'+l+'</div></div>'; };
+    const rows = vars.map(function(v){ const n=valid(v), total=(v.values||[]).length;
+      return '<tr><td class="dx-name">'+esc(v.name)+'</td><td class="l">'+esc((v.types||['—'])[0])+'</td><td>'+n+'</td><td>'+(total-n)+'</td></tr>'; }).join('');
+    host.innerHTML = '<div class="ws-header"><div class="eyebrow"><span class="eyebrow-dot"></span>'+esc(BOOT.name)+' <span class="strand-chip quan">QUAN</span></div><h1 class="title">Overview</h1>'
+      + '<p class="lede">What is in this dataset, before you analyze it.</p></div>'
+      + (window.AnalysisStudio && window.AnalysisStudio.helpButton ? window.AnalysisStudio.helpButton('overview') : '')
+      + '<div class="panel"><div class="panel-h"><h3>Dataset</h3></div><div class="panel-b">'
+      + '<div style="display:flex;gap:34px;flex-wrap:wrap">' + stat(ds.rowCount||0,'Rows') + stat(vars.length,'Variables') + stat(vars.filter(isNum).length,'Numeric') + '</div>'
+      + '<p style="margin:14px 0 0;color:var(--text-3);font-size:13px">Source: '+esc(ds.source || BOOT.projectLabel)+'</p></div></div>'
+      + '<div class="panel"><div class="panel-h"><h3>Variables</h3></div><div class="panel-b"><div class="dx-scroll"><table class="dx-table">'
+      + '<thead><tr><th class="l">Variable</th><th class="l">Type</th><th>Valid n</th><th>Missing</th></tr></thead><tbody>'+rows+'</tbody></table></div></div></div>'
+      + '<div class="dp-nav"><button class="btn" id="ovBack">&larr; Mode</button><button class="btn primary" id="ovGo">Variable Map &rarr;</button></div>';
+    const go = document.getElementById('ovGo'); if (go) go.addEventListener('click', function(){ state.stepId='datamap'; render(); });
+    const bk = document.getElementById('ovBack'); if (bk) bk.addEventListener('click', function(){ state.stepId='mode'; render(); });
   }
 
   // Data Map step — shared DataMap component (apps/studio/data-map.js + type-taxonomy.js).
