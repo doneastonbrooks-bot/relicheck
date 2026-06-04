@@ -838,18 +838,6 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
   // Mode step: choose analysis approach (Self / Auto / Report)
   function renderMode(host, s){
     const has = !!state.dataset;
-    // Auto analyze / Auto report run the recommended tests right here on the Mode step.
-    if (has && state.autoMode) {
-      host.innerHTML = '<div style="margin-bottom:14px"><button class="btn" id="modeBack">&larr; Back to options</button></div><div id="autoHost"></div>';
-      const mb = document.getElementById('modeBack'); if (mb) mb.addEventListener('click', function(){ state.autoMode=null; render(); });
-      if (window.AnalysisStudio && window.AnalysisStudio.renderAutoInferential) {
-        window.AnalysisStudio.renderAutoInferential(document.getElementById('autoHost'),
-          { dataset: state.dataset, mode: state.autoMode, projectId: BOOT.projectId, projectTitle: BOOT.projectLabel });
-      } else {
-        document.getElementById('autoHost').innerHTML = '<div class="placeholder">Auto analysis engine is loading&hellip;</div>';
-      }
-      return;
-    }
     const rows = has ? (state.dataset.rowCount || 0) : 0;
     const src = has ? esc(state.dataset.source || BOOT.projectLabel) : '';
     host.innerHTML = (has ? '<div style="display:flex;align-items:center;gap:8px;padding:9px 16px;background:var(--bg);border:1px solid var(--border);border-radius:999px;font-size:13px;color:var(--text-2);width:fit-content;margin-bottom:22px;"><span style="width:8px;height:8px;border-radius:50%;background:#22c55e;flex:none"></span><b style="color:var(--text)">'+src+'</b><span>&middot;&nbsp;'+rows+' rows loaded</span></div>' : '')
@@ -886,9 +874,14 @@ const BOOT = <?= json_encode($BOOT, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNIC
       + '<div class="option-copy">' + (has ? 'ReliCheck Intelligence writes a plain-language report from your data — ready to print or save as PDF.' : 'Load your data on Step 1 to unlock this.') + '</div>'
       + (has ? '<a class="option-cta">Generate report →</a>' : '') + '</button>'
       + '</div>';
+    const openPop = function(mode){
+      if (window.AnalysisStudio && window.AnalysisStudio.openAutoPopup) {
+        window.AnalysisStudio.openAutoPopup({ dataset: state.dataset, mode: mode, projectId: BOOT.projectId, projectTitle: BOOT.projectLabel });
+      }
+    };
     const sf = document.getElementById('mdSelf');   if (sf) sf.addEventListener('click', function(){ state.stepId='datamap'; render(); });
-    const au = document.getElementById('mdAuto');   if (au && has) au.addEventListener('click', function(){ state.autoMode='auto'; render(); });
-    const rp = document.getElementById('mdReport'); if (rp && has) rp.addEventListener('click', function(){ state.autoMode='report'; render(); });
+    const au = document.getElementById('mdAuto');   if (au && has) au.addEventListener('click', function(){ openPop('auto'); });
+    const rp = document.getElementById('mdReport'); if (rp && has) rp.addEventListener('click', function(){ openPop('report'); });
   }
 
   // Overview is the landing view once data is loaded.

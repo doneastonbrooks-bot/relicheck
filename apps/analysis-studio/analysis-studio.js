@@ -2671,6 +2671,35 @@
     if(mode==='report' && total){ draw(undefined); runNarrative(); } else { draw(undefined); }
   };
 
+  // Open the auto analysis/report straight in a printable popup (matches the
+  // Descriptive studio's daOpenQuickAnalyze — no inline "back to options" hop).
+  AS.openAutoPopup = function(opts){
+    opts = opts || {};
+    if (!document.getElementById('aspop-css')) {
+      var st = document.createElement('style'); st.id = 'aspop-css';
+      st.textContent =
+        '.aspop-ov{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:10000;display:flex;align-items:flex-start;justify-content:center;padding:28px;overflow:auto;}'
+        + '.aspop-panel{background:#fff;border-radius:16px;width:100%;max-width:920px;margin:auto;box-shadow:0 24px 70px rgba(15,23,42,.34);}'
+        + '.aspop-head{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid #e6e8ec;position:sticky;top:0;background:#fff;border-radius:16px 16px 0 0;z-index:2;}'
+        + '.aspop-title{font-size:14.5px;font-weight:700;color:#15171a;flex:1;}'
+        + '.aspop-close{background:none;border:none;font-size:24px;line-height:1;color:#8a8f98;cursor:pointer;padding:0 4px;}'
+        + '.aspop-body{padding:22px 26px;}'
+        + '@media print{body>*:not(.aspop-ov){display:none!important;}.aspop-ov{position:static;background:#fff;padding:0;overflow:visible;display:block;}.aspop-panel{max-width:none;box-shadow:none;border-radius:0;}.aspop-head{display:none!important;}.aspop-body{padding:0;}}';
+      document.head.appendChild(st);
+    }
+    var ov = document.createElement('div'); ov.className = 'aspop-ov';
+    var title = (opts.mode === 'report' ? 'Auto report' : 'Auto analysis') + (opts.projectTitle ? ' — ' + opts.projectTitle : '');
+    ov.innerHTML = '<div class="aspop-panel"><div class="aspop-head"><div class="aspop-title">' + esc(title) + '</div>'
+      + '<button class="aspop-close" aria-label="Close">&times;</button></div><div class="aspop-body" id="aspopBody"></div></div>';
+    document.body.appendChild(ov);
+    function close(){ ov.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(e){ if (e.key === 'Escape') close(); }
+    ov.addEventListener('click', function(e){ if (e.target === ov) close(); });
+    ov.querySelector('.aspop-close').addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    AS.renderAutoInferential(document.getElementById('aspopBody'), opts);
+  };
+
   // Delegated: any "How to use this" button (in a work step or the Overview)
   // opens its help modal.
   document.addEventListener('click', function(e){
