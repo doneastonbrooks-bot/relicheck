@@ -832,19 +832,44 @@ function dom(name,p,max){const pct=Math.round(p/max*100);return `<div class="dom
 
 /* Launch / Analyze */
 function viewLaunch(){
+  const ds=state.deploymentSettings, live=!!(ds&&ds.link_key);
+  const link=live?('relichecksurvey.com/s/'+ds.link_key):'';
+  const open=!!(ds&&ds.responses_open);
+  const linkBlock=live
+    ? `<div class="notice"><div class="ni">🔗</div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Your survey link</div>
+        <div class="linkbox"><code>${esc(link)}</code><button class="btn sm" onclick="copyLink('${esc(link)}')">Copy</button></div>
+        <div style="margin-top:11px;font-size:14px;color:var(--ink-2)">Responses are <b>${open?'open':'closed'}</b>. <button class="ailink" onclick="toggleOpen()">${open?'Close':'Open'} collection</button></div></div></div>`
+    : `<div class="notice"><div class="ni">🚀</div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Ready to send it out?</div><p class="muted" style="font-size:14px;margin:3px 0 11px">Publishing creates a shareable link. You can open and close responses any time.</p><button class="btn primary" onclick="publishSurvey()">Publish &amp; get the link</button></div></div>`;
+  const share=live?`<div class="share">
+      <button onclick="toast('Opens your email with the link.')"><span class="si">✉️</span><span class="st">Email it</span></button>
+      <button onclick="toast('Shows a QR code to print or share.')"><span class="si">▦</span><span class="st">QR code</span></button>
+      <button onclick="window.open('https://'+${JSON.stringify(link)},'_blank')"><span class="si">👁</span><span class="st">Preview</span></button>
+    </div>`:'';
   return `
     <div class="eyebrow">Launch</div>
     <h1 class="title">Send it out</h1>
-    <p class="lede">Your survey is ready. Share the link, and answers flow back into Analyze automatically.</p>
-    <div class="notice"><div class="ni">🔗</div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Your survey link</div><div class="linkbox"><code>relichecksurvey.com/s/fresh-enroll-26</code><button class="btn sm" onclick="toast('Link copied.')">Copy</button></div></div></div>
-    <div class="share">
-      <button onclick="toast('Opens your email with the link.')"><span class="si">✉️</span><span class="st">Email it</span></button>
-      <button onclick="toast('Shows a QR code to print or share.')"><span class="si">▦</span><span class="st">QR code</span></button>
-      <button onclick="toast('Opens a respondent preview.')"><span class="si">👁</span><span class="st">Preview</span></button>
-    </div>
+    <p class="lede">Publish your survey to get a shareable link. Answers flow back into Analyze automatically.</p>
+    ${linkBlock}
+    ${share}
     <div class="card pad" style="max-width:760px;margin-bottom:16px"><div style="font-weight:700;margin-bottom:6px">Before you send it wide</div><p class="muted" style="font-size:14px">Send it to 3 to 5 people first and watch where they pause. The Coach has more on this.</p></div>
-    <div class="btn-row"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div><button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button><button class="btn primary lg" onclick="go('analyze')">Go to Analyze →</button></div>`;
+    <div class="btn-row"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('analyze')">Go to Analyze →</button></div>`;
 }
+function publishSurvey(){
+  if(!PERSIST.on){ state.deploymentSettings={link_key:'demo-'+((state.projectId)||'x'),responses_open:true}; render(); toast('Published (demo).'); return; }
+  if(!state.projectId){ toast('Add a question first, then publish.'); return; }
+  toast('Publishing…');
+  DB.call('project-publish.php',{method:'POST',body:{project_id:state.projectId,override:true}}).then(r=>{
+    const d=r.deployment||(r.link_key?{link_key:r.link_key,responses_open:!!r.responses_open}:r);
+    state.deploymentSettings=d||{}; render(); toast('Published — your link is ready.');
+  }).catch(e=>{ degrade(e.message); toast('Could not publish: '+e.message); });
+}
+function toggleOpen(){
+  const ds=state.deploymentSettings; if(!ds||!ds.link_key)return;
+  const open=!ds.responses_open;
+  if(!PERSIST.on){ ds.responses_open=open; render(); return; }
+  DB.call('project-open.php',{method:'POST',body:{project_id:state.projectId,open}}).then(()=>{ ds.responses_open=open; render(); toast(open?'Responses open':'Responses closed'); }).catch(e=>degrade(e.message));
+}
+function copyLink(l){ try{ navigator.clipboard.writeText('https://'+l); }catch(e){} toast('Link copied.'); }
 function simulate(){state.responses=142;go('analyze');toast('142 responses came in.');}
 function viewAnalyze(){
   if(state.responses===0)return `
