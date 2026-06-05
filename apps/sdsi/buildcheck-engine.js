@@ -118,8 +118,28 @@
     informal_category_label:       38, // informal or dignity-risk category label
     open_ended_too_broad:          38,
     reading_clarity_concern:       42,
-    negative_wording:              45  // minor wording issue
+    negative_wording:              45, // minor wording issue
+    response_format_mismatch:      20,
+    response_fit_weak:             35,
+    stem_item_code:                10
   };
+
+  var RT_CATEGORICAL   = 'categorical';
+  var RT_MULTI_SELECT  = 'multi_select';
+  var RT_AGREEMENT     = 'agreement';
+  var RT_PERCEPTION    = 'perception';
+  var RT_FREQUENCY     = 'frequency';
+  var RT_SATISFACTION  = 'satisfaction';
+  var RT_QUALITY       = 'quality';
+  var RT_NUMERIC       = 'numeric';
+  var RT_DATE_TIME     = 'date_time';
+  var RT_RANKING       = 'ranking';
+  var RT_OPEN_ENDED    = 'open_ended';
+  var RT_KNOWLEDGE     = 'knowledge';
+  var RT_MATRIX        = 'matrix';
+  var RT_ADMIN         = 'administrative';
+  var RT_NON_INTERP    = 'non_interpretable';
+  var RT_VAGUE_QUALITY = 'vague_quality';  // imperative + bare label — format fits the verb but construct is undefined
 
   var SCALED_TYPES = { 'Likert Scale': true, 'Likert (5-pt)': true, 'Likert (7-pt)': true, 'Rating Scale': true, 'NPS': true, 'Slider': true };
   // Choice questions that require the author to supply real answer options. These
@@ -202,6 +222,10 @@
   var PLACEHOLDER_OPT_RE = /^(option|choice|response option|answer)\s*[0-9a-d]*$|^(add|new|enter|untitled)\s+option$|^(lorem ipsum|test|sample|tbd|todo|n\/a placeholder)$|choice\s*[a-d]$/i;
   // Question text that is a placeholder, not a real question.
   var PLACEHOLDER_Q_RE = /^(untitled question|question text|enter question|add question|new question|lorem ipsum|test question|sample question|untitled|question \d+)$/i;
+  // Bare item codes / imported column headers — NOT respondent-facing prompts.
+  // Q1, Q3_1, VAR001, Item_2, Col_1, x4, v2, Unnamed, 1, 2 …
+  // These are identifiers. Without actual question text the instrument CANNOT be assessed.
+  var ITEM_CODE_RE = /^(?:[a-z]{1,4}[_.-]?\d{1,4}(?:[_.-]\d{1,3})?|var_?\d+|item_?\d+|col(?:umn)?_?\d+|field_?\d+|x_?\d+|v_?\d+|response_?\d+|unnamed(?:[:\s_.-]\s*\d+)?|\d+(?:\.\d+)?)$/i;
   // Informal / dignity-risk category labels.
   var INFORMAL_LABELS = ['the floor', 'low level', 'bottom level', 'unskilled', 'non-professional', 'regular worker', 'just staff', 'subordinate', 'grunt', 'peon'];
   // Sensitive demographic topics that need a decline path + a stated purpose.
@@ -226,7 +250,16 @@
   // clear what construct, experience, behaviour, perception, or fact the
   // respondent is being asked to report.
   var CONSTRUCT_LABELS = {};
-  ['leadership','development','support','equity','safety','communication','engagement','wellbeing','well-being','inclusion','belonging','trust','satisfaction','performance','culture','diversity','innovation','collaboration','recognition','accountability','integrity','quality','climate','morale','fairness','respect','growth','feedback','workload','autonomy','motivation','empowerment','transparency','teamwork','productivity','flexibility','professionalism','ethics','mission','values','training','mentorship','supervision','management','environment','resources','benefits','compensation','pay','rewards','opportunity','advancement','retention','burnout','stress','wellness','onboarding','effectiveness','efficiency','vision','strategy','alignment','empathy','fulfillment','purpose','workplace','community'].forEach(function (k) { CONSTRUCT_LABELS[k] = true; });
+  ['leadership','development','support','equity','safety','communication','engagement','wellbeing','well-being','inclusion','belonging','trust','satisfaction','performance','culture','diversity','innovation','collaboration','recognition','accountability','integrity','quality','climate','morale','fairness','respect','growth','feedback','workload','autonomy','motivation','empowerment','transparency','teamwork','productivity','flexibility','professionalism','ethics','mission','values','training','mentorship','supervision','management','environment','resources','benefits','compensation','pay','rewards','opportunity','advancement','retention','burnout','stress','wellness','onboarding','effectiveness','efficiency','vision','strategy','alignment','empathy','fulfillment','purpose','workplace','community',
+  // K-12 education
+  'instruction','curriculum','learning','assessment','behavior','behaviour','literacy','rigor','rigour','grading','classroom','participation','readiness','standards','homework',
+  // Healthcare
+  'care','staffing','outcomes','resilience','compassion','documentation','coordination','compliance','workflow',
+  // Higher education
+  'teaching','research','service','advising','governance','scholarship',
+  // Cross-domain
+  'access','voice','identity','representation'
+  ].forEach(function (k) { CONSTRUCT_LABELS[k] = true; });
   var CONCEPT_REWRITES = {
     'leadership': 'How effective is leadership at communicating decisions that affect your work?',
     'development': 'How useful was the professional development you received?',
@@ -244,7 +277,45 @@
     'training': 'How well did your training prepare you for your role?',
     'feedback': 'How useful is the feedback you receive from your manager?',
     'culture': 'How would you describe the culture on your team?',
-    'collaboration': 'How well do teams collaborate across the organization?'
+    'collaboration': 'How well do teams collaborate across the organization?',
+    // K-12
+    'instruction': 'How clear and effective is the instruction in this course?',
+    'curriculum': 'How well does the curriculum prepare students for the next level?',
+    'learning': 'How much growth in learning are students experiencing in this area?',
+    'assessment': 'How fair and useful is the feedback students receive from assessments?',
+    'behavior': 'How well do classroom behavior expectations support student learning?',
+    'behaviour': 'How well do classroom behaviour expectations support student learning?',
+    'literacy': 'How well does this program build the literacy skills students need?',
+    'rigor': 'How challenging is the academic work in a way that promotes growth?',
+    'rigour': 'How challenging is the academic work in a way that promotes growth?',
+    'grading': 'How clearly are grading criteria communicated to students?',
+    'classroom': 'How well does the classroom environment support student learning?',
+    'standards': 'How clearly are learning standards communicated to students and families?',
+    'readiness': 'How prepared do students feel for the demands of this grade or level?',
+    'participation': 'How actively do students engage in learning activities?',
+    'homework': 'How useful is the homework assigned in reinforcing classroom learning?',
+    // Healthcare
+    'care': 'How well does this unit deliver high-quality, compassionate patient care?',
+    'staffing': 'How adequate are staffing levels for the demands of your unit?',
+    'outcomes': 'How consistently does this setting achieve positive outcomes for those it serves?',
+    'resilience': 'How well are you able to recover from the demands of your work?',
+    'compassion': 'How supported are you in maintaining compassion in your day-to-day work?',
+    'documentation': 'How well do current documentation requirements support safe, efficient care?',
+    'coordination': 'How effectively is care coordinated across teams and units?',
+    'compliance': 'How clearly are compliance expectations communicated to staff?',
+    'workflow': 'How well does your current workflow support efficient, safe practice?',
+    // Higher education
+    'teaching': 'How effectively does the teaching in this course support your learning?',
+    'research': 'How well does the institution support your research and scholarly goals?',
+    'service': 'How fairly is service work recognized and distributed among faculty?',
+    'advising': 'How useful is the academic advising you receive in supporting your goals?',
+    'governance': 'How meaningfully do faculty participate in decisions that affect this institution?',
+    'scholarship': 'How well does the institution support your scholarly and creative work?',
+    // Cross-domain
+    'access': 'How equitable is access to the resources needed to succeed here?',
+    'voice': 'How much do people in this community feel their perspectives are heard?',
+    'identity': 'How well does this environment affirm and support diverse identities?',
+    'representation': 'How well are different groups represented in leadership and decision-making here?'
   };
   var AMBIG_NOTE = {
     'safety': 'It could mean physical, psychological, job, classroom, data, or cultural safety — name which.',
@@ -254,7 +325,18 @@
     'performance': 'Whose performance, and of what?',
     'communication': 'Communication of what, by whom, to whom?',
     'culture': 'Culture is broad — name the specific behaviour or norm.',
-    'development': 'Name the kind of development (skills, career, leadership).'
+    'development': 'Name the kind of development (skills, career, leadership).',
+    'assessment': 'Assessment of what — student learning, program quality, clinical performance, or staff?',
+    'learning': 'Learning of what, by whom — academic content, professional skills, social-emotional growth?',
+    'care': 'Care of what kind — patient care quality, emotional care, social care, self-care?',
+    'outcomes': 'Outcomes for whom, measured how — student, patient, program, or organizational?',
+    'service': 'Service to whom — patient service, community service, faculty service, or customer service?',
+    'teaching': 'Teaching by whom — a specific instructor, a program, or the institution as a whole?',
+    'research': 'Research support, productivity, methods, or quality — name which aspect.',
+    'access': 'Access to what — resources, opportunities, information, technology, or people?',
+    'compliance': 'Compliance with what — safety protocols, accreditation standards, legal or regulatory requirements?',
+    'staffing': 'Staffing in what sense — levels, mix, quality, diversity, or satisfaction?',
+    'instruction': 'Instruction by whom, in what subject or skill area?'
   };
   var DEMO_REWRITES = {
     'role level': 'What is your current role level?', 'role': 'What is your current role?',
@@ -266,12 +348,39 @@
     'start date': 'What was your start date?', 'hire date': 'What was your hire date?', 'shift': 'Which shift do you work?',
     'education': 'What is your highest level of education?', 'experience': 'How many years of experience do you have?',
     'years of service': 'How many years have you worked here?', 'employment type': 'What is your employment type (e.g. full-time, part-time)?',
-    'job type': 'What type of job do you hold?', 'manager': 'Who is your manager?', 'supervisor': 'Who is your supervisor?'
+    'job type': 'What type of job do you hold?', 'manager': 'Who is your manager?', 'supervisor': 'Who is your supervisor?',
+    // Identity / demographics (cross-domain)
+    'ethnicity': 'What is your ethnicity?', 'race': 'What is your race?', 'disability status': 'Do you identify as a person with a disability?',
+    // K-12 education
+    'subject area': 'What subject area(s) do you teach?', 'subject': 'What subject do you teach?',
+    'school type': 'What type of school do you work in (e.g. public, charter, private)?',
+    'school role': 'What is your role at this school (e.g. teacher, administrator, counselor)?',
+    'grade taught': 'What grade(s) do you teach?', 'years teaching': 'How many years have you been teaching?',
+    'class size': 'How many students are typically in your class?',
+    'certification': 'What type of teaching certification do you hold?',
+    // Healthcare
+    'specialty': 'What is your specialty or area of practice?', 'specialty area': 'What is your specialty area?',
+    'clinical role': 'What is your clinical role (e.g. RN, MD, PA, NP)?',
+    'unit type': 'What type of unit or care setting do you work in?',
+    'licensure': 'What type of licensure or credential do you hold?',
+    'years in practice': 'How many years have you been in practice?',
+    'patient population': 'What patient population do you primarily serve?',
+    'practice setting': 'What type of practice setting do you work in?',
+    // Higher education
+    'faculty rank': 'What is your current faculty rank (e.g. assistant, associate, full professor)?',
+    'academic rank': 'What is your academic rank?',
+    'tenure status': 'What is your tenure status (tenured, tenure-track, non-tenure-track)?',
+    'appointment type': 'What type of appointment do you hold (e.g. full-time, adjunct, visiting)?',
+    'student status': 'What is your student status (e.g. undergraduate, graduate, doctoral)?',
+    'class standing': 'What is your class standing (e.g. first-year, sophomore, junior, senior)?',
+    'major': 'What is your major or field of study?', 'field of study': 'What is your field of study?',
+    'college': 'Which college or school are you in?', 'program': 'What academic program are you in?',
+    'institution type': 'What type of institution is this (e.g. research university, liberal arts college, community college)?'
   };
   var DEMO_LABELS = {}; Object.keys(DEMO_REWRITES).forEach(function (k) { DEMO_LABELS[k] = true; });
   var METADATA_RE = /^(respondent|response|record|submission|participant|user|employee|session|row)?\s*(id|number|no\.?)$|^(id|uuid|guid|index)$|^(timestamp|ip address|ip|completion time|duration|status|progress|finished|recorded date|end date|end time|submitted at)$|_id$/i;
   var FRAGMENT_VERBS = { rate:1, describe:1, explain:1, select:1, rank:1, list:1, choose:1, specify:1, indicate:1, provide:1, tell:1, name:1, identify:1, share:1, complete:1, enter:1, comment:1, define:1, evaluate:1, assess:1 };
-  var STATEMENT_VERBS = {}; ('is are am was were be been being have has had do does did feel feels felt make makes made give gives gave provide provides provided help helps helped support supports supported treat treats treated communicate communicates understand understands understood know knows knew can could would will shall should may might must trust trusts recommend recommends matter matters happen happens work works worked seem seems appear appears believe believes think thinks want wants need needs receive received enjoy enjoys agree agrees encourage encourages value values respect respects listen listens care cares allow allows enable enables expect expects prefer prefers reflect reflects deliver delivers set sets hold holds act acts behave behaves fit fits belong belongs improve improves reward rewards recognize recognizes develop develops grow grows learn learns contribute contributes inform informs respond responds address addresses gets has').split(' ').forEach(function (k) { STATEMENT_VERBS[k] = 1; });
+  var STATEMENT_VERBS = {}; ('is are am was were be been being have has had do does did feel feels felt make makes made give gives gave provide provides provided help helps helped support supports supported treat treats treated communicate communicates understand understands understood know knows knew can could would will shall should may might must trust trusts recommend recommends matter matters happen happens work works worked seem seems appear appears believe believes think thinks want wants need needs receive received enjoy enjoys agree agrees encourage encourages value values respect respects listen listens care cares allow allows enable enables expect expects prefer prefers reflect reflects deliver delivers set sets hold holds act acts behave behaves fit fits belong belongs improve improves reward rewards recognize recognizes develop develops grow grows learn learns contribute contributes inform informs respond responds address addresses gets has keep keeps kept get got let lets take takes took tell tells told show shows showed offer offers offered ensure ensures ensured bring brings brought create creates created find finds found use uses used see sees saw hear hears heard').split(' ').forEach(function (k) { STATEMENT_VERBS[k] = 1; });
   var QUESTION_START_RE = /^(what|which|when|where|why|who|whose|how|do|does|did|are|is|was|were|have|has|had|can|could|would|will|should|to what extent|in your)\b/;
   var IMPERATIVE_START_RE = /^(please|describe|select|rate|rank|list|choose|explain|provide|indicate|specify|tell|name|identify|share|complete|enter|comment)\b/;
 
@@ -320,6 +429,14 @@
         why: 'A bare demographic label is read inconsistently; a clear question keeps the responses comparable.',
         fix: 'Phrase it as a question, e.g. "' + (DEMO_REWRITES[key] || ('What is your ' + key + '?')) + '"' };
     }
+    // Item code check: must come before the generic short-label check.
+    // Q1, VAR001, Col_1 are NOT weak questions — they are identifiers with no interpretable content.
+    if (ITEM_CODE_RE.test(text.trim())) {
+      return { key: 'stem_item_code', sev: 'critical', label: 'Item code, not a question',
+        msg: 'This looks like an item identifier or imported column name, not a question respondents can answer.',
+        why: 'Without actual question text, ReliCheck cannot evaluate clarity, construct alignment, neutrality, or response-format fit. An identifier is not a survey item.',
+        fix: 'Replace with the question respondents will actually see.' };
+    }
     if (w.length <= 4) {                                          // generic short non-answerable label/topic
       return { key: 'stem_not_answerable', sev: (w.length <= 3 ? 'high' : 'medium'), label: 'Stem is not an answerable item',
         msg: 'This item reads as a label or topic, not a question respondents answer.',
@@ -327,6 +444,135 @@
         fix: 'Rewrite it so the respondent knows exactly what to answer, e.g. "How would you rate ' + key + '?" or "What is your ' + key + '?"' };
     }
     return null;                                                  // longer non-question/non-statement: other checks + AI
+  }
+
+  function classifyResponseTask(text, type, w, low) {
+    if (ITEM_CODE_RE.test(text.trim())) return RT_NON_INTERP;
+    if (METADATA_RE.test(low)) return RT_ADMIN;
+    // Instruction-only stem: names the response mechanism, not a construct to respond about.
+    // "Please select your level of agreement." has no subject — there is nothing to be assessed.
+    if (/\b(level of agreement|your (agreement|response|rating)|extent to which you agree|select (one|an option|your answer)|choose (one|your (answer|response)))\b/i.test(low) && !/\b(because|about|with|that|regarding|for|when)\b/.test(low)) return RT_NON_INTERP;
+    if (OPEN_TYPES[type]) return RT_OPEN_ENDED;
+    if (type === 'Matrix/Grid') return RT_MATRIX;
+    if (/^(rank|please rank|order|arrange)\b/i.test(low)) return RT_RANKING;
+    // "Which Xs are/were available/provided?" — plural predicate signals select-all intent
+    if (/^which\b/i.test(low) && /\b(are|were)\b/.test(low) && !/\bis\b/.test(low)) return RT_MULTI_SELECT;
+    // "What Xs did you receive/use/get?" — enumeration/recall of items, not a perception rating
+    if (/^what\b.*\bdid you (receive|get|use|access|encounter|experience|select|choose|attend)\b/i.test(low)) return RT_MULTI_SELECT;
+    if (/(start|hire|birth) date|date of birth|when did you|what (year|date)/i.test(low)) return RT_DATE_TIME;
+    if (/^how many\b|^how long have|how many years|number of|count of/i.test(low)) return RT_NUMERIC;
+    if (/what is your age\b|years? of experience\b/i.test(low)) return RT_NUMERIC;
+    if (/^(please )?(explain|describe|elaborate|tell us more|share your|what do you think|why did|why do|what suggestions|what comments|provide details|give an example)\b/i.test(low) || /\bwhy\b.*\?/i.test(low)) return RT_OPEN_ENDED;
+    if (/\b(select all|check all|choose all|all that apply)\b/i.test(low)) return RT_MULTI_SELECT;
+    var key = low.replace(/[^a-z0-9 \/-]/g, '').replace(/\s+/g, ' ').replace(/^(my|your|the|a|an|our)\s+/, '').trim();
+    if (DEMO_LABELS[key] || /^what is your (department|role|position|title|gender|race|ethnicity|major|school|grade|specialty|subject)\b/i.test(low)) return RT_CATEGORICAL;
+    if (/^how (often|frequently)\b|how many times\b|how regularly\b/i.test(low)) return RT_FREQUENCY;
+    if (/^how satisfied\b|overall satisfaction\b|rate your satisfaction\b/i.test(low)) return RT_SATISFACTION;
+    if (/^how (useful|effective|helpful|valuable|important|relevant|well does|well did)\b|rate the quality\b/i.test(low)) return RT_QUALITY;
+    // Imperative rating verb: a specific dimension/object is a quality rating; a bare label
+    // ("Rate your department") leaves the construct undefined — the verb fits a scale, but
+    // what is being measured is unclear.
+    if (/^(rate|evaluate|assess)\b/i.test(low)) {
+      var ro = low.replace(/^(rate|evaluate|assess)\s+/, '').replace(/^(your|the|this|our|a|an)\s+/, '').trim();
+      var roWords = ro.split(/\s+/).filter(Boolean);
+      if (roWords.length >= 3 || /^(usefulness|quality|effectiveness|clarity|helpfulness|importance|value|relevance|difficulty|ease|extent|how)\b/.test(ro)) return RT_QUALITY;
+      return RT_VAGUE_QUALITY;
+    }
+    var firstPer = /^(i|i'm|i've|my|we|we're|we've|our)\b/.test(low);
+    var subjVerb = false;
+    for (var vi = 1; vi < w.length; vi++) { if (STATEMENT_VERBS[w[vi]]) { subjVerb = true; break; } }
+    if (firstPer && subjVerb) return RT_AGREEMENT;
+    if (subjVerb && w.length >= 3 && !/^(what|which|when|where|why|who|how)\b/.test(low)) return RT_AGREEMENT;
+    if (/^(to what extent|how (well|clear|safe|supported|valued|engaged|included|empowered|committed|confident|motivated|connected|prepared|ready|strong|effective|much|important))\b/i.test(low)) return RT_PERCEPTION;
+    if (/^how\b/i.test(low)) return RT_PERCEPTION;
+    if (/^what is your\b/i.test(low) && w.length <= 6) return RT_CATEGORICAL;
+    if (/\?/.test(text)) return RT_PERCEPTION;
+    if (w.length <= 2) return RT_NON_INTERP;
+    return RT_PERCEPTION;
+  }
+
+  function getResponseFormatType(type) {
+    if (type === 'Likert Scale' || type === 'Likert (5-pt)' || type === 'Likert (7-pt)') return 'likert';
+    if (type === 'Rating Scale' || type === 'NPS' || type === 'Slider') return 'rating';
+    if (type === 'Multiple Choice' || type === 'Single Choice' || type === 'Dropdown' || type === 'Demographic' || type === 'Categorical') return 'single_choice';
+    if (type === 'Checkboxes' || type === 'Multiple Answers / Checkboxes') return 'multi_choice';
+    if (type === 'Yes/No') return 'binary';
+    if (type === 'True/False') return 'binary';
+    if (type === 'Numeric') return 'numeric_entry';
+    if (type === 'Short Answer') return 'short_text';
+    if (type === 'Long Answer' || type === 'Comment Box' || type === 'Open-Ended') return 'long_text';
+    if (type === 'Date') return 'date_field';
+    if (type === 'Ranking') return 'ranking';
+    if (type === 'Matrix/Grid' || type === 'Matrix') return 'matrix_format';
+    if (STRUCTURAL_TYPES[type]) return 'structural';
+    return 'single_choice';
+  }
+
+  var RF_FIT_MATRIX = {
+    categorical:   { single_choice: 'strong', binary: 'acceptable', multi_choice: 'acceptable', short_text: 'weak', likert: 'mismatch', rating: 'mismatch', numeric_entry: 'mismatch', date_field: 'mismatch', ranking: 'mismatch', long_text: 'mismatch' },
+    multi_select:  { multi_choice: 'strong', single_choice: 'weak', ranking: 'weak', likert: 'mismatch', rating: 'mismatch', numeric_entry: 'mismatch' },
+    agreement:     { likert: 'strong', rating: 'acceptable', binary: 'acceptable', single_choice: 'acceptable', numeric_entry: 'weak', long_text: 'mismatch', date_field: 'mismatch', ranking: 'mismatch' },
+    perception:    { likert: 'strong', rating: 'strong', single_choice: 'acceptable', multi_choice: 'acceptable', numeric_entry: 'acceptable', binary: 'weak', long_text: 'mismatch', date_field: 'mismatch', ranking: 'mismatch' },
+    frequency:     { likert: 'strong', single_choice: 'strong', numeric_entry: 'acceptable', rating: 'weak', binary: 'acceptable', long_text: 'mismatch', date_field: 'mismatch', ranking: 'mismatch' },
+    satisfaction:  { rating: 'strong', likert: 'strong', single_choice: 'acceptable', binary: 'weak', long_text: 'weak', numeric_entry: 'acceptable', date_field: 'mismatch', ranking: 'mismatch' },
+    quality:       { rating: 'strong', likert: 'strong', single_choice: 'acceptable', numeric_entry: 'acceptable', binary: 'weak', long_text: 'weak', date_field: 'mismatch', ranking: 'mismatch' },
+    numeric:       { numeric_entry: 'strong', single_choice: 'strong', binary: 'weak', short_text: 'weak', long_text: 'weak', likert: 'mismatch', rating: 'mismatch', date_field: 'mismatch', ranking: 'mismatch' },
+    date_time:     { date_field: 'strong', single_choice: 'acceptable', numeric_entry: 'acceptable', short_text: 'weak', likert: 'mismatch', rating: 'mismatch', ranking: 'mismatch', multi_choice: 'mismatch' },
+    ranking:       { ranking: 'strong', single_choice: 'weak', multi_choice: 'weak', likert: 'mismatch', rating: 'mismatch', numeric_entry: 'mismatch', date_field: 'mismatch' },
+    open_ended:    { long_text: 'strong', short_text: 'acceptable', likert: 'mismatch', rating: 'mismatch', single_choice: 'mismatch', multi_choice: 'mismatch', numeric_entry: 'mismatch', date_field: 'mismatch', ranking: 'mismatch' },
+    knowledge:     { single_choice: 'strong', short_text: 'acceptable', long_text: 'acceptable', multi_choice: 'acceptable', binary: 'acceptable', likert: 'mismatch', rating: 'mismatch', numeric_entry: 'weak' },
+    matrix:        { matrix_format: 'strong', likert: 'acceptable' },
+    vague_quality: { rating: 'weak', likert: 'weak', single_choice: 'weak', multi_choice: 'weak', numeric_entry: 'weak', binary: 'weak', short_text: 'weak', long_text: 'acceptable', date_field: 'mismatch', ranking: 'mismatch' }
+  };
+
+  var RF_MISMATCH_MSGS = {
+    'categorical:likert':    ['This question asks for a category (e.g. a department name), but the response format captures degree of agreement. A dropdown or single-choice list would produce the right kind of data.', 'Likert agreement scales are ordinal responses to a psychological or behavioral statement. Applying one to a categorical question (e.g. department, role) conflates nominal classification with attitude measurement, producing uninterpretable codes.', 'Change to a Single Choice or Dropdown format.', 'My department has the resources needed to support my work.'],
+    'categorical:rating':    ['This question asks for a category, but the response format captures a numeric rating. Use a dropdown or single-choice list instead.', 'Rating scales quantify intensity, not category membership. Forcing categorical data onto a rating scale produces meaningless ordinality.', 'Change to a Single Choice or Dropdown format.', null],
+    'numeric:likert':        ['This question asks for a number or quantity, but the response format captures agreement. Use numeric entry or labeled categories instead.', 'Agreement scales produce ordinal attitude data; they cannot capture a count or measured quantity.', 'Change to Numeric or Single Choice with labeled ranges.', null],
+    'numeric:rating':        ['This question asks for a number, but the response format captures a rating. Use numeric entry or labeled categories instead.', 'Rating scales capture intensity, not raw quantities.', 'Change to Numeric or Single Choice with labeled ranges.', null],
+    'open_ended:likert':     ['This question invites an open explanation, but the response format limits respondents to a scale. Use a text box instead.', 'Constraining an open-ended question to a fixed scale suppresses qualitative data and may frustrate respondents whose answer does not fit any option.', 'Change to Long Answer or Short Answer.', null],
+    'open_ended:rating':     ['This question invites an open explanation, but the response format is a rating scale. Use a text box instead.', 'A rating scale cannot capture narrative or explanatory content.', 'Change to Long Answer or Short Answer.', null],
+    'open_ended:single_choice': ['This question invites an open explanation, but the response format limits respondents to a fixed set of choices. Use a text box instead.', 'Fixed-choice formats close off the narrative response an open-ended question seeks.', 'Change to Long Answer or Short Answer.', null],
+    'open_ended:multi_choice':  ['This question invites an open explanation, but the response format limits respondents to checkboxes. Use a text box instead.', 'Checkboxes cannot capture narrative content.', 'Change to Long Answer or Short Answer.', null],
+    'open_ended:numeric_entry': ['This question invites an open explanation, but the response format only accepts a number. Use a text box instead.', 'Numeric entry cannot capture qualitative responses.', 'Change to Long Answer or Short Answer.', null],
+    'ranking:likert':        ['This question asks respondents to rank or order items, but the response format captures agreement. Use a ranking format instead.', 'Agreement scales produce independent item ratings; ranking requires a comparative, ordered response that agreement scales cannot encode.', 'Change to Ranking format.', null],
+    'ranking:rating':        ['This question asks respondents to rank items, but the response format is a rating scale. Use a ranking format instead.', 'Rating scales assign independent scores; ranking requires a relative ordering.', 'Change to Ranking format.', null],
+    'ranking:numeric_entry': ['This question asks respondents to rank items, but the response format only accepts a single number. Use a ranking format instead.', 'A single numeric entry cannot capture an ordered set.', 'Change to Ranking format.', null],
+    'multi_select:likert':   ['This question asks respondents to select all that apply, but the response format captures agreement. Use checkboxes instead.', 'Agreement scales require a single ordered response per item; multi-select requires independent yes/no per option.', 'Change to Checkboxes or Multiple Answers.', null],
+    'multi_select:rating':   ['This question asks respondents to select all that apply, but the response format is a rating scale. Use checkboxes instead.', 'Rating scales capture intensity, not inclusion.', 'Change to Checkboxes or Multiple Answers.', null],
+    'multi_select:numeric_entry': ['This question asks respondents to select all that apply, but the response format only accepts a number. Use checkboxes instead.', 'Numeric entry cannot capture multiple selections.', 'Change to Checkboxes or Multiple Answers.', null],
+    'date_time:likert':      ['This question asks for a date, but the response format captures agreement. Use a date entry field instead.', 'Agreement scales cannot encode calendar dates.', 'Change to a Date field or Short Answer.', null],
+    'date_time:rating':      ['This question asks for a date, but the response format is a rating scale. Use a date entry field instead.', 'Rating scales cannot encode calendar dates.', 'Change to a Date field or Short Answer.', null],
+    'date_time:ranking':     ['This question asks for a date, but the response format is a ranking. Use a date entry field instead.', 'Rankings cannot encode calendar dates.', 'Change to a Date field or Short Answer.', null],
+    'date_time:multi_choice': ['This question asks for a date, but the response format is checkboxes. Use a date entry field instead.', 'Checkboxes cannot encode a single calendar date.', 'Change to a Date field or Short Answer.', null]
+  };
+
+  function evaluateResponseFit(task, rfType) {
+    if (task === RT_NON_INTERP || task === RT_ADMIN) return { status: 'cannot_assess', userMsg: '', researcherMsg: '', fixFormat: null, fixRewrite: null };
+    if (rfType === 'structural') return null;
+    var taskKey = task;
+    var matrix = RF_FIT_MATRIX[taskKey];
+    if (!matrix) return { status: 'cannot_assess', userMsg: '', researcherMsg: '', fixFormat: null, fixRewrite: null };
+    var fit = matrix[rfType];
+    if (!fit) fit = 'acceptable';
+    var status = fit === 'strong' ? 'strong_fit' : (fit === 'acceptable' ? 'acceptable_fit' : (fit === 'weak' ? 'weak_fit' : 'mismatch'));
+    if (status === 'strong_fit' || status === 'acceptable_fit') {
+      return { status: status, userMsg: '', researcherMsg: '', fixFormat: null, fixRewrite: null };
+    }
+    var msgKey = taskKey + ':' + rfType;
+    var msgs = RF_MISMATCH_MSGS[msgKey];
+    if (status === 'mismatch') {
+      var userMsg = msgs ? msgs[0] : 'The response format does not match what this question asks for. Check that the format can produce the type of answer the stem requires.';
+      var researcherMsg = msgs ? msgs[1] : 'The response format is not valid for the measurement task implied by this stem.';
+      var fixFormat = msgs ? msgs[2] : 'Change the response format to one that matches the stem.';
+      var fixRewrite = msgs ? msgs[3] : null;
+      return { status: 'mismatch', userMsg: userMsg, researcherMsg: researcherMsg, fixFormat: fixFormat, fixRewrite: fixRewrite };
+    }
+    // weak_fit
+    var wUserMsg = msgs ? msgs[0] : 'The response format is not the best match for what this question asks. Consider whether respondents can give a meaningful answer.';
+    var wResMsg = msgs ? msgs[1] : 'The response format is suboptimal for this measurement task but may still yield interpretable data.';
+    var wFix = msgs ? msgs[2] : 'Consider a better-matched response format.';
+    return { status: 'weak_fit', userMsg: wUserMsg, researcherMsg: wResMsg, fixFormat: wFix, fixRewrite: null };
   }
 
   // Parse a numeric range from a category label ("1-3 years", "55+", "Less than 1").
@@ -459,9 +705,63 @@
         // verb fragments, topic headings, and metadata fields — regardless of
         // whether the item is Likert, MC, dropdown, numeric, or demographic. A
         // real question, a Likert STATEMENT, and an instructional prompt pass.
-        if (!STRUCTURAL_TYPES[type] && w.length > 0) {
-          var sf = assessStemFunction(text, type, w, low);
-          if (sf) add({ key: sf.key, label: sf.label, sev: sf.sev, domain: 'Clarity', cat: 'item', msg: sf.msg, why: sf.why, fix: sf.fix });
+        var sf = (!STRUCTURAL_TYPES[type] && w.length > 0) ? assessStemFunction(text, type, w, low) : null;
+        if (sf) add({ key: sf.key, label: sf.label, sev: sf.sev, domain: 'Clarity', cat: 'item', msg: sf.msg, why: sf.why, fix: sf.fix });
+        // Response Fit Check
+        if (!STRUCTURAL_TYPES[type]) {
+          var stemInterp = !sf;
+          var rtask = classifyResponseTask(text, type, w, low);
+          var rfmt = getResponseFormatType(type);
+          var rfResult = evaluateResponseFit(stemInterp ? rtask : RT_NON_INTERP, rfmt);
+          // Why a fit could not be judged (drives the precise "label-only" vs "code" copy).
+          var rfReason = !stemInterp ? sf.key : (rtask === RT_ADMIN ? 'admin' : (rtask === RT_NON_INTERP ? 'instruction' : null));
+          if (rfResult) {
+            if (rfResult.status === 'mismatch') {
+              // Sensitive identity attribute on an agreement/rating scale is not just a
+              // format mismatch — it is culturally and contextually inappropriate, and is
+              // elevated to a critical (deployment-blocking) finding.
+              var sensitiveId = stemInterp && rtask === RT_CATEGORICAL && (rfmt === 'likert' || rfmt === 'rating') && SENSITIVE_RE.test(low);
+              var rfMsg = rfResult.userMsg, rfWhy = rfResult.researcherMsg;
+              if (sensitiveId) {
+                rfMsg = 'This question asks respondents to report an identity or demographic category, but the response format captures degree of agreement. Pairing a sensitive identity question with an agreement scale is confusing and culturally inappropriate. Use a single-choice list with respectful self-identification options and a "Prefer not to answer" choice.';
+                rfWhy = 'A sensitive identity attribute (e.g. race, ethnicity, gender) is a nominal self-identification, not an attitude. Forcing it onto an agreement scale is invalid and can feel disrespectful or alienating to respondents, threatening both data quality and participant trust.';
+              }
+              // Repair guidance. For a sensitive identity item, never suggest rewriting it
+              // into an agreement statement — only the respectful single-choice path.
+              var rfFix = sensitiveId
+                ? 'Use a single-choice list with respectful self-identification options and a "Prefer not to answer" choice.'
+                : (rfResult.fixFormat + (rfResult.fixRewrite ? ' Alternatively, keep the scale and rewrite the item as a statement, e.g. "' + rfResult.fixRewrite + '"' : ''));
+              add({ key: 'response_format_mismatch', label: sensitiveId ? 'Inappropriate response format for identity question' : 'Response format mismatch', sev: sensitiveId ? 'critical' : 'high',
+                domain: 'Response Fit', cat: 'response_fit',
+                msg: rfMsg, why: rfWhy,
+                fix: rfFix });
+            } else if (rfResult.status === 'weak_fit') {
+              add({ key: 'response_fit_weak', label: 'Response fit concern', sev: 'medium',
+                domain: 'Response Fit', cat: 'response_fit',
+                msg: rfResult.userMsg, why: rfResult.researcherMsg,
+                fix: rfResult.fixFormat });
+            }
+            if (rfResult.status !== 'mismatch' && rfResult.status !== 'weak_fit') {
+              found.push({
+                category: 'response_fit_info', check: 'response_fit', severity: 'info',
+                item_ref: ref, item_no: no, quote: text,
+                message: '', suggestion: '',
+                flag_key: 'response_fit_info', flag_label: 'Response fit', severity_level: 'info',
+                domain: 'Response Fit', response_task: rtask, response_fit_status: rfResult.status,
+                response_fit_reason: rfReason
+              });
+            } else {
+              var lastAdded = found[found.length - 1];
+              if (lastAdded && lastAdded.item_ref === ref && (lastAdded.flag_key === 'response_format_mismatch' || lastAdded.flag_key === 'response_fit_weak')) {
+                lastAdded.response_task = rtask;
+                lastAdded.response_fit_status = rfResult.status;
+                lastAdded.response_fit_reason = rfReason;
+                lastAdded.response_fit_fix_format = rfResult.fixFormat;
+                lastAdded.response_fit_fix_rewrite = rfResult.fixRewrite;
+                lastAdded.response_fit_sensitive = !!(typeof sensitiveId !== 'undefined' && sensitiveId);
+              }
+            }
+          }
         }
       }
 
@@ -912,6 +1212,9 @@
         compoundPenalty = additional * 4;
         score = Math.max(0, Math.min(raw, mr.cap) - compoundPenalty);
       }
+      var rfInfo = ctx.review.filter(function (f) {
+        return (f.category === 'response_fit' || f.category === 'response_fit_info') && f.item_ref === ref;
+      })[0] || null;
       return {
         item_ref: ref, item_no: no, question_text: String(it.prompt || ''), question_type: it.type || '',
         score: score, domains: dom,
@@ -923,7 +1226,12 @@
         compound_cap_penalty: compoundPenalty,
         item_sdsi_final_score: score,
         // Back-compat aliases used by the screen / earlier code.
-        score_raw: raw, cap_applied: (mr ? mr.cap : null), cap_flag: mrFlag
+        score_raw: raw, cap_applied: (mr ? mr.cap : null), cap_flag: mrFlag,
+        // Response fit fields (single lookup, all surfaced for the UI)
+        response_task: rfInfo ? rfInfo.response_task : null,
+        response_fit_status: rfInfo ? rfInfo.response_fit_status : null,
+        response_fit_reason: rfInfo ? (rfInfo.response_fit_reason || null) : null,
+        response_fit_sensitive: rfInfo ? !!rfInfo.response_fit_sensitive : false
       };
     });
 
@@ -960,6 +1268,66 @@
       wasCapped = true;
       capReason = 'The SDSI score average is ' + rawBand.label + ', but the readiness band is capped at ' + band.label +
         ' because ' + (blockerCount === 1 ? 'a critical item-level blocker was' : blockerCount + ' critical item-level blockers were') + ' detected.';
+    }
+
+    // ── Stem-validity gate ──────────────────────────────────────────────────
+    // Item codes (Q1, VAR001, Col_1…) have no interpretable content.
+    // This is a measurement-validity gate, not a clarity penalty.
+    // At 40%+: cap at Not ready. At 60%+: block assessment entirely.
+    var codeItemCount = ctx.ans.filter(function (it) {
+      return ITEM_CODE_RE.test((it.prompt || '').trim());
+    }).length;
+    var codeItemPct = N > 0 ? (codeItemCount / N) : 0;
+    var stemValidityState = codeItemPct >= 0.6 ? 'blocked' : (codeItemPct >= 0.4 ? 'limited' : 'ok');
+    if (stemValidityState !== 'ok') {
+      var codeRatioStr = Math.round(codeItemPct * 100) + '% of items (' + codeItemCount + ' of ' + N + ')';
+      if (stemValidityState === 'blocked') {
+        band = { key: 'codes', label: 'Assessment blocked' };
+        rawBand = band; wasCapped = true;
+        headline = 'Assessment blocked: ' + codeRatioStr + ' appear to be codes or imported column names, not respondent-facing question text.';
+        capReason = headline;
+      } else {
+        if (ORDER.indexOf(band.key) > ORDER.indexOf('notready')) {
+          band = { key: 'notready', label: 'Not ready' }; wasCapped = true;
+          capReason = codeRatioStr + ' appear to be codes or imported column names. Readiness is capped until respondent-facing question text is provided.';
+          if (!headline) headline = capReason;
+        }
+      }
+    }
+
+    // ── Response-fit gate ────────────────────────────────────────────────────
+    // The overall band must never contradict item-level response-fit warnings.
+    // 40%+ outright mismatches -> Not ready. 60%+ combined response-fit/text
+    // problems -> Assessment limited. Sensitive-identity scale misuse is always
+    // elevated to the headline.
+    function bandSeverityRank(k) {
+      if (k === 'codes') return -2;    // assessment blocked (coded stems)
+      if (k === 'limited') return -1;  // assessment limited (text / fit problems)
+      return ORDER.indexOf(k);         // notready(0) … strong(4)
+    }
+    var rfMismatchCount = itemScores.filter(function (s) { return s.response_fit_status === 'mismatch'; }).length;
+    var rfProblemCount  = itemScores.filter(function (s) { return s.response_fit_status === 'mismatch' || s.response_fit_status === 'cannot_assess'; }).length;
+    var rfSensitiveCount = itemScores.filter(function (s) { return s.response_fit_sensitive; }).length;
+    var rfMismatchPct = N > 0 ? (rfMismatchCount / N) : 0;
+    var rfProblemPct  = N > 0 ? (rfProblemCount / N) : 0;
+    var responseFitState = rfProblemPct >= 0.6 ? 'limited'
+      : (rfMismatchPct >= 0.4 ? 'major_revision'
+      : (rfMismatchCount >= 1 ? 'has_mismatch' : 'ok'));
+
+    if (responseFitState === 'limited' && bandSeverityRank('limited') < bandSeverityRank(band.key)) {
+      band = { key: 'limited', label: 'Assessment limited' }; wasCapped = true;
+      var rfLim = Math.round(rfProblemPct * 100) + '% of items have response-format or question-text problems, which prevents a full readiness judgment.';
+      capReason = capReason ? capReason + ' ' + rfLim : rfLim;
+      if (!headline) headline = rfLim;
+    } else if (responseFitState === 'major_revision' && bandSeverityRank('notready') < bandSeverityRank(band.key)) {
+      band = { key: 'notready', label: 'Not ready' }; wasCapped = true;
+      var rfMaj = Math.round(rfMismatchPct * 100) + '% of items use a response format that does not match what the question asks; this needs major revision before launch.';
+      capReason = capReason ? capReason + ' ' + rfMaj : rfMaj;
+      if (!headline) headline = rfMaj;
+    }
+    if (rfSensitiveCount > 0) {
+      var rfSens = rfSensitiveCount + ' identity question' + (rfSensitiveCount === 1 ? ' uses' : 's use') + ' an agreement scale, which is culturally inappropriate. Use respectful self-identification choices and a "Prefer not to answer" option.';
+      headline = rfSens + (headline ? ' ' + headline : '');
     }
 
     // The five 10-point domain cards = the average domain score across items
@@ -1011,6 +1379,15 @@
       blocker_headline: headline,
       // Back-compat aliases (earlier field names).
       unusableItems: blockerCount, bandCapped: wasCapped,
+      stem_validity_state: stemValidityState,
+      stem_validity_code_count: codeItemCount,
+      stem_validity_code_pct: Math.round(codeItemPct * 100),
+      // Response-fit survey roll-up (drives the band cap + SIRI propagation + UI).
+      response_fit_state: responseFitState,
+      response_fit_mismatch_count: rfMismatchCount,
+      response_fit_mismatch_pct: Math.round(rfMismatchPct * 100),
+      response_fit_problem_pct: Math.round(rfProblemPct * 100),
+      response_fit_sensitive_count: rfSensitiveCount,
       // The full per-question validity review (M-spec): rich, structured findings
       // for every question — flag_key, flag_label, severity_level, domain,
       // problem_summary, why_it_matters, suggested_revision, suggested_options.

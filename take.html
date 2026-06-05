@@ -534,6 +534,12 @@
         } catch (_) { /* fail-soft */ }
       }
 
+      // Hide top brand if the researcher opted out; the powered-by footer always stays.
+      if (survey && survey.settings && survey.settings.hideBrand) {
+        const brandEl = document.querySelector('.brand.brand-image');
+        if (brandEl) brandEl.style.display = 'none';
+      }
+
       // Phase 139: optional cover page (informed consent / introduction).
       // Renders first when survey.settings.coverPage.enabled is true. The
       // Continue button hands off to renderChat or renderForm.

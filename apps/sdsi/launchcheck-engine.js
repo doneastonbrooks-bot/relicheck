@@ -233,6 +233,36 @@
       var display = raw, wasCapped = false;
       if (cap && ORDER.indexOf(raw.key) > ORDER.indexOf(cap)) { display = totalBandFromKey(cap); wasCapped = true; }
 
+      // Special states (coded stems / response-fit problems) sit BELOW notready.
+      function bandRank(k) { if (k === 'codes') return -2; if (k === 'limited') return -1; return ORDER.indexOf(k); }
+
+      // Propagate stem-validity gate: if SDSI found non-interpretable stems,
+      // SIRI cannot make a valid readiness claim either.
+      var stemState = opts.sdsiResult && opts.sdsiResult.stem_validity_state;
+      if (stemState === 'blocked') {
+        display = { key: 'codes', label: 'Assessment blocked' };
+        wasCapped = true;
+        headline = 'Assessment blocked: item stems appear to be codes or identifiers, not respondent-facing question text.';
+      } else if (stemState === 'limited' && bandRank('notready') < bandRank(display.key)) {
+        display = totalBandFromKey('notready'); wasCapped = true;
+        headline = headline || 'Readiness capped: several item stems appear to be codes or column names, not respondent-facing question text.';
+      }
+
+      // Propagate response-fit gate: the overall band cannot contradict item-level
+      // response-fit warnings.
+      var rfState = (opts.sdsiResult && opts.sdsiResult.response_fit_state) || 'ok';
+      var rfSensitive = (opts.sdsiResult && opts.sdsiResult.response_fit_sensitive_count) || 0;
+      if (rfState === 'limited' && bandRank('limited') < bandRank(display.key)) {
+        display = { key: 'limited', label: 'Assessment limited' }; wasCapped = true;
+        headline = headline || 'Assessment limited: response-format or question-text problems prevent a full readiness judgment.';
+      } else if (rfState === 'major_revision' && bandRank('notready') < bandRank(display.key)) {
+        display = totalBandFromKey('notready'); wasCapped = true;
+        headline = headline || 'Needs major revision: many items use a response format that does not match what the question asks.';
+      }
+      if (rfSensitive > 0) {
+        headline = rfSensitive + ' identity question' + (rfSensitive === 1 ? ' uses' : 's use') + ' an agreement scale, which is culturally inappropriate. ' + (headline || '');
+      }
+
       result.sdsi = sdsi;
       result.total = total; result.total_max = 100;
       result.total_raw_band = raw.label;
@@ -241,8 +271,11 @@
       result.deployment_blocker_count = blockers;
       result.blocker_headline = headline;
       result.total_band_cap_reason = wasCapped
-        ? ('The total score is ' + raw.label + ', but readiness is capped at ' + display.label + ' because ' + blockers + ' critical deployment blocker' + (blockers === 1 ? ' was' : 's were') + ' detected.')
+        ? (headline || ('The total score is ' + raw.label + ', but readiness is capped at ' + display.label + ' because ' + blockers + ' critical deployment blocker' + (blockers === 1 ? ' was' : 's were') + ' detected.'))
         : '';
+      result.stem_validity_state = stemState || 'ok';
+      result.response_fit_state = rfState;
+      result.response_fit_sensitive_count = rfSensitive;
     }
     return result;
   }

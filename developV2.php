@@ -29,10 +29,11 @@ $_dv_initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $_dv_name) ?: 
 -->
 <style>
 :root{
-  --ink:#16181d; --ink-2:#54585f; --ink-3:#888c94;
-  --bg:#fbfbfc; --panel:#ffffff; --soft:#f4f5f6;
+  --ink:#15171a; --ink-2:#2d3240; --ink-3:#5a6070;
+  --bg:#f7f5f2; --panel:#ffffff; --soft:#edeae6;
   --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.055);
   --pri:#1b1e25; --pri-2:#000;
+  --serif:ui-serif,Georgia,"Times New Roman",serif;
   /* Brand theme — rust orange (matches the public survey button, not a bright orange). */
   --accent:#bf4726; --accent-2:#a23a1d; --accent-soft:#fbede7; --accent-ink:#8f3318;
   --good:#1f9e44; --good-soft:#eef6f0;
@@ -117,15 +118,15 @@ body.start .main{grid-column:1/-1}
 .wrap{max-width:1060px;margin:0 auto}
 .screen{animation:fade .22s ease}
 @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
-.eyebrow{font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
-h1.title{font-size:36px;font-weight:800;letter-spacing:-0.035em;margin:9px 0 14px}
-.title-input{display:block;width:100%;max-width:760px;border:none;background:none;font-family:inherit;font-size:36px;font-weight:800;letter-spacing:-0.035em;color:var(--ink);padding:2px 0;margin:9px 0 12px;border-bottom:2px solid transparent}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--accent-ink)}
+h1.title{font-family:var(--serif);font-size:38px;font-weight:700;letter-spacing:-0.02em;margin:10px 0 16px;line-height:1.1}
+.title-input{display:block;width:100%;max-width:760px;border:none;background:none;font-family:inherit;font-size:42px;font-weight:800;letter-spacing:-0.035em;color:var(--ink);padding:2px 0;margin:10px 0 14px;border-bottom:2px solid transparent;line-height:1.1}
 .title-input::placeholder{color:var(--ink-3)}
 .title-input:hover{border-bottom-color:var(--line)}
 .title-input:focus{outline:none;border-bottom-color:var(--ink-3)}
-.lede{font-size:18px;color:var(--ink-2);max-width:700px;margin-bottom:36px;line-height:1.65}
+.lede{font-size:17px;color:var(--ink);max-width:680px;margin-bottom:36px;line-height:1.65}
 .sec-row{display:flex;align-items:baseline;gap:14px;margin:36px 0 18px}
-h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
+h2.sec{font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-0.01em}
 .tlink{background:none;border:none;font-size:14.5px;font-weight:650;color:var(--ink-2);padding:0;border-bottom:1px solid var(--line)}
 .tlink:hover{color:var(--ink);border-color:var(--ink-3)}
 
@@ -151,10 +152,23 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .entry-card h3{font-size:17.5px;font-weight:750}
 .entry-card p{font-size:14.5px;color:var(--ink-2);flex:1;line-height:1.6}
 .entry-card .go{font-size:14px;font-weight:700;color:var(--ink)}
-.recent{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
-.recent-pill{display:flex;align-items:center;gap:9px;border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:10px 15px;font-size:14.5px;font-weight:600;box-shadow:var(--sh)}
-.recent-pill:hover{border-color:var(--ink-3)}
-.recent-pill .rdot{width:7px;height:7px;border-radius:50%;background:var(--good)}
+.proj-list{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--sh);overflow:hidden;max-height:420px;overflow-y:auto;margin-top:10px}
+.proj-row{display:flex;align-items:center;gap:13px;padding:12px 16px;border-bottom:1px solid var(--line-2);transition:background .1s}
+.proj-row:last-child{border-bottom:none}
+.proj-row:hover{background:var(--soft)}
+.proj-rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.proj-open{flex:1;text-align:left;background:none;border:none;font-family:inherit;font-size:15px;font-weight:650;color:var(--ink);cursor:pointer;padding:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.proj-open:hover{color:var(--accent-ink)}
+.proj-status{font-size:12.5px;font-weight:650;white-space:nowrap;flex-shrink:0}
+.proj-meta{font-size:12px;color:var(--ink-3);white-space:nowrap;flex-shrink:0}
+.proj-del{width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:none;color:var(--ink-3);font-size:15px;display:grid;place-items:center;flex-shrink:0;transition:.1s}
+.proj-del:hover{background:var(--bad-soft);border-color:var(--bad-soft);color:var(--bad)}
+.proj-confirm{display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:13px;color:var(--bad)}
+.proj-confirm button{font-size:13px;font-weight:700;border:none;background:none;cursor:pointer;padding:2px 6px;border-radius:6px}
+.proj-confirm .yes{color:#fff;background:var(--bad);border-radius:6px;padding:3px 10px}
+.proj-confirm .yes:hover{background:#a31f17}
+.proj-confirm .no{color:var(--ink-3)}
+.proj-confirm .no:hover{color:var(--ink)}
 .drop{border:2px dashed var(--line);border-radius:var(--r);padding:50px 24px;text-align:center;background:var(--panel);width:100%;cursor:pointer;max-width:760px}
 .drop:hover{border-color:var(--ink-3);background:var(--soft)}
 .drop .di{font-size:30px}
@@ -168,8 +182,11 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .composer select{border:1.5px solid var(--line);border-radius:9px;padding:11px 14px;font-family:inherit;font-size:14.5px;color:var(--ink);background:var(--panel)}
 .composer select:focus{outline:none;border-color:var(--ink-3)}
 .qcard{padding:20px 22px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);margin-bottom:14px;box-shadow:var(--sh);scroll-margin-top:20px}
+.qcard.mark-down{border-bottom:2px solid var(--warn)}
 .qhead{display:flex;gap:15px;align-items:flex-start}
-.qn{width:26px;height:26px;border-radius:7px;background:var(--soft);color:var(--ink-3);font-size:12px;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px}
+.qn{width:26px;height:26px;border-radius:7px;background:var(--soft);color:var(--ink-3);font-size:12px;font-weight:700;display:grid;place-items:center;flex-shrink:0;margin-top:1px;transition:background .2s,color .2s}
+.qcard.mark-up .qn{background:var(--good-soft);color:var(--good)}
+.qcard.mark-down .qn{background:var(--warn-soft);color:var(--warn)}
 .qb{flex:1;min-width:0}
 .qt{font-size:17px;font-weight:600;line-height:1.5}
 .qmeta{font-size:13.5px;color:var(--ink-3);margin-top:6px;display:flex;align-items:center;gap:10px}
@@ -260,7 +277,7 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .dom-head{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:6px}
 .dom-head .nm{font-weight:600}.dom-head .pts{color:var(--ink-3);font-weight:600}
 .meter{height:6px;border-radius:999px;background:var(--soft);overflow:hidden}
-.meter>span{display:block;height:100%;border-radius:999px;background:var(--ink)}
+.meter>span{display:block;height:100%;border-radius:999px;background:var(--accent)}
 
 /* launch / analyze */
 .notice{display:flex;gap:15px;align-items:flex-start;padding:20px 22px;border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--sh);margin-bottom:18px;max-width:760px}
@@ -270,7 +287,7 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .share{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:16px 0;max-width:560px}
 .share button{border:1px solid var(--line);background:var(--panel);border-radius:var(--r-sm);padding:17px;display:flex;flex-direction:column;gap:7px;align-items:center;box-shadow:var(--sh)}
 .share button:hover{border-color:var(--ink-3)}
-.share .si{font-size:21px}.share .st{font-size:13px;font-weight:650;color:var(--ink)}
+.share .si{font-size:22px;font-weight:300;color:var(--ink-2);line-height:1}.share .st{font-size:13px;font-weight:650;color:var(--ink)}
 .result-card{border:1px solid var(--line);border-radius:var(--r);background:var(--panel);box-shadow:var(--sh);padding:22px 24px;margin-bottom:14px;max-width:780px}
 .result-card h4{font-size:16.5px;font-weight:700;margin-bottom:15px}
 .bar-row{display:flex;align-items:center;gap:13px;margin-bottom:10px;font-size:14.5px}
@@ -393,7 +410,7 @@ const state={
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
   reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
-  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',explainItem:null,itemVerdict:null,
+  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',explainItem:null,itemVerdict:null,writeGaugeInfo:false,deleteConfirm:null,
   questions:[
     {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple Choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -481,6 +498,10 @@ function refOf(q,i){ return q.id!=null?('q'+q.id):('i'+i); }
 function liveStrength(){ const r=assessNow(); return (r&&typeof r.pct==='number')?Math.round(r.pct):strengthHeuristic(state.questions); }
 function strengthValue(){ return (state.bc&&typeof state.bc.pct==='number')?Math.round(state.bc.pct):strengthHeuristic(state.questions); }
 function bandOf(s){if(s>=85)return{w:'Strong',c:'green'};if(s>=70)return{w:'Good',c:'green'};if(s>=55)return{w:'Fair',c:'amber'};return{w:'Needs work',c:'red'};}
+function siriBandOf(s){if(s>=90)return{w:'Strong',c:'green'};if(s>=80)return{w:'Good',c:'green'};if(s>=70)return{w:'Caution',c:'amber'};if(s>=55)return{w:'Weak',c:'amber'};return{w:'Not ready',c:'red'};}
+// Color for an engine SDSI band KEY (the capped band). Keeps the writing gauge in
+// lockstep with the engine so it can never read "Good" once readiness is capped.
+function sdsiBandColor(k){ if(k==='strong'||k==='good')return 'green'; if(k==='caution'||k==='weak')return 'amber'; return 'red'; }
 function markOf(q,i){
   if(state.bc&&state.bc.flags){
     const ref=refOf(q,i),fs=state.bc.flags.filter(f=>f.item_ref===ref);
@@ -510,15 +531,68 @@ function itemFlags(q,i){
 function cleanMsg(m){ return String(m||'').replace(/^Question\s+\d+\s*/i,'').replace(/^[a-z]/,c=>c.toUpperCase()); }
 function toggleExplain(i){ state.explainItem=(state.explainItem===i?null:i); render(); }
 function explainPanel(q,i){
-  const m=markOf(q,i), flags=itemFlags(q,i);
+  const m=markOf(q,i);
+  const rf=rfFor(q,i);
+  // Response-fit flags get their own dedicated block, so keep them out of the generic rows.
+  const flags=itemFlags(q,i).filter(f=>f.flag_key!=='response_format_mismatch'&&f.flag_key!=='response_fit_weak');
+  const rfBlock=rf?rfExplainBlock(rf,i):'';
   const head = m==='down' ? 'Why this is lowering your survey strength'
             : (m==='flat' ? 'Worth a look on this question' : 'This question is on track');
-  if(m==='up'||!flags.length){
-    return `<div class="explain"><div class="ex-h">${head}</div><div class="ex-w">Nothing is lowering your strength on this question. It reads well and fits your survey. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
+  if(m==='up'&&!flags.length&&(!rf||rf.status==='strong_fit'||rf.status==='acceptable_fit')){
+    return `<div class="explain"><div class="ex-h">${head}</div>${rfBlock}<div class="ex-w">Nothing is lowering your strength on this question. It reads well and fits your survey. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
   }
   const rows=flags.map(f=>`<div class="ex-row"><div class="ex-t">${esc(f.flag_label||cleanMsg(f.message))}</div>${f.why_it_matters?`<div class="ex-w">${esc(f.why_it_matters)}</div>`:(f.message&&f.flag_label?`<div class="ex-w">${esc(cleanMsg(f.message))}</div>`:'')}${f.suggestion?`<div class="ex-fix"><b>Fix:</b> ${esc(f.suggestion)}</div>`:''}</div>`).join('');
-  return `<div class="explain"><div class="ex-h">${head}</div>${rows}
-    <div class="ex-note">“Pulling it down” means your overall <b>survey strength</b> — not always the wording. If ReliCheck Intelligence said the wording is fine, the reason above is usually structural (for example, grouping the item into a construct) or a specific flagged word. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
+  return `<div class="explain"><div class="ex-h">${head}</div>${rfBlock}${rows}
+    <div class="ex-note">"Pulling it down" means your overall <b>survey strength</b> — not always the wording. If ReliCheck Intelligence said the wording is fine, the reason above is usually structural (for example, grouping the item into a construct) or a specific flagged word. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
+}
+// ── Response Fit Check — per-item surfacing ──────────────────────────────────
+const RF_LABELS={
+  strong_fit:{short:'Strong fit',c:'green',plain:'The response format matches what the question is asking.'},
+  acceptable_fit:{short:'Acceptable fit',c:'green',plain:'This response format can work, though another format may produce cleaner data.'},
+  weak_fit:{short:'Weak fit',c:'amber',plain:'The response format is usable, but the question or answer structure may reduce precision.'},
+  mismatch:{short:'Format mismatch',c:'red',plain:'The response format does not match what the question is asking.'},
+  cannot_assess:{short:'Needs question text',c:'gray',plain:'ReliCheck cannot judge the response format until the question text is clear.'}
+};
+const RF_TASK_LABELS={
+  categorical:'a category or fact',multi_select:'one or more selections',agreement:'a level of agreement',
+  perception:'a perception or intensity',frequency:'how often something happens',satisfaction:'a level of satisfaction',
+  quality:'a quality or effectiveness rating',numeric:'a number or quantity',date_time:'a date or time',
+  ranking:'a ranking or order',open_ended:'an open explanation',knowledge:'a correct answer',
+  matrix:'a matrix battery response',administrative:'an administrative value',non_interpretable:'something unclear'
+};
+function rfColor(c){ return c==='green'?'var(--good)':(c==='amber'?'var(--warn)':(c==='red'?'var(--bad)':'var(--ink-3)')); }
+function rfFor(q,i){
+  if(!(state.bc&&state.bc.itemScores))return null;
+  const ref=refOf(q,i);
+  const sc=state.bc.itemScores.filter(s=>s.item_ref===ref)[0];
+  if(!sc||!sc.response_fit_status)return null;
+  const fl=(state.bc.flags||[]).filter(f=>f.item_ref===ref&&(f.flag_key==='response_format_mismatch'||f.flag_key==='response_fit_weak'))[0]||null;
+  return {status:sc.response_fit_status,task:sc.response_task,reason:sc.response_fit_reason,sensitive:!!sc.response_fit_sensitive,flag:fl};
+}
+function rfCannotMsg(reason){
+  if(reason==='stem_demographic_label'||reason==='stem_construct_label'||reason==='stem_not_answerable')
+    return 'The response format may be plausible, but the question is label-only. Rewrite it as a respondent-facing question (for example, "What is your department?") before ReliCheck can judge response fit.';
+  if(reason==='stem_item_code') return 'This item is a code or column name, not a question. Add the respondent-facing question text before ReliCheck can judge response fit.';
+  if(reason==='instruction') return 'This stem is an instruction with no subject to respond about. Add the actual question before ReliCheck can judge response fit.';
+  if(reason==='admin') return 'This is an administrative or metadata field, not a respondent-facing question, so response fit is not assessed.';
+  return RF_LABELS.cannot_assess.plain;
+}
+function rfChip(q,i){
+  const rf=rfFor(q,i); if(!rf)return '';
+  const L=RF_LABELS[rf.status]||RF_LABELS.cannot_assess, col=rfColor(L.c);
+  return ` · <button class="qmark" onclick="toggleExplain(${i})" title="Response fit — click for detail" style="color:${col}"><span class="md" style="background:${col}"></span>Fit: ${esc(L.short)}</button>`;
+}
+function rfExplainBlock(rf,i){
+  const L=RF_LABELS[rf.status]||RF_LABELS.cannot_assess, col=rfColor(L.c);
+  const task=rf.task&&RF_TASK_LABELS[rf.task]?RF_TASK_LABELS[rf.task]:null;
+  const body=rf.status==='cannot_assess'?esc(rfCannotMsg(rf.reason)):esc(L.plain);
+  const taskLine=(task&&rf.status!=='cannot_assess')?`<div class="ex-w" style="font-size:12.5px;color:var(--ink-3);margin-top:4px">What this question asks for: ${esc(task)}.</div>`:'';
+  let extra='';
+  if(rf.flag){
+    if(rf.flag.why_it_matters) extra+=`<div class="ex-w" style="margin-top:6px"><b>For researchers:</b> ${esc(rf.flag.why_it_matters)}</div>`;
+    if(rf.flag.suggestion) extra+=`<div class="ex-fix"><b>How to fix:</b> ${esc(rf.flag.suggestion)}</div>`;
+  }
+  return `<div class="ex-row"><div class="ex-t" style="display:flex;align-items:center;gap:7px"><span style="width:8px;height:8px;border-radius:50%;background:${col};display:inline-block;flex-shrink:0"></span>Response fit: ${esc(L.short)}</div><div class="ex-w">${body}</div>${taskLine}${extra}</div>`;
 }
 function qualityHeuristic(q){
   let s=86;const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
@@ -691,28 +765,61 @@ function renderRail(){
 }
 function openCoachAsk(){state.coachOpen=true;state.coachTab='ask';document.body.classList.add('coach-open');paintCoach();}
 function renderTicker(){
-  const s=strengthValue(),b=bandOf(s),d=state.lastDelta;
-  const delta=d?`<span class="tk-delta ${d.dir}">${d.dir==='flat'?'no change':(d.amount>0?'+'+d.amount:d.amount)}</span>`:'';
+  const sr=state.siriResult, stale=state.siriStale;
+  let inner;
+  if(sr&&sr.total!=null){
+    const score=Math.round(sr.total);
+    const bandKey=sr.total_band_key||'';
+    const gated=(bandKey==='codes'||bandKey==='limited');
+    const c=bandKey?siriBandColor(bandKey):siriBandOf(score).c;
+    const w=sr.total_band||siriBandOf(score).w;
+    const staleTag=stale?`<span class="tk-k" style="color:var(--warn);font-size:9.5px">STALE</span>`:'';
+    inner=`${staleTag}<span class="tk-l"><span class="tk-k">Readiness</span><span class="tk-w">${esc(w)}</span></span><span class="tk-dot ${c}"></span><span class="tk-n"${gated?' style="color:var(--bad)"':''}>${gated?'—':score}</span><span class="tk-go">${stale?'Re-run':'Analyze'}<span class="cv">›</span></span>`;
+  } else {
+    inner=`<span class="tk-l"><span class="tk-k">Readiness</span><span class="tk-w" style="color:var(--ink-3)">Not checked</span></span><span class="tk-dot" style="background:var(--ink-3);opacity:.4"></span><span class="tk-n" style="color:var(--ink-3);font-size:18px;min-width:24px">—</span><span class="tk-go">Run check<span class="cv">›</span></span>`;
+  }
   $('#tbRight').innerHTML=`
     <span class="savestat ${state.saveStatus}" id="saveStat">${saveStatusText(state.saveStatus)}</span>
     <button class="topbtn" onclick="goStart()" title="Start or open another survey">＋ New survey</button>
-    <button class="ticker" onclick="openReview()" title="Click for the full review">${delta}
-      <span class="tk-l"><span class="tk-k">Strength</span><span class="tk-w">${b.w}</span></span>
-      <span class="tk-dot ${b.c}"></span><span class="tk-n">${s}</span>
-      <span class="tk-go">Review<span class="cv">›</span></span>
-    </button>
+    <button class="ticker" onclick="${state.phase==='launch'?'go(\'analyze\')':'openReview()'}" title="Launch readiness">${inner}</button>
     <button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button>`;
 }
 
 /* start */
+function relDate(s){
+  if(!s)return '';
+  const d=new Date(s),now=new Date(),days=Math.floor((now-d)/86400000);
+  if(days===0)return 'today';if(days===1)return 'yesterday';
+  if(days<7)return days+'d ago';if(days<30)return Math.floor(days/7)+'w ago';
+  return Math.floor(days/30)+'mo ago';
+}
 function recentSection(){
   if(!PERSIST.on){
-    return `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="enter()"><span class="rdot"></span>Freshman Enrollment <span class="faint">· draft</span></button><button class="recent-pill" onclick="enter()"><span class="rdot" style="background:var(--ink-3)"></span>Staff Pulse 2026 <span class="faint">· launched</span></button></div>`;
+    return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="proj-list">
+      <div class="proj-row"><span class="proj-rdot" style="background:var(--good)"></span><button class="proj-open" onclick="enter()">Freshman Enrollment</button><span class="proj-status" style="color:var(--ink-3)">draft</span><span class="proj-meta">3 questions</span></div>
+      <div class="proj-row"><span class="proj-rdot" style="background:var(--ink-3)"></span><button class="proj-open" onclick="enter()">Staff Pulse 2026</button><span class="proj-status" style="color:var(--good)">published</span><span class="proj-meta">12 questions</span></div>
+    </div>`;
   }
-  if(state.projects===null){ loadProjects(); return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="faint" style="font-size:14px">Loading…</div>`; }
+  if(state.projects===null){ loadProjects(); return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="faint" style="font-size:14px;padding:8px 0">Loading…</div>`; }
   if(!state.projects.length) return '';
-  return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="recent">`+
-    state.projects.slice(0,16).map(p=>`<button class="recent-pill" onclick="openProject(${p.id})"><span class="rdot" style="background:${p.status==='published'?'var(--good)':'var(--ink-3)'}"></span>${esc(p.title||'Untitled survey')} <span class="faint">· ${esc(p.status||'draft')}</span></button>`).join('')+`</div>`;
+  const rows=state.projects.map(p=>{
+    const pub=p.status==='published';
+    const dotColor=pub?'var(--good)':'var(--ink-3)';
+    const statusColor=pub?'color:var(--good)':'color:var(--ink-3)';
+    const parts=[p.item_count>0?p.item_count+' question'+(p.item_count===1?'':'s'):'',p.response_count>0?p.response_count+' response'+(p.response_count===1?'':'s'):'',p.updated_at?relDate(p.updated_at):''];
+    const meta=parts.filter(Boolean).join(' · ');
+    const metaEl=meta?'<span class="proj-meta">'+esc(meta)+'</span>':'';
+    const action=state.deleteConfirm===p.id
+      ?'<span class="proj-confirm">Remove? <button class="yes" onclick="confirmDelete('+p.id+')">Yes</button><button class="no" onclick="cancelDelete()">No</button></span>'
+      :'<button class="proj-del" title="Remove" onclick="askDelete('+p.id+')">&times;</button>';
+    return '<div class="proj-row">'
+      +'<span class="proj-rdot" style="background:'+dotColor+'"></span>'
+      +'<button class="proj-open" onclick="openProject('+p.id+')">'+esc(p.title||'Untitled survey')+'</button>'
+      +'<span class="proj-status" style="'+statusColor+'">'+esc(p.status||'draft')+'</span>'
+      +metaEl+' '+action
+      +'</div>';
+  });
+  return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="proj-list">${rows.join('')}</div>`;
 }
 async function loadProjects(){
   if(!PERSIST.on){ state.projects=[]; return; }
@@ -720,12 +827,19 @@ async function loadProjects(){
   catch(e){ state.projects=[]; }
   if(state.screen==='start')render();
 }
+function askDelete(id){ state.deleteConfirm=id; render(); }
+function cancelDelete(){ state.deleteConfirm=null; render(); }
+async function confirmDelete(id){
+  state.projects=(state.projects||[]).filter(p=>p.id!==id);
+  state.deleteConfirm=null; render();
+  if(PERSIST.on) await DB.call('project-archive.php',{method:'POST',body:{id}}).catch(e=>degrade(e.message));
+  toast('Survey removed.');
+}
 async function openProject(id){
   try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=liveStrength();render(); }
   catch(e){ degrade(e.message); toast('Could not open: '+e.message); }
 }
 function renderStart(){
-  if(state.startFlow==='setup')return renderSetup();
   if(state.startFlow==='upload')return renderUpload();
   $('#app').innerHTML=`<div class="screen">
     <div class="eyebrow">New survey</div>
@@ -743,29 +857,51 @@ function renderStart(){
 // Two-question setup shown for EVERY build mode before the workspace. Title +
 // purpose tailor ReliCheck Intelligence's help and feed the SIRI readiness check
 // (they clear the "no purpose recorded" flag) — captured even before any question.
-function startSetup(mode){ state.startFlow='setup'; state.setupMode=mode; state.study={name:'',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}}; render(); }
-function renderSetup(){
+function startSetup(mode){
+  state.setupMode=mode;
+  state.study={name:'',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}};
+  openSetupModal();
+}
+function openSetupModal(){
   const M={'scratch':{eyebrow:'Build it myself',cta:'Start building →'},'ai-assist':{eyebrow:'Build with an assistant',cta:'Start building →'},'ai-build':{eyebrow:'Have ReliCheck build it',cta:'Draft my survey →'}};
   const m=M[state.setupMode]||M.scratch;
-  $('#app').innerHTML=`<div class="screen">
-    <div class="eyebrow">${m.eyebrow}</div>
-    <h1 class="title">Let’s set up your survey</h1>
-    <p class="lede">Two quick things before you start. They tailor ReliCheck Intelligence’s help and feed the readiness check — even before you write a question.</p>
-    <div class="card pad" style="max-width:680px">
-      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Survey title</div>
-      <input id="setTitle" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 15px;font-family:inherit;font-size:16px" value="${esc(state.study.name||'')}" placeholder="e.g. Employee Engagement Pulse">
-      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">What are you looking to get from this survey?</div>
-      <textarea id="setPurpose" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:15.5px;min-height:96px;resize:vertical" placeholder="e.g. Understand what drives engagement and what makes people consider leaving, so we can prioritize the right changes.">${esc(state.study.purpose||'')}</textarea>
-      <p class="faint" style="font-size:12.5px;margin-top:8px">This guides ReliCheck Intelligence’s suggestions and the pre-launch readiness check. You can refine it later.</p>
-      <div class="btn-row" style="margin-top:18px"><button class="btn" onclick="goStart()">← Back</button><div class="spacer"></div><button class="btn primary lg" onclick="submitSetup()">${m.cta}</button></div>
-    </div></div>`;
+  const ov=document.createElement('div'); ov.className='qr-ov'; ov.id='setupOv';
+  ov.innerHTML=`<div class="qr-modal" style="max-width:540px;width:calc(100vw - 40px)">
+    <div class="qr-head" style="flex-direction:column;align-items:flex-start;gap:4px;padding-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+        <span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink)">${m.eyebrow}</span>
+        <button class="cx" onclick="closeSetupModal()">&times;</button>
+      </div>
+      <div style="font-family:var(--serif);font-size:24px;font-weight:700;color:var(--ink);line-height:1.2">Let's set up your survey</div>
+      <p style="font-size:14px;color:var(--ink-3);margin:4px 0 0;line-height:1.5">Two quick things — they tailor ReliCheck Intelligence and the readiness check.</p>
+    </div>
+    <div style="padding:4px 0 0">
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px">Survey title</div>
+        <input id="setTitle" type="text" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-family:inherit;font-size:15px;box-sizing:border-box" value="${esc(state.study.name||'')}" placeholder="e.g. Employee Engagement Pulse" onkeydown="if(event.key==='Enter')document.getElementById('setPurpose').focus()">
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px">What are you looking to get from this survey?</div>
+        <textarea id="setPurpose" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 14px;font-family:inherit;font-size:15px;min-height:88px;resize:vertical;box-sizing:border-box" placeholder="e.g. Understand what drives engagement and what makes people consider leaving, so we can prioritize the right changes.">${esc(state.study.purpose||'')}</textarea>
+        <p style="font-size:12.5px;color:var(--ink-3);margin:5px 0 0">You can refine this later. It feeds ReliCheck Intelligence and the pre-launch readiness check.</p>
+      </div>
+    </div>
+    <div class="qr-btns" style="margin-top:20px">
+      <button class="btn primary lg" onclick="submitSetup()" style="flex:1">${m.cta}</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)closeSetupModal(); });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const el=document.getElementById('setTitle'); if(el)el.focus(); },80);
 }
+function closeSetupModal(){ const o=document.getElementById('setupOv'); if(o)o.remove(); }
 function submitSetup(){
   const title=(($('#setTitle')||{}).value||'').trim();
   const purpose=(($('#setPurpose')||{}).value||'').trim();
   if(!purpose){ toast('Tell ReliCheck what you want to get from this survey.'); const el=document.getElementById('setPurpose'); if(el)el.focus(); return; }
   state.study.name=title||'Untitled survey';
   state.study.purpose=purpose;
+  closeSetupModal();
   if(state.setupMode==='ai-build') aiDraft();
   else enter(state.setupMode,true);
 }
@@ -859,7 +995,7 @@ async function enter(mode,fromSetup){
     try{ await createProject(mode); }catch(e){ degrade(e.message); }
   }
   state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
-  if(mode==='ai-assist') toast('Assistant on — use “Suggest a question” or the wording help on each card.');
+  if(mode==='ai-assist') toast('Assistant on — use "Suggest a question" or the wording help on each card.');
 }
 
 /* Build */
@@ -893,22 +1029,69 @@ function answerPreview(q){
     default: return `<div class="prevtext">Response…</div>`;
   }
 }
+function toggleWriteGauge(){ state.writeGaugeInfo=!state.writeGaugeInfo; render(); }
 function viewBuild(){
   if(state.grouping)return viewGrouping();
   const qs=state.questions;
   const weakCount=qs.filter((q,i)=>markOf(q,i)==='down').length;
   const list=qs.map((q,i)=>state.editing===i?editorCard(q,i):displayCard(q,i)).join('');
+  // Writing quality — single-line label + level + info toggle.
+  let writeGauge='';
+  if(qs.length){
+    const sv=state.bc&&state.bc.stem_validity_state;
+    const codePct=state.bc&&state.bc.stem_validity_code_pct||0;
+    const rfState=state.bc&&state.bc.response_fit_state;
+    const rfMisPct=state.bc&&state.bc.response_fit_mismatch_pct||0;
+    const rfProbPct=state.bc&&state.bc.response_fit_problem_pct||0;
+    const rfSens=state.bc&&state.bc.response_fit_sensitive_count||0;
+    const problem=sv==='blocked'?'blocked':((sv==='limited'||rfState==='limited')?'limited':(rfState==='major_revision'?'major':null));
+    let b, dotColor;
+    if(problem==='blocked'){ b={w:'Assessment blocked',c:'red'}; }
+    else if(problem==='limited'){ b={w:'Assessment limited',c:'red'}; }
+    else if(problem==='major'){ b={w:'Needs major revision',c:'red'}; }
+    // Use the engine's CAPPED band (single source of truth) so the gauge can never
+    // read "Good" when blockers have capped readiness to Caution/Weak/Not ready.
+    else if(state.bc&&state.bc.sdsi_display_band){ b={w:state.bc.sdsi_display_band,c:sdsiBandColor(state.bc.bandKey)}; }
+    else { b=bandOf(strengthValue()); }
+    dotColor=b.c==='green'?'var(--good)':(b.c==='red'?'var(--bad)':'var(--warn)');
+    const warns=[];
+    if(sv==='blocked') warns.push('<b>Assessment blocked.</b> '+codePct+'% of items appear to be codes or imported column names (e.g. Q1, VAR001), not respondent-facing question text. ReliCheck cannot make a valid readiness judgment until the actual question wording is provided.');
+    else if(sv==='limited') warns.push('<b>Question text missing.</b> Several items appear to be codes or imported column names rather than question text. Replace them with the actual wording.');
+    if(rfState==='limited') warns.push('<b>Response fit limited.</b> '+rfProbPct+'% of items have a response format that does not match the question, or text that is not yet clear. These prevent a full readiness judgment.');
+    else if(rfState==='major_revision') warns.push('<b>Needs major revision.</b> '+rfMisPct+'% of items use a response format that does not match what the question is asking. Open each flagged item to change the format or rewrite the question.');
+    if(rfSens>0) warns.push('<b>Identity question on an agreement scale.</b> '+(rfSens===1?'1 item asks':rfSens+' items ask')+' for a sensitive identity (e.g. race, gender) using an agreement scale, which is culturally inappropriate. Use respectful self-identification choices.');
+    const warnHtml=warns.length?'<div style="margin-top:10px;padding:11px 13px;background:var(--bad-soft);border:1px solid var(--bad-soft);border-radius:8px;font-size:13.5px;color:var(--bad);line-height:1.55">'+warns.join('<br><br>')+'</div>':'';
+    const clean=!problem&&!warns.length;
+    const infoPanel=state.writeGaugeInfo?`
+      <div style="margin-top:10px;padding:13px 14px 14px;background:var(--soft);border:1px solid var(--line);border-radius:8px;font-size:13.5px;color:var(--ink-2);line-height:1.65">
+        <p style="margin:0 0 9px"><b style="color:var(--ink)">What this measures:</b> how clearly and neutrally your questions are written, plus whether each answer format matches what the question asks (Response Fit). Updated on every save.</p>
+        <p style="margin:0 0 9px"><b style="color:var(--ink)">Its relationship to SIRI Launch Readiness (the ticker):</b><br>
+        Writing quality is the question-design component of SIRI. The Analyze step adds deployment setup — consent, defined audience, collection settings — to produce the full 100-point launch verdict.</p>
+        <p style="margin:0"><button class="ailink" style="font-size:13px" onclick="toggleWriteGauge();go('build')">See flagged questions in Build →</button></p>
+      </div>` : '';
+    writeGauge=`<div style="margin-bottom:22px;max-width:760px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)">Writing quality</span>
+        <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0"></span>
+        <span style="font-family:var(--serif);font-size:20px;font-weight:700;color:${dotColor};letter-spacing:-.01em">${b.w}</span>
+        ${clean?`<button onclick="toggleWriteGauge()" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--ink-3);padding:0 2px;line-height:1;margin-left:2px" title="About this score">ⓘ</button>`:''}
+      </div>
+      ${warnHtml}
+      ${clean?infoPanel:''}
+    </div>`;
+  }
   return `
     <div class="eyebrow">Build</div>
     <input class="title title-input" value="${esc(state.study.name||'Untitled survey')}" placeholder="Untitled survey" oninput="setStudyName(this.value)" aria-label="Survey title">
     <p class="lede">Build your questions one at a time. Each opens on its own card, where you write the question, choose how people answer, and set the choices right there. Save it, then add the next.</p>
+    ${writeGauge}
     ${qs.length?`<div class="sec-row">
       <h2 class="sec">${qs.length} question${qs.length===1?'':'s'} in your survey</h2>
       ${weakCount?`<button class="tlink" onclick="improveWeakest()">${weakCount} need${weakCount===1?'s':''} a look — improve ${weakCount===1?'it':'them'}</button>`:''}
     </div>`:''}
     ${list||(state.entry==='ai-assist'
       ? `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✨</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">Build with ReliCheck Intelligence</p><p class="faint" style="font-size:14.5px;margin:4px 0 14px">Start from a suggestion, or write your own. Wording and clarity help is on every card.</p><div class="btn-row" style="justify-content:center"><button class="btn primary" onclick="suggestQ()">✨ Suggest my first question</button><button class="btn" onclick="addBlankQ()">Write one myself</button></div></div>`
-      : `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✎</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">No questions yet</p><p class="faint" style="font-size:14.5px;margin-top:4px">Click “Add question” below to write your first one.</p></div>`)}
+      : `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✎</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">No questions yet</p><p class="faint" style="font-size:14.5px;margin-top:4px">Click "Add question" below to write your first one.</p></div>`)}
     <div class="btn-row" style="margin-top:18px">
       <button class="btn primary lg" onclick="addBlankQ()">+ Add question</button>
       <button class="ailink" onclick="suggestQ()">${state.entry==='ai-assist'?'Suggest the next one':'Let ReliCheck suggest one'}</button>
@@ -922,8 +1105,8 @@ function displayCard(q,i){
   const cond=(q.settings&&q.settings.showIf)?` · <span class="faint" title="Shown only when an earlier answer matches">⤷ conditional</span>`:'';
   const meta=(struct
     ? `<span class="faint">Survey structure</span>`
-    : `${esc(typeLabel(q.type))} <button class="qmark ${m}" onclick="toggleExplain(${i})" title="Why?"><span class="md"></span>${lbl}<span class="qwhy">ⓘ why</span></button>`)+cond;
-  return `<div class="qcard" id="qc-${i}">
+    : `${esc(typeLabel(q.type))} <button class="qmark ${m}" onclick="toggleExplain(${i})" title="Why?"><span class="md"></span>${lbl}<span class="qwhy">ⓘ why</span></button>${rfChip(q,i)}`)+cond;
+  return `<div class="qcard${(!struct&&m==='down')?' mark-down':(!struct&&m==='up')?' mark-up':''}" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
       <div class="qb"><div class="qt">${esc(q.t)}</div><div class="qmeta">${meta}${q.group?` · <span style="font-weight:650;color:var(--ink-2)">${esc(q.group)}</span>`:''}</div></div>
@@ -1303,20 +1486,40 @@ function closeReview(){state.reviewOpen=false;paintReview();}
 function paintReview(){
   const r=$('#review'),sc=$('#scrim');
   if(state.screen!=='start'){
-    const s=strengthValue(),b=bandOf(s);
-    const items=reviewItems();
-    const fixes=items.length?items.map(x=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">Q${x.i+1}: ${esc(x.q.t)}</div><div class="fs">${esc(x.msg)}${x.fix?' '+esc(x.fix):''}</div><button class="fa" onclick="closeReview();jumpTo(${x.i})">Fix this one →</button></div></div>`).join('')
-      :`<div class="allgood"><span class="ag">✓</span><div>Nothing is pulling your survey down right now. It is in good shape to launch.</div></div>`;
-    r.innerHTML=`
-      <div class="rv-head"><span class="rv-n">${s}</span><div><div class="rv-w">${b.w}</div><div class="rv-sub">Survey strength · updates as you build</div></div><button class="cx" onclick="closeReview()">&times;</button></div>
-      <div class="rv-body">
-        <div class="sec-row" style="margin-top:0"><h2 class="sec">${items.length?`${items.length} question${items.length===1?'':'s'} worth a look`:'Nothing flagged'}</h2></div>
-        ${fixes}
-        <details class="tech"><summary>Full technical breakdown</summary><div class="tbody">
-          <p class="faint" style="font-size:12px;margin-bottom:14px">For the curious. You never have to read this to use the score above.</p>
-          ${techBreakdown()}
-        </div></details>
+    const sr=state.siriResult, stale=state.siriStale;
+    let body;
+    if(!sr){
+      body=`<div style="padding:18px 0 6px">
+        <p style="font-size:14.5px;color:var(--ink-2);line-height:1.6;margin-bottom:20px">Run the readiness check to see your launch score — question design plus deployment setup, 100 points total.</p>
+        <button class="btn primary" onclick="closeReview();go('analyze');setTimeout(runSiriCheck,200)">Run readiness check →</button>
       </div>`;
+    } else {
+      const score=sr.total!=null?Math.round(sr.total):Math.round(sr.siri||0);
+      const hasTotal=sr.total!=null;
+      const band=hasTotal?(sr.total_band||''):'';
+      const color=siriBandColor(hasTotal?(sr.total_band_key||''):'');
+      const blockers=sr.deployment_blocker_count||0;
+      const gated=(sr.total_band_key==='codes'||sr.total_band_key==='limited');
+      const capped=!!sr.total_band_was_capped;
+      const flags=(sr.flags||[]).filter(f=>['critical','high'].includes(f.severity)).slice(0,4);
+      const flagHtml=flags.length?flags.map(f=>'<div class="fixitem" style="margin-bottom:8px"><div class="fi">!</div><div><div class="ft" style="font-size:13.5px">'+esc(f.message)+'</div>'+fixFlagBtn(f)+'</div></div>').join(''):'';
+      const staleNote=stale?'<p style="font-size:12px;color:var(--warn);margin-bottom:10px">Results are out of date. Re-run for current score.</p>':'';
+      const statusLine=(blockers||gated||capped)
+        ?'<div class="trust hold" style="margin:12px 0 10px"><span class="ti">!</span><div>'+esc(sr.blocker_headline||sr.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))+'</div></div>'
+        :'<div class="trust ok" style="margin:12px 0 10px"><span class="ti">✓</span><div>No deployment blockers.</div></div>';
+      body=staleNote+statusLine+flagHtml
+        +'<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'
+        +'<button class="btn sm" onclick="closeReview();go(\'analyze\')">Full report →</button>'
+        +'<button class="btn sm" onclick="runSiriCheck()">'+(stale?'Re-run':'Re-run')+'</button>'
+        +'</div>';
+    }
+    const gatedHdr=sr&&(sr.total_band_key==='codes'||sr.total_band_key==='limited');
+    const hdrNum=sr&&sr.total!=null?(gatedHdr?'—':Math.round(sr.total)):'-';
+    r.innerHTML='<div class="rv-head">'
+      +(sr?'<span class="rv-n" style="font-family:var(--serif)'+(gatedHdr?';color:var(--bad)':'')+'">'+hdrNum+'</span><div><div class="rv-w">'+(sr.total!=null?(sr.total_band||''):'')+'</div><div class="rv-sub">SIRI Launch Readiness</div></div>'
+          :'<div><div class="rv-w" style="font-size:15px;font-weight:750">Launch Readiness</div><div class="rv-sub">SIRI · not yet run</div></div>')
+      +'<button class="cx" onclick="closeReview()">&times;</button></div>'
+      +'<div class="rv-body">'+body+'</div>';
   }
   r.classList.toggle('open',state.reviewOpen&&state.screen!=='start');
   sc.classList.toggle('open',state.reviewOpen&&state.screen!=='start');
@@ -1353,19 +1556,58 @@ function viewLaunch(){
     : `<div class="notice"><div class="ni">🚀</div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Ready to send it out?</div><p class="muted" style="font-size:14px;margin:3px 0 11px">Publishing creates a shareable link. You can open and close responses any time.</p><button class="btn primary" onclick="publishSurvey()">Publish &amp; get the link</button></div></div>`;
   const share=live?`<div class="sec-row" style="margin-top:24px"><h2 class="sec">Share &amp; collect</h2></div>
     <div class="share" style="grid-template-columns:repeat(5,1fr)">
-      <button onclick="shareLinkModal('${esc(link)}')"><span class="si">🔗</span><span class="st">Share link</span></button>
-      <button onclick="shareEmail('${esc(link)}')"><span class="si">✉️</span><span class="st">Email it</span></button>
-      <button onclick="showQR('${esc(link)}')"><span class="si">▦</span><span class="st">QR code</span></button>
-      <button onclick="invitePanel('${esc(link)}')"><span class="si">👥</span><span class="st">Invite list</span></button>
-      <button onclick="window.open('https://'+${JSON.stringify(link)},'_blank')"><span class="si">👁</span><span class="st">Preview</span></button>
+      <button onclick="shareLinkModal('${esc(link)}')"><span class="si">↗</span><span class="st">Share link</span></button>
+      <button onclick="shareEmail('${esc(link)}')"><span class="si">@</span><span class="st">Email it</span></button>
+      <button onclick="showQR('${esc(link)}')"><span class="si">⊞</span><span class="st">QR code</span></button>
+      <button onclick="invitePanel('${esc(link)}')"><span class="si">⊕</span><span class="st">Invite list</span></button>
+      <button onclick="window.open('https://'+${JSON.stringify(link)},'_blank')"><span class="si">→</span><span class="st">Preview</span></button>
     </div>`:'';
   // Instrument exports are available anytime — you can hand the blueprint off before publishing.
   const exportsBlock=`<div class="sec-row" style="margin-top:24px"><h2 class="sec">Export the instrument</h2></div>
     <p class="muted" style="font-size:14px;max-width:740px;margin-bottom:14px">Take your survey out for offline use or another platform. Your questions and answer formats carry over.</p>
     <div class="share" style="grid-template-columns:repeat(3,1fr);max-width:560px">
-      <button onclick="exportInstrumentDoc()"><span class="si">📄</span><span class="st">Word / PDF</span></button>
-      <button onclick="exportInstrumentCsv()"><span class="si">▤</span><span class="st">CSV / Excel</span></button>
+      <button onclick="exportInstrumentDoc()"><span class="si">↓</span><span class="st">Word / PDF</span></button>
+      <button onclick="exportInstrumentCsv()"><span class="si">⊟</span><span class="st">CSV / Excel</span></button>
       <button onclick="exportInstrumentJson()"><span class="si">{ }</span><span class="st">JSON / Qualtrics</span></button>
+    </div>`;
+  // Intro / consent / branding panel
+  const lr=state.study.launchReadiness||{};
+  const introEnabled=!!(lr.introEnabled);
+  const consentType=lr.consentType||'none';
+  const directions=(lr.instructions&&lr.instructions.text)||'';
+  const consentStatement=(lr.consent&&lr.consent.statement)||'';
+  const hideBrand=!!(state.settings&&state.settings.hideBrand);
+  const consentRows=consentType!=='none'?`<textarea id="consentText" rows="4" style="width:100%;font-size:14px;padding:9px 11px;border:1px solid #d0d5e0;border-radius:7px;resize:vertical;font-family:inherit;box-sizing:border-box;${consentType!=='custom'?'background:#f5f6fa;color:#5a607a;':''}" ${consentType!=='custom'?'readonly':''} placeholder="Enter consent statement..." oninput="setConsentStatement(this.value)">${esc(consentStatement)}</textarea>${consentType!=='custom'?`<p class="faint" style="font-size:12.5px;margin-top:4px">This is a template. Switch to Custom to edit it.</p>`:''}`:''
+  const introInner=introEnabled?`
+    <div style="margin-top:16px;padding-top:14px;border-top:1px solid #e8e8ef">
+      <label style="font-size:13.5px;font-weight:600;color:var(--ink-2);display:block;margin-bottom:5px">Directions <span style="font-weight:400">(optional)</span></label>
+      <textarea id="introDirections" rows="3" style="width:100%;font-size:14px;padding:9px 11px;border:1px solid #d0d5e0;border-radius:7px;resize:vertical;font-family:inherit;box-sizing:border-box" placeholder="e.g. This survey takes about 5 minutes. Your responses are anonymous." oninput="setIntroDirections(this.value)">${esc(directions)}</textarea>
+      <div style="margin-top:16px">
+        <div style="font-size:13.5px;font-weight:600;color:var(--ink-2);margin-bottom:8px">Consent statement</div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:10px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="radio" name="consentType" value="none" ${consentType==='none'?'checked':''} onchange="setConsentType('none')"> None</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="radio" name="consentType" value="irb" ${consentType==='irb'?'checked':''} onchange="setConsentType('irb')"> IRB / research</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="radio" name="consentType" value="hipaa" ${consentType==='hipaa'?'checked':''} onchange="setConsentType('hipaa')"> HIPAA notice</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer"><input type="radio" name="consentType" value="custom" ${consentType==='custom'?'checked':''} onchange="setConsentType('custom')"> Custom</label>
+        </div>
+        ${consentRows}
+      </div>
+    </div>`:'';
+  const introPanel=`<div class="sec-row" style="margin-top:24px"><h2 class="sec">Introduction &amp; consent</h2></div>
+    <div class="card pad" style="max-width:760px">
+      <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14.5px;font-weight:700">
+        <input type="checkbox" id="chkIntro" onchange="toggleIntro(this.checked)" ${introEnabled?'checked':''}>
+        Show an introduction page before the first question
+      </label>
+      <p class="muted" style="font-size:13.5px;margin:4px 0 0 23px">Directions, study context, IRB disclosure, or a consent statement respondents read before answering.</p>
+      ${introInner}
+      <div style="margin-top:14px;border-top:1px solid #e8e8ef;padding-top:14px">
+        <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:14px">
+          <input type="checkbox" id="chkHideBrand" onchange="setHideBrand(this.checked)" ${hideBrand?'checked':''}>
+          Hide the ReliCheck logo at the top of the survey
+        </label>
+        <p class="faint" style="font-size:12.5px;margin:3px 0 0 23px">The "Powered by ReliCheck" attribution at the bottom always appears.</p>
+      </div>
     </div>`;
   const readyPct=state.siriResult&&state.siriResult.total!=null?Math.round(state.siriResult.total):null;
   const readyNote=readyPct!=null?`<button class="ailink" onclick="go('analyze')">Readiness ${readyPct}/100 — review</button>`:`<button class="ailink" onclick="go('analyze')">← Run the readiness check first</button>`;
@@ -1375,9 +1617,50 @@ function viewLaunch(){
     <p class="lede">Publish your survey to get a shareable link, then share it however you like. Answers flow into Results automatically. ${readyNote}</p>
     ${linkBlock}
     ${share}
+    ${introPanel}
     ${live?`<div class="card pad" style="max-width:760px;margin:18px 0 0"><div style="font-weight:700;margin-bottom:6px">Before you send it wide</div><p class="muted" style="font-size:14px">Send it to 3 to 5 people first and watch where they pause. The Coach has more on this.</p></div>`:''}
     ${exportsBlock}
     <div class="btn-row" style="margin-top:24px"><button class="btn" onclick="go('analyze')">← Back to Analyze</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('results')">Go to Results →</button></div>`;
+}
+// ── Intro / consent / branding helpers ──────────────────────────────────────
+const CONSENT_PRESETS={
+  irb:`This survey is part of a research study. Your participation is completely voluntary — you may decline to answer any question or stop at any time without penalty. Your responses will remain confidential and used only for research purposes. No identifying information will be linked to your responses. Contact the research team with any questions before continuing.`,
+  hipaa:`Some responses you provide may constitute protected health information (PHI) under HIPAA. Your information will be handled in accordance with applicable federal and state privacy regulations. Participation is voluntary. Your responses will not be disclosed to unauthorized parties except as required by law.`
+};
+let _introTimer=null;
+function _lr(){ state.study.launchReadiness=state.study.launchReadiness||{}; return state.study.launchReadiness; }
+function toggleIntro(checked){ _lr().introEnabled=checked; render(); queueSaveIntro(); }
+function setConsentType(type){
+  const lr=_lr(); lr.consentType=type;
+  if(type==='irb'||type==='hipaa'){ lr.consent=lr.consent||{}; lr.consent.statement=CONSENT_PRESETS[type]; }
+  else if(type==='none'){ lr.consent=lr.consent||{}; lr.consent.statement=''; }
+  render(); queueSaveIntro();
+}
+function setIntroDirections(text){ const lr=_lr(); lr.instructions=lr.instructions||{}; lr.instructions.text=text; queueSaveIntro(); }
+function setConsentStatement(text){ const lr=_lr(); lr.consent=lr.consent||{}; lr.consent.statement=text; queueSaveIntro(); }
+function setHideBrand(checked){ state.settings=state.settings||{}; state.settings.hideBrand=checked; render(); queueSaveIntro(); }
+function queueSaveIntro(){ clearTimeout(_introTimer); _introTimer=setTimeout(saveIntroSettings,700); }
+async function saveIntroSettings(){
+  const lr=state.study.launchReadiness||{};
+  const merged=Object.assign({},state.settings,{launchReadiness:Object.assign({},lr),hideBrand:!!(state.settings&&state.settings.hideBrand)});
+  state.settings=merged; state.study.launchReadiness=merged.launchReadiness;
+  if(!PERSIST.on||!state.projectId)return;
+  await DB.call('project-update.php',{method:'POST',body:{id:state.projectId,settings:merged}}).catch(e=>degrade(e.message));
+}
+// SVG ring gauge for the SIRI score. r=52, viewBox 120×120, starts at 12 o'clock.
+function siriRing(score,colorKey,gated){
+  const r=52,cx=60,cy=60,circ=2*Math.PI*r;
+  const filled=gated?0:Math.min(Math.max(score,0),100)/100*circ;
+  const stroke=colorKey==='green'?'var(--good)':(colorKey==='amber'?'var(--warn)':'var(--bad)');
+  const label=gated?'—':score;
+  return `<svg viewBox="0 0 120 120" width="148" height="148" aria-hidden="true">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--soft)" stroke-width="9"/>
+    ${gated?'':`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${stroke}" stroke-width="9"
+      stroke-dasharray="${filled.toFixed(1)} ${circ.toFixed(1)}" stroke-linecap="round"
+      transform="rotate(-90 ${cx} ${cy})"/>`}
+    <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central"
+      style="font-family:var(--serif)" font-size="${gated?'40':'32'}" font-weight="700" fill="${gated?'var(--bad)':'var(--ink)'}">${label}</text>
+  </svg>`;
 }
 // The SIRI Launch Check (100-pt readiness) card — runs the real engine. Shown on the Analyze (pre-launch readiness) page.
 function siriBandColor(key){ return (key==='strong'||key==='good')?'green':(key==='caution'?'amber':'red'); }
@@ -1395,27 +1678,87 @@ function siriCard(){
   const hasTotal=(r.total!=null);
   const score=hasTotal?Math.round(r.total):Math.round(r.siri);
   const band=hasTotal?(r.total_band||''):'';
-  const color=siriBandColor(hasTotal?(r.total_band_key||''):'');
+  const bandKey=hasTotal?(r.total_band_key||''):'';
+  const gated=(bandKey==='codes'||bandKey==='limited'); // no valid score — show "—" not a number
+  const color=siriBandColor(bandKey);
   const blockers=r.deployment_blocker_count||0;
   const domains=(r.domains||[]).map(d=>{const pct=Math.round((d.points/(d.max||10))*100);return `<div class="dom"><div class="dom-head"><span class="nm">${esc(d.name)}</span><span class="pts">${d.points} / ${d.max||10}</span></div><div class="meter"><span style="width:${pct}%"></span></div></div>`;}).join('');
   const flags=(r.flags||[]).filter(f=>['critical','high','medium'].includes(f.severity)).slice(0,8);
-  const body = blockers
-    ? `<div class="trust hold" style="margin-top:14px"><span class="ti">!</span><div>${esc(r.blocker_headline||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))}${r.total_band_cap_reason?' '+esc(r.total_band_cap_reason):''}</div></div>`
+  const capped=!!r.total_band_was_capped;
+  const hold=blockers||gated||capped;
+  const body = hold
+    ? `<div class="trust hold" style="margin-top:14px"><span class="ti">!</span><div>${esc(r.blocker_headline||r.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))}</div></div>`
     : `<div class="trust ok" style="margin-top:14px"><span class="ti">✓</span><div>No deployment blockers. Your survey is ready to publish.</div></div>`;
-  const flagList = flags.length?`<div style="margin-top:6px">${flags.map(f=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">${esc(f.domain)}: ${esc(f.message)}</div>${f.suggestion?`<div class="fs">${esc(f.suggestion)}</div>`:''}<button class="fa" onclick="go('build')">Fix in Build →</button></div></div>`).join('')}</div>`:'';
-  const stale=state.siriStale?` <span class="faint" style="font-size:12.5px;font-weight:600">· out of date</span>`:'';
+  const flagList = flags.length?`<div style="margin-top:6px">${flags.map(f=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">${esc(f.domain)}: ${esc(f.message)}</div>${f.suggestion?`<div class="fs">${esc(f.suggestion)}</div>`:''} ${fixFlagBtn(f)}</div></div>`).join('')}</div>`:'';
+  const stale=state.siriStale;
   return `<div class="card pad" style="max-width:820px;margin-bottom:18px">
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-      <span class="tk-dot ${color}" style="width:13px;height:13px"></span>
-      <div class="rv-n" style="font-size:34px;font-weight:800;line-height:1">${score}<span class="faint" style="font-size:16px;font-weight:700">/${hasTotal?100:50}</span></div>
-      <div style="flex:1"><div style="font-weight:750;font-size:16px">Launch readiness${hasTotal&&band?' · '+esc(band):''}${stale}</div>
-      <div class="faint" style="font-size:13px">SIRI Launch Check · ${hasTotal?'survey design + deployment readiness':'readiness lenses'}</div></div>
-      <button class="btn sm" onclick="runSiriCheck()">Re-run</button>
+    <div style="display:flex;align-items:flex-start;gap:32px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;min-width:148px">
+        ${siriRing(score,color,gated)}
+        ${hasTotal&&band?`<span style="display:inline-flex;align-items:center;gap:7px;padding:5px 14px;border-radius:999px;background:${color==='green'?'var(--good-soft)':(color==='amber'?'var(--warn-soft)':'var(--bad-soft)')};font-size:13px;font-weight:700;color:${color==='green'?'var(--good)':(color==='amber'?'var(--warn)':'var(--bad)')}">${esc(band)}</span>`:''}
+      </div>
+      <div style="flex:1;min-width:220px;padding-top:8px">
+        <div style="font-family:var(--serif);font-size:22px;font-weight:700;color:var(--ink);line-height:1.2">Launch readiness${stale?` <span style="font-size:13px;font-weight:600;color:var(--warn)">· out of date</span>`:''}</div>
+        <div style="font-size:13px;color:var(--ink-3);margin:4px 0 16px">SIRI Launch Check · ${hasTotal?'survey design + deployment readiness':'readiness lenses'}</div>
+        ${body}
+        <button class="btn sm" style="margin-top:14px" onclick="runSiriCheck()">${stale?'Re-run check':'Re-run'}</button>
+      </div>
     </div>
-    ${body}
-    ${flagList}
+    ${flagList?`<div style="margin-top:20px;border-top:1px solid var(--line);padding-top:18px">${flagList}</div>`:''}
     <details class="tech" style="margin-top:12px"><summary>Readiness domains</summary><div class="tbody">${domains||'<p class="faint">No domain detail.</p>'}</div></details>
   </div>`;
+}
+// ── Analyze flag fix routing ─────────────────────────────────────────────────
+function fixFlagBtn(f){
+  const msg=f.message||'', key=f.domainKey||'';
+  if(key==='purpose'&&(msg.includes('No survey purpose')||msg.includes('purpose statement is very brief')))
+    return `<button class="fa" onclick="openFixPopup('purpose')">Fix here →</button>`;
+  if(key==='purpose'&&msg.includes('No intended audience'))
+    return `<button class="fa" onclick="openFixPopup('population')">Fix here →</button>`;
+  if(key==='deployment'&&(msg.includes('No consent')||msg.includes('privacy statement')))
+    return `<button class="fa" onclick="go('launch')">Fix in Launch →</button>`;
+  if(key==='coverage'&&(msg.includes('not mapped to any construct')||msg.includes('three or more items')))
+    return `<button class="fa" onclick="go('build');setTimeout(openGrouping,120)">Fix in Build →</button>`;
+  return `<button class="fa" onclick="go('build')">Fix in Build →</button>`;
+}
+function openFixPopup(type){
+  const isPurpose=type==='purpose';
+  const title=isPurpose?'Survey purpose':'Intended audience';
+  const label=isPurpose
+    ?"What do you want to learn, and which decision will this survey inform?"
+    :"Who will answer this survey? (e.g. K-12 teachers, hospital nursing staff, enrolled undergraduates)";
+  const current=isPurpose?(state.study.purpose||''):(state.study.population||'');
+  const field=isPurpose?'<textarea id="fpVal" rows="4" style="width:100%;font-size:14px;padding:9px 11px;border:1px solid #d0d5e0;border-radius:7px;resize:vertical;font-family:inherit;box-sizing:border-box;margin-top:8px" placeholder="e.g. Understand why students disengage mid-semester to inform advisor outreach.">'+(current.replace(/</g,'&lt;'))+'</textarea>'
+    :'<input id="fpVal" type="text" style="width:100%;font-size:14px;padding:9px 11px;border:1px solid #d0d5e0;border-radius:7px;font-family:inherit;box-sizing:border-box;margin-top:8px" placeholder="e.g. Full-time nursing staff at mid-sized hospitals" value="'+(current.replace(/"/g,'&quot;'))+'">';
+  const ov=document.createElement('div'); ov.className='qr-ov'; ov.id='fpOv';
+  ov.innerHTML=`<div class="qr-modal" style="max-width:500px">
+    <div class="qr-head"><div style="font-weight:750;font-size:16px">${title}</div><button class="cx" onclick="closeFixPopup()">&times;</button></div>
+    <div style="padding:4px 0 16px">
+      <p style="font-size:14px;color:var(--ink-2);margin:0">${label}</p>
+      ${field}
+    </div>
+    <div class="qr-btns">
+      <button class="btn primary" onclick="saveFixPopup('${type}')">Save &amp; re-run check</button>
+      <button class="btn" onclick="closeFixPopup()">Cancel</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)closeFixPopup(); });
+  document.body.appendChild(ov);
+  setTimeout(()=>{ const el=document.getElementById('fpVal'); if(el){ el.focus(); if(el.tagName==='TEXTAREA'){ el.setSelectionRange(el.value.length,el.value.length); } } },80);
+}
+function closeFixPopup(){ const o=document.getElementById('fpOv'); if(o)o.remove(); }
+async function saveFixPopup(type){
+  const el=document.getElementById('fpVal'); if(!el)return;
+  const val=el.value.trim();
+  if(type==='purpose') state.study.purpose=val;
+  else state.study.population=val;
+  closeFixPopup();
+  if(PERSIST.on&&state.projectId){
+    const body={id:state.projectId}; body[type]=val;
+    await DB.call('project-update.php',{method:'POST',body}).catch(e=>degrade(e.message));
+  }
+  toast('Saved. Re-running readiness check…');
+  runSiriCheck();
 }
 function publishSurvey(){
   if(!PERSIST.on){ state.deploymentSettings={link_key:'demo-'+((state.projectId)||'x'),responses_open:true}; render(); toast('Published (demo).'); return; }

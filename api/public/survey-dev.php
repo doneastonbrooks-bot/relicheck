@@ -159,8 +159,11 @@ elseif (strpos($mode, 'satisf') !== false) { $defaultLow = 'Very Dissatisfied'; 
 // Build a cover page from launch readiness (consent + instructions).
 $consentStatement = trim((string)(($lr['consent']      ?? [])['statement'] ?? ''));
 $instructionsText = trim((string)(($lr['instructions'] ?? [])['text']      ?? ''));
+$introEnabled     = $lr['introEnabled'] ?? null; // null = legacy (before the toggle existed)
 $coverPage = null;
-if ($consentStatement !== '' || $instructionsText !== '') {
+// Show cover page if: explicitly enabled, OR legacy project that already had content (introEnabled was null).
+$showCover = ($introEnabled === true) || ($introEnabled === null && ($consentStatement !== '' || $instructionsText !== ''));
+if ($showCover && ($consentStatement !== '' || $instructionsText !== '')) {
     $body = '';
     if ($instructionsText !== '') $body = $instructionsText;
     if ($consentStatement !== '') {
@@ -176,12 +179,15 @@ if ($consentStatement !== '' || $instructionsText !== '') {
     ];
 }
 
+$hideBrand = !empty($projSettings['hideBrand']);
+
 $settings = [
     'likertPoints' => $defaultPts,
     'likertLow'    => $defaultLow,
     'likertHigh'   => $defaultHigh,
 ];
 if ($coverPage !== null) $settings['coverPage'] = $coverPage;
+if ($hideBrand) $settings['hideBrand'] = true;
 
 json_out([
     'ok'     => true,

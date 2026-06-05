@@ -272,5 +272,136 @@ console.log('\n— Category weights sum to 50 —');
   eq('weights sum', sum, 50);
 })();
 
+// ── Response Fit Check ────────────────────────────────────────────────────
+console.log('\n-- Response Fit Check --');
+(function () {
+  function rfCheck(prompt, type) {
+    var r = BC.assess({ purpose: 'Test survey for response fit.', population: 'Staff',
+      constructs: [{ name: 'C', definition: 'A test construct for response fit checks.' }],
+      items: [{ item_ref: 'q', type: type, prompt: prompt, construct: 'C', settings: { points: 5 } }],
+      sections: [{ id: 1 }] });
+    return r.itemScores[0];
+  }
+
+  var rf1 = rfCheck('What is your department?', 'Likert Scale');
+  ok('RF1 dept+Likert = mismatch', rf1.response_fit_status === 'mismatch');
+
+  var rf2 = rfCheck('What is your department?', 'Dropdown');
+  ok('RF2 dept+Dropdown = strong_fit or acceptable_fit', rf2.response_fit_status === 'strong_fit' || rf2.response_fit_status === 'acceptable_fit');
+
+  var rf3 = rfCheck('How supported do you feel?', 'Likert Scale');
+  ok('RF3 how-supported+Likert = strong_fit', rf3.response_fit_status === 'strong_fit');
+
+  var rf4 = rfCheck('I feel supported by my supervisor.', 'Likert Scale');
+  ok('RF4 agreement-statement+Likert = strong_fit', rf4.response_fit_status === 'strong_fit');
+
+  var rf5 = rfCheck('How many years have you worked here?', 'Numeric');
+  ok('RF5 years+Numeric = strong_fit', rf5.response_fit_status === 'strong_fit');
+
+  var rf6 = rfCheck('How many years have you worked here?', 'Likert Scale');
+  ok('RF6 years+Likert = mismatch', rf6.response_fit_status === 'mismatch');
+
+  var rf7 = rfCheck('Please explain your answer.', 'Long Answer');
+  ok('RF7 explain+LongAnswer = strong_fit', rf7.response_fit_status === 'strong_fit');
+
+  var rf8 = rfCheck('Please explain your answer.', 'Likert Scale');
+  ok('RF8 explain+Likert = mismatch', rf8.response_fit_status === 'mismatch');
+
+  var rf9 = rfCheck('Rank these services by usefulness.', 'Ranking');
+  ok('RF9 rank+Ranking = strong_fit', rf9.response_fit_status === 'strong_fit');
+
+  var rf10 = rfCheck('Rank these services by usefulness.', 'Multiple Choice');
+  ok('RF10 rank+MultipleChoice = weak_fit or mismatch', rf10.response_fit_status === 'weak_fit' || rf10.response_fit_status === 'mismatch');
+
+  var rf11 = rfCheck('Q1', 'Likert Scale');
+  ok('RF11 code-stem+Likert = cannot_assess', rf11.response_fit_status === 'cannot_assess');
+
+  var rf12 = rfCheck('Department', 'Likert Scale');
+  ok('RF12 bare-label-stem+Likert = cannot_assess', rf12.response_fit_status === 'cannot_assess');
+})();
+
+// ── Response Fit: context-sensitivity (must infer task from the FULL stem, ─────
+// not from isolated keywords like support/department/rate/feel/satisfied) ─────
+console.log('\n-- Response Fit: context-sensitivity --');
+(function () {
+  function rf(prompt, type, options) {
+    var r = BC.assess({ purpose: 'Context-sensitivity response fit test.', population: 'Staff',
+      constructs: [{ name: 'C', definition: 'A test construct for response fit checks.' }],
+      items: [{ item_ref: 'q', type: type, prompt: prompt, construct: 'C',
+        options: options || null, settings: { points: 5 } }],
+      sections: [{ id: 1 }] });
+    return r.itemScores[0];
+  }
+  function flagFor(prompt, type, options) {
+    var r = BC.assess({ purpose: 'Context-sensitivity response fit test.', population: 'Staff',
+      constructs: [{ name: 'C', definition: 'A test construct for response fit checks.' }],
+      items: [{ item_ref: 'q', type: type, prompt: prompt, construct: 'C',
+        options: options || null, settings: { points: 5 } }],
+      sections: [{ id: 1 }] });
+    return r.flags.filter(function (f) { return f.flag_key === 'response_format_mismatch' && f.item_ref === 'q'; })[0] || null;
+  }
+  function isFit(s) { return s === 'strong_fit' || s === 'acceptable_fit'; }
+
+  // 1. "department" in a perception stem must NOT be read as categorical
+  var c1 = rf('How supportive is your department?', 'Likert Scale');
+  ok('CS1 how-supportive-is-dept+Likert = strong/acceptable (not categorical)', isFit(c1.response_fit_status) && c1.response_task !== 'categorical');
+
+  // 2. enumeration recall with checkboxes
+  var c2 = rf('What support did you receive?', 'Checkboxes', ['Coaching', 'Training', 'Mentoring']);
+  ok('CS2 what-support-received+Checkboxes = strong_fit', c2.response_fit_status === 'strong_fit');
+  var c2b = rf('What support did you receive?', 'Long Answer');
+  ok('CS2b what-support-received+LongAnswer = acceptable', isFit(c2b.response_fit_status));
+
+  // 3. binary on a perception is usable, not severe mismatch
+  var c3 = rf('Do you feel supported?', 'Yes/No');
+  ok('CS3 do-you-feel-supported+Yes/No = acceptable or weak (not mismatch)', c3.response_fit_status === 'acceptable_fit' || c3.response_fit_status === 'weak_fit');
+
+  // 4. "which ... are available" = multi-select, not a leadership rating
+  var c4 = rf('Which leadership supports are available to you?', 'Checkboxes', ['Coaching', 'Mentoring', 'Peer groups']);
+  ok('CS4 which-supports-available+Checkboxes = strong_fit', c4.response_fit_status === 'strong_fit' && c4.response_task === 'multi_select');
+
+  // 5. vague imperative rating: format fits the verb, construct undefined
+  var c5 = rf('Rate your department.', 'Rating Scale');
+  ok('CS5 rate-your-department+Rating = weak_fit (vague construct)', c5.response_fit_status === 'weak_fit');
+
+  // 6 & 7. frequency: scale = strong, count = acceptable
+  var c6 = rf('How often do you meet with your supervisor?', 'Likert Scale');
+  ok('CS6 how-often+frequency scale = strong_fit', c6.response_fit_status === 'strong_fit');
+  var c7 = rf('How often do you meet with your supervisor?', 'Numeric');
+  ok('CS7 how-often+Numeric = acceptable_fit', c7.response_fit_status === 'acceptable_fit');
+
+  // 8 & 9. tenure: ordered categories = strong, numeric = strong/acceptable
+  var c8 = rf('How long have you worked here?', 'Multiple Choice', ['< 1 year', '1-3 years', '4-6 years', '7+ years']);
+  ok('CS8 how-long+tenure categories = strong_fit', c8.response_fit_status === 'strong_fit');
+  var c9 = rf('How long have you worked here?', 'Numeric');
+  ok('CS9 how-long+Numeric = strong/acceptable', isFit(c9.response_fit_status));
+
+  // 10. instruction-only stem (no construct) cannot be assessed
+  var c10 = rf('Please select your level of agreement.', 'Likert Scale');
+  ok('CS10 instruction-only stem = cannot_assess or weak', c10.response_fit_status === 'cannot_assess' || c10.response_fit_status === 'weak_fit');
+
+  // 11. "role level" inside an attitude statement is NOT categorical
+  var c11 = rf('I am satisfied with my role level.', 'Likert Scale');
+  ok('CS11 attitude-statement w/ role-level+Likert = strong/acceptable', isFit(c11.response_fit_status) && c11.response_task !== 'categorical');
+
+  // 12. "department" inside an attitude statement is NOT categorical
+  var c12 = rf('My department has the resources needed to do its work.', 'Likert Scale');
+  ok('CS12 attitude-statement w/ department+Likert = strong_fit', c12.response_fit_status === 'strong_fit' && c12.response_task !== 'categorical');
+
+  // 13 & 14. plausible format does NOT rescue a label-only stem
+  var c13 = rf('Department', 'Dropdown', ['Sales', 'Engineering', 'HR']);
+  ok('CS13 bare-label "Department"+Dropdown = not strong (label-stem issue)', c13.response_fit_status !== 'strong_fit');
+  var c14 = rf('Start Date', 'Date');
+  ok('CS14 bare-label "Start Date"+Date = not strong (label-stem issue)', c14.response_fit_status !== 'strong_fit');
+
+  // 15. sensitive identity on an agreement scale: severe + culturally flagged
+  var c15 = rf('What is your race?', 'Likert Scale');
+  ok('CS15 race+Likert = mismatch', c15.response_fit_status === 'mismatch');
+  var c15f = flagFor('What is your race?', 'Likert Scale');
+  ok('CS15 race+Likert carries a cultural-inappropriateness note', !!c15f && /culturally inappropriate/.test(c15f.message));
+  var deptf = flagFor('What is your department?', 'Likert Scale');
+  ok('CS15 control: department mismatch is NOT flagged as cultural', !!deptf && !/culturally/.test(deptf.message));
+})();
+
 console.log('\n' + (fail === 0 ? 'ALL PASS' : (fail + ' FAILED')) + ' (' + pass + ' passed)');
 process.exit(fail === 0 ? 0 : 1);
