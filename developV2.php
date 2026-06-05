@@ -809,9 +809,10 @@ function viewBuild(){
 function displayCard(q,i){
   const struct=isStructural(q.type);
   const m=markOf(q,i),lbl=m==='up'?'on track':(m==='down'?'pulling it down':'neutral');
-  const meta=struct
+  const cond=(q.settings&&q.settings.showIf)?` · <span class="faint" title="Shown only when an earlier answer matches">⤷ conditional</span>`:'';
+  const meta=(struct
     ? `<span class="faint">Survey structure</span>`
-    : `${esc(typeLabel(q.type))} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>`;
+    : `${esc(typeLabel(q.type))} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>`)+cond;
   return `<div class="qcard" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
@@ -841,6 +842,7 @@ function editorCard(q,i){
       </div>
       ${helpPick}
       ${responseEditor(q,i)}${help}
+      ${displayLogicEditor(q,i)}
       <div class="erow" style="margin-top:18px;padding-top:15px;border-top:1px solid var(--line-2)"><button class="btn primary" onclick="saveEdit(${i})">Save question</button><button class="btn" onclick="removeQ(${i})">Remove</button></div>
     </div>
   </div>`;
@@ -895,6 +897,54 @@ function responseEditor(q,i){
   if(open[t]) return `<div style="margin-top:15px">${lbl('People answer with '+open[t])}${answerPreview(q)}</div>`;
   return '';
 }
+/* ── Skip patterns / display logic — show a question only when an earlier
+   choice/rating answer matches. The public renderer (take.html) already
+   evaluates `showIf:{questionId,op,value}`; here we author it and store it in
+   the item settings, and survey-dev.php passes it through. Triggers must be
+   SAVED earlier single-choice or Likert questions (they need a server id and a
+   discrete, numeric answer). ── */
+function skipTriggerCandidates(i){
+  const single=['Multiple Choice','Dropdown','Yes/No','True/False','Demographic','Likert Scale'];
+  return state.questions.map((q,idx)=>({q,idx})).filter(x=>x.idx<i && x.q.id!=null && single.includes(x.q.type));
+}
+function triggerValues(q){
+  if(q.type==='Likert Scale'){ const n=(q.settings&&q.settings.likertPoints)||5; return Array.from({length:n},(_,k)=>({value:k+1,label:'('+(k+1)+')'})); }
+  let opts=q.options||[];
+  if(q.type==='Yes/No')opts=['Yes','No']; if(q.type==='True/False')opts=['True','False'];
+  return opts.map((o,idx)=>({value:idx,label:o}));
+}
+function displayLogicEditor(q,i){
+  const cands=skipTriggerCandidates(i);
+  const rule=(q.settings&&q.settings.showIf)||null;
+  const wrap=inner=>`<div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--line-2)">${inner}</div>`;
+  if(!rule && !cands.length) return wrap(`<div class="faint" style="font-size:12.5px">Display logic (show this question only after a certain answer) becomes available once an earlier multiple-choice or rating question exists.</div>`);
+  if(!rule) return wrap(`<button class="ailink" onclick="enableShowIf(${i})">+ Add display logic — show only if an earlier answer matches</button>`);
+  const trig=state.questions.find(x=>x.id===rule.questionId)||(cands[0]&&cands[0].q);
+  const vals=trig?triggerValues(trig):[];
+  return wrap(`<div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Display logic</div>
+    <div class="erow" style="flex-wrap:wrap">
+      <span class="faint" style="font-size:13px">Show only if</span>
+      <select onchange="setShowIf(${i},'questionId',this.value)">${cands.map(c=>`<option value="${c.q.id}" ${c.q.id===rule.questionId?'selected':''}>Q${c.idx+1}: ${esc((c.q.t||'').slice(0,38))}</option>`).join('')}</select>
+      <select onchange="setShowIf(${i},'op',this.value)"><option value="equals" ${rule.op==='equals'?'selected':''}>is</option><option value="not_equals" ${rule.op==='not_equals'?'selected':''}>is not</option></select>
+      <select onchange="setShowIf(${i},'value',this.value)">${vals.map(v=>`<option value="${v.value}" ${Number(v.value)===Number(rule.value)?'selected':''}>${esc(v.label)}</option>`).join('')}</select>
+      <button class="ailink" onclick="clearShowIf(${i})">Remove</button>
+    </div>`);
+}
+function enableShowIf(i){
+  const cands=skipTriggerCandidates(i); if(!cands.length){ toast('Add an earlier choice or rating question first.'); return; }
+  const trig=cands[0].q, vals=triggerValues(trig);
+  const q=state.questions[i]; q.settings=q.settings||{};
+  q.settings.showIf={questionId:trig.id,op:'equals',value:vals.length?vals[0].value:0};
+  render();
+}
+function setShowIf(i,field,val){
+  const q=state.questions[i]; if(!q.settings||!q.settings.showIf)return;
+  if(field==='questionId'){ q.settings.showIf.questionId=Number(val); const trig=state.questions.find(x=>x.id===Number(val)); const vals=trig?triggerValues(trig):[]; q.settings.showIf.value=vals.length?vals[0].value:0; }
+  else if(field==='value'){ q.settings.showIf.value=Number(val); }
+  else { q.settings.showIf[field]=val; }
+  render();
+}
+function clearShowIf(i){ const q=state.questions[i]; if(q.settings)delete q.settings.showIf; render(); }
 function aiHelpBox(h){
   if(h.kind==='busy')return `<div class="aihelp"><div class="ahl">ReliCheck Intelligence is ${h.action==='rewrite'?'rewriting your question':'reading your question'}…</div></div>`;
   if(h.kind==='error')return `<div class="aihelp"><div class="ahl">ReliCheck Intelligence is unavailable right now (${esc(h.msg||'')}). Your question is unchanged.</div><div class="ahacts"><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;

@@ -129,6 +129,25 @@ function dev_map_item(array $item): array
 
 $questions = array_map('dev_map_item', $rawItems);
 
+// Skip patterns / display logic: attach each item's showIf rule (authored in the
+// builder, stored in settings) so take.html can show/hide the question as the
+// respondent answers. The trigger id is normalised to the public 'i'<id> form.
+foreach ($rawItems as $k => $ri) {
+    $iset = ($ri['settings'] !== null) ? json_decode((string)$ri['settings'], true) : [];
+    if (is_array($iset) && isset($iset['showIf']) && is_array($iset['showIf'])) {
+        $si     = $iset['showIf'];
+        $trigId = isset($si['questionId']) ? (int)$si['questionId'] : 0;
+        $op     = (string)($si['op'] ?? 'equals');
+        if ($trigId > 0 && in_array($op, ['equals', 'not_equals'], true)) {
+            $questions[$k]['showIf'] = [
+                'questionId' => 'i' . $trigId,
+                'op'         => $op,
+                'value'      => $si['value'] ?? null,
+            ];
+        }
+    }
+}
+
 // Response mode → default Likert anchors.
 $mode = (string)$project['response_mode'];
 $defaultPts  = (strpos($mode, '7-pt') !== false) ? 7 : 5;
