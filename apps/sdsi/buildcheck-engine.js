@@ -121,7 +121,11 @@
     negative_wording:              45, // minor wording issue
     response_format_mismatch:      20,
     response_fit_weak:             35,
-    stem_item_code:                10
+    stem_item_code:                10, // "Q1", "VAR001" — not a question at all
+    stem_metadata_field:           10, // "Respondent ID", timestamps — not a respondent item
+    stem_construct_label:          15, // bare concept ("Leadership") — not answerable as-is
+    stem_not_answerable:           15, // topic/label fragment — not a usable item
+    stem_demographic_label:        18, // "Department", "Tenure" — answerable but needs question form
   };
 
   var RT_CATEGORICAL   = 'categorical';
@@ -1254,7 +1258,9 @@
     var blockerCount = blockedQuestionIds.length;
     var blockerPct = N > 0 ? (blockerCount / N) : 0;
     var ORDER = ['notready', 'weak', 'caution', 'good', 'strong'];
-    var BAND_LABEL = { notready: 'Not ready', weak: 'Weak', caution: 'Caution' };
+    var BAND_LABEL = { codes: 'Assessment blocked', limited: 'Assessment limited', notready: 'Not ready', weak: 'Weak', caution: 'Caution', good: 'Good', strong: 'Strong' };
+    // Special non-interpretable states sit BELOW notready. Lower rank = more severe.
+    function bandSeverityRank(k) { if (k === 'codes') return -2; if (k === 'limited') return -1; return ORDER.indexOf(k); }
 
     // Most-severe applicable cap wins (proportion > count > any).
     var cap = null, headline = '';
@@ -1270,28 +1276,40 @@
         ' because ' + (blockerCount === 1 ? 'a critical item-level blocker was' : blockerCount + ' critical item-level blockers were') + ' detected.';
     }
 
-    // ── Stem-validity gate ──────────────────────────────────────────────────
-    // Item codes (Q1, VAR001, Col_1…) have no interpretable content.
-    // This is a measurement-validity gate, not a clarity penalty.
-    // At 40%+: cap at Not ready. At 60%+: block assessment entirely.
-    var codeItemCount = ctx.ans.filter(function (it) {
-      return ITEM_CODE_RE.test((it.prompt || '').trim());
-    }).length;
-    var codeItemPct = N > 0 ? (codeItemCount / N) : 0;
-    var stemValidityState = codeItemPct >= 0.6 ? 'blocked' : (codeItemPct >= 0.4 ? 'limited' : 'ok');
-    if (stemValidityState !== 'ok') {
-      var codeRatioStr = Math.round(codeItemPct * 100) + '% of items (' + codeItemCount + ' of ' + N + ')';
-      if (stemValidityState === 'blocked') {
-        band = { key: 'codes', label: 'Assessment blocked' };
-        rawBand = band; wasCapped = true;
-        headline = 'Assessment blocked: ' + codeRatioStr + ' appear to be codes or imported column names, not respondent-facing question text.';
+    // ── Stem-interpretability gate ───────────────────────────────────────────
+    // A stem that is not a respondent-facing question (a code like Q1/VAR001, a
+    // bare label like "Department"/"Respondent ID", a topic fragment, or an
+    // instruction with no construct) cannot receive a full quality score — the
+    // items are capped above, and they cap the survey band proportionally. The
+    // locked principle: "Strong" cannot be claimed while any item is not a real
+    // question. Tiers: any -> not Strong; 20% -> Caution; 40% -> Not ready;
+    // 60% -> Assessment blocked.
+    var nonInterpCount = itemScores.filter(function (s) { return s.response_fit_status === 'cannot_assess'; }).length;
+    var nonInterpPct = N > 0 ? (nonInterpCount / N) : 0;
+    var codeItemCount = ctx.ans.filter(function (it) { return ITEM_CODE_RE.test((it.prompt || '').trim()); }).length;
+    var stemCapKey = nonInterpPct >= 0.6 ? 'codes'
+      : (nonInterpPct >= 0.4 ? 'notready'
+      : (nonInterpPct >= 0.2 ? 'caution'
+      : (nonInterpCount >= 1 ? 'good' : null)));
+    var stemValidityState = nonInterpPct >= 0.6 ? 'blocked'
+      : (nonInterpPct >= 0.4 ? 'limited'
+      : (nonInterpPct >= 0.2 ? 'caution'
+      : (nonInterpCount >= 1 ? 'soft' : 'ok')));
+    if (stemCapKey) {
+      var niStr = Math.round(nonInterpPct * 100) + '% of items (' + nonInterpCount + ' of ' + N + ')';
+      // Describe by what dominates: codes/columns vs. label-style stems.
+      var niNoun = (codeItemCount >= Math.ceil(nonInterpCount / 2))
+        ? 'appear to be codes or imported column names'
+        : 'are labels or topics (e.g. "Department", "Respondent ID"), not respondent-facing questions';
+      if (stemCapKey === 'codes') {
+        band = { key: 'codes', label: 'Assessment blocked' }; rawBand = band; wasCapped = true;
+        headline = 'Assessment blocked: ' + niStr + ' ' + niNoun + '. ReliCheck cannot judge readiness until they are written as questions.';
         capReason = headline;
-      } else {
-        if (ORDER.indexOf(band.key) > ORDER.indexOf('notready')) {
-          band = { key: 'notready', label: 'Not ready' }; wasCapped = true;
-          capReason = codeRatioStr + ' appear to be codes or imported column names. Readiness is capped until respondent-facing question text is provided.';
-          if (!headline) headline = capReason;
-        }
+      } else if (bandSeverityRank(stemCapKey) < bandSeverityRank(band.key)) {
+        band = { key: stemCapKey, label: BAND_LABEL[stemCapKey] }; wasCapped = true;
+        var niMsg = niStr + ' ' + niNoun + '. Rewrite them as respondent-facing questions before relying on the score.';
+        capReason = capReason ? capReason + ' ' + niMsg : niMsg;
+        if (!headline) headline = niMsg;
       }
     }
 
@@ -1299,12 +1317,7 @@
     // The overall band must never contradict item-level response-fit warnings.
     // 40%+ outright mismatches -> Not ready. 60%+ combined response-fit/text
     // problems -> Assessment limited. Sensitive-identity scale misuse is always
-    // elevated to the headline.
-    function bandSeverityRank(k) {
-      if (k === 'codes') return -2;    // assessment blocked (coded stems)
-      if (k === 'limited') return -1;  // assessment limited (text / fit problems)
-      return ORDER.indexOf(k);         // notready(0) … strong(4)
-    }
+    // elevated to the headline. (bandSeverityRank is defined above.)
     var rfMismatchCount = itemScores.filter(function (s) { return s.response_fit_status === 'mismatch'; }).length;
     var rfProblemCount  = itemScores.filter(function (s) { return s.response_fit_status === 'mismatch' || s.response_fit_status === 'cannot_assess'; }).length;
     var rfSensitiveCount = itemScores.filter(function (s) { return s.response_fit_sensitive; }).length;
@@ -1381,7 +1394,9 @@
       unusableItems: blockerCount, bandCapped: wasCapped,
       stem_validity_state: stemValidityState,
       stem_validity_code_count: codeItemCount,
-      stem_validity_code_pct: Math.round(codeItemPct * 100),
+      stem_noninterp_count: nonInterpCount,
+      stem_noninterp_pct: Math.round(nonInterpPct * 100),
+      stem_band_cap_key: stemCapKey,
       // Response-fit survey roll-up (drives the band cap + SIRI propagation + UI).
       response_fit_state: responseFitState,
       response_fit_mismatch_count: rfMismatchCount,

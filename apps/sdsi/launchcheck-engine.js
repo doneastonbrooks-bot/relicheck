@@ -236,16 +236,19 @@
       // Special states (coded stems / response-fit problems) sit BELOW notready.
       function bandRank(k) { if (k === 'codes') return -2; if (k === 'limited') return -1; return ORDER.indexOf(k); }
 
-      // Propagate stem-validity gate: if SDSI found non-interpretable stems,
-      // SIRI cannot make a valid readiness claim either.
+      // Propagate stem-interpretability gate: if SDSI found stems that are not
+      // respondent-facing questions (codes, labels, fragments), SIRI cannot make a
+      // valid readiness claim either. Mirror the SDSI band cap (any -> not Strong;
+      // 20% -> Caution; 40% -> Not ready; 60% -> Assessment blocked).
       var stemState = opts.sdsiResult && opts.sdsiResult.stem_validity_state;
-      if (stemState === 'blocked') {
-        display = { key: 'codes', label: 'Assessment blocked' };
-        wasCapped = true;
-        headline = 'Assessment blocked: item stems appear to be codes or identifiers, not respondent-facing question text.';
-      } else if (stemState === 'limited' && bandRank('notready') < bandRank(display.key)) {
-        display = totalBandFromKey('notready'); wasCapped = true;
-        headline = headline || 'Readiness capped: several item stems appear to be codes or column names, not respondent-facing question text.';
+      var stemCapKey = opts.sdsiResult && opts.sdsiResult.stem_band_cap_key;
+      var stemHeadline = opts.sdsiResult && opts.sdsiResult.blocker_headline;
+      if (stemCapKey === 'codes') {
+        display = { key: 'codes', label: 'Assessment blocked' }; wasCapped = true;
+        headline = stemHeadline || 'Assessment blocked: item stems are codes or labels, not respondent-facing question text.';
+      } else if (stemCapKey && bandRank(stemCapKey) < bandRank(display.key)) {
+        display = totalBandFromKey(stemCapKey); wasCapped = true;
+        headline = headline || stemHeadline || 'Readiness capped: several item stems are labels or codes, not respondent-facing questions.';
       }
 
       // Propagate response-fit gate: the overall band cannot contradict item-level
@@ -263,6 +266,15 @@
         headline = rfSensitive + ' identity question' + (rfSensitive === 1 ? ' uses' : 's use') + ' an agreement scale, which is culturally inappropriate. ' + (headline || '');
       }
 
+      // Surface validity problems even when the numeric band already reflects them
+      // (so the card never says "ready to publish" beside a held-down band).
+      var nonInterp = (opts.sdsiResult && opts.sdsiResult.stem_noninterp_count) || 0;
+      var rfMismatch = (opts.sdsiResult && opts.sdsiResult.response_fit_mismatch_count) || 0;
+      if (!headline && nonInterp > 0) {
+        headline = nonInterp + ' item' + (nonInterp === 1 ? ' is' : 's are') + ' not a respondent-facing question (a code or label, not a question); rewrite ' + (nonInterp === 1 ? 'it' : 'them') + ' before publishing.';
+      }
+      var hasValidityProblem = (blockers > 0) || wasCapped || nonInterp > 0 || rfMismatch > 0 || rfSensitive > 0;
+
       result.sdsi = sdsi;
       result.total = total; result.total_max = 100;
       result.total_raw_band = raw.label;
@@ -270,11 +282,14 @@
       result.total_band_was_capped = wasCapped;
       result.deployment_blocker_count = blockers;
       result.blocker_headline = headline;
+      result.has_validity_problem = hasValidityProblem;
       result.total_band_cap_reason = wasCapped
         ? (headline || ('The total score is ' + raw.label + ', but readiness is capped at ' + display.label + ' because ' + blockers + ' critical deployment blocker' + (blockers === 1 ? ' was' : 's were') + ' detected.'))
         : '';
       result.stem_validity_state = stemState || 'ok';
+      result.stem_noninterp_count = nonInterp;
       result.response_fit_state = rfState;
+      result.response_fit_mismatch_count = rfMismatch;
       result.response_fit_sensitive_count = rfSensitive;
     }
     return result;

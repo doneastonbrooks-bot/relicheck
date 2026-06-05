@@ -1038,30 +1038,23 @@ function viewBuild(){
   // Writing quality — single-line label + level + info toggle.
   let writeGauge='';
   if(qs.length){
-    const sv=state.bc&&state.bc.stem_validity_state;
-    const codePct=state.bc&&state.bc.stem_validity_code_pct||0;
+    const niCount=state.bc&&state.bc.stem_noninterp_count||0;
     const rfState=state.bc&&state.bc.response_fit_state;
     const rfMisPct=state.bc&&state.bc.response_fit_mismatch_pct||0;
-    const rfProbPct=state.bc&&state.bc.response_fit_problem_pct||0;
     const rfSens=state.bc&&state.bc.response_fit_sensitive_count||0;
-    const problem=sv==='blocked'?'blocked':((sv==='limited'||rfState==='limited')?'limited':(rfState==='major_revision'?'major':null));
-    let b, dotColor;
-    if(problem==='blocked'){ b={w:'Assessment blocked',c:'red'}; }
-    else if(problem==='limited'){ b={w:'Assessment limited',c:'red'}; }
-    else if(problem==='major'){ b={w:'Needs major revision',c:'red'}; }
-    // Use the engine's CAPPED band (single source of truth) so the gauge can never
-    // read "Good" when blockers have capped readiness to Caution/Weak/Not ready.
-    else if(state.bc&&state.bc.sdsi_display_band){ b={w:state.bc.sdsi_display_band,c:sdsiBandColor(state.bc.bandKey)}; }
+    // The engine's CAPPED band is the single source of truth — the gauge never
+    // overrides it, so it can never read "Strong/Good" once readiness is capped.
+    let b;
+    if(state.bc&&state.bc.sdsi_display_band){ b={w:state.bc.sdsi_display_band,c:sdsiBandColor(state.bc.bandKey)}; }
     else { b=bandOf(strengthValue()); }
-    dotColor=b.c==='green'?'var(--good)':(b.c==='red'?'var(--bad)':'var(--warn)');
+    const dotColor=b.c==='green'?'var(--good)':(b.c==='red'?'var(--bad)':'var(--warn)');
+    // Warnings explain WHY the band is held down.
     const warns=[];
-    if(sv==='blocked') warns.push('<b>Assessment blocked.</b> '+codePct+'% of items appear to be codes or imported column names (e.g. Q1, VAR001), not respondent-facing question text. ReliCheck cannot make a valid readiness judgment until the actual question wording is provided.');
-    else if(sv==='limited') warns.push('<b>Question text missing.</b> Several items appear to be codes or imported column names rather than question text. Replace them with the actual wording.');
-    if(rfState==='limited') warns.push('<b>Response fit limited.</b> '+rfProbPct+'% of items have a response format that does not match the question, or text that is not yet clear. These prevent a full readiness judgment.');
-    else if(rfState==='major_revision') warns.push('<b>Needs major revision.</b> '+rfMisPct+'% of items use a response format that does not match what the question is asking. Open each flagged item to change the format or rewrite the question.');
+    if(niCount>0) warns.push('<b>'+niCount+' item'+(niCount===1?'':'s')+' '+(niCount===1?'is':'are')+' not a respondent-facing question.</b> Some stems are codes or labels (e.g. "Department", "Respondent ID", "Q1"), not questions. ReliCheck cannot fully assess these, and they hold your score down until you rewrite them as questions (e.g. "What is your department?").');
+    if(rfState==='major_revision') warns.push('<b>Needs major revision.</b> '+rfMisPct+'% of items use a response format that does not match what the question is asking. Open each flagged item to change the format or rewrite the question.');
     if(rfSens>0) warns.push('<b>Identity question on an agreement scale.</b> '+(rfSens===1?'1 item asks':rfSens+' items ask')+' for a sensitive identity (e.g. race, gender) using an agreement scale, which is culturally inappropriate. Use respectful self-identification choices.');
     const warnHtml=warns.length?'<div style="margin-top:10px;padding:11px 13px;background:var(--bad-soft);border:1px solid var(--bad-soft);border-radius:8px;font-size:13.5px;color:var(--bad);line-height:1.55">'+warns.join('<br><br>')+'</div>':'';
-    const clean=!problem&&!warns.length;
+    const clean=!warns.length;
     const infoPanel=state.writeGaugeInfo?`
       <div style="margin-top:10px;padding:13px 14px 14px;background:var(--soft);border:1px solid var(--line);border-radius:8px;font-size:13.5px;color:var(--ink-2);line-height:1.65">
         <p style="margin:0 0 9px"><b style="color:var(--ink)">What this measures:</b> how clearly and neutrally your questions are written, plus whether each answer format matches what the question asks (Response Fit). Updated on every save.</p>
@@ -1504,9 +1497,11 @@ function paintReview(){
       const flags=(sr.flags||[]).filter(f=>['critical','high'].includes(f.severity)).slice(0,4);
       const flagHtml=flags.length?flags.map(f=>'<div class="fixitem" style="margin-bottom:8px"><div class="fi">!</div><div><div class="ft" style="font-size:13.5px">'+esc(f.message)+'</div>'+fixFlagBtn(f)+'</div></div>').join(''):'';
       const staleNote=stale?'<p style="font-size:12px;color:var(--warn);margin-bottom:10px">Results are out of date. Re-run for current score.</p>':'';
-      const statusLine=(blockers||gated||capped)
-        ?'<div class="trust hold" style="margin:12px 0 10px"><span class="ti">!</span><div>'+esc(sr.blocker_headline||sr.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))+'</div></div>'
-        :'<div class="trust ok" style="margin:12px 0 10px"><span class="ti">✓</span><div>No deployment blockers.</div></div>';
+      const bandKey=hasTotal?(sr.total_band_key||''):'';
+      const ready=(bandKey==='good'||bandKey==='strong')&&!sr.has_validity_problem&&!blockers;
+      const statusLine=ready
+        ?'<div class="trust ok" style="margin:12px 0 10px"><span class="ti">✓</span><div>No deployment blockers.</div></div>'
+        :'<div class="trust hold" style="margin:12px 0 10px"><span class="ti">!</span><div>'+esc(sr.blocker_headline||sr.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.')||'Resolve the flagged items before publishing.')+'</div></div>';
       body=staleNote+statusLine+flagHtml
         +'<div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">'
         +'<button class="btn sm" onclick="closeReview();go(\'analyze\')">Full report →</button>'
@@ -1685,10 +1680,12 @@ function siriCard(){
   const domains=(r.domains||[]).map(d=>{const pct=Math.round((d.points/(d.max||10))*100);return `<div class="dom"><div class="dom-head"><span class="nm">${esc(d.name)}</span><span class="pts">${d.points} / ${d.max||10}</span></div><div class="meter"><span style="width:${pct}%"></span></div></div>`;}).join('');
   const flags=(r.flags||[]).filter(f=>['critical','high','medium'].includes(f.severity)).slice(0,8);
   const capped=!!r.total_band_was_capped;
-  const hold=blockers||gated||capped;
-  const body = hold
-    ? `<div class="trust hold" style="margin-top:14px"><span class="ti">!</span><div>${esc(r.blocker_headline||r.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))}</div></div>`
-    : `<div class="trust ok" style="margin-top:14px"><span class="ti">✓</span><div>No deployment blockers. Your survey is ready to publish.</div></div>`;
+  // "Ready to publish" only when the band is genuinely good/strong AND there are no
+  // validity problems — never beside a held-down band.
+  const ready=(bandKey==='good'||bandKey==='strong')&&!r.has_validity_problem&&!blockers;
+  const body = ready
+    ? `<div class="trust ok" style="margin-top:14px"><span class="ti">✓</span><div>No deployment blockers. Your survey is ready to publish.</div></div>`
+    : `<div class="trust hold" style="margin-top:14px"><span class="ti">!</span><div>${esc(r.blocker_headline||r.total_band_cap_reason||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.')||'Resolve the flagged items before publishing.')}</div></div>`;
   const flagList = flags.length?`<div style="margin-top:6px">${flags.map(f=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">${esc(f.domain)}: ${esc(f.message)}</div>${f.suggestion?`<div class="fs">${esc(f.suggestion)}</div>`:''} ${fixFlagBtn(f)}</div></div>`).join('')}</div>`:'';
   const stale=state.siriStale;
   return `<div class="card pad" style="max-width:820px;margin-bottom:18px">
