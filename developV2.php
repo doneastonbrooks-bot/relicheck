@@ -336,6 +336,8 @@ body.coach-open .companion{transform:translateX(0)}
 <!-- Real Build Check (SDSI) engine — the strength ticker reads this client-side -->
 <script src="/apps/sdsi/validity-lens-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/validity-lens-engine.js') ? filemtime(__DIR__.'/apps/sdsi/validity-lens-engine.js') : '1' ?>"></script>
 <script src="/apps/sdsi/buildcheck-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/buildcheck-engine.js') ? filemtime(__DIR__.'/apps/sdsi/buildcheck-engine.js') : '1' ?>"></script>
+<!-- Shared ReliCheck upload widget (the ecosystem entry gate) -->
+<script src="/apps/studio/dataset-upload.js?v=<?= is_file(__DIR__.'/apps/studio/dataset-upload.js') ? filemtime(__DIR__.'/apps/studio/dataset-upload.js') : '1' ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= is_file(__DIR__.'/apps/studio/studio-footer.js') ? filemtime(__DIR__.'/apps/studio/studio-footer.js') : '1' ?>"></script>
 <script>
 const state={
@@ -546,7 +548,7 @@ function renderStart(){
     <div class="entry">
       <button class="entry-card" onclick="enter()"><div class="ico">✎</div><h3>Build it myself</h3><p>A clean workspace. Add questions one at a time, with help on tap whenever you want it.</p><span class="go">Start building →</span></button>
       <button class="entry-card" onclick="state.startFlow='ai';render()"><div class="ico">✨</div><h3>Help me build it</h3><p>Tell ReliCheck your goal and it drafts the questions for you to review and adjust.</p><span class="go">Get a draft →</span></button>
-      <button class="entry-card" onclick="state.startFlow='upload';render()"><div class="ico">⤓</div><h3>I already have one</h3><p>Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet.</p><span class="go">Upload it →</span></button>
+      <button class="entry-card" onclick="openUpload()"><div class="ico">⤓</div><h3>I already have one</h3><p>Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet.</p><span class="go">Upload it →</span></button>
     </div>
     <a class="ailink" href="#" onclick="return false">Or browse ready-made templates →</a>
     ${recentSection()}
@@ -597,6 +599,30 @@ async function uploadDone(){
   if(PERSIST.on){ state.study={name:'Imported survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('existing'); }catch(e){ degrade(e.message); } }
   state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
   render();toast('Brought in 3 questions from your file.');
+}
+// Real upload via the shared DatasetUpload widget (projectType 'survey'); mock falls back to the demo.
+function openUpload(){
+  if(!PERSIST.on){ uploadDone(); return; }
+  if(!window.DatasetUpload){ toast('Upload widget is unavailable right now'); return; }
+  DatasetUpload.open({
+    projectType:'survey',
+    projectId:null,
+    onLoaded(_err,newProjectId){
+      if(!newProjectId)return;
+      (async()=>{
+        try{
+          const r=await DB.call('project-load.php?id='+encodeURIComponent(newProjectId));
+          DB.hydrate(r);
+          const n=(state.questions||[]).length;
+          state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=liveStrength();render();
+          toast(n?('Brought in '+n+' question'+(n===1?'':'s')):'Survey uploaded');
+        }catch(e){
+          state.projectId=+newProjectId; try{localStorage.setItem(LS_KEY,String(state.projectId));}catch(_){}
+          degrade(e.message); state.screen='workspace';state.phase='build';state.startFlow=null;render();
+        }
+      })();
+    }
+  });
 }
 async function enter(){
   state.startFlow=null;
