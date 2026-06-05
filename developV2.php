@@ -664,47 +664,65 @@ async function openProject(id){
   catch(e){ degrade(e.message); toast('Could not open: '+e.message); }
 }
 function renderStart(){
-  if(state.startFlow==='ai')return renderAiGoal();
+  if(state.startFlow==='setup')return renderSetup();
   if(state.startFlow==='upload')return renderUpload();
   $('#app').innerHTML=`<div class="screen">
     <div class="eyebrow">New survey</div>
     <h1 class="title">How would you like to start?</h1>
     <p class="lede">Pick how much help you want from ReliCheck Intelligence. You can change course any time.</p>
     <div class="entry">
-      <button class="entry-card" onclick="enter('scratch')"><div class="ico">✎</div><h3>Build it myself</h3><p>A clean workspace, no assistance. You write every question and choose every answer format yourself.</p><span class="go">Start building →</span></button>
-      <button class="entry-card" onclick="enter('ai-assist')"><div class="ico">✨</div><h3>Build with an assistant</h3><p>You build it, with ReliCheck Intelligence suggesting question items and improving your wording as you go.</p><span class="go">Build together →</span></button>
-      <button class="entry-card" onclick="state.startFlow='ai';render()"><div class="ico">⚡</div><h3>Have ReliCheck build it</h3><p>Describe your goal and ReliCheck Intelligence drafts the whole survey for you to review and adjust.</p><span class="go">Get a full draft →</span></button>
+      <button class="entry-card" onclick="startSetup('scratch')"><div class="ico">✎</div><h3>Build it myself</h3><p>A clean workspace, no assistance. You write every question and choose every answer format yourself.</p><span class="go">Start building →</span></button>
+      <button class="entry-card" onclick="startSetup('ai-assist')"><div class="ico">✨</div><h3>Build with an assistant</h3><p>You build it, with ReliCheck Intelligence suggesting question items and improving your wording as you go.</p><span class="go">Build together →</span></button>
+      <button class="entry-card" onclick="startSetup('ai-build')"><div class="ico">⚡</div><h3>Have ReliCheck build it</h3><p>Describe your goal and ReliCheck Intelligence drafts the whole survey for you to review and adjust.</p><span class="go">Get a full draft →</span></button>
     </div>
     <button class="entry-card" style="width:100%;flex-direction:row;align-items:center;gap:16px;margin-top:16px" onclick="openUpload()"><div class="ico" style="margin:0">⤓</div><div style="flex:1"><h3>I already have a survey</h3><p style="margin-top:2px">Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet. ReliCheck detects the format.</p></div><span class="go">Upload it →</span></button>
     ${recentSection()}
   </div>`;
 }
-function renderAiGoal(){
+// Two-question setup shown for EVERY build mode before the workspace. Title +
+// purpose tailor ReliCheck Intelligence's help and feed the SIRI readiness check
+// (they clear the "no purpose recorded" flag) — captured even before any question.
+function startSetup(mode){ state.startFlow='setup'; state.setupMode=mode; state.study={name:'',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}}; render(); }
+function renderSetup(){
+  const M={'scratch':{eyebrow:'Build it myself',cta:'Start building →'},'ai-assist':{eyebrow:'Build with an assistant',cta:'Start building →'},'ai-build':{eyebrow:'Have ReliCheck build it',cta:'Draft my survey →'}};
+  const m=M[state.setupMode]||M.scratch;
   $('#app').innerHTML=`<div class="screen">
-    <div class="eyebrow">Have ReliCheck build it</div>
-    <h1 class="title">What do you want to learn?</h1>
-    <p class="lede">Describe your goal and (optionally) who will answer. ReliCheck Intelligence drafts a tailored survey you can review and adjust. Nothing is locked in.</p>
+    <div class="eyebrow">${m.eyebrow}</div>
+    <h1 class="title">Let’s set up your survey</h1>
+    <p class="lede">Two quick things before you start. They tailor ReliCheck Intelligence’s help and feed the readiness check — even before you write a question.</p>
     <div class="card pad" style="max-width:680px">
-      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Your goal or research question</div>
-      <textarea id="aiGoal" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:15.5px;min-height:90px;resize:vertical" placeholder="e.g. I want to understand why admitted students chose to enroll, and what almost made them choose another school."></textarea>
-      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px">Who will answer? (optional)</div>
-      <input id="aiPop" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 15px;font-family:inherit;font-size:15px" placeholder="e.g. Admitted first-year students">
-      <div class="btn-row" style="margin-top:18px"><button class="btn" onclick="state.startFlow=null;render()">← Back</button><div class="spacer"></div><button class="btn primary lg" onclick="aiDraft()">Draft my survey →</button></div>
+      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Survey title</div>
+      <input id="setTitle" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:12px 15px;font-family:inherit;font-size:16px" value="${esc(state.study.name||'')}" placeholder="e.g. Employee Engagement Pulse">
+      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">What are you looking to get from this survey?</div>
+      <textarea id="setPurpose" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:15.5px;min-height:96px;resize:vertical" placeholder="e.g. Understand what drives engagement and what makes people consider leaving, so we can prioritize the right changes.">${esc(state.study.purpose||'')}</textarea>
+      <p class="faint" style="font-size:12.5px;margin-top:8px">This guides ReliCheck Intelligence’s suggestions and the pre-launch readiness check. You can refine it later.</p>
+      <div class="btn-row" style="margin-top:18px"><button class="btn" onclick="goStart()">← Back</button><div class="spacer"></div><button class="btn primary lg" onclick="submitSetup()">${m.cta}</button></div>
     </div></div>`;
 }
+function submitSetup(){
+  const title=(($('#setTitle')||{}).value||'').trim();
+  const purpose=(($('#setPurpose')||{}).value||'').trim();
+  if(!purpose){ toast('Tell ReliCheck what you want to get from this survey.'); const el=document.getElementById('setPurpose'); if(el)el.focus(); return; }
+  state.study.name=title||'Untitled survey';
+  state.study.purpose=purpose;
+  if(state.setupMode==='ai-build') aiDraft();
+  else enter(state.setupMode,true);
+}
 async function aiDraft(){
-  const goal=(document.getElementById('aiGoal')||{}).value.trim();
-  const pop=(document.getElementById('aiPop')||{}).value.trim();
-  if(!goal){ toast('Describe what you want to learn first.'); return; }
+  // Reads title + purpose from the setup step (state.study), already captured.
+  const goal=(state.study.purpose||'').trim();
+  const pop=(state.study.population||'').trim();
+  const titleHint=(state.study.name||'').trim();
+  if(!goal){ toast('Tell ReliCheck what you want to get from this survey.'); return; }
   $('#app').innerHTML=`<div class="screen"><div class="card pad" style="text-align:center;max-width:520px;margin:50px auto"><p class="muted" style="font-size:15px">ReliCheck Intelligence is drafting your survey…</p></div></div>`;
   state.startFlow=null; state.groups=[]; state.entry='ai-build'; state.aiReason='';
-  // Real path: ask api/dev/ai-build.php for a study tailored to the goal.
+  // Real path: ask api/dev/ai-build.php for a study tailored to the title + purpose.
   if(PERSIST.on){
     try{
-      const r=await DB.call('ai-build.php',{method:'POST',body:{purpose:goal,population:pop}});
+      const r=await DB.call('ai-build.php',{method:'POST',body:{name:titleHint,purpose:goal,population:pop}});
       const study=r.study||{}, items=Array.isArray(study.items)?study.items:[];
       if(items.length){
-        state.study={name:study.title||'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
+        state.study={name:titleHint||study.title||'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
         state.groups=(study.constructs||[]).map(c=>c.name).filter(Boolean);
         state.questions=items.map(it=>{ const type=normType(mapType(it.type)); return {t:it.prompt,type,options:defaultOptions(type),settings:defaultSettings(type),group:it.construct||''}; });
         try{ await createProject('ai-build'); }catch(e){ degrade(e.message); }
@@ -721,7 +739,7 @@ async function aiDraft(){
     {t:'Which of these did you weigh before deciding? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Support','Other']},
     {t:'How clear was the process?',type:'Rating Scale',options:null,settings:defaultSettings('Rating Scale')},
   ];
-  state.study={name:'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
+  state.study={name:titleHint||'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
   if(PERSIST.on){ try{ await createProject('ai-build'); }catch(e){ degrade(e.message); } }
   state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
   toast(state.aiReason?('ReliCheck Intelligence is unavailable ('+state.aiReason+'). Loaded a sample to edit.'):'Loaded a sample survey to edit.');
@@ -770,12 +788,13 @@ function openUpload(){
     }
   });
 }
-async function enter(mode){
+async function enter(mode,fromSetup){
   mode=(mode==='ai-assist')?'ai-assist':'scratch';
   state.startFlow=null; state.entry=mode;
   if(PERSIST.on){
     state.questions=[]; state.groups=[];
-    state.study={name:'Untitled survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}};
+    // Keep the title + purpose captured in the setup step; only reset when entering directly.
+    if(!fromSetup) state.study={name:'Untitled survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}};
     try{ await createProject(mode); }catch(e){ degrade(e.message); }
   }
   state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
