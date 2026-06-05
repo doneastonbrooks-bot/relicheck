@@ -344,7 +344,7 @@ const state={
   screen:'start',startFlow:null,phase:'build',
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
-  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,
+  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,
   questions:[
     {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -477,7 +477,7 @@ function setStudyName(v){ state.study.name=v; if(!(PERSIST.on&&state.projectId))
 // offered on the Start screen when a saved project exists.
 function boot(){ render(); if(typeof StudioFooter!=='undefined')StudioFooter.init(); }
 function savedProjectId(){ try{ return Number(localStorage.getItem(LS_KEY))||null; }catch(e){ return null; } }
-function goStart(){ state.screen='start'; state.startFlow=null; render(); }
+function goStart(){ state.screen='start'; state.startFlow=null; state.projects=null; render(); }
 async function resumeLast(){
   const id=savedProjectId(); if(!id)return;
   try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace'; state.phase='build'; state.prevStrength=liveStrength(); render(); }
@@ -533,12 +533,23 @@ function renderTicker(){
 
 /* start */
 function recentSection(){
-  if(PERSIST.on){
-    return savedProjectId()
-      ? `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="resumeLast()"><span class="rdot"></span>Resume your last survey →</button></div>`
-      : '';
+  if(!PERSIST.on){
+    return `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="enter()"><span class="rdot"></span>Freshman Enrollment <span class="faint">· draft</span></button><button class="recent-pill" onclick="enter()"><span class="rdot" style="background:var(--ink-3)"></span>Staff Pulse 2026 <span class="faint">· launched</span></button></div>`;
   }
-  return `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="enter()"><span class="rdot"></span>Freshman Enrollment <span class="faint">· draft</span></button><button class="recent-pill" onclick="enter()"><span class="rdot" style="background:var(--ink-3)"></span>Staff Pulse 2026 <span class="faint">· launched</span></button></div>`;
+  if(state.projects===null){ loadProjects(); return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="faint" style="font-size:14px">Loading…</div>`; }
+  if(!state.projects.length) return '';
+  return `<div class="sec-row"><h2 class="sec">Your surveys</h2></div><div class="recent">`+
+    state.projects.slice(0,16).map(p=>`<button class="recent-pill" onclick="openProject(${p.id})"><span class="rdot" style="background:${p.status==='published'?'var(--good)':'var(--ink-3)'}"></span>${esc(p.title||'Untitled survey')} <span class="faint">· ${esc(p.status||'draft')}</span></button>`).join('')+`</div>`;
+}
+async function loadProjects(){
+  if(!PERSIST.on){ state.projects=[]; return; }
+  try{ const r=await DB.call('project-list.php'); state.projects=r.projects||[]; }
+  catch(e){ state.projects=[]; }
+  if(state.screen==='start')render();
+}
+async function openProject(id){
+  try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=liveStrength();render(); }
+  catch(e){ degrade(e.message); toast('Could not open: '+e.message); }
 }
 function renderStart(){
   if(state.startFlow==='ai')return renderAiGoal();
@@ -611,6 +622,7 @@ function openUpload(){
     projectId:null,
     onLoaded(_err,newProjectId){
       if(!newProjectId)return;
+      if(!PERSIST.on){ PERSIST.on=true; PERSIST.degraded=false; PERSIST.reason=''; }
       (async()=>{
         try{
           const r=await DB.call('project-load.php?id='+encodeURIComponent(newProjectId));
