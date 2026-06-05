@@ -112,6 +112,10 @@ body.start .main{grid-column:1/-1}
 @keyframes fade{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3)}
 h1.title{font-size:36px;font-weight:800;letter-spacing:-0.035em;margin:9px 0 14px}
+.title-input{display:block;width:100%;max-width:760px;border:none;background:none;font-family:inherit;font-size:36px;font-weight:800;letter-spacing:-0.035em;color:var(--ink);padding:2px 0;margin:9px 0 12px;border-bottom:2px solid transparent}
+.title-input::placeholder{color:var(--ink-3)}
+.title-input:hover{border-bottom-color:var(--line)}
+.title-input:focus{outline:none;border-bottom-color:var(--ink-3)}
 .lede{font-size:18px;color:var(--ink-2);max-width:700px;margin-bottom:36px;line-height:1.65}
 .sec-row{display:flex;align-items:baseline;gap:14px;margin:36px 0 18px}
 h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
@@ -404,6 +408,76 @@ function defaultOptions(t){if(t==='Multiple choice'||t==='Checkboxes')return['Op
 function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render();}
 function withTicker(fn){const before=liveStrength();fn();const after=liveStrength();state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')};state.prevStrength=after;}
 
+/* ── Persistence — mirrors develop.php's proven api/dev DB layer.
+   PERSIST.on when logged in; ?mock forces the offline demo (sample data). ── */
+const PERSIST_REQUESTED = !new URLSearchParams(location.search).has('mock');
+const PERSIST = { on:PERSIST_REQUESTED, degraded:false, reason:'' };
+const LS_KEY = 'sds_v2_project_id';
+function degrade(reason){ if(!PERSIST.degraded){ PERSIST.on=false; PERSIST.degraded=true; PERSIST.reason=reason||''; toast('Working offline — changes are not being saved'); } }
+const DB={
+  async call(path,opts={}){
+    const res=await fetch('/api/dev/'+path,{method:opts.method||'GET',headers:opts.body?{'Content-Type':'application/json'}:undefined,body:opts.body?JSON.stringify(opts.body):undefined,credentials:'same-origin'});
+    let data=null; try{ data=await res.json(); }catch(e){}
+    if(!res.ok||!data||data.ok===false){ const msg=(data&&(data.message||data.error))||('HTTP '+res.status); const err=new Error(msg); err.status=res.status; throw err; }
+    if(PERSIST_REQUESTED&&!PERSIST.on){ PERSIST.on=true; PERSIST.degraded=false; PERSIST.reason=''; }
+    return data;
+  },
+  // q.group is the construct name; it rides in the item settings JSON (no construct column).
+  itemSettingsOut(q){ const s=Object.assign({},q.settings||{}); delete s.construct; delete s.constructId; if(q.group)s.construct=q.group; return Object.keys(s).length?s:null; },
+  itemsWire(){ return (state.questions||[]).map(q=>({ id:q.id, section_id:q.section_id||null, type:q.type, prompt:q.t, flag:q.flag||null, required:q.required?1:0, options:q.options||null, settings:DB.itemSettingsOut(q) })); },
+  itemHydrate(it){ const s=it.settings||{}; const q={ id:it.id, t:it.prompt, type:it.type, flag:it.flag, section_id:it.section_id, required:!!it.required, options:it.options||null, settings:it.settings||null, group:'' }; if(s.construct)q.group=s.construct; return q; },
+  constructsWire(){ return (state.groups||[]).map((g,i)=>({ id:null, name:g, definition:'', position:i })); },
+  hydrate(payload){
+    const p=payload.project;
+    state.projectId=p.id;
+    state.study.name=p.title||''; state.study.purpose=p.purpose||''; state.study.population=p.population||'';
+    state.study.mode=p.response_mode||''; state.study.dataType=p.data_type||'';
+    state.settings=p.settings||{}; state.study.launchReadiness=(p.settings&&p.settings.launchReadiness)||{};
+    state.groups=(payload.constructs||[]).map(c=>c.name).filter(Boolean);
+    state.questions=(payload.items||[]).map(it=>DB.itemHydrate(it));
+    state.responses=payload.responses||0;
+    state.deploymentSettings=payload.deployment||null;
+    try{ localStorage.setItem(LS_KEY,String(p.id)); }catch(e){}
+  },
+};
+async function createProject(source){
+  const r=await DB.call('project-create.php',{method:'POST',body:{
+    title:state.study.name||'Untitled survey', source:source||'scratch',
+    purpose:state.study.purpose||'', population:state.study.population||'',
+    response_mode:state.study.mode||'', data_type:state.study.dataType||'',
+    sections:[{title:'Main'}],
+    items:(state.questions||[]).map(q=>({ type:q.type, prompt:q.t, flag:q.flag||null, required:q.required?1:0, options:q.options||null, settings:DB.itemSettingsOut(q) })),
+    constructs:(state.groups||[]).map(g=>({name:g,definition:''})),
+  }});
+  DB.hydrate(r);
+}
+function persistItems(){ if(PERSIST.on&&state.projectId) saveItemsNow(); }
+async function saveItemsNow(){
+  if(!(PERSIST.on&&state.projectId))return;
+  try{
+    const r=await DB.call('items-save.php',{method:'POST',body:{project_id:state.projectId,items:DB.itemsWire()}});
+    state.questions=(r.items||[]).map(it=>DB.itemHydrate(it));
+    await saveConstructsNow();
+    if(state.screen==='workspace'&&state.editing==null)render();
+  }catch(e){ degrade(e.message); }
+}
+async function saveConstructsNow(){
+  if(!(PERSIST.on&&state.projectId))return;
+  try{ const r=await DB.call('constructs-save.php',{method:'POST',body:{project_id:state.projectId,constructs:DB.constructsWire()}}); state.groups=(r.constructs||[]).map(c=>c.name).filter(Boolean); }catch(e){ degrade(e.message); }
+}
+let _titleTimer=null;
+function setStudyName(v){ state.study.name=v; if(!(PERSIST.on&&state.projectId))return; clearTimeout(_titleTimer); _titleTimer=setTimeout(()=>{ DB.call('project-update.php',{method:'POST',body:{id:state.projectId,title:state.study.name}}).catch(e=>degrade(e.message)); },500); }
+async function boot(){
+  if(PERSIST.on){
+    let id=null; try{ id=Number(localStorage.getItem(LS_KEY))||null; }catch(e){}
+    if(id){
+      try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace'; state.phase='build'; state.prevStrength=liveStrength(); render(); if(typeof StudioFooter!=='undefined')StudioFooter.init(); return; }
+      catch(e){ try{localStorage.removeItem(LS_KEY);}catch(_){} }
+    }
+  }
+  render(); if(typeof StudioFooter!=='undefined')StudioFooter.init();
+}
+
 function render(){
   document.body.classList.toggle('start',state.screen==='start');
   if(state.screen==='start'){$('#stepsWrap').innerHTML='';$('#tbRight').innerHTML='<button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button>';$('#rail').innerHTML='';renderStart();paintCoach();paintReview();return;}
@@ -482,8 +556,9 @@ function renderAiGoal(){
     </div></div>`;
 }
 function aiDraft(){
+  const goal=(document.getElementById('aiGoal')||{}).value||'';
   $('#app').innerHTML=`<div class="screen"><div class="card pad" style="text-align:center;max-width:520px;margin:50px auto"><p class="muted" style="font-size:15px">Drafting your survey…</p></div></div>`;
-  setTimeout(()=>{
+  setTimeout(async()=>{
     state.questions=[
       {t:'How confident did you feel about your decision to enroll here?',type:'Rating scale',options:null},
       {t:'What was the single biggest reason you chose us?',type:'Long comment',options:null},
@@ -491,7 +566,9 @@ function aiDraft(){
       {t:'How clear was the application process?',type:'Rating scale',options:null},
       {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     ];
-    state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
+    state.startFlow=null; state.groups=[];
+    if(PERSIST.on){ state.study={name:'Survey from your goal',purpose:goal,population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('ai-build'); }catch(e){ degrade(e.message); } }
+    state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
     render();toast('ReliCheck drafted 5 questions. Review and adjust.');
   },800);
 }
@@ -503,16 +580,26 @@ function renderUpload(){
     <button class="drop" onclick="uploadDone()"><div class="di">⤓</div><div style="font-weight:700;font-size:15px;margin-top:10px">Drop a file here, or click to choose</div><div class="faint" style="font-size:13px;margin-top:5px">CSV, Excel, Google Forms, SurveyMonkey, Qualtrics</div></button>
     <div class="btn-row"><button class="btn" onclick="state.startFlow=null;render()">← Back</button></div></div>`;
 }
-function uploadDone(){
+async function uploadDone(){
   state.questions=[
     {t:'Overall, how satisfied are you with your experience?',type:'Rating scale',options:null},
     {t:'How likely are you to recommend us to a friend?',type:'Rating scale',options:null},
     {t:'What could we have done better?',type:'Long comment',options:null},
   ];
-  state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
+  state.startFlow=null; state.groups=[];
+  if(PERSIST.on){ state.study={name:'Imported survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('existing'); }catch(e){ degrade(e.message); } }
+  state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
   render();toast('Brought in 3 questions from your file.');
 }
-function enter(){state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=liveStrength();render();}
+async function enter(){
+  state.startFlow=null;
+  if(PERSIST.on){
+    state.questions=[]; state.groups=[];
+    state.study={name:'Untitled survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}};
+    try{ await createProject('scratch'); }catch(e){ degrade(e.message); }
+  }
+  state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
+}
 
 /* Build */
 function answerPreview(q){
@@ -533,7 +620,7 @@ function viewBuild(){
   const list=qs.map((q,i)=>state.editing===i?editorCard(q,i):displayCard(q,i)).join('');
   return `
     <div class="eyebrow">Build</div>
-    <h1 class="title">Freshman Enrollment</h1>
+    <input class="title title-input" value="${esc(state.study.name||'Untitled survey')}" placeholder="Untitled survey" oninput="setStudyName(this.value)" aria-label="Survey title">
     <p class="lede">Add your questions one at a time. Watch the strength reading at the top, it moves with each question so you can fix a weak one as you go, not at the end.</p>
     <div class="composer">
       <div class="clbl">Add a question</div>
@@ -589,18 +676,18 @@ function aiHelpBox(h){
 }
 function addQ(){
   const t=$('#qtext').value.trim();if(!t)return;const type=$('#qtype').value;
-  withTicker(()=>state.questions.push({t,type,options:defaultOptions(type)}));render();
+  withTicker(()=>state.questions.push({t,type,options:defaultOptions(type)}));render();persistItems();
   const d=state.lastDelta;toast(d.dir==='down'?`Added. Strength ${d.amount} — see its mark.`:(d.dir==='up'?`Added. Strength +${d.amount}.`:'Added. Strength unchanged.'));
 }
 function suggestQ(){
   const ideas=[{t:'How confident do you feel about your decision to enroll?',type:'Rating scale',options:null},{t:'What is the main reason you chose us over other schools?',type:'Long comment',options:null},{t:'Which of these influenced your decision? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Financial aid']}];
   const next=ideas[state.questions.length%ideas.length];if(state.phase!=='build')state.phase='build';
-  withTicker(()=>state.questions.push(Object.assign({},next)));render();toast('Added a suggested question.');
+  withTicker(()=>state.questions.push(Object.assign({},next)));render();persistItems();toast('Added a suggested question.');
 }
-function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;});render();}
+function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;});render();persistItems();}
 function editQ(i){state.editing=i;state.aiHelp=null;render();}
 function cancelEdit(){state.editing=null;state.aiHelp=null;render();}
-function saveEdit(i){state.editing=null;state.aiHelp=null;render();toast('Question updated.');}
+function saveEdit(i){state.editing=null;state.aiHelp=null;render();persistItems();toast('Question updated.');}
 function setEditText(i,v){state.questions[i].t=v;}
 function setType(i,v){const q=state.questions[i];q.type=v;if(['Multiple choice','Checkboxes','Yes / No'].includes(v)&&!q.options)q.options=defaultOptions(v);render();}
 function setOpt(i,oi,v){state.questions[i].options[oi]=v;}
@@ -653,7 +740,7 @@ function viewGrouping(){
     <div class="btn-row"><button class="btn" onclick="closeGrouping()">← Done</button></div>`;
 }
 function openGrouping(){state.grouping=true;state.phase='build';state.editing=null;render();}
-function closeGrouping(){state.grouping=false;render();toast('Groups saved.');}
+function closeGrouping(){state.grouping=false;render();persistItems();toast('Groups saved.');}
 function addGroup(){const v=$('#grpName').value.trim();if(!v)return;if(!state.groups.includes(v))state.groups.push(v);render();}
 function assignGroup(i,v){state.questions[i].group=v;}
 
@@ -765,8 +852,7 @@ function paintCoach(){
 }
 function toggleAsk(i){state.askOpen=state.askOpen===i?null:i;paintCoach();}
 
-render();
-if(typeof StudioFooter!=='undefined')StudioFooter.init();
+boot();
 </script>
 </body>
 </html>
