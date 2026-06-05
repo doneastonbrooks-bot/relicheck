@@ -327,12 +327,16 @@ body.coach-open .companion{transform:translateX(0)}
 <aside class="review" id="review"></aside>
 <div class="toast" id="toast"></div>
 
+<!-- Real Build Check (SDSI) engine — the strength ticker reads this client-side -->
+<script src="/apps/sdsi/validity-lens-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/validity-lens-engine.js') ? filemtime(__DIR__.'/apps/sdsi/validity-lens-engine.js') : '1' ?>"></script>
+<script src="/apps/sdsi/buildcheck-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/buildcheck-engine.js') ? filemtime(__DIR__.'/apps/sdsi/buildcheck-engine.js') : '1' ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= is_file(__DIR__.'/apps/studio/studio-footer.js') ? filemtime(__DIR__.'/apps/studio/studio-footer.js') : '1' ?>"></script>
 <script>
 const state={
   screen:'start',startFlow:null,phase:'build',
+  study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
-  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],
+  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,
   questions:[
     {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -342,23 +346,54 @@ const state={
 const PHASES=[{id:'build',t:'Build'},{id:'launch',t:'Launch'},{id:'analyze',t:'Analyze'}];
 const QTYPES=['Multiple choice','Checkboxes','Rating scale','Yes / No','Short text','Long comment','Number'];
 
-function qualityOf(q){
+/* ── Quality model — driven by the real Build Check (SDSI) engine.
+   The engine (apps/sdsi/buildcheck-engine.js) runs client-side. Heuristic
+   functions below are a fallback used ONLY if the engine fails to load. ── */
+function buildCheckProject(){
+  const s=state.study||{},qs=state.questions||[];
+  return {
+    purpose:s.purpose||'',population:s.population||'',mode:s.mode||'',dataType:s.dataType||'',
+    launchReadiness:s.launchReadiness||{},
+    constructs:(state.groups||[]).map(g=>({name:g,definition:''})),
+    items:qs.map((q,i)=>({item_ref:(q.id!=null?('q'+q.id):('i'+i)),item_no:i+1,type:q.type||'',prompt:q.t||'',options:q.options||[],settings:q.settings||{},construct:q.group||'',required:!!q.required})),
+    sections:[]
+  };
+}
+function assessNow(){ try{ if(window.BuildCheck&&window.BuildCheck.assess) return window.BuildCheck.assess(buildCheckProject()); }catch(e){} return null; }
+function refOf(q,i){ return q.id!=null?('q'+q.id):('i'+i); }
+function liveStrength(){ const r=assessNow(); return (r&&typeof r.pct==='number')?Math.round(r.pct):strengthHeuristic(state.questions); }
+function strengthValue(){ return (state.bc&&typeof state.bc.pct==='number')?Math.round(state.bc.pct):strengthHeuristic(state.questions); }
+function bandOf(s){if(s>=85)return{w:'Strong',c:'green'};if(s>=70)return{w:'Good',c:'green'};if(s>=55)return{w:'Fair',c:'amber'};return{w:'Needs work',c:'red'};}
+function markOf(q,i){
+  if(state.bc&&state.bc.flags){
+    const ref=refOf(q,i),fs=state.bc.flags.filter(f=>f.item_ref===ref);
+    if(fs.some(f=>f.severity==='critical'||f.severity==='major'))return 'down';
+    if(fs.some(f=>f.severity==='moderate'))return 'flat';
+    return 'up';
+  }
+  const v=qualityHeuristic(q);return v>=80?'up':(v>=65?'flat':'down');
+}
+function reviewItems(){
+  if(state.bc&&state.bc.flags){
+    const by={};
+    state.bc.flags.forEach(f=>{ if(!f.item_ref)return; if(!['moderate','major','critical'].includes(f.severity))return; (by[f.item_ref]=by[f.item_ref]||[]).push(f); });
+    return state.questions.map((q,i)=>({q,i,ref:refOf(q,i)})).filter(x=>by[x.ref]).map(x=>({q:x.q,i:x.i,msg:(by[x.ref][0].message||'Worth a look.'),fix:(by[x.ref][0].suggestion||'')}));
+  }
+  return state.questions.map((q,i)=>({q,i})).filter(x=>markHeuristic(x.q)==='down').map(x=>({q:x.q,i:x.i,msg:issueHeuristic(x.q),fix:''}));
+}
+function qualityHeuristic(q){
   let s=86;const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
-  if(/\band\b/i.test(text)&&words>6)s-=26;
-  if(/\bor\b/i.test(text)&&words>9)s-=8;
-  if(words>22)s-=12; if(words<3)s-=18;
-  if(!/[?]$/.test(text))s-=6;
+  if(/\band\b/i.test(text)&&words>6)s-=26; if(/\bor\b/i.test(text)&&words>9)s-=8;
+  if(words>22)s-=12; if(words<3)s-=18; if(!/[?]$/.test(text))s-=6;
   if(['Multiple choice','Checkboxes'].includes(q.type)){const n=(q.options||[]).length;if(n>=3)s+=4;else if(n<2)s-=10;}
   return Math.max(28,Math.min(98,s));
 }
-function strengthOf(qs){if(!qs.length)return 0;let s=qs.reduce((a,q)=>a+qualityOf(q),0)/qs.length;if(qs.length>=4)s+=3;if(qs.length>=8)s+=2;return Math.round(Math.max(0,Math.min(100,s)));}
-function bandOf(s){if(s>=85)return{w:'Strong',c:'green'};if(s>=70)return{w:'Good',c:'green'};if(s>=55)return{w:'Fair',c:'amber'};return{w:'Needs work',c:'red'};}
-function markOf(q){const v=qualityOf(q);return v>=80?'up':(v>=65?'flat':'down');}
-function issueOf(q){const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
+function strengthHeuristic(qs){if(!qs.length)return 0;let s=qs.reduce((a,q)=>a+qualityHeuristic(q),0)/qs.length;if(qs.length>=4)s+=3;if(qs.length>=8)s+=2;return Math.round(Math.max(0,Math.min(100,s)));}
+function markHeuristic(q){const v=qualityHeuristic(q);return v>=80?'up':(v>=65?'flat':'down');}
+function issueHeuristic(q){const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
   if(/\band\b/i.test(text)&&words>6)return'Asks two things at once (it has an "and"). Split it so the answers stay clean.';
   if(words>22)return'A bit long. Shorter questions are answered more honestly.';
   if(words<3)return'Very short. Add enough that a respondent knows exactly what you mean.';
-  if(['Multiple choice','Checkboxes'].includes(q.type)&&(q.options||[]).length<2)return'Needs at least two answer options.';
   return'Could be a little clearer.';}
 
 const $=s=>document.querySelector(s);
@@ -367,11 +402,12 @@ function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function defaultOptions(t){if(t==='Multiple choice'||t==='Checkboxes')return['Option 1','Option 2','Option 3'];if(t==='Yes / No')return['Yes','No'];return null;}
 function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render();}
-function withTicker(fn){const before=strengthOf(state.questions);fn();const after=strengthOf(state.questions);state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')};state.prevStrength=after;}
+function withTicker(fn){const before=liveStrength();fn();const after=liveStrength();state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')};state.prevStrength=after;}
 
 function render(){
   document.body.classList.toggle('start',state.screen==='start');
   if(state.screen==='start'){$('#stepsWrap').innerHTML='';$('#tbRight').innerHTML='<button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button>';$('#rail').innerHTML='';renderStart();paintCoach();paintReview();return;}
+  state.bc=assessNow();
   renderSteps();renderTicker();renderRail();
   const fn={build:viewBuild,launch:viewLaunch,analyze:viewAnalyze}[state.phase];
   $('#app').innerHTML=`<div class="screen">${fn()}</div>`;
@@ -387,7 +423,7 @@ function renderSteps(){
 }
 function renderRail(){
   const qs=state.questions;
-  const outline=qs.length?qs.map((q,i)=>{const m=markOf(q);return `<button class="ol-item ${state.editing===i?'active':''}" onclick="jumpTo(${i})"><span class="ol-num">${i+1}</span><span class="ol-txt">${esc(q.t)}</span><span class="ol-dot ${m}"></span></button>`;}).join(''):`<div class="faint" style="font-size:12.5px;padding:4px 2px">No questions yet.</div>`;
+  const outline=qs.length?qs.map((q,i)=>{const m=markOf(q,i);return `<button class="ol-item ${state.editing===i?'active':''}" onclick="jumpTo(${i})"><span class="ol-num">${i+1}</span><span class="ol-txt">${esc(q.t)}</span><span class="ol-dot ${m}"></span></button>`;}).join(''):`<div class="faint" style="font-size:12.5px;padding:4px 2px">No questions yet.</div>`;
   $('#rail').innerHTML=`
     <div><div class="rail-h">Survey outline <span class="cnt">${qs.length}</span></div>${outline}</div>
     <div><div class="rail-h">ReliCheck Intelligence</div>
@@ -403,7 +439,7 @@ function renderRail(){
 }
 function openCoachAsk(){state.coachOpen=true;state.coachTab='ask';document.body.classList.add('coach-open');paintCoach();}
 function renderTicker(){
-  const s=strengthOf(state.questions),b=bandOf(s),d=state.lastDelta;
+  const s=strengthValue(),b=bandOf(s),d=state.lastDelta;
   const delta=d?`<span class="tk-delta ${d.dir}">${d.dir==='flat'?'no change':(d.amount>0?'+'+d.amount:d.amount)}</span>`:'';
   $('#tbRight').innerHTML=`
     <button class="ticker" onclick="openReview()" title="Click for the full review">${delta}
@@ -455,7 +491,7 @@ function aiDraft(){
       {t:'How clear was the application process?',type:'Rating scale',options:null},
       {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     ];
-    state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=strengthOf(state.questions);
+    state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
     render();toast('ReliCheck drafted 5 questions. Review and adjust.');
   },800);
 }
@@ -473,10 +509,10 @@ function uploadDone(){
     {t:'How likely are you to recommend us to a friend?',type:'Rating scale',options:null},
     {t:'What could we have done better?',type:'Long comment',options:null},
   ];
-  state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=strengthOf(state.questions);
+  state.startFlow=null;state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
   render();toast('Brought in 3 questions from your file.');
 }
-function enter(){state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=strengthOf(state.questions);render();}
+function enter(){state.screen='workspace';state.phase='build';state.startFlow=null;state.prevStrength=liveStrength();render();}
 
 /* Build */
 function answerPreview(q){
@@ -493,7 +529,7 @@ function answerPreview(q){
 function viewBuild(){
   if(state.grouping)return viewGrouping();
   const qs=state.questions;
-  const weakCount=qs.filter(q=>markOf(q)==='down').length;
+  const weakCount=qs.filter((q,i)=>markOf(q,i)==='down').length;
   const list=qs.map((q,i)=>state.editing===i?editorCard(q,i):displayCard(q,i)).join('');
   return `
     <div class="eyebrow">Build</div>
@@ -516,7 +552,7 @@ function viewBuild(){
     <div class="btn-row"><div class="spacer"></div><button class="btn primary lg" onclick="go('launch')">Ready to launch →</button></div>`;
 }
 function displayCard(q,i){
-  const m=markOf(q),lbl=m==='up'?'on track':(m==='down'?'pulling it down':'neutral');
+  const m=markOf(q,i),lbl=m==='up'?'on track':(m==='down'?'pulling it down':'neutral');
   return `<div class="qcard" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
@@ -571,7 +607,16 @@ function setOpt(i,oi,v){state.questions[i].options[oi]=v;}
 function addOpt(i){state.questions[i].options=state.questions[i].options||[];state.questions[i].options.push('Option '+(state.questions[i].options.length+1));render();}
 function delOpt(i,oi){state.questions[i].options.splice(oi,1);render();}
 function jumpTo(i){state.phase='build';state.editing=i;state.aiHelp=null;render();setTimeout(()=>{const el=document.getElementById('qc-'+i);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},40);}
-function improveWeakest(){if(!state.questions.length)return;let wi=0,wv=999;state.questions.forEach((q,i)=>{const v=qualityOf(q);if(v<wv){wv=v;wi=i;}});state.phase='build';state.editing=wi;state.aiHelp=null;render();setTimeout(()=>improveWording(wi),120);}
+function improveWeakest(){
+  if(!state.questions.length)return;
+  state.bc=assessNow();
+  let wi=-1;
+  state.questions.forEach((q,i)=>{ if(wi<0&&markOf(q,i)==='down')wi=i; });
+  if(wi<0)state.questions.forEach((q,i)=>{ if(wi<0&&markOf(q,i)==='flat')wi=i; });
+  if(wi<0){let wv=999;state.questions.forEach((q,i)=>{const v=qualityHeuristic(q);if(v<wv){wv=v;wi=i;}});}
+  if(wi<0)wi=0;
+  state.phase='build';state.editing=wi;state.aiHelp=null;render();setTimeout(()=>improveWording(wi),120);
+}
 function improveWording(i){const q=state.questions[i],original=q.t;withTicker(()=>{q.t=improvedText(original);});state.aiHelp={i,kind:'rewrite',original,delta:state.lastDelta.amount};render();}
 function improvedText(t){
   const map={'Was the enrollment process clear and did you feel supported the whole way through?':'How clear was the enrollment process?','How did you first hear about our university?':'How did you first hear about us?'};
@@ -618,25 +663,31 @@ function closeReview(){state.reviewOpen=false;paintReview();}
 function paintReview(){
   const r=$('#review'),sc=$('#scrim');
   if(state.screen!=='start'){
-    const s=strengthOf(state.questions),b=bandOf(s);
-    const weak=state.questions.map((q,i)=>({q,i})).filter(x=>markOf(x.q)==='down');
-    const fixes=weak.length?weak.map(x=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">Q${x.i+1}: ${esc(x.q.t)}</div><div class="fs">${issueOf(x.q)}</div><button class="fa" onclick="closeReview();jumpTo(${x.i})">Fix this one →</button></div></div>`).join('')
+    const s=strengthValue(),b=bandOf(s);
+    const items=reviewItems();
+    const fixes=items.length?items.map(x=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">Q${x.i+1}: ${esc(x.q.t)}</div><div class="fs">${esc(x.msg)}${x.fix?' '+esc(x.fix):''}</div><button class="fa" onclick="closeReview();jumpTo(${x.i})">Fix this one →</button></div></div>`).join('')
       :`<div class="allgood"><span class="ag">✓</span><div>Nothing is pulling your survey down right now. It is in good shape to launch.</div></div>`;
     r.innerHTML=`
       <div class="rv-head"><span class="rv-n">${s}</span><div><div class="rv-w">${b.w}</div><div class="rv-sub">Survey strength · updates as you build</div></div><button class="cx" onclick="closeReview()">&times;</button></div>
       <div class="rv-body">
-        <div class="sec-row" style="margin-top:0"><h2 class="sec">${weak.length?`${weak.length} question${weak.length===1?'':'s'} worth a look`:'Nothing flagged'}</h2></div>
+        <div class="sec-row" style="margin-top:0"><h2 class="sec">${items.length?`${items.length} question${items.length===1?'':'s'} worth a look`:'Nothing flagged'}</h2></div>
         ${fixes}
         <details class="tech"><summary>Full technical breakdown</summary><div class="tbody">
           <p class="faint" style="font-size:12px;margin-bottom:14px">For the curious. You never have to read this to use the score above.</p>
-          ${dom('Question clarity',clarityScore(),10)}${dom('Answer options fit',9,10)}${dom('Structure & length',8,10)}${dom('Coverage of your goal',9,10)}${dom('Ready to launch',8,10)}
+          ${techBreakdown()}
         </div></details>
       </div>`;
   }
   r.classList.toggle('open',state.reviewOpen&&state.screen!=='start');
   sc.classList.toggle('open',state.reviewOpen&&state.screen!=='start');
 }
-function clarityScore(){const qs=state.questions;if(!qs.length)return 8;const avg=qs.reduce((a,q)=>a+qualityOf(q),0)/qs.length;return Math.max(3,Math.min(10,Math.round(avg/10)));}
+function techBreakdown(){
+  if(state.bc&&Array.isArray(state.bc.categories)&&state.bc.categories.length){
+    return state.bc.categories.map(c=>{const label=c.label||c.name||c.key||'Category';const pts=(typeof c.points==='number')?c.points:0;const max=(typeof c.max==='number')?c.max:(typeof c.max_points==='number'?c.max_points:10);return dom(label,Math.round(pts*10)/10,max);}).join('');
+  }
+  return dom('Question clarity',clarityScore(),10)+dom('Answer options fit',9,10)+dom('Structure & length',8,10)+dom('Coverage of your goal',9,10)+dom('Ready to launch',8,10);
+}
+function clarityScore(){return Math.max(3,Math.min(10,Math.round(strengthValue()/10)));}
 function dom(name,p,max){const pct=Math.round(p/max*100);return `<div class="dom"><div class="dom-head"><span class="nm">${name}</span><span class="pts">${p} / ${max}</span></div><div class="meter"><span style="width:${pct}%"></span></div></div>`;}
 
 /* Launch / Analyze */
