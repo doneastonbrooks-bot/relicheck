@@ -181,11 +181,21 @@
   // statement ("Clearly, you agree…") — NOT as ordinary mid-sentence adverbs
   // ("My responsibilities are clearly defined."), which is a false positive that
   // contradicts the AI clarity check and erodes trust.
-  var LEADING_PHRASES = ['everyone knows', "don't you agree", "don't you think", 'isn\'t it', 'wouldn\'t you', 'as you know', 'you must agree', 'you would agree', 'most people agree'];
-  var LEADING_ADVERB_RE = /^\s*(obviously|clearly|surely|undoubtedly|certainly|of course|naturally)\b/;
-  var ABSOLUTE_WORDS = ['always', 'never', 'every ', 'all of', 'none of', 'completely', 'totally', 'rarely'];
-  var LOADED_WORDS = ['failure', 'foolish', 'irresponsible', 'lazy', 'stupid', 'crazy', 'suffer', 'unfortunately'];
-  var ASSUMPTIVE_WORDS = ['since you', 'now that you', 'given that you', 'as you already', 'after you'];
+  // All four families below match WHOLE WORDS/PHRASES (\b…\b), not substrings, so
+  // "nevertheless" no longer trips "never", "since your" no longer trips "since
+  // you", and "knowledge" no longer trips "as you know". Topic-ambiguous words
+  // that read as neutral content far more often than as bias ("suffer" in
+  // "workloads suffer", "failure" in "learn from failure", bare quantifiers
+  // "all of"/"none of"/"every") are dropped — the cost of a false accusation of
+  // bias is high for a validity tool.
+  // "as you know," only counts as a leading discourse marker WITH the comma
+  // ("As you know, X — do you agree?"), not the transitive verb ("as you know
+  // your team best").
+  var LEADING_PHRASE_RE  = /\beveryone knows\b|\bdon'?t you (?:agree|think)\b|\bisn'?t it\b|\bwouldn'?t you\b|\bas you (?:already )?know,|\byou (?:must|would) agree\b|\bmost people agree\b/;
+  var LEADING_ADVERB_RE  = /^\s*(obviously|clearly|surely|undoubtedly|certainly|of course|naturally)\b/;
+  var ABSOLUTE_RE        = /\b(always|never|completely|totally|every single|all the time|each and every)\b/;
+  var LOADED_RE          = /\b(foolish|irresponsible|lazy|stupid|incompetent|useless|pathetic|ridiculous|idiotic|worthless|inept|dumb|moronic)\b/;
+  var ASSUMPTIVE_RE      = /\b(since you|now that you|given that you|as you already|after you)\b/;
 
   // ── Item-validity vocabularies (the pre-deployment review layer) ──────────
   // A response option that is a placeholder, not a real answer choice.
@@ -416,19 +426,19 @@
           add({ key: 'double_barreled', label: 'Double-barreled item', sev: 'high', domain: 'Single Construct', cat: 'item',
             msg: 'Question ' + no + ' asks about two things at once ("and"/"or").', why: 'Respondents who feel differently about each part cannot answer accurately, and the data conflates two constructs.', fix: 'Split it into separate single-idea questions.' });
         }
-        if (LEADING_PHRASES.some(function (lw) { return low.indexOf(lw) !== -1; }) || LEADING_ADVERB_RE.test(low)) {
+        if (LEADING_PHRASE_RE.test(low) || LEADING_ADVERB_RE.test(low)) {
           add({ key: 'leading', label: 'Leading wording', sev: 'high', domain: 'Neutrality', cat: 'bias',
             msg: 'Question ' + no + ' uses leading wording that nudges the answer.', why: 'Leading wording biases responses toward a preferred answer.', fix: 'Rephrase neutrally so no response is signaled as correct.' });
         }
-        if (LOADED_WORDS.some(function (lw) { return low.indexOf(lw) !== -1; })) {
+        if (LOADED_RE.test(low)) {
           add({ key: 'loaded_wording', label: 'Loaded wording', sev: 'high', domain: 'Neutrality', cat: 'bias',
             msg: 'Question ' + no + ' uses emotionally loaded wording.', why: 'Loaded language pressures respondents and distorts honest answers.', fix: 'Use neutral, respectful language.' });
         }
-        if (ASSUMPTIVE_WORDS.some(function (lw) { return low.indexOf(lw) !== -1; })) {
+        if (ASSUMPTIVE_RE.test(low)) {
           add({ key: 'assumptive_wording', label: 'Assumptive wording', sev: 'medium', domain: 'Neutrality', cat: 'bias',
             msg: 'Question ' + no + ' assumes something about the respondent.', why: 'Assumptive framing excludes respondents for whom the premise is false.', fix: 'Remove the assumption or add a screening question first.' });
         }
-        if (ABSOLUTE_WORDS.some(function (lw) { return low.indexOf(lw) !== -1; })) {
+        if (ABSOLUTE_RE.test(low)) {
           add({ key: 'absolute_wording', label: 'Absolute wording', sev: 'medium', domain: 'Clarity', cat: 'bias',
             msg: 'Question ' + no + ' uses an absolute term (e.g. "always"/"never").', why: 'Absolutes are hard to answer truthfully and push respondents to disagree.', fix: 'Soften absolutes so the item fits a range of real experiences.' });
         }
