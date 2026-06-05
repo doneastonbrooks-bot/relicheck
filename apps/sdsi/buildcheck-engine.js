@@ -328,6 +328,26 @@
           add({ key: 'reading_clarity_concern', label: 'Reading clarity concern', sev: 'low', domain: 'Clarity', cat: 'item',
             msg: 'Question ' + no + ' is very short and may be unclear.', why: 'A fragment may not read as a complete, answerable question.', fix: 'Make sure it reads as a full question.' });
         }
+        // A short item whose stem reads as a bare LABEL ("Role Level",
+        // "Department", "Tenure", "Start Date") rather than a question. Closed-
+        // ended items are exempt from the short-stem check above, but a label
+        // stem is read inconsistently across respondents, so it is a real
+        // clarity problem on ANY type. Exempt: Likert/agreement STATEMENTS (a
+        // statement is fine), structural items, and anything that already reads
+        // as a question (ends "?" / starts with a question or imperative word)
+        // or a first-person statement ("I ...", "We ..."). The <=4-word gate
+        // keeps full statements ("Work gives me a sense of purpose.") clear.
+        if (!isLikertish(type) && !STRUCTURAL_TYPES[type] && w.length > 0 && w.length <= 4) {
+          var endsQ    = /\?\s*$/.test(text);
+          var startsQ  = /^(what|which|when|where|why|who|whose|how|do|does|did|are|is|was|were|have|has|had|can|could|would|will|should|select|choose|pick|rank|order|rate|describe|list|name|indicate|identify|specify|enter|provide|tell|please|in your|to what|on a)\b/.test(low);
+          var firstPer = /^(i|i'm|i've|my|we|we're|we've|our)\b/.test(low);
+          if (!endsQ && !startsQ && !firstPer) {
+            add({ key: 'label_style_stem', label: 'Stem reads as a label, not a question', sev: 'medium', domain: 'Clarity', cat: 'item',
+              msg: 'Question ' + no + ' ("' + text + '") reads as a label, not a question respondents answer.',
+              why: 'A bare label is interpreted differently by different respondents, so the answers are not comparable. A clear question stem keeps responses consistent.',
+              fix: 'Phrase it as a question, e.g. "What is your ' + low + '?" or "Which best describes your ' + low + '?"' });
+          }
+        }
       }
 
       // 2. Closed-ended response options ------------------------------------
