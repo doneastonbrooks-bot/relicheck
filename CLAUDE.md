@@ -20,6 +20,26 @@ Saving any file in this repo auto-uploads to live production in ~15 seconds. Git
 
 ---
 
+## LOCKED: Writing Quality stem-gate (accepted 2026-06-05 — do not change without approval)
+
+**The hard rule:** If an item is not written as a respondent-facing, answerable prompt, **Writing Quality cannot show "Strong".**
+
+Two axes, kept separate:
+1. **Stem Quality (question writing)** — is it an answerable question with a clear construct and clear wording? Label-only / coded / metadata / fragment / instruction-only stems (e.g. "Department", "Tenure", "Role Level", "Start Date", "Respondent ID", "Q1") FAIL this. **Stem Quality drives the survey-level Writing Quality band.**
+2. **Response Fit** — judged ONLY after the stem is interpretable: does the response format match what the (clear) question asks?
+
+How it is wired (in `apps/sdsi/buildcheck-engine.js`, used by `developV2.php`):
+- "Needs question text" items are counted by their stem-quality flags — `STEM_QUALITY_FLAGS` = `stem_item_code`, `stem_demographic_label`, `stem_construct_label`, `stem_metadata_field`, `stem_not_answerable`, `stem_verb_fragment` (plus the `response_fit_status === 'cannot_assess'` echo).
+- Band tiers: **any → cannot be Strong (cap Good); 25% → Caution / "Needs revision"; 40% → Not ready / "Question text needed"; 60% → Assessment blocked.**
+- The engine exposes `writing_quality_band`, `writing_quality_can_show_strong`, `writing_quality_needs_text_count`. **The gauge MUST use these, never the raw numeric score.**
+- Item-card marks, left-rail dots, the summary count ("N need question text"), the gauge, the SIRI card, and the review drawer must all tell the same story.
+
+**Do not change the writing-quality gates/thresholds, the label-stem (STEM_QUALITY_FLAGS) counting, or the "needs question text" handling without explicit approval.** These are shared SDSI/SIRI engines — see "Don't touch the Survey Dev app from other apps" in memory. (Reference: branch `developv2-response-fit-check`, commit `01fd15b`.)
+
+Note: `developV2.php` inline JS caches — hard-refresh (Cmd+Shift+R) to see new builder logic on the live site.
+
+---
+
 ## Upload widget — universal rule
 
 Every studio uses `apps/studio/dataset-upload.js` — `DatasetUpload.open({ projectType, ... })`. One widget, one modal, same file formats, same look. No exceptions. No studio builds its own upload path.
