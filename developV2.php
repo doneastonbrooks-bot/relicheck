@@ -272,6 +272,23 @@ body.coach-open .companion{transform:translateX(0)}
 .ask-row input{flex:1;font-family:inherit;font-size:13px;background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px;outline:none}
 .ask-row input:focus{border-color:var(--ink-3)}
 
+/* grouping (constructs) */
+.grp-chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}
+.grp-chip{font-size:13.5px;font-weight:700;color:var(--ink);background:var(--soft);padding:6px 14px;border-radius:999px;border:1px solid var(--line)}
+.grp-add{display:flex;gap:9px;margin-top:4px}
+.grp-add input{flex:1;max-width:360px;border:1.5px solid var(--line);border-radius:9px;padding:11px 14px;font-family:inherit;font-size:15px}
+.grp-add input:focus{outline:none;border-color:var(--ink-3)}
+.assign-row{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid var(--line-2)}
+.assign-row .aq{flex:1;font-size:15px;color:var(--ink-2);line-height:1.5}
+.assign-row select{border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;font-family:inherit;font-size:14px;color:var(--ink);background:var(--panel)}
+/* handoffs (Analyze → RSSI / studios) */
+.handoff{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:920px;margin-bottom:8px}
+.handoff-card{text-align:left;border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);transition:.13s;display:flex;flex-direction:column;gap:6px}
+.handoff-card:hover{border-color:var(--ink-3);box-shadow:var(--sh-lg);transform:translateY(-2px)}
+.hc-t{font-size:16px;font-weight:750}
+.hc-d{font-size:14px;color:var(--ink-2);flex:1;line-height:1.5}
+.hc-go{font-size:14px;font-weight:700;color:var(--ink);margin-top:4px}
+@media(max-width:820px){.handoff{grid-template-columns:1fr}}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:var(--sh-lg);opacity:0;pointer-events:none;transition:.2s;z-index:120}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 @media(max-width:820px){.entry,.share{grid-template-columns:1fr}}
@@ -311,7 +328,7 @@ body.coach-open .companion{transform:translateX(0)}
 const state={
   screen:'start',startFlow:null,phase:'build',
   coachOpen:false,coachTab:'guide',askOpen:null,
-  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,
+  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],
   questions:[
     {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -373,6 +390,10 @@ function renderRail(){
       <button class="rail-link" onclick="suggestQ()">Suggest a question</button>
       <button class="rail-link" onclick="improveWeakest()">Improve the weakest</button>
       <button class="rail-link" onclick="openCoachAsk()">Ask about my survey</button>
+    </div>
+    <div><div class="rail-h">Advanced <span class="cnt" style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink-3)">optional</span></div>
+      <button class="rail-link" onclick="openGrouping()">Group questions by meaning</button>
+      <div class="faint" style="font-size:12.5px;line-height:1.5;padding:3px 11px 0">For measuring one thing (a construct) across several questions. New to it? The Coach explains it.</div>
     </div>
     <div class="rail-foot">The strength reading updates as you build. A weak question shows a colored dot here so you can find it.</div>`;
 }
@@ -466,6 +487,7 @@ function answerPreview(q){
   return'';
 }
 function viewBuild(){
+  if(state.grouping)return viewGrouping();
   const qs=state.questions;
   const weakCount=qs.filter(q=>markOf(q)==='down').length;
   const list=qs.map((q,i)=>state.editing===i?editorCard(q,i):displayCard(q,i)).join('');
@@ -494,7 +516,7 @@ function displayCard(q,i){
   return `<div class="qcard" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
-      <div class="qb"><div class="qt">${esc(q.t)}</div><div class="qmeta">${esc(q.type)} <span class="qmark ${m}"><span class="md"></span>${lbl}</span></div></div>
+      <div class="qb"><div class="qt">${esc(q.t)}</div><div class="qmeta">${esc(q.type)} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>${q.group?` · <span style="font-weight:650;color:var(--ink-2)">${esc(q.group)}</span>`:''}</div></div>
       <div class="qacts"><button class="iconbtn" title="Edit" onclick="editQ(${i})">✎</button><button class="iconbtn" title="Remove" onclick="removeQ(${i})">✕</button></div>
     </div>
     <div class="qprev">${answerPreview(q)}</div>
@@ -561,6 +583,31 @@ function checkClarity(i){const q=state.questions[i],notes=[],text=q.t,words=(tex
 function undoRewrite(i){if(state.aiHelp&&state.aiHelp.i===i){withTicker(()=>{state.questions[i].t=state.aiHelp.original;});state.aiHelp=null;render();}}
 function dismissHelp(){state.aiHelp=null;render();}
 
+/* Grouping (constructs) — optional, high-level. Reached from the left rail. */
+function viewGrouping(){
+  const rows=state.questions.map((q,i)=>`
+    <div class="assign-row"><div class="aq">${i+1}. ${esc(q.t)}</div>
+      <select onchange="assignGroup(${i},this.value)">${['<option value="">— not grouped —</option>'].concat(state.groups.map(g=>`<option ${g===q.group?'selected':''}>${esc(g)}</option>`)).join('')}</select></div>`).join('');
+  return `
+    <div class="eyebrow">Build · Grouping <span class="faint" style="text-transform:none;letter-spacing:0;font-weight:600">· optional</span></div>
+    <h1 class="title">What is this survey measuring?</h1>
+    <p class="lede">Some surveys measure one underlying thing (a "construct") with several questions. Name those things and point each question at one, and ReliCheck can check the questions agree once answers come in. Skip this if your questions each stand on their own. New to it? Open the <b>Coach</b>.</p>
+    <div class="card pad" style="margin-bottom:18px;max-width:780px">
+      <div style="font-weight:700;margin-bottom:9px">What you are measuring</div>
+      <div class="grp-chips">${state.groups.length?state.groups.map(g=>`<span class="grp-chip">${esc(g)}</span>`).join(''):'<span class="faint" style="font-size:14.5px">None yet</span>'}</div>
+      <div class="grp-add"><input id="grpName" placeholder="e.g. Belonging, Decision confidence"><button class="btn sm" onclick="addGroup()">Add</button></div>
+    </div>
+    <div class="card pad" style="max-width:780px">
+      <div style="font-weight:700;margin-bottom:8px">Point each question at what it measures</div>
+      ${rows}
+    </div>
+    <div class="btn-row"><button class="btn" onclick="closeGrouping()">← Done</button></div>`;
+}
+function openGrouping(){state.grouping=true;state.phase='build';state.editing=null;render();}
+function closeGrouping(){state.grouping=false;render();toast('Groups saved.');}
+function addGroup(){const v=$('#grpName').value.trim();if(!v)return;if(!state.groups.includes(v))state.groups.push(v);render();}
+function assignGroup(i,v){state.questions[i].group=v;}
+
 /* Review */
 function openReview(){state.reviewOpen=true;paintReview();}
 function closeReview(){state.reviewOpen=false;paintReview();}
@@ -620,8 +667,18 @@ function viewAnalyze(){
     <div class="sec-row"><h2 class="sec">Can you trust these scores?</h2></div>
     <div class="trust ok"><span class="ti">✓</span><div>The questions measuring <b>decision confidence</b> agree well with each other. You can report that score with confidence.</div></div>
     <div class="trust hold"><span class="ti">!</span><div>There is not yet enough data on <b>belonging</b> to judge its reliability. ReliCheck is holding that score rather than guessing. Collect a few more responses.</div></div>
-    <div class="btn-row"><button class="btn" onclick="go('launch')">← Back to Launch</button><div class="spacer"></div><button class="btn primary">Open the full report →</button></div>`;
+    <div class="sec-row"><h2 class="sec">Take this further</h2></div>
+    <p class="muted" style="font-size:15px;max-width:740px;margin-bottom:16px">Hand your clean data to the right tool. Your questions and responses carry over, no re-upload.</p>
+    <div class="handoff">
+      ${handoffCard('Strength index (RSSI)','Full reliability and validity evidence on your responses.')}
+      ${handoffCard('Descriptive Studio','Explore and summarize what your data shows.')}
+      ${handoffCard('Qualitative Studio','Code and theme your open-ended answers.')}
+      ${handoffCard('Inferential Studio','Test differences and relationships.')}
+      ${handoffCard('Mixed Methods Studio','Integrate the numbers and the words together.')}
+    </div>
+    <div class="btn-row"><button class="btn" onclick="go('launch')">← Back to Launch</button></div>`;
 }
+function handoffCard(title,desc){return `<button class="handoff-card" onclick="toast('Hands off to ${esc(title)} with your data.')"><div class="hc-t">${esc(title)}</div><div class="hc-d">${esc(desc)}</div><div class="hc-go">Open →</div></button>`;}
 function bar(l,p){return `<div class="bar-row"><span class="bl">${esc(l)}</span><span class="bm"><span style="width:${p}%"></span></span><span class="bv">${p}%</span></div>`;}
 
 /* Coach */
