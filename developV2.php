@@ -68,8 +68,8 @@ body.start .main{grid-column:1/-1}
 .rail-link{display:block;width:100%;text-align:left;background:none;border:none;font-size:14.5px;font-weight:600;color:var(--ink-2);padding:9px 11px;border-radius:8px}
 .rail-link:hover{background:var(--soft);color:var(--ink)}
 .rail-foot{margin-top:auto;font-size:12.5px;color:var(--ink-3);line-height:1.55;padding-top:12px;border-top:1px solid var(--line)}
-.brand{display:flex;align-items:center;gap:9px;font-weight:750;letter-spacing:-0.02em;font-size:15px;justify-self:start;color:var(--ink)}
-.brand .mark{width:24px;height:24px;border-radius:7px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+.brand{display:flex;align-items:center;justify-self:start}
+.brand img{height:30px;width:auto;display:block}
 .tb-right{display:flex;align-items:center;justify-content:flex-end;gap:14px}
 
 /* stepper — words, spread out (plain) */
@@ -299,7 +299,7 @@ body.coach-open .companion{transform:translateX(0)}
 
 <div class="app">
   <div class="topbar">
-    <div class="brand"><span class="mark">R</span>ReliCheck</div>
+    <a class="brand" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/logo-brand.svg?v=<?= is_file(__DIR__.'/logo-brand.svg') ? filemtime(__DIR__.'/logo-brand.svg') : '1' ?>" alt="ReliCheck"></a>
     <div id="stepsWrap"></div>
     <div class="tb-right" id="tbRight"><button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button></div>
   </div>
