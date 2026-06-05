@@ -33,6 +33,8 @@ $_dv_initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $_dv_name) ?: 
   --bg:#fbfbfc; --panel:#ffffff; --soft:#f4f5f6;
   --line:rgba(0,0,0,.10); --line-2:rgba(0,0,0,.055);
   --pri:#1b1e25; --pri-2:#000;
+  /* Brand theme — rust orange (matches the public survey button, not a bright orange). */
+  --accent:#bf4726; --accent-2:#a23a1d; --accent-soft:#fbede7; --accent-ink:#8f3318;
   --good:#1f9e44; --good-soft:#eef6f0;
   --warn:#b07203; --warn-soft:#f7f2e8;
   --bad:#c1271f; --bad-soft:#f8ecea;
@@ -77,14 +79,14 @@ body.start .main{grid-column:1/-1}
 .tb-step{display:flex;align-items:center;gap:9px;cursor:pointer;background:none;border:none;padding:4px 2px}
 .tb-ind{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);flex-shrink:0;transition:.15s}
 .tb-step:hover .tb-ind{border-color:var(--ink-3)}
-.tb-step.done .tb-ind{background:var(--ink);border-color:transparent}
-.tb-step.active .tb-ind{background:var(--ink);border-color:transparent;box-shadow:0 0 0 3px rgba(16,24,40,.07)}
+.tb-step.done .tb-ind{background:var(--accent);border-color:transparent}
+.tb-step.active .tb-ind{background:var(--accent);border-color:transparent;box-shadow:0 0 0 3px var(--accent-soft)}
 .tb-word{font-size:15px;font-weight:600;color:var(--ink-3);transition:color .15s;white-space:nowrap}
 .tb-step:hover .tb-word{color:var(--ink-2)}
 .tb-step.done .tb-word{color:var(--ink-2)}
-.tb-step.active .tb-word{color:var(--ink);font-weight:750}
-.tb-connector{width:88px;height:1.5px;background:var(--line);flex-shrink:0;transition:background .15s}
-.tb-connector.done{background:var(--ink);opacity:.3}
+.tb-step.active .tb-word{color:var(--accent-ink);font-weight:750}
+.tb-connector{width:62px;height:1.5px;background:var(--line);flex-shrink:0;transition:background .15s}
+.tb-connector.done{background:var(--accent);opacity:.45}
 
 /* the strength ticker (plain; one small status color) */
 .ticker{display:flex;align-items:center;gap:13px;border:1px solid var(--line);background:var(--panel);padding:6px 12px 6px 16px;border-radius:11px;transition:.12s;position:relative;box-shadow:var(--sh)}
@@ -130,8 +132,8 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 /* buttons */
 .btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-weight:600;font-size:15px;padding:11px 19px;border-radius:10px;transition:.12s}
 .btn:hover{background:var(--soft)}
-.btn.primary{background:var(--pri);border-color:var(--pri);color:#fff}
-.btn.primary:hover{background:var(--pri-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
 .btn.lg{padding:14px 26px;font-size:16px}
 .btn.sm{padding:8px 14px;font-size:14px;border-radius:8px}
 .btn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:36px}
@@ -145,7 +147,7 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .entry{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:16px;max-width:1000px}
 .entry-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;text-align:left;display:flex;flex-direction:column;gap:11px;transition:.14s;box-shadow:var(--sh)}
 .entry-card:hover{border-color:var(--ink-3);box-shadow:var(--sh-lg)}
-.entry-card .ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--soft);color:var(--ink);font-size:19px}
+.entry-card .ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-size:19px}
 .entry-card h3{font-size:17.5px;font-weight:750}
 .entry-card p{font-size:14.5px;color:var(--ink-2);flex:1;line-height:1.6}
 .entry-card .go{font-size:14px;font-weight:700;color:var(--ink)}
@@ -366,7 +368,10 @@ const state={
     {t:'Was the enrollment process clear and did you feel supported the whole way through?',type:'Rating Scale',options:null},
   ],
 };
-const PHASES=[{id:'build',t:'Build'},{id:'launch',t:'Launch'},{id:'analyze',t:'Analyze'}];
+// Lifecycle: Build the survey → Analyze (pre-launch readiness checker) → Launch
+// (deploy) → Results (post-response). Analyze and Launch are deliberately
+// separate pages so neither is crowded.
+const PHASES=[{id:'build',t:'Build'},{id:'analyze',t:'Analyze'},{id:'launch',t:'Launch'},{id:'results',t:'Results'}];
 /* Full question-type catalog — ported from the mature builder so V2 exposes
    every type, not a subset. `editOpts` types get an answer-choices editor;
    `structural` types are content (no answer); settings carry per-type config
@@ -488,7 +493,7 @@ function defaultSettings(t){
   if(t==='Slider')return{sliderMin:0,sliderMax:100};
   return null;
 }
-function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render(); if(phase==='launch')maybeRunSiri();}
+function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render(); if(phase==='analyze')maybeRunSiri();}
 // SIRI Launch Check (100-pt readiness gate) — runs the real LaunchCheck engine
 // against the survey + the current SDSI Build Check result.
 function maybeRunSiri(){ if((state.questions||[]).length && window.LaunchCheck && window.LaunchCheck.assess && (!state.siriResult||state.siriStale)) runSiriCheck(); }
@@ -595,7 +600,7 @@ function render(){
   if(state.screen==='start'){$('#stepsWrap').innerHTML='';$('#tbRight').innerHTML='<button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button>';$('#rail').innerHTML='';renderStart();paintCoach();paintReview();return;}
   state.bc=assessNow();
   renderSteps();renderTicker();renderRail();
-  const fn={build:viewBuild,launch:viewLaunch,analyze:viewAnalyze}[state.phase];
+  const fn={build:viewBuild,analyze:viewAnalyzeCheck,launch:viewLaunch,results:viewResults}[state.phase]||viewBuild;
   $('#app').innerHTML=`<div class="screen">${fn()}</div>`;
   paintCoach();paintReview();
 }
@@ -828,7 +833,7 @@ function viewBuild(){
       <button class="btn primary lg" onclick="addBlankQ()">+ Add question</button>
       <button class="ailink" onclick="suggestQ()">${state.entry==='ai-assist'?'Suggest the next one':'Let ReliCheck suggest one'}</button>
       <div class="spacer"></div>
-      ${qs.length?`<button class="btn primary lg" onclick="goLaunch()">Ready to launch →</button>`:''}
+      ${qs.length?`<button class="btn primary lg" onclick="commitThenGo('analyze')">Check readiness →</button>`:''}
     </div>`;
 }
 function displayCard(q,i){
@@ -1001,13 +1006,15 @@ function dropEmptyDraft(){
   const q=state.questions[state.editing];
   if(q&&q._new&&!(q.t||'').trim()){ state.questions.splice(state.editing,1); state.editing=null; }
 }
-function goLaunch(){
+// Commit any open question edit, then move to the named phase. Used by the
+// forward buttons so an in-progress question is never lost on navigation.
+function commitThenGo(phase){
   if(state.editing!=null){
     const q=state.questions[state.editing];
     if((q.t||'').trim()){ delete q._new; state.editing=null; persistItems(); }
     else dropEmptyDraft();
   }
-  go('launch');
+  go(phase);
 }
 async function suggestQ(){
   if(state.phase!=='build')state.phase='build';
@@ -1185,7 +1192,18 @@ function techBreakdown(){
 function clarityScore(){return Math.max(3,Math.min(10,Math.round(strengthValue()/10)));}
 function dom(name,p,max){const pct=Math.round(p/max*100);return `<div class="dom"><div class="dom-head"><span class="nm">${name}</span><span class="pts">${p} / ${max}</span></div><div class="meter"><span style="width:${pct}%"></span></div></div>`;}
 
-/* Launch / Analyze */
+/* Analyze (pre-launch readiness checker) · Launch (deploy) · Results (post-response) */
+// Analyze = the pre-launch readiness check. It runs the real SIRI Launch Check so
+// you fix anything that would weaken your data BEFORE you send the survey out.
+function viewAnalyzeCheck(){
+  const hasQ=(state.questions||[]).length>0;
+  return `
+    <div class="eyebrow">Analyze · readiness check</div>
+    <h1 class="title">Is your survey ready?</h1>
+    <p class="lede">Before you launch, ReliCheck checks that your survey will produce clean, trustworthy data — question design plus deployment readiness. Resolve anything flagged, then continue to Launch.</p>
+    ${hasQ?siriCard():`<div class="notice" style="max-width:760px"><div class="ni">✎</div><div><div style="font-weight:700;font-size:14.5px">No questions yet</div><p class="muted" style="font-size:14px;margin-top:3px">Add some questions in Build, then come back to check readiness.</p></div></div>`}
+    <div class="btn-row" style="margin-top:24px"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div><button class="btn primary lg" onclick="go('launch')">Continue to Launch →</button></div>`;
+}
 function viewLaunch(){
   const ds=state.deploymentSettings, live=!!(ds&&ds.link_key);
   const link=live?('relichecksurvey.com/s/'+ds.link_key):'';
@@ -1211,18 +1229,19 @@ function viewLaunch(){
       <button onclick="exportInstrumentCsv()"><span class="si">▤</span><span class="st">CSV / Excel</span></button>
       <button onclick="exportInstrumentJson()"><span class="si">{ }</span><span class="st">JSON / Qualtrics</span></button>
     </div>`;
+  const readyPct=state.siriResult&&state.siriResult.total!=null?Math.round(state.siriResult.total):null;
+  const readyNote=readyPct!=null?`<button class="ailink" onclick="go('analyze')">Readiness ${readyPct}/100 — review</button>`:`<button class="ailink" onclick="go('analyze')">← Run the readiness check first</button>`;
   return `
     <div class="eyebrow">Launch</div>
     <h1 class="title">Send it out</h1>
-    <p class="lede">A quick readiness check first, then publish to get a shareable link. Answers flow back into Analyze automatically.</p>
-    ${siriCard()}
+    <p class="lede">Publish your survey to get a shareable link, then share it however you like. Answers flow into Results automatically. ${readyNote}</p>
     ${linkBlock}
     ${share}
     ${live?`<div class="card pad" style="max-width:760px;margin:18px 0 0"><div style="font-weight:700;margin-bottom:6px">Before you send it wide</div><p class="muted" style="font-size:14px">Send it to 3 to 5 people first and watch where they pause. The Coach has more on this.</p></div>`:''}
     ${exportsBlock}
-    <div class="btn-row" style="margin-top:24px"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('analyze')">Go to Analyze →</button></div>`;
+    <div class="btn-row" style="margin-top:24px"><button class="btn" onclick="go('analyze')">← Back to Analyze</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('results')">Go to Results →</button></div>`;
 }
-// The SIRI Launch Check (100-pt readiness) card shown on Launch — runs the real engine.
+// The SIRI Launch Check (100-pt readiness) card — runs the real engine. Shown on the Analyze (pre-launch readiness) page.
 function siriBandColor(key){ return (key==='strong'||key==='good')?'green':(key==='caution'?'amber':'red'); }
 function siriCard(){
   const r=state.siriResult;
@@ -1408,16 +1427,16 @@ function invitePanel(link){
     ov.remove();
   });
 }
-function simulate(){state.responses=142;go('analyze');toast('142 responses came in.');}
-function viewAnalyze(){
+function simulate(){state.responses=142;go('results');toast('142 responses came in.');}
+function viewResults(){
   if(state.responses===0)return `
-    <div class="eyebrow">Analyze</div>
+    <div class="eyebrow">Results</div>
     <h1 class="title">Understand the answers</h1>
     <p class="lede">When responses come in, ReliCheck shows what they mean and how much you can trust them, in plain language.</p>
     <div class="notice"><div class="ni">⏳</div><div><div style="font-weight:700;font-size:14.5px">Waiting for responses</div><p class="muted" style="font-size:14px;margin-top:3px">No answers yet. Once a handful arrive, your results appear here with a trust check on the questions that measure the same thing.</p></div></div>
     <div class="btn-row"><button class="btn" onclick="go('launch')">← Back to Launch</button><div class="spacer"></div><button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button></div>`;
   return `
-    <div class="eyebrow">Analyze</div>
+    <div class="eyebrow">Results</div>
     <h1 class="title">What your answers say</h1>
     <p class="lede"><b>${state.responses} responses</b> so far. Here is the plain-language read. ReliCheck handles the statistics underneath.</p>
     <div class="result-card"><h4>How did students first hear about us?</h4>${bar('Friend or family',46)}${bar('Social media',28)}${bar('College fair',16)}${bar('Web search',10)}</div>
@@ -1443,9 +1462,11 @@ function bar(l,p){return `<div class="bar-row"><span class="bl">${esc(l)}</span>
 const COACH={
   build:{sub:'Guidance · Build',what:'Write your survey one question at a time. The strength reading at the top moves with every question, so a weak one shows itself right away.',why:'Catching a vague or double-barreled question as you write it is far cheaper than discovering it after people have answered.',tip:'Keep each question to one idea. If it has an "and" in it, it might really be two questions.',
     prompts:[['Which question type should I use?','Multiple choice for distinct options (pick a major), a rating scale for degree (how satisfied, 1–5), short text for a word, long comment for open feedback.'],['Why did the strength drop?','A question scored low, usually because it is double-barreled, too long, or missing answer options. The one pulling it down is marked on its card.'],['What does grouping do?','Pointing several questions at the same thing lets ReliCheck check they agree once answers arrive. Optional, useful once you have a few related questions.']]},
-  launch:{sub:'Guidance · Launch',what:'Turn your finished survey into a shareable link and send it to the people you want answers from.',why:'A short pilot with a few people catches confusing wording before it reaches everyone.',tip:'Send it to 3 to 5 people first and watch where they hesitate.',
+  analyze:{sub:'Guidance · Analyze',what:'A readiness check before you launch. ReliCheck reviews your survey design and deployment readiness and gives a 100-point score with anything worth fixing first.',why:'Fixing a confusing question or a missing consent statement now is far cheaper than discovering it after people have answered. A ready survey yields data you can actually trust.',tip:'Clear any deployment blockers before launching. Cautions are fine to launch with, but worth a look.',
+    prompts:[['What is this score?','A pre-launch readiness index out of 100: your question design plus deployment readiness. It is not your data yet — it is whether your survey is ready to collect good data.'],['What is a deployment blocker?','Something that would make the responses hard to interpret — like placeholder answer options or a required sensitive question with no way to decline. Fix these before launch.']]},
+  launch:{sub:'Guidance · Launch',what:'Turn your finished survey into a shareable link and send it to the people you want answers from. Share by link, email, QR, or an invite list, or export the instrument.',why:'A short pilot with a few people catches confusing wording before it reaches everyone.',tip:'Send it to 3 to 5 people first and watch where they hesitate.',
     prompts:[['Can I change it after launch?','Small wording fixes are fine. Avoid changing answer options once responses are coming in, since it makes early and later answers hard to compare.']]},
-  analyze:{sub:'Guidance · Analyze',what:'Once answers come in, ReliCheck shows what they mean and how much you can trust them.',why:'A result you can trust comes from questions that actually agree with each other. ReliCheck tells you when they do, and when there is not enough data yet.',tip:'Wait until you have a reasonable number of responses before reading too much into the numbers.',
+  results:{sub:'Guidance · Results',what:'Once answers come in, ReliCheck shows what they mean and how much you can trust them.',why:'A result you can trust comes from questions that actually agree with each other. ReliCheck tells you when they do, and when there is not enough data yet.',tip:'Wait until you have a reasonable number of responses before reading too much into the numbers.',
     prompts:[['What is a reliability check?','It tells you whether questions meant to measure the same thing actually agree. High agreement means you can trust that score; low agreement means revisit those questions.']]},
 };
 function toggleCoach(){state.coachOpen=!state.coachOpen;document.body.classList.toggle('coach-open',state.coachOpen);}
