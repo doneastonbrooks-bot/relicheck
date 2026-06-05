@@ -49,7 +49,8 @@ a{color:inherit;text-decoration:none}
 .muted{color:var(--ink-2)} .faint{color:var(--ink-3)}
 
 /* shell: top bar + left outline rail + wide main */
-.app{display:grid;grid-template-rows:var(--topbar-h) 1fr;grid-template-columns:var(--rail-w) 1fr;height:100vh}
+.app{display:grid;grid-template-rows:var(--topbar-h) 1fr auto;grid-template-columns:var(--rail-w) 1fr;height:100vh}
+#studioFooter{grid-column:1/-1;grid-row:3}
 .topbar{grid-column:1/-1;grid-row:1;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;padding:0 26px;height:var(--topbar-h);background:var(--panel);border-bottom:1px solid var(--line);z-index:30}
 body.start .rail{display:none}
 body.start .main{grid-column:1/-1}
@@ -304,6 +305,8 @@ body.coach-open .companion{transform:translateX(0)}
   </div>
   <nav class="rail" id="rail"></nav>
   <main class="main"><div class="wrap" id="app"></div></main>
+  <!-- Shared ReliCheck studio footer (studio-footer.js, grid row 3) -->
+  <div id="studioFooter"></div>
 </div>
 
 <button class="coach-tab" onclick="toggleCoach()"><span class="lbl">Coach</span></button>
@@ -324,6 +327,7 @@ body.coach-open .companion{transform:translateX(0)}
 <aside class="review" id="review"></aside>
 <div class="toast" id="toast"></div>
 
+<script src="/apps/studio/studio-footer.js?v=<?= is_file(__DIR__.'/apps/studio/studio-footer.js') ? filemtime(__DIR__.'/apps/studio/studio-footer.js') : '1' ?>"></script>
 <script>
 const state={
   screen:'start',startFlow:null,phase:'build',
@@ -711,6 +715,7 @@ function paintCoach(){
 function toggleAsk(i){state.askOpen=state.askOpen===i?null:i;paintCoach();}
 
 render();
+if(typeof StudioFooter!=='undefined')StudioFooter.init();
 </script>
 </body>
 </html>
