@@ -25,13 +25,13 @@ return [
     'accent_deep'    => '#b85f10',
     'accent_soft'    => '#fef3e8',
     'primary_action' => 'Open the development workspace',
-    'primary_route'  => '/develop.php?db=1',
+    'primary_route'  => '/developV2.php',
     'sample'         => [
       'project' => 'Workplace Equity Survey, 2026',
       'context' => '412 responses',
     ],
     'route'  => '/survey-dev.php',
-    'direct' => '/develop.php?db=1&start=choose',
+    'direct' => '/developV2.php',
   ],
   'da' => [
     'slug'           => 'da',

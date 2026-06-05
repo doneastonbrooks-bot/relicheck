@@ -1,5 +1,17 @@
 <?php
 // ════════════════════════════════════════════════════════════════════════
+//  ENTRY REPOINT (2026-06-05): the live Survey Builder is now developV2.php
+//  (the rebuilt V4 builder). Every develop.php link forwards here, with its
+//  query string preserved (?project_id=N opens that project). To load this
+//  original builder directly — as a fallback or for debugging — add ?legacy=1.
+//  Revert: delete this block.
+if (!isset($_GET['legacy'])) {
+    $qs = $_SERVER['QUERY_STRING'] ?? '';
+    $qs = preg_replace('/(^|&)legacy=[^&]*/', '', $qs);
+    header('Location: /developV2.php' . ($qs !== '' ? '?' . ltrim($qs, '&') : ''), true, 302);
+    exit;
+}
+// ════════════════════════════════════════════════════════════════════════
 //  ReliCheck Survey Development System.
 //
 //  Naming (locked):
@@ -879,6 +891,11 @@ const state = {
   siriResult:null,       // last computed Launch Check result from LaunchCheck.assess()
   siriStale:false,       // true when the survey changed since the last Launch Check run
   fixFocus:null,         // element id to scroll/flash after a "Fix this" navigation (consumed once)
+  fixReturn:null,        // route to go back to after a "Fix this" detour (e.g. 'siri')
+  constructsDirty:false, // true when constructs have unsaved edits
+  aiSuggestBusy:false,   // ai-assist: fetching question suggestions
+  aiSuggestions:[],      // ai-assist: alternate suggestions after the first is loaded
+  aiSuggestError:'',     // ai-assist: error from suggestion fetch
   publishReady:false,    // user confirmed readiness on the Publish gate (no link/collection yet)
   deploymentSettings:null, // Phase 3B: {link_key, published_at, responses_open} from deployment_settings
   responseCount:0,         // Phase 3D: completed public submissions for this project
@@ -1073,7 +1090,7 @@ function toast(msg){
    APP. Navigation + actions
    ════════════════════════════════════════════════════════════════════ */
 const App = {
-  go(route, focus){ state.route=route; state.reached[route]=true; state.fixFocus=(typeof focus==='string'?focus:null); window.scrollTo(0,0); render(); },
+  go(route, focus, returnRoute){ state.route=route; state.reached[route]=true; state.fixFocus=(typeof focus==='string'&&focus?focus:null); state.fixReturn=(typeof returnRoute==='string'&&returnRoute?returnRoute:null); window.scrollTo(0,0); render(); },
 
   async setEntry(mode){
     state.entry=mode; state.reached.start=true;
@@ -1145,7 +1162,7 @@ const App = {
 
     if(ai && ai.items.length){
       if(PERSIST.on){
-        try { await App._createProject(ai.title, ai.items, 'ai-build', ai.constructs);
+        try { await App._createProject(ai.title, ai.items, state.entry||'ai-build', ai.constructs);
           toast('ReliCheck Intelligence drafted '+ai.items.length+' tailored items'); App.go('build'); return; }
         catch(e){ degrade(e.message); }
       }
@@ -1155,14 +1172,14 @@ const App = {
     }
 
     // Fallback: AI not configured, not signed in, or unreachable.
-    const why = state.aiReason ? ' ('+state.aiReason+')' : '';
+    if(state.aiReason) toast('ReliCheck Intelligence error: '+state.aiReason);
     const qs=MOCK.builtSurvey.questions.slice();
     if(PERSIST.on){
-      try { await App._createProject(state.study.name||'ReliCheck Intelligence Study', qs, 'ai-build'); toast('ReliCheck Intelligence is unavailable'+why+'. Drafted a sample to edit.'); App.go('build'); return; }
+      try { await App._createProject(state.study.name||'ReliCheck Intelligence Study', qs, state.entry||'ai-build'); toast('Loaded a sample study to edit while ReliCheck Intelligence is unavailable.'); App.go('build'); return; }
       catch(e){ degrade(e.message); }
     }
     state.survey={ title:state.study.name||'ReliCheck Intelligence Study', questions:qs };
-    toast('ReliCheck Intelligence is unavailable'+why+'. Drafted a sample to edit.');
+    toast('Loaded a sample study to edit while ReliCheck Intelligence is unavailable.');
     App.go('build');
   },
 
@@ -1196,22 +1213,28 @@ const App = {
         action, prompt:text, type:state.composer.type||'',
         purpose:state.study.purpose||'', population:state.study.population||'',
       }});
-      state.composerAI={ busy:false, action,
-        rewrite:(r.rewrite||'').trim(),
-        notes:(r.notes||[]).filter(Boolean), reason:'' };
+      const rewrite=(r.rewrite||'').trim();
+      const notes=(r.notes||[]).filter(Boolean);
+      // For rewrite: apply it immediately so one click = the question changes.
+      // Store the original so the user can undo.
+      if(action==='rewrite' && rewrite && state.composer){
+        state.composer.t=rewrite;
+        state.composerAI={ busy:false, action, rewrite, notes, reason:'', original:text };
+      } else {
+        state.composerAI={ busy:false, action, rewrite, notes, reason:'' };
+      }
     } catch(e){
       state.composerAI={ busy:false, action, rewrite:'', notes:[], reason:e.message };
     }
     render();
   },
 
-  // Accept the rewrite ReliCheck Intelligence offered into the composer text.
-  useRewrite(){
+  // Undo a rewrite that was auto-applied.
+  revertRewrite(){
     const a=state.composerAI;
-    if(!a || !a.rewrite || !state.composer) return;
-    state.composer.t=a.rewrite;
+    if(!a || !a.original || !state.composer) return;
+    state.composer.t=a.original;
     state.composerAI=null;
-    toast('Question updated');
     render();
   },
 
@@ -1330,13 +1353,13 @@ const App = {
       item_clarity:{route:R,label:'Revise flagged items'},
       response_option_validity:{route:R,label:'Fix response options in Revise'},
       response_scale_consistency:{route:R,label:'Fix scales in Revise'},
-      purpose_alignment:{route:S,label:'Add a purpose in Study Setup'},
-      administration_consistency:{route:S,label:'Set the response mode in Study Setup'},
+      purpose_alignment:{route:S,focus:'setup-purpose',label:'Add a purpose in Study Setup'},
+      administration_consistency:{route:S,focus:'setup-name',label:'Review study details in Study Setup'},
       redundancy_balance:{route:B,label:'Balance items in the workspace'},
       scale_structure_readiness:{route:B,label:'Group scaled items in the workspace'},
       completion_burden:{route:B,label:'Adjust survey length in the workspace'},
       // SIRI whole-survey domain keys (new 5-domain model) → coarse routing.
-      purpose:{route:S,label:'Add survey purpose and audience in Study Setup'},
+      purpose:{route:S,focus:'setup-purpose',label:'Add survey purpose and audience in Study Setup'},
       coverage:{route:B,focus:'build-constructs',label:'Add constructs or map items'},
       structure:{route:B,label:'Adjust structure and length in the workspace'},
       scale:{route:R,label:'Fix scale consistency in Revise'},
@@ -1359,7 +1382,8 @@ const App = {
   _fixArg(key){
     const fx=App._fixFor(key); let focus=fx.focus||'';
     if(key==='item_construct_alignment'){ const u=App._firstUnmappedItem(); if(u>=0) focus='qcard-'+u; }
-    return { route:fx.route, label:fx.label, focus:focus, arg: focus?`'${fx.route}','${focus}'`:`'${fx.route}'` };
+    // Always pass 'siri' as the return route so fix-action detours can navigate back.
+    return { route:fx.route, label:fx.label, focus:focus, arg: focus?`'${fx.route}','${focus}','siri'`:`'${fx.route}','','siri'` };
   },
   // Phase 3A — Publish Readiness gate. SIRI is the final launch gate; SDSI is
   // advisory only. Returns { status:'blocked'|'review'|'ready', headline,
@@ -1403,13 +1427,20 @@ const App = {
   // Phase 2E — minimal construct add + item-mapping controls (the 'constructs'
   // fix screen). Reuse existing persistence: saveConstructs + saveItems. Any
   // change marks SIRI stale (via _markSdsiStale) so the user re-runs the check.
-  addConstruct(){ App._ensureSurvey(); state.survey.constructs=(state.survey.constructs||[]); state.survey.constructs.push({name:'',definition:''}); App._markSdsiStale(); render(); },
-  setConstructField(i,k,v){ const cs=(state.survey&&state.survey.constructs)||[]; if(!cs[i]) return; cs[i][k]=v; App._markSdsiStale(); clearTimeout(App._consTimer); App._consTimer=setTimeout(()=>App._persistConstructs(),500); },
+  addConstruct(){ App._ensureSurvey(); state.survey.constructs=(state.survey.constructs||[]); state.survey.constructs.push({name:'',definition:''}); state.constructsDirty=true; App._markSdsiStale(); render(); },
+  setConstructField(i,k,v){ const cs=(state.survey&&state.survey.constructs)||[]; if(!cs[i]) return; cs[i][k]=v; state.constructsDirty=true; App._markSdsiStale(); clearTimeout(App._consTimer); App._consTimer=setTimeout(()=>App._persistConstructs(),1500); render(); },
   removeConstruct(i){ const cs=(state.survey&&state.survey.constructs)||[]; const c=cs[i]; if(!c) return; const nm=c.name; cs.splice(i,1);
     (((state.survey&&state.survey.questions))||[]).forEach(q=>{ if(nm && q.construct===nm){ q.construct=''; delete q.constructId; } });
     App._markSdsiStale(); App._persistConstructs(); App._persistItems(); render(); },
   setItemConstruct(i,v){ const q=((state.survey&&state.survey.questions)||[])[i]; if(!q) return; q.construct=v||''; if(!v) delete q.constructId; App._markSdsiStale(); App._persistItems(); render(); },
   _persistConstructs(){ if(PERSIST_REQUESTED && state.projectId) App.saveConstructs(); },
+  async saveConstructsManual(){
+    clearTimeout(App._consTimer);
+    await App.saveConstructs();
+    state.constructsDirty=false;
+    render();
+    toast('Constructs saved');
+  },
 
   // Drop the working project/survey so the next entry starts clean. Does NOT
   // delete anything in the database; it only clears the in-app pointer + the
@@ -1462,15 +1493,60 @@ const App = {
     } else {
       state.survey.questions.push(c);
     }
-    state.composer=null; state.composerRef=null; state.composerAI=null;
+    state.composer=null; state.composerRef=null; state.composerAI=null; state.aiSuggestions=[]; state.aiSuggestError='';
     App._markSdsiStale();
     render(); App._persistItems();
   },
-  cancelComposer(){ state.composer=null; state.composerRef=null; state.composerAI=null; render(); },
+  cancelComposer(){ state.composer=null; state.composerRef=null; state.composerAI=null; state.aiSuggestions=[]; state.aiSuggestError=''; render(); },
   // Clear the composer to a fresh, empty state ready for the next type pick.
   newComposer(){
+    if(state.entry==='ai-assist'){ App.aiSuggestQuestion(); return; }
     state.composer=null; state.composerRef=null; state.composerAI=null; render();
     const el=$('#composer'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'center'});
+  },
+
+  // ai-assist path: call AI to suggest the next question, populate the composer
+  // with the first result, and store the rest as one-click alternatives.
+  async aiSuggestQuestion(){
+    state.composer=null; state.composerRef=null; state.composerAI=null;
+    state.aiSuggestBusy=true; state.aiSuggestions=[]; state.aiSuggestError='';
+    render();
+    const el=$('#composer'); if(el&&el.scrollIntoView) el.scrollIntoView({behavior:'smooth',block:'center'});
+    try {
+      const existing=((state.survey&&state.survey.questions)||[]).map(q=>q.t).filter(Boolean);
+      const r=await DB.call('ai-suggest.php',{method:'POST',body:{
+        purpose:state.study.purpose||'', population:state.study.population||'', existing
+      }});
+      // Client-side dedup: strip punctuation + lowercase, then drop any suggestion
+      // whose normalized text matches an existing question. The AI is instructed not
+      // to duplicate but may ignore it when context is thin.
+      const norm = t => t.toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+      const existingNorm = new Set(existing.map(norm));
+      const qs=(r.questions||[]).filter(q=>q.prompt).filter(q=>!existingNorm.has(norm(q.prompt)));
+      if(!qs.length){
+        state.aiSuggestBusy=false;
+        state.aiSuggestError='ReliCheck Intelligence ran out of new ideas — all suggestions matched questions you already have. Add a study purpose and target population in Setup so it can suggest different questions.';
+        render(); return;
+      }
+      const first=qs[0];
+      state.composer=newQuestion(first.type||'likert');
+      state.composer.t=first.prompt;
+      state.aiSuggestBusy=false;
+      state.aiSuggestions=qs.slice(1);
+    } catch(e){
+      state.aiSuggestBusy=false; state.aiSuggestError=e.message;
+    }
+    render();
+  },
+
+  // Pick an alternate AI suggestion into the composer.
+  useAiSuggestion(i){
+    const s=state.aiSuggestions[i]; if(!s) return;
+    state.composer=newQuestion(s.type||'likert');
+    state.composer.t=s.prompt;
+    state.composerRef=null; state.composerAI=null;
+    state.aiSuggestions=state.aiSuggestions.filter((_,idx)=>idx!==i);
+    render();
   },
 
   // Load a saved question back into the composer for editing.
@@ -1538,6 +1614,7 @@ const App = {
       const r=await DB.call('constructs-save.php',{method:'POST',body:{project_id:state.projectId, constructs:DB.constructsWire()}});
       state.survey.constructs=(r.constructs||[]).map(c=>({ id:c.id, name:c.name||'', definition:c.definition||'' }));
       DB.realignItemConstructs();
+      state.constructsDirty=false;
       dlog('constructs saved:', state.survey.constructs);
     } catch(e){ degrade(e.message); }
   },
@@ -2695,9 +2772,27 @@ function composerChecks(c){
 function composerCenter(){
   const c=state.composer, e=escapeHtml;
   if(!c){
+    // ai-assist loading / error state
+    if(state.aiSuggestBusy){
+      return `<div class="composer-empty" id="composer">
+        <p class="hint" style="margin:0">ReliCheck Intelligence is suggesting the next question…</p>
+      </div>`;
+    }
+    if(state.aiSuggestError){
+      return `<div class="composer-empty" id="composer">
+        <p class="hint" style="margin:0 0 10px">${e(state.aiSuggestError)}</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn sm" onclick="App.go('setup','setup-purpose')">Add purpose in Setup</button>
+          <button class="btn sm" onclick="App.aiSuggestQuestion()">Try again</button>
+        </div>
+      </div>`;
+    }
+    const emptyMsg = state.entry==='ai-assist'
+      ? 'Click <b>+ New question</b> and ReliCheck Intelligence will suggest the next question for you.'
+      : 'Click a question type on the right. It opens here so you can write your question, then save. Saved questions stack below so you always see the whole survey.';
     return `<div class="composer-empty" id="composer">
-      <h3>Write your first question here</h3>
-      <p>Click a question type on the right. It opens here so you can write your question, then save. Saved questions stack below so you always see the whole survey.</p>
+      <h3>${state.entry==='ai-assist'?'AI-assisted question builder':'Write your first question here'}</h3>
+      <p>${emptyMsg}</p>
     </div>`;
   }
   const editing=state.composerRef!=null;
@@ -2714,10 +2809,17 @@ function composerCenter(){
       ${qPreview(c)}
     </div>
     ${composerChecks(c)}
-    ${state.entry==='ai-assist' ? composerAssist() : ''}
+    ${composerAssist()}
+    ${state.aiSuggestions&&state.aiSuggestions.length&&!editing?`<div class="composer-assist" style="margin-top:10px">
+      <div class="eyebrow" style="color:var(--ink-3)">Other suggestions</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        ${state.aiSuggestions.map((s,i)=>`<button class="btn sm" style="text-align:left;white-space:normal;height:auto;padding:6px 10px" onclick="App.useAiSuggestion(${i})"><span class="badge gray" style="margin-right:6px;flex-shrink:0">${typeLabel(s.type)}</span>${e(s.prompt)}</button>`).join('')}
+      </div>
+    </div>`:''}
     <div class="composer-foot">
       <button class="btn primary" onclick="App.saveComposer()">${editing?'Update question':'Save question'}</button>
       <button class="btn" onclick="App.cancelComposer()">Cancel</button>
+      ${state.entry==='ai-assist'&&!editing?`<button class="btn sm" style="margin-left:auto" onclick="App.aiSuggestQuestion()">Suggest another</button>`:''}
     </div>
   </div>`;
 }
@@ -2733,21 +2835,21 @@ function composerAssist(){
   } else if(a && a.reason){
     result=`<p class="hint" style="margin:10px 0 0">ReliCheck Intelligence is unavailable right now (${e(a.reason)}). Your question is unchanged.</p>`;
   } else if(a && (a.rewrite || a.notes.length)){
-    const rw = a.rewrite
+    // rewrite action: question was already updated in the textarea; show confirmation + undo
+    const rw = (a.action==='rewrite' && a.rewrite)
       ? `<div class="assist-rewrite">
-          <div class="eyebrow" style="color:var(--ink-3)">Suggested rewrite</div>
-          <p class="assist-text">${e(a.rewrite)}</p>
+          <div class="eyebrow" style="color:var(--ink-3)">Question updated</div>
           <div class="assist-acts">
-            <button class="btn sm primary" onclick="App.useRewrite()">Use this wording</button>
-            <button class="btn sm" onclick="App.dismissAssist()">Keep mine</button>
+            ${a.original?`<button class="btn sm" onclick="App.revertRewrite()">Undo</button>`:''}
+            <button class="btn sm" onclick="App.dismissAssist()">Dismiss</button>
           </div>
         </div>`
       : '';
     const notes = a.notes.length
-      ? `<div class="assist-notes"><div class="eyebrow" style="color:var(--ink-3)">${a.rewrite?'What changed':'Clarity notes'}</div>
+      ? `<div class="assist-notes"><div class="eyebrow" style="color:var(--ink-3)">${(a.action==='rewrite'&&a.rewrite)?'What changed':'Clarity notes'}</div>
           <ul>${a.notes.map(n=>`<li>${e(n)}</li>`).join('')}</ul></div>`
       : '';
-    result=`<div class="assist-result">${rw}${notes}${a.rewrite?'':`<div class="assist-acts"><button class="btn sm" onclick="App.dismissAssist()">Dismiss</button></div>`}</div>`;
+    result=`<div class="assist-result">${rw}${notes}${(a.action==='rewrite'&&a.rewrite)?'':`<div class="assist-acts"><button class="btn sm" onclick="App.dismissAssist()">Dismiss</button></div>`}</div>`;
   }
   const busy = a && a.busy;
   return `<div class="composer-assist">
@@ -2930,15 +3032,17 @@ const Screens = {
       <p class="lede">A few essentials now keep every later step (design review, deployment, analysis) aligned to the same goal.</p>
       ${aiNote}
       <div class="card pad" style="max-width:720px">
-        <div class="field"><label>Study name</label>
+        <div class="field" id="setup-name"><label>Study name</label>
           <input value="${state.study.name||''}" placeholder="e.g. Spring Employee Engagement Pulse" oninput="App.setStudy('name',this.value)"></div>
-        <div class="field"><label>Purpose / research question</label>
+        <div class="field" id="setup-purpose"><label>Purpose / research question</label>
           <textarea placeholder="What decision will this survey inform?" oninput="App.setStudy('purpose',this.value)">${state.study.purpose||''}</textarea></div>
-        <div class="field"><label>Target population</label>
+        <div class="field" id="setup-population"><label>Target population</label>
           <input value="${state.study.population||''}" placeholder="e.g. Full-time staff, all departments" oninput="App.setStudy('population',this.value)"></div>
       </div>
       <div class="btn-row">
-        <button class="btn" onclick="App.go('start')">← Back</button>
+        ${state.fixReturn
+          ? `<button class="btn" onclick="App.go('${state.fixReturn}')">← Back to Launch Check</button>`
+          : `<button class="btn" onclick="App.go('start')">← Back</button>`}
         <div class="spacer"></div>
         ${state.entry==='ai-build'
           ? `<button class="btn primary lg" onclick="App.generate()" ${state.aiBusy?'disabled':''}>${state.aiBusy?'ReliCheck Intelligence is drafting…':`Generate study ${SVG.arrow}`}</button>`
@@ -3005,7 +3109,10 @@ const Screens = {
             <div class="saved-head" style="margin-bottom:6px">
               <h2 class="sec" style="margin:0">Constructs</h2>
               <div class="spacer"></div>
-              <button class="btn sm" onclick="App.addConstruct()">+ Add construct</button>
+              ${state.constructsDirty
+                ? `<button class="btn sm primary" onclick="App.saveConstructsManual()">Save constructs</button>`
+                : (cs.length ? `<span class="badge green" style="font-size:12px">Saved</span>` : '')}
+              <button class="btn sm" onclick="App.addConstruct()" style="margin-left:6px">+ Add construct</button>
             </div>
             <p class="muted" style="font-size:13px;margin:0 0 10px">Name what your survey measures, then map each question to a construct using the selector on its card below.</p>
             ${cs.length
@@ -3024,7 +3131,7 @@ const Screens = {
               <button class="btn sm" onclick="App.archiveProject()">Archive</button>`:''}
           </div>
           ${ n ? savedCards : `<div class="callout"><div class="ci">${SVG.info}</div><div><h4>No questions yet</h4>
-              <p>Pick a type on the right, write your question in the center, and save. It appears here. ${state.entry==='ai-assist'?'ReliCheck Intelligence suggestions will appear as you type.':''}</p></div></div>` }
+              <p>Pick a type on the right, write your question in the center, and save. It appears here. ReliCheck Intelligence can help improve wording or check clarity as you go.</p></div></div>` }
           <div class="btn-row" style="margin-top:20px">
             <button class="btn" onclick="App.go('setup')">← Setup</button>
             <div class="spacer"></div>
@@ -4212,13 +4319,12 @@ function render(){
   App._focusAfterRender();
 }
 
-// Boot: probe the server for auth + templates. Always lands on the start screen
-// so a page reload never drops the user into a stale project workspace.
-// Projects are re-opened intentionally via "Work on a Saved Survey" on the start screen.
+// Boot: load templates, then resume the last open project if one is stored in
+// localStorage. A fresh DB load is never stale, so restoring is safe. Falls
+// through to the Start screen if there is no saved id or the load fails.
 async function boot(){
   const _start = new URLSearchParams(location.search).get('start');
-  // Consume the ?start hint ONCE, then strip it from the address bar so a later
-  // hard-reload returns to the Start screen instead of re-firing the same entry.
+  // Consume the ?start hint ONCE so a later hard-reload returns to Start.
   if(_start){ try { history.replaceState(null, '', location.pathname); } catch(e){} }
   if(PERSIST.on){
     try {
@@ -4228,10 +4334,26 @@ async function boot(){
   }
   // Entry hint from the Survey Development System landing (survey-dev.php):
   // ?start=scratch|existing|template|ai-build|ai-assist routes the user straight
-  // to that entry. 'import' is intentionally NOT here: bringing in an existing
-  // survey is now the upload widget on the Start screen, not a paste screen.
+  // to that entry.
   const _validStart = ['scratch','existing','template','ai-build','ai-assist'];
   if(_start && _validStart.includes(_start)){ App.setEntry(_start); return; }
+  // Auto-restore the last open project from localStorage so browser Back or a
+  // reload does not wipe in-progress work.
+  if(PERSIST.on){
+    let savedId = null;
+    try { savedId = Number(localStorage.getItem(LS_KEY)) || null; } catch(e){}
+    if(savedId){
+      try {
+        const r = await DB.call('project-load.php?id='+encodeURIComponent(savedId));
+        DB.hydrate(r);
+        App.go('build');
+        return;
+      } catch(e){
+        try{ localStorage.removeItem(LS_KEY); }catch(_){}
+        // Fall through to Start screen if project is gone or inaccessible.
+      }
+    }
+  }
   render();
 }
 

@@ -639,8 +639,15 @@ async function saveConstructsNow(){
 let _titleTimer=null;
 function setStudyName(v){ state.study.name=v; if(!(PERSIST.on&&state.projectId))return; clearTimeout(_titleTimer); _titleTimer=setTimeout(()=>{ DB.call('project-update.php',{method:'POST',body:{id:state.projectId,title:state.study.name}}).catch(e=>degrade(e.message)); },500); }
 // Always land on Start (never trap the user inside the last project). Resume is
-// offered on the Start screen when a saved project exists.
-function boot(){ render(); if(typeof StudioFooter!=='undefined')StudioFooter.init(); }
+// offered on the Start screen when a saved project exists. EXCEPTION: a
+// ?project_id=N deep-link (e.g. from ReliCheck Basic / studio handoffs) opens
+// that project directly so the old develop.php links keep working after repoint.
+function boot(){
+  render();
+  if(typeof StudioFooter!=='undefined')StudioFooter.init();
+  const pid=new URLSearchParams(location.search).get('project_id');
+  if(pid && /^\d+$/.test(pid) && PERSIST_REQUESTED){ openProject(+pid); }
+}
 function savedProjectId(){ try{ return Number(localStorage.getItem(LS_KEY))||null; }catch(e){ return null; } }
 function goStart(){ state.screen='start'; state.startFlow=null; state.projects=null; render(); }
 async function resumeLast(){
