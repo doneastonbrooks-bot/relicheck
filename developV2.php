@@ -460,10 +460,12 @@ async function saveItemsNow(){
   if(!(PERSIST.on&&state.projectId))return;
   try{
     const r=await DB.call('items-save.php',{method:'POST',body:{project_id:state.projectId,items:DB.itemsWire()}});
-    state.questions=(r.items||[]).map(it=>DB.itemHydrate(it));
+    // Capture server-assigned ids by position WITHOUT replacing the live array,
+    // so an in-progress question can never be wiped by a save response.
+    const saved=Array.isArray(r.items)?r.items:[];
+    if(saved.length===state.questions.length){ saved.forEach((it,i)=>{ if(state.questions[i]&&it&&it.id!=null) state.questions[i].id=it.id; }); }
     await saveConstructsNow();
-    if(state.screen==='workspace'&&state.editing==null)render();
-  }catch(e){ degrade(e.message); }
+  }catch(e){ degrade(e.message); toast('Could not save: '+e.message); }
 }
 async function saveConstructsNow(){
   if(!(PERSIST.on&&state.projectId))return;
