@@ -104,6 +104,8 @@ body.start .main{grid-column:1/-1}
 .tk-delta.flat{color:var(--ink-3);background:var(--soft)}
 @keyframes pop{0%{transform:translateY(5px);opacity:0}20%{transform:translateY(0);opacity:1}74%{opacity:1}100%{transform:translateY(-6px);opacity:0}}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:700;border:none}
+.topbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 13px;font-size:13.5px;font-weight:650;color:var(--ink-2);white-space:nowrap}
+.topbtn:hover{background:var(--soft);color:var(--ink)}
 
 /* main: wide, breathing */
 .main{grid-row:2;grid-column:2;overflow-y:auto;padding:48px 52px 110px}
@@ -467,15 +469,15 @@ async function saveConstructsNow(){
 }
 let _titleTimer=null;
 function setStudyName(v){ state.study.name=v; if(!(PERSIST.on&&state.projectId))return; clearTimeout(_titleTimer); _titleTimer=setTimeout(()=>{ DB.call('project-update.php',{method:'POST',body:{id:state.projectId,title:state.study.name}}).catch(e=>degrade(e.message)); },500); }
-async function boot(){
-  if(PERSIST.on){
-    let id=null; try{ id=Number(localStorage.getItem(LS_KEY))||null; }catch(e){}
-    if(id){
-      try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace'; state.phase='build'; state.prevStrength=liveStrength(); render(); if(typeof StudioFooter!=='undefined')StudioFooter.init(); return; }
-      catch(e){ try{localStorage.removeItem(LS_KEY);}catch(_){} }
-    }
-  }
-  render(); if(typeof StudioFooter!=='undefined')StudioFooter.init();
+// Always land on Start (never trap the user inside the last project). Resume is
+// offered on the Start screen when a saved project exists.
+function boot(){ render(); if(typeof StudioFooter!=='undefined')StudioFooter.init(); }
+function savedProjectId(){ try{ return Number(localStorage.getItem(LS_KEY))||null; }catch(e){ return null; } }
+function goStart(){ state.screen='start'; state.startFlow=null; render(); }
+async function resumeLast(){
+  const id=savedProjectId(); if(!id)return;
+  try{ const r=await DB.call('project-load.php?id='+encodeURIComponent(id)); DB.hydrate(r); state.screen='workspace'; state.phase='build'; state.prevStrength=liveStrength(); render(); }
+  catch(e){ try{localStorage.removeItem(LS_KEY);}catch(_){} degrade(e.message); render(); }
 }
 
 function render(){
@@ -516,6 +518,7 @@ function renderTicker(){
   const s=strengthValue(),b=bandOf(s),d=state.lastDelta;
   const delta=d?`<span class="tk-delta ${d.dir}">${d.dir==='flat'?'no change':(d.amount>0?'+'+d.amount:d.amount)}</span>`:'';
   $('#tbRight').innerHTML=`
+    <button class="topbtn" onclick="goStart()" title="Start or open another survey">＋ New survey</button>
     <button class="ticker" onclick="openReview()" title="Click for the full review">${delta}
       <span class="tk-l"><span class="tk-k">Strength</span><span class="tk-w">${b.w}</span></span>
       <span class="tk-dot ${b.c}"></span><span class="tk-n">${s}</span>
@@ -525,6 +528,14 @@ function renderTicker(){
 }
 
 /* start */
+function recentSection(){
+  if(PERSIST.on){
+    return savedProjectId()
+      ? `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="resumeLast()"><span class="rdot"></span>Resume your last survey →</button></div>`
+      : '';
+  }
+  return `<div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div><div class="recent"><button class="recent-pill" onclick="enter()"><span class="rdot"></span>Freshman Enrollment <span class="faint">· draft</span></button><button class="recent-pill" onclick="enter()"><span class="rdot" style="background:var(--ink-3)"></span>Staff Pulse 2026 <span class="faint">· launched</span></button></div>`;
+}
 function renderStart(){
   if(state.startFlow==='ai')return renderAiGoal();
   if(state.startFlow==='upload')return renderUpload();
@@ -538,11 +549,7 @@ function renderStart(){
       <button class="entry-card" onclick="state.startFlow='upload';render()"><div class="ico">⤓</div><h3>I already have one</h3><p>Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet.</p><span class="go">Upload it →</span></button>
     </div>
     <a class="ailink" href="#" onclick="return false">Or browse ready-made templates →</a>
-    <div class="sec-row"><h2 class="sec">Pick up where you left off</h2></div>
-    <div class="recent">
-      <button class="recent-pill" onclick="enter()"><span class="rdot"></span>Freshman Enrollment <span class="faint">· draft</span></button>
-      <button class="recent-pill" onclick="enter()"><span class="rdot" style="background:var(--ink-3)"></span>Staff Pulse 2026 <span class="faint">· launched</span></button>
-    </div>
+    ${recentSection()}
   </div>`;
 }
 function renderAiGoal(){
