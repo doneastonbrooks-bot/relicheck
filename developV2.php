@@ -191,6 +191,25 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .explain .ex-fix{font-size:13.5px;color:var(--ink);margin-top:5px}
 .explain .ex-fix b{font-weight:700}
 .explain .ex-note{font-size:12.5px;color:var(--ink-3);margin-top:11px;padding-top:10px;border-top:1px solid var(--line-2);line-height:1.55}
+/* Combined per-item verdict (rules + ReliCheck Intelligence) */
+.verdict{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:var(--panel);max-width:640px;overflow:hidden;animation:fade .18s ease}
+.verdict .vh{padding:13px 16px;font-size:14.5px;font-weight:750;display:flex;align-items:center;gap:9px;border-bottom:1px solid var(--line)}
+.verdict .vh .vdot{width:9px;height:9px;border-radius:50%}
+.verdict .vh.ok .vdot{background:var(--good)} .verdict .vh.work .vdot{background:var(--warn)}
+.verdict .vbody{padding:6px 16px 14px}
+.verdict .vgrp{margin-top:12px}
+.verdict .vgk{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-3);margin-bottom:7px}
+.verdict .vrow{display:flex;gap:9px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line-2)}
+.verdict .vrow:first-of-type{border-top:none}
+.verdict .vdim{flex-shrink:0;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-2);background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 8px;margin-top:1px}
+.verdict .vtx{flex:1;font-size:13.5px;color:var(--ink-2);line-height:1.5}
+.verdict .vtx b{color:var(--ink);font-weight:700}
+.verdict .vfix{color:var(--ink);margin-top:3px}
+.verdict .vrw{margin-top:13px;padding:12px 14px;background:var(--accent-soft);border:1px solid var(--accent-soft);border-radius:10px}
+.verdict .vrw .vrk{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent-ink);margin-bottom:5px}
+.verdict .vrw .vrt{font-size:14.5px;color:var(--ink);line-height:1.5}
+.verdict .vacts{display:flex;gap:8px;margin-top:11px}
+.verdict .vfoot{padding:10px 16px;border-top:1px solid var(--line);background:var(--soft);font-size:12px;color:var(--ink-3);line-height:1.5}
 .qacts{display:flex;gap:6px}
 .iconbtn{width:31px;height:31px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-3);display:grid;place-items:center;font-size:13px}
 .iconbtn:hover{background:var(--soft);color:var(--ink)}
@@ -374,7 +393,7 @@ const state={
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
   reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
-  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',explainItem:null,
+  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',explainItem:null,itemVerdict:null,
   questions:[
     {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple Choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -913,7 +932,7 @@ function editorCard(q,i){
   const typeSelect=`<select onchange="setType(${i},this.value)">${QGROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.types.map(t=>`<option value="${esc(t)}" ${t===q.type?'selected':''}>${esc(typeLabel(t))}</option>`).join('')}</optgroup>`).join('')}</select>`;
   const helpPick=(state.helpPick===i)?`<div class="aihelp" style="margin-top:12px"><div class="ahl">What kind of answer do you need?</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">${QHELP.map(h=>`<button class="btn sm" onclick="pickHelpType(${i},'${esc(h.type)}')">${esc(h.q)}</button>`).join('')}</div></div>`:'';
   const promptLbl=struct?(q.type==='Section Text'?'Instructions text':(q.type==='Consent'?'Consent statement':(q.type==='Thank-you Message'?'Thank-you message':'Label (optional)'))):'Your question';
-  const ai=struct?'':`<button class="ailink" onclick="improveWording(${i})">Improve wording</button><button class="ailink" onclick="checkClarity(${i})">Check clarity</button>`;
+  const ai=struct?'':`<button class="ailink" onclick="checkItem(${i})">✦ Check this item</button><button class="ailink" onclick="improveWording(${i})">Improve wording</button>`;
   return `<div class="qcard" id="qc-${i}" style="border-color:var(--ink-3)">
     <div class="qhead"><span class="qn">${i+1}</span><div class="qb" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);padding-top:5px">${isNew?'New question':'Editing question '+(i+1)}</div></div>
     <div class="qedit">
@@ -927,6 +946,7 @@ function editorCard(q,i){
       </div>
       ${helpPick}
       ${responseEditor(q,i)}${help}
+      ${itemVerdictBox(i)}
       ${displayLogicEditor(q,i)}
       <div class="erow" style="margin-top:18px;padding-top:15px;border-top:1px solid var(--line-2)"><button class="btn primary" onclick="saveEdit(${i})">Save question</button><button class="btn" onclick="removeQ(${i})">Remove</button></div>
     </div>
@@ -1112,13 +1132,13 @@ function mapType(label){
   return 'Short Answer';
 }
 function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;else if(state.editing!=null&&state.editing>i)state.editing--;});render();persistItems();toast('Question removed.');}
-function editQ(i){ if(state.editing!=null&&state.editing!==i){ const c=state.questions[state.editing]; if(c&&c._new&&!(c.t||'').trim()){ state.questions.splice(state.editing,1); if(i>state.editing)i--; } } state.prevStrength=liveStrength(); state.editing=i;state.aiHelp=null;render();focusEditor();}
-function cancelEdit(){state.editing=null;state.aiHelp=null;render();}
+function editQ(i){ if(state.editing!=null&&state.editing!==i){ const c=state.questions[state.editing]; if(c&&c._new&&!(c.t||'').trim()){ state.questions.splice(state.editing,1); if(i>state.editing)i--; } } state.prevStrength=liveStrength(); state.editing=i;state.aiHelp=null;state.itemVerdict=null;render();focusEditor();}
+function cancelEdit(){state.editing=null;state.aiHelp=null;state.itemVerdict=null;render();}
 function saveEdit(i){
   const q=state.questions[i];
   if(!(q.t||'').trim()){ toast('Write the question first, then save.'); focusEditor(); return; }
   const wasNew=!!q._new; delete q._new;
-  state.editing=null;state.aiHelp=null;
+  state.editing=null;state.aiHelp=null;state.itemVerdict=null;
   const before=state.prevStrength,after=liveStrength();
   if(typeof before==='number'){ state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')}; }
   state.prevStrength=after;
@@ -1188,6 +1208,62 @@ async function checkClarity(i){
 }
 function undoRewrite(i){if(state.aiHelp&&state.aiHelp.i===i){withTicker(()=>{state.questions[i].t=state.aiHelp.original;});state.aiHelp=null;render();}}
 function dismissHelp(){state.aiHelp=null;render();}
+
+/* ── Combined per-item verdict ─────────────────────────────────────────────
+   One judgement from two reinforcing sources: the deterministic Build Check
+   engine (structure, wording, stem FUNCTION) + ReliCheck Intelligence reading
+   the item in context (answerability, construct clarity, and cultural/
+   contextual fairness for the stated population — what a word list cannot do).
+   The AI is given the rule findings so it confirms/refines rather than
+   contradicts them. Judged stem-first; response format is secondary. ── */
+async function checkItem(i){
+  const q=state.questions[i];
+  if(!(q.t||'').trim()){ toast('Write the question first.'); focusEditor(); return; }
+  state.bc=assessNow();
+  const eng=itemFlags(q,i).filter(f=>['moderate','major','critical'].includes(f.severity));
+  state.aiHelp=null;
+  state.itemVerdict={i,busy:true,eng,ai:null,reason:'',applied:false};
+  render();
+  if(!PERSIST.on){ state.itemVerdict={i,busy:false,eng,ai:null,reason:'offline',applied:false}; render(); return; }
+  try{
+    const r=await DB.call('ai-refine.php',{method:'POST',body:{action:'review',prompt:q.t,type:q.type||'',purpose:state.study.purpose||'',population:state.study.population||'',flags:eng.map(f=>f.flag_label||cleanMsg(f.message))}});
+    state.itemVerdict={i,busy:false,eng,ai:r,reason:'',applied:false};
+  }catch(e){ state.itemVerdict={i,busy:false,eng,ai:null,reason:e.message||'',applied:false}; }
+  render();
+}
+function applyVerdictRewrite(i){
+  const v=state.itemVerdict; if(!v||v.i!==i||!v.ai||!(v.ai.rewrite||'').trim())return;
+  v.original=state.questions[i].t; state.questions[i].t=v.ai.rewrite.trim(); v.applied=true;
+  render(); persistItems(); toast('Item updated. Re-check to confirm.');
+}
+function undoVerdictRewrite(i){ const v=state.itemVerdict; if(!v||!v.applied)return; state.questions[i].t=v.original; v.applied=false; render(); persistItems(); }
+function dismissVerdict(){ state.itemVerdict=null; render(); }
+function itemVerdictBox(i){
+  const v=state.itemVerdict; if(!v||v.i!==i)return '';
+  const engRows=src=>(src||[]).map(f=>`<div class="vrow"><span class="vdim">checker</span><div class="vtx"><b>${esc(f.flag_label||cleanMsg(f.message))}.</b> ${esc(f.why_it_matters||'')}${f.suggestion?`<div class="vfix">Fix: ${esc(f.suggestion)}</div>`:''}</div></div>`).join('');
+  if(v.busy){
+    return `<div class="verdict"><div class="vh work"><span class="vdot"></span>Checking this item… <span class="faint" style="font-weight:600">rules + ReliCheck Intelligence</span></div><div class="vbody">${v.eng.length?`<div class="vgrp"><div class="vgk">What the checks found</div>${engRows(v.eng)}</div>`:''}<div class="faint" style="font-size:13px;margin-top:12px">Reading the item in the context of your purpose and population…</div></div></div>`;
+  }
+  const ai=v.ai, aiNotes=(ai&&ai.notes)||[];
+  const solid=!v.eng.length&&ai&&ai.verdict==='solid'&&!aiNotes.length;
+  const aiRows=aiNotes.map(n=>`<div class="vrow"><span class="vdim">${esc(n.dimension||'clarity')}</span><div class="vtx">${esc(n.note)}</div></div>`).join('');
+  const aiBlock = ai
+    ? (aiNotes.length
+        ? `<div class="vgrp"><div class="vgk">Reading it in context · ReliCheck Intelligence</div>${aiRows}</div>`
+        : (v.eng.length?'':`<div class="vgrp"><div class="vgk">Reading it in context · ReliCheck Intelligence</div><div class="vrow"><span class="vdim">solid</span><div class="vtx">Reads as a clear, answerable item for your population.</div></div></div>`))
+    : `<div class="vgrp"><div class="vgk">ReliCheck Intelligence</div><div class="vrow"><div class="vtx faint">Unavailable right now${v.reason&&v.reason!=='offline'?' ('+esc(v.reason)+')':''} — showing the rule checks only.</div></div></div>`;
+  const rw = (ai&&(ai.rewrite||'').trim())
+    ? `<div class="vrw"><div class="vrk">Suggested rewrite</div><div class="vrt">${esc(ai.rewrite.trim())}</div><div class="vacts">${v.applied?`<button class="btn sm" onclick="undoVerdictRewrite(${i})">Undo</button>`:`<button class="btn primary sm" onclick="applyVerdictRewrite(${i})">Apply rewrite</button>`}<button class="btn sm" onclick="dismissVerdict()">Dismiss</button></div></div>`
+    : `<div class="vacts" style="margin-top:12px"><button class="btn sm" onclick="checkItem(${i})">Re-check</button><button class="btn sm" onclick="dismissVerdict()">Dismiss</button></div>`;
+  return `<div class="verdict"><div class="vh ${solid?'ok':'work'}"><span class="vdot"></span>${solid?'This item is solid':'This item needs work'}</div>
+    <div class="vbody">
+      ${v.eng.length?`<div class="vgrp"><div class="vgk">What the checks found</div>${engRows(v.eng)}</div>`:''}
+      ${aiBlock}
+      ${rw}
+    </div>
+    <div class="vfoot">Judged stem-first — the response format is secondary. The checker covers structure and wording; ReliCheck Intelligence reads meaning, construct, and cultural fit for your population.</div>
+  </div>`;
+}
 
 /* Grouping (constructs) — optional, high-level. Reached from the left rail. */
 function viewGrouping(){
