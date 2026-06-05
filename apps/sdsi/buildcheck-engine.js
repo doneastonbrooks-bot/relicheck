@@ -209,6 +209,116 @@
   var OTHER_RE = /^other\b|please specify/i;
   var NA_RE = /not applicable|^n\/a$|does not apply/i;
 
+  // ── Stem-first, function-first item assessment ─────────────────────────────
+  // ReliCheck judges the STEM (the measurement prompt) before the response
+  // scale. The scale is only the answer FORMAT; a weak stem stays weak on
+  // Likert, MC, dropdown, numeric, rating, or demographic. The stem must make
+  // clear what construct, experience, behaviour, perception, or fact the
+  // respondent is being asked to report.
+  var CONSTRUCT_LABELS = {};
+  ['leadership','development','support','equity','safety','communication','engagement','wellbeing','well-being','inclusion','belonging','trust','satisfaction','performance','culture','diversity','innovation','collaboration','recognition','accountability','integrity','quality','climate','morale','fairness','respect','growth','feedback','workload','autonomy','motivation','empowerment','transparency','teamwork','productivity','flexibility','professionalism','ethics','mission','values','training','mentorship','supervision','management','environment','resources','benefits','compensation','pay','rewards','opportunity','advancement','retention','burnout','stress','wellness','onboarding','effectiveness','efficiency','vision','strategy','alignment','empathy','fulfillment','purpose','workplace','community'].forEach(function (k) { CONSTRUCT_LABELS[k] = true; });
+  var CONCEPT_REWRITES = {
+    'leadership': 'How effective is leadership at communicating decisions that affect your work?',
+    'development': 'How useful was the professional development you received?',
+    'support': 'How supported do you feel in completing your work?',
+    'communication': 'How clearly does your team communicate the information you need?',
+    'equity': 'How fairly are people treated here, regardless of their background?',
+    'safety': 'How safe do you feel raising concerns at work?',
+    'engagement': 'How engaged do you feel in your day-to-day work?',
+    'recognition': 'How recognized do you feel for your contributions?',
+    'wellbeing': 'How would you rate your overall wellbeing at work?',
+    'belonging': 'How strong is your sense of belonging on your team?',
+    'inclusion': 'How included do you feel in decisions that affect your work?',
+    'trust': 'How much do you trust the leaders of this organization?',
+    'workload': 'How manageable is your current workload?',
+    'training': 'How well did your training prepare you for your role?',
+    'feedback': 'How useful is the feedback you receive from your manager?',
+    'culture': 'How would you describe the culture on your team?',
+    'collaboration': 'How well do teams collaborate across the organization?'
+  };
+  var AMBIG_NOTE = {
+    'safety': 'It could mean physical, psychological, job, classroom, data, or cultural safety — name which.',
+    'support': 'It could mean emotional, managerial, resource, or technical support — name which.',
+    'equity': 'Name the kind of fairness (pay, opportunity, treatment, access).',
+    'quality': 'Quality of what, specifically?',
+    'performance': 'Whose performance, and of what?',
+    'communication': 'Communication of what, by whom, to whom?',
+    'culture': 'Culture is broad — name the specific behaviour or norm.',
+    'development': 'Name the kind of development (skills, career, leadership).'
+  };
+  var DEMO_REWRITES = {
+    'role level': 'What is your current role level?', 'role': 'What is your current role?',
+    'tenure': 'How long have you worked in this organization?', 'department': 'What is your department?',
+    'team': 'Which team are you on?', 'division': 'Which division are you in?', 'unit': 'Which unit are you in?',
+    'location': 'What is your primary work location?', 'region': 'Which region are you in?', 'site': 'Which site do you work at?',
+    'age': 'What is your age?', 'gender': 'What is your gender?', 'seniority': 'What is your level of seniority?',
+    'position': 'What is your position?', 'title': 'What is your job title?', 'grade': 'What is your grade level?',
+    'start date': 'What was your start date?', 'hire date': 'What was your hire date?', 'shift': 'Which shift do you work?',
+    'education': 'What is your highest level of education?', 'experience': 'How many years of experience do you have?',
+    'years of service': 'How many years have you worked here?', 'employment type': 'What is your employment type (e.g. full-time, part-time)?',
+    'job type': 'What type of job do you hold?', 'manager': 'Who is your manager?', 'supervisor': 'Who is your supervisor?'
+  };
+  var DEMO_LABELS = {}; Object.keys(DEMO_REWRITES).forEach(function (k) { DEMO_LABELS[k] = true; });
+  var METADATA_RE = /^(respondent|response|record|submission|participant|user|employee|session|row)?\s*(id|number|no\.?)$|^(id|uuid|guid|index)$|^(timestamp|ip address|ip|completion time|duration|status|progress|finished|recorded date|end date|end time|submitted at)$|_id$/i;
+  var FRAGMENT_VERBS = { rate:1, describe:1, explain:1, select:1, rank:1, list:1, choose:1, specify:1, indicate:1, provide:1, tell:1, name:1, identify:1, share:1, complete:1, enter:1, comment:1, define:1, evaluate:1, assess:1 };
+  var STATEMENT_VERBS = {}; ('is are am was were be been being have has had do does did feel feels felt make makes made give gives gave provide provides provided help helps helped support supports supported treat treats treated communicate communicates understand understands understood know knows knew can could would will shall should may might must trust trusts recommend recommends matter matters happen happens work works worked seem seems appear appears believe believes think thinks want wants need needs receive received enjoy enjoys agree agrees encourage encourages value values respect respects listen listens care cares allow allows enable enables expect expects prefer prefers reflect reflects deliver delivers set sets hold holds act acts behave behaves fit fits belong belongs improve improves reward rewards recognize recognizes develop develops grow grows learn learns contribute contributes inform informs respond responds address addresses gets has').split(' ').forEach(function (k) { STATEMENT_VERBS[k] = 1; });
+  var QUESTION_START_RE = /^(what|which|when|where|why|who|whose|how|do|does|did|are|is|was|were|have|has|had|can|could|would|will|should|to what extent|in your)\b/;
+  var IMPERATIVE_START_RE = /^(please|describe|select|rate|rank|list|choose|explain|provide|indicate|specify|tell|name|identify|share|complete|enter|comment)\b/;
+
+  // Returns a flag def for a stem that is NOT a usable item, or null if the stem
+  // is a true question, a Likert-style STATEMENT, or an instructional prompt with
+  // an object. Function — not length or scale type — is the test.
+  function assessStemFunction(text, type, w, low) {
+    if (!text || PLACEHOLDER_Q_RE.test(text)) return null;        // handled elsewhere
+    if (/\?\s*$/.test(text) || QUESTION_START_RE.test(low)) return null;  // true question
+
+    if (IMPERATIVE_START_RE.test(low)) {                           // instructional prompt
+      if (w.length <= 2) {                                        // bare verb, no object → fragment
+        var v = FRAGMENT_VERBS[w[w.length - 1]] ? w[w.length - 1] : (FRAGMENT_VERBS[w[0]] ? w[0] : 'respond');
+        return { key: 'stem_verb_fragment', sev: 'high', label: 'Verb fragment, not a complete prompt',
+          msg: 'This item is a verb with no object — respondents are not told what to ' + v + '.',
+          why: 'A prompt that names an action but not its object is not answerable; respondents guess what to report, so the answers are not comparable.',
+          fix: 'Name what to ' + v + ', e.g. "How would you rate your overall experience with this program?"' };
+      }
+      return null;                                                // "Please describe one way…" is usable
+    }
+
+    // Declarative STATEMENT (a valid Likert stem): a subject followed by a verb.
+    var firstPer = /^(i|i'm|i've|my|we|we're|we've|our)\b/.test(low);
+    var subjVerb = false;
+    for (var vi = 1; vi < w.length; vi++) { if (STATEMENT_VERBS[w[vi]]) { subjVerb = true; break; } }
+    if (subjVerb && w.length >= 3) return null;
+    if (firstPer && subjVerb) return null;
+
+    // Otherwise: a label / fragment / construct / metadata. Classify and flag.
+    var key = low.replace(/[^a-z0-9 \/-]/g, '').replace(/\s+/g, ' ').replace(/^(my|your|the|a|an|our)\s+/, '').trim();
+    if (METADATA_RE.test(key)) {
+      return { key: 'stem_metadata_field', sev: 'high', label: 'Metadata or identifier field, not a survey item',
+        msg: 'This item reads as a data or identifier field, not a question respondents answer.',
+        why: 'Identifier and metadata fields collect record-keeping data, not respondent perceptions; mixed into the instrument they obscure what is being measured.',
+        fix: 'Remove it from the instrument if respondents do not provide it, or phrase it as a real question.' };
+    }
+    if (CONSTRUCT_LABELS[key]) {
+      return { key: 'stem_construct_label', sev: 'high', label: 'Construct label, not a measurable item',
+        msg: 'This item names a broad concept, not something a respondent can answer.',
+        why: 'A bare construct label is interpreted differently by every respondent, so the responses are not comparable and the score cannot be interpreted.' + (AMBIG_NOTE[key] ? ' ' + AMBIG_NOTE[key] : ''),
+        fix: 'Ask about a specific, observable aspect, e.g. "' + (CONCEPT_REWRITES[key] || ('How would you rate the ' + key + ' you experience here?')) + '"' };
+    }
+    if (DEMO_LABELS[key]) {
+      return { key: 'stem_demographic_label', sev: 'medium', label: 'Demographic label, not a question',
+        msg: 'This item reads as a label, not a question respondents answer.',
+        why: 'A bare demographic label is read inconsistently; a clear question keeps the responses comparable.',
+        fix: 'Phrase it as a question, e.g. "' + (DEMO_REWRITES[key] || ('What is your ' + key + '?')) + '"' };
+    }
+    if (w.length <= 4) {                                          // generic short non-answerable label/topic
+      return { key: 'stem_not_answerable', sev: (w.length <= 3 ? 'high' : 'medium'), label: 'Stem is not an answerable item',
+        msg: 'This item reads as a label or topic, not a question respondents answer.',
+        why: 'Respondents cannot tell what information, judgment, behaviour, or experience to report, which weakens item clarity and threatens validity.',
+        fix: 'Rewrite it so the respondent knows exactly what to answer, e.g. "How would you rate ' + key + '?" or "What is your ' + key + '?"' };
+    }
+    return null;                                                  // longer non-question/non-statement: other checks + AI
+  }
+
   // Parse a numeric range from a category label ("1-3 years", "55+", "Less than 1").
   function parseRange(s) {
     s = lc(s);
@@ -334,25 +444,14 @@
           add({ key: 'reading_clarity_concern', label: 'Reading clarity concern', sev: 'low', domain: 'Clarity', cat: 'item',
             msg: 'Question ' + no + ' is very short and may be unclear.', why: 'A fragment may not read as a complete, answerable question.', fix: 'Make sure it reads as a full question.' });
         }
-        // A short item whose stem reads as a bare LABEL ("Role Level",
-        // "Department", "Tenure", "Start Date") rather than a question. Closed-
-        // ended items are exempt from the short-stem check above, but a label
-        // stem is read inconsistently across respondents, so it is a real
-        // clarity problem on ANY type. Exempt: Likert/agreement STATEMENTS (a
-        // statement is fine), structural items, and anything that already reads
-        // as a question (ends "?" / starts with a question or imperative word)
-        // or a first-person statement ("I ...", "We ..."). The <=4-word gate
-        // keeps full statements ("Work gives me a sense of purpose.") clear.
-        if (!isLikertish(type) && !STRUCTURAL_TYPES[type] && w.length > 0 && w.length <= 4) {
-          var endsQ    = /\?\s*$/.test(text);
-          var startsQ  = /^(what|which|when|where|why|who|whose|how|do|does|did|are|is|was|were|have|has|had|can|could|would|will|should|select|choose|pick|rank|order|rate|describe|list|name|indicate|identify|specify|enter|provide|tell|please|in your|to what|on a)\b/.test(low);
-          var firstPer = /^(i|i'm|i've|my|we|we're|we've|our)\b/.test(low);
-          if (!endsQ && !startsQ && !firstPer) {
-            add({ key: 'label_style_stem', label: 'Stem reads as a label, not a question', sev: 'medium', domain: 'Clarity', cat: 'item',
-              msg: 'Question ' + no + ' ("' + text + '") reads as a label, not a question respondents answer.',
-              why: 'A bare label is interpreted differently by different respondents, so the answers are not comparable. A clear question stem keeps responses consistent.',
-              fix: 'Phrase it as a question, e.g. "What is your ' + low + '?" or "Which best describes your ' + low + '?"' });
-          }
+        // STEM-FIRST item assessment: judge the communicative function of the
+        // prompt BEFORE the response scale. Flags bare labels, construct labels,
+        // verb fragments, topic headings, and metadata fields — regardless of
+        // whether the item is Likert, MC, dropdown, numeric, or demographic. A
+        // real question, a Likert STATEMENT, and an instructional prompt pass.
+        if (!STRUCTURAL_TYPES[type] && w.length > 0) {
+          var sf = assessStemFunction(text, type, w, low);
+          if (sf) add({ key: sf.key, label: sf.label, sev: sf.sev, domain: 'Clarity', cat: 'item', msg: sf.msg, why: sf.why, fix: sf.fix });
         }
       }
 
