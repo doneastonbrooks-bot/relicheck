@@ -39,7 +39,7 @@ $_dv_initials = strtoupper(substr(preg_replace('/[^A-Za-z]/', '', $_dv_name) ?: 
   --sh:0 1px 2px rgba(16,24,40,.05);
   --sh-lg:0 12px 38px rgba(16,24,40,.12);
   --r:14px; --r-sm:10px;
-  --topbar-h:66px; --rail-w:328px; --companion:340px;
+  --topbar-h:76px; --rail-w:328px; --companion:340px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
@@ -69,7 +69,7 @@ body.start .main{grid-column:1/-1}
 .rail-link:hover{background:var(--soft);color:var(--ink)}
 .rail-foot{margin-top:auto;font-size:12.5px;color:var(--ink-3);line-height:1.55;padding-top:12px;border-top:1px solid var(--line)}
 .brand{display:flex;align-items:center;justify-self:start}
-.brand img{height:40px;width:auto;display:block}
+.brand img{height:70px;width:auto;display:block}
 .tb-right{display:flex;align-items:center;justify-content:flex-end;gap:14px}
 
 /* stepper — words, spread out (plain) */
