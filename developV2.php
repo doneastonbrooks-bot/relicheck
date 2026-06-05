@@ -173,11 +173,24 @@ h2.sec{font-size:20px;font-weight:750;letter-spacing:-0.01em}
 .qb{flex:1;min-width:0}
 .qt{font-size:17px;font-weight:600;line-height:1.5}
 .qmeta{font-size:13.5px;color:var(--ink-3);margin-top:6px;display:flex;align-items:center;gap:10px}
-.qmark{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:650}
+.qmark{display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:650;border:none;background:none;cursor:pointer;padding:2px 4px;border-radius:6px}
+.qmark:hover{background:var(--soft)}
 .qmark .md{width:7px;height:7px;border-radius:50%}
+.qmark .qwhy{font-size:11px;font-weight:700;opacity:.55}
+.qmark:hover .qwhy{opacity:1}
 .qmark.up{color:var(--ink-2)} .qmark.up .md{background:var(--good)}
 .qmark.flat{color:var(--ink-3)} .qmark.flat .md{background:var(--ink-3)}
 .qmark.down{color:var(--warn)} .qmark.down .md{background:var(--warn)}
+/* "Why?" explanation for a question's mark */
+.explain{margin:12px 0 0 41px;padding:14px 16px;border:1px solid var(--line);background:var(--soft);border-radius:11px;max-width:620px;animation:fade .18s ease}
+.explain .ex-h{font-size:13px;font-weight:750;margin-bottom:8px}
+.explain .ex-row{padding:9px 0;border-top:1px solid var(--line-2)}
+.explain .ex-row:first-of-type{border-top:none;padding-top:0}
+.explain .ex-t{font-size:14px;font-weight:700;color:var(--ink)}
+.explain .ex-w{font-size:13.5px;color:var(--ink-2);margin-top:3px;line-height:1.5}
+.explain .ex-fix{font-size:13.5px;color:var(--ink);margin-top:5px}
+.explain .ex-fix b{font-weight:700}
+.explain .ex-note{font-size:12.5px;color:var(--ink-3);margin-top:11px;padding-top:10px;border-top:1px solid var(--line-2);line-height:1.55}
 .qacts{display:flex;gap:6px}
 .iconbtn{width:31px;height:31px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-3);display:grid;place-items:center;font-size:13px}
 .iconbtn:hover{background:var(--soft);color:var(--ink)}
@@ -361,7 +374,7 @@ const state={
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
   reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
-  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',
+  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',explainItem:null,
   questions:[
     {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple Choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -465,6 +478,28 @@ function reviewItems(){
     return state.questions.map((q,i)=>({q,i,ref:refOf(q,i)})).filter(x=>by[x.ref]).map(x=>({q:x.q,i:x.i,msg:(by[x.ref][0].message||'Worth a look.'),fix:(by[x.ref][0].suggestion||'')}));
   }
   return state.questions.map((q,i)=>({q,i})).filter(x=>markHeuristic(x.q)==='down').map(x=>({q:x.q,i:x.i,msg:issueHeuristic(x.q),fix:''}));
+}
+/* ── "Why is this marked?" — the per-question explanation. Clicking a question's
+   strength mark reveals the SPECIFIC engine flags behind it, so "pulling it
+   down" is never a mystery and never contradicts the AI wording check. ── */
+function itemFlags(q,i){
+  if(!(state.bc&&state.bc.flags))return [];
+  const ref=refOf(q,i);
+  const order={critical:0,major:1,moderate:2,high:1,medium:2,low:3,minor:3};
+  return state.bc.flags.filter(f=>f.item_ref===ref).slice().sort((a,b)=>(order[a.severity]??9)-(order[b.severity]??9));
+}
+function cleanMsg(m){ return String(m||'').replace(/^Question\s+\d+\s*/i,'').replace(/^[a-z]/,c=>c.toUpperCase()); }
+function toggleExplain(i){ state.explainItem=(state.explainItem===i?null:i); render(); }
+function explainPanel(q,i){
+  const m=markOf(q,i), flags=itemFlags(q,i);
+  const head = m==='down' ? 'Why this is lowering your survey strength'
+            : (m==='flat' ? 'Worth a look on this question' : 'This question is on track');
+  if(m==='up'||!flags.length){
+    return `<div class="explain"><div class="ex-h">${head}</div><div class="ex-w">Nothing is lowering your strength on this question. It reads well and fits your survey. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
+  }
+  const rows=flags.map(f=>`<div class="ex-row"><div class="ex-t">${esc(f.flag_label||cleanMsg(f.message))}</div>${f.why_it_matters?`<div class="ex-w">${esc(f.why_it_matters)}</div>`:(f.message&&f.flag_label?`<div class="ex-w">${esc(cleanMsg(f.message))}</div>`:'')}${f.suggestion?`<div class="ex-fix"><b>Fix:</b> ${esc(f.suggestion)}</div>`:''}</div>`).join('');
+  return `<div class="explain"><div class="ex-h">${head}</div>${rows}
+    <div class="ex-note">“Pulling it down” means your overall <b>survey strength</b> — not always the wording. If ReliCheck Intelligence said the wording is fine, the reason above is usually structural (for example, grouping the item into a construct) or a specific flagged word. <button class="ailink" onclick="toggleExplain(${i})">Close</button></div></div>`;
 }
 function qualityHeuristic(q){
   let s=86;const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
@@ -861,7 +896,7 @@ function displayCard(q,i){
   const cond=(q.settings&&q.settings.showIf)?` · <span class="faint" title="Shown only when an earlier answer matches">⤷ conditional</span>`:'';
   const meta=(struct
     ? `<span class="faint">Survey structure</span>`
-    : `${esc(typeLabel(q.type))} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>`)+cond;
+    : `${esc(typeLabel(q.type))} <button class="qmark ${m}" onclick="toggleExplain(${i})" title="Why?"><span class="md"></span>${lbl}<span class="qwhy">ⓘ why</span></button>`)+cond;
   return `<div class="qcard" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
@@ -869,6 +904,7 @@ function displayCard(q,i){
       <div class="qacts"><button class="iconbtn" title="Edit" onclick="editQ(${i})">✎</button><button class="iconbtn" title="Remove" onclick="removeQ(${i})">✕</button></div>
     </div>
     <div class="qprev">${answerPreview(q)}</div>
+    ${state.explainItem===i?explainPanel(q,i):''}
   </div>`;
 }
 function editorCard(q,i){

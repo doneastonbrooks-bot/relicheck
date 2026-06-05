@@ -176,7 +176,13 @@
     return sum;
   }
 
-  var LEADING_WORDS = ['obviously', 'clearly', 'surely', 'everyone knows', "don't you agree", 'isn\'t it', 'wouldn\'t you', 'as you know'];
+  // Leading PHRASES are leading anywhere they appear. The editorial adverbs
+  // (obviously/clearly/surely…) are only leading when they front the whole
+  // statement ("Clearly, you agree…") — NOT as ordinary mid-sentence adverbs
+  // ("My responsibilities are clearly defined."), which is a false positive that
+  // contradicts the AI clarity check and erodes trust.
+  var LEADING_PHRASES = ['everyone knows', "don't you agree", "don't you think", 'isn\'t it', 'wouldn\'t you', 'as you know', 'you must agree', 'you would agree', 'most people agree'];
+  var LEADING_ADVERB_RE = /^\s*(obviously|clearly|surely|undoubtedly|certainly|of course|naturally)\b/;
   var ABSOLUTE_WORDS = ['always', 'never', 'every ', 'all of', 'none of', 'completely', 'totally', 'rarely'];
   var LOADED_WORDS = ['failure', 'foolish', 'irresponsible', 'lazy', 'stupid', 'crazy', 'suffer', 'unfortunately'];
   var ASSUMPTIVE_WORDS = ['since you', 'now that you', 'given that you', 'as you already', 'after you'];
@@ -300,7 +306,7 @@
           add({ key: 'double_barreled', label: 'Double-barreled item', sev: 'high', domain: 'Single Construct', cat: 'item',
             msg: 'Question ' + no + ' asks about two things at once ("and"/"or").', why: 'Respondents who feel differently about each part cannot answer accurately, and the data conflates two constructs.', fix: 'Split it into separate single-idea questions.' });
         }
-        if (LEADING_WORDS.some(function (lw) { return low.indexOf(lw) !== -1; })) {
+        if (LEADING_PHRASES.some(function (lw) { return low.indexOf(lw) !== -1; }) || LEADING_ADVERB_RE.test(low)) {
           add({ key: 'leading', label: 'Leading wording', sev: 'high', domain: 'Neutrality', cat: 'bias',
             msg: 'Question ' + no + ' uses leading wording that nudges the answer.', why: 'Leading wording biases responses toward a preferred answer.', fix: 'Rephrase neutrally so no response is signaled as correct.' });
         }
