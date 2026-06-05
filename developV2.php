@@ -671,18 +671,42 @@ function editorCard(q,i){
   </div>`;
 }
 function aiHelpBox(h){
-  if(h.kind==='rewrite')return `<div class="aihelp"><div class="ahl">Question updated · strength ${h.delta>=0?'+'+h.delta:h.delta}</div><div class="ahacts"><button class="btn sm" onclick="undoRewrite(${h.i})">Undo</button><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
-  return `<div class="aihelp"><div class="ahl">Clarity notes</div><ul>${h.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="ahacts"><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
+  if(h.kind==='busy')return `<div class="aihelp"><div class="ahl">ReliCheck Intelligence is ${h.action==='rewrite'?'rewriting your question':'reading your question'}…</div></div>`;
+  if(h.kind==='error')return `<div class="aihelp"><div class="ahl">ReliCheck Intelligence is unavailable right now (${esc(h.msg||'')}). Your question is unchanged.</div><div class="ahacts"><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
+  if(h.kind==='rewrite')return `<div class="aihelp"><div class="ahl">Question updated${typeof h.delta==='number'?' · strength '+(h.delta>=0?'+'+h.delta:h.delta):''}</div>${(h.notes&&h.notes.length)?`<ul>${h.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}<div class="ahacts"><button class="btn sm" onclick="undoRewrite(${h.i})">Undo</button><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
+  return `<div class="aihelp"><div class="ahl">Clarity notes</div><ul>${(h.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="ahacts"><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
 }
 function addQ(){
   const t=$('#qtext').value.trim();if(!t)return;const type=$('#qtype').value;
   withTicker(()=>state.questions.push({t,type,options:defaultOptions(type)}));render();persistItems();
   const d=state.lastDelta;toast(d.dir==='down'?`Added. Strength ${d.amount} — see its mark.`:(d.dir==='up'?`Added. Strength +${d.amount}.`:'Added. Strength unchanged.'));
 }
-function suggestQ(){
+async function suggestQ(){
+  if(state.phase!=='build')state.phase='build';
   const ideas=[{t:'How confident do you feel about your decision to enroll?',type:'Rating scale',options:null},{t:'What is the main reason you chose us over other schools?',type:'Long comment',options:null},{t:'Which of these influenced your decision? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Financial aid']}];
-  const next=ideas[state.questions.length%ideas.length];if(state.phase!=='build')state.phase='build';
-  withTicker(()=>state.questions.push(Object.assign({},next)));render();persistItems();toast('Added a suggested question.');
+  if(!PERSIST.on){ const next=ideas[state.questions.length%ideas.length]; withTicker(()=>state.questions.push(Object.assign({},next)));render();persistItems();toast('Added a suggested question.'); return; }
+  toast('ReliCheck is thinking…');
+  try{
+    const existing=(state.questions||[]).map(q=>q.t).filter(Boolean);
+    const r=await DB.call('ai-suggest.php',{method:'POST',body:{purpose:state.study.purpose||'',population:state.study.population||'',existing}});
+    const norm=t=>(t||'').toLowerCase().replace(/[^a-z0-9 ]/g,'').replace(/\s+/g,' ').trim();
+    const have=new Set(existing.map(norm));
+    const fresh=(r.questions||[]).filter(q=>q.prompt&&!have.has(norm(q.prompt)));
+    if(!fresh.length){ toast('No new ideas right now — add a survey purpose for more.'); return; }
+    const next=fresh[0],type=mapType(next.type);
+    withTicker(()=>state.questions.push({t:next.prompt,type,options:defaultOptions(type)}));
+    render();persistItems();toast('ReliCheck suggested a question.');
+  }catch(e){ degrade(e.message); toast('Could not get a suggestion: '+e.message); }
+}
+function mapType(label){
+  const t=String(label||'').toLowerCase();
+  if(t.includes('checkbox'))return 'Checkboxes';
+  if(t.includes('multiple')||t.includes('dropdown'))return 'Multiple choice';
+  if(t.includes('likert')||t.includes('rating')||t.includes('scale')||t.includes('nps')||t.includes('slider'))return 'Rating scale';
+  if(t.includes('yes')||t.includes('true')||t.includes('boolean'))return 'Yes / No';
+  if(t.includes('long')||t.includes('comment')||t.includes('open')||t.includes('essay')||t.includes('paragraph'))return 'Long comment';
+  if(t.includes('number')||t.includes('numeric')||t.includes('date'))return 'Number';
+  return 'Short text';
 }
 function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;});render();persistItems();}
 function editQ(i){state.editing=i;state.aiHelp=null;render();}
@@ -704,18 +728,40 @@ function improveWeakest(){
   if(wi<0)wi=0;
   state.phase='build';state.editing=wi;state.aiHelp=null;render();setTimeout(()=>improveWording(wi),120);
 }
-function improveWording(i){const q=state.questions[i],original=q.t;withTicker(()=>{q.t=improvedText(original);});state.aiHelp={i,kind:'rewrite',original,delta:state.lastDelta.amount};render();}
+async function improveWording(i){
+  const q=state.questions[i],original=q.t;
+  if(!PERSIST.on){ withTicker(()=>{q.t=improvedText(original);});state.aiHelp={i,kind:'rewrite',original,delta:state.lastDelta.amount};render();return; }
+  state.aiHelp={i,kind:'busy',action:'rewrite'};render();
+  try{
+    const r=await DB.call('ai-refine.php',{method:'POST',body:{action:'rewrite',prompt:original,type:q.type||'',purpose:state.study.purpose||'',population:state.study.population||''}});
+    const rw=(r.rewrite||'').trim();
+    if(rw){ withTicker(()=>{q.t=rw;}); state.aiHelp={i,kind:'rewrite',original,delta:state.lastDelta.amount,notes:(r.notes||[])}; persistItems(); }
+    else { state.aiHelp={i,kind:'clarity',notes:(r.notes&&r.notes.length?r.notes:['This question already reads well — no rewrite needed.'])}; }
+  }catch(e){ state.aiHelp={i,kind:'error',msg:e.message}; }
+  render();
+}
 function improvedText(t){
   const map={'Was the enrollment process clear and did you feel supported the whole way through?':'How clear was the enrollment process?','How did you first hear about our university?':'How did you first hear about us?'};
   if(map[t])return map[t];let s=t.trim();
   if(/\band\b/i.test(s))s=s.replace(/\s+and\s+.*$/i,'').replace(/[?,.]?\s*$/,'')+'?';
   if(!/[?]$/.test(s))s+='?';return s.charAt(0).toUpperCase()+s.slice(1);
 }
-function checkClarity(i){const q=state.questions[i],notes=[],text=q.t,words=(text.match(/\b[\w']+\b/g)||[]).length;
-  if(/\band\b/i.test(text)&&words>6)notes.push('This asks two things at once (it has an "and"). Splitting it into two keeps the answers clean.');
-  if(words>22)notes.push('A little long. Shorter questions are answered more honestly.');
-  if(!notes.length)notes.push('Reads clearly and asks one thing. Good as is.');
-  state.aiHelp={i,kind:'clarity',notes};render();}
+async function checkClarity(i){
+  const q=state.questions[i];
+  if(!PERSIST.on){
+    const notes=[],text=q.t,words=(text.match(/\b[\w']+\b/g)||[]).length;
+    if(/\band\b/i.test(text)&&words>6)notes.push('This asks two things at once (it has an "and"). Splitting it into two keeps the answers clean.');
+    if(words>22)notes.push('A little long. Shorter questions are answered more honestly.');
+    if(!notes.length)notes.push('Reads clearly and asks one thing. Good as is.');
+    state.aiHelp={i,kind:'clarity',notes};render();return;
+  }
+  state.aiHelp={i,kind:'busy',action:'clarity'};render();
+  try{
+    const r=await DB.call('ai-refine.php',{method:'POST',body:{action:'clarity',prompt:q.t,type:q.type||'',purpose:state.study.purpose||'',population:state.study.population||''}});
+    state.aiHelp={i,kind:'clarity',notes:(r.notes&&r.notes.length?r.notes:['Reads clearly.'])};
+  }catch(e){ state.aiHelp={i,kind:'error',msg:e.message}; }
+  render();
+}
 function undoRewrite(i){if(state.aiHelp&&state.aiHelp.i===i){withTicker(()=>{state.questions[i].t=state.aiHelp.original;});state.aiHelp=null;render();}}
 function dismissHelp(){state.aiHelp=null;render();}
 
