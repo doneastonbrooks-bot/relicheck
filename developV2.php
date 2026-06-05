@@ -69,7 +69,7 @@ body.start .main{grid-column:1/-1}
 .rail-link:hover{background:var(--soft);color:var(--ink)}
 .rail-foot{margin-top:auto;font-size:12.5px;color:var(--ink-3);line-height:1.55;padding-top:12px;border-top:1px solid var(--line)}
 .brand{display:flex;align-items:center;justify-self:start}
-.brand img{height:30px;width:auto;display:block}
+.brand img{height:40px;width:auto;display:block}
 .tb-right{display:flex;align-items:center;justify-content:flex-end;gap:14px}
 
 /* stepper — words, spread out (plain) */
@@ -299,7 +299,7 @@ body.coach-open .companion{transform:translateX(0)}
 
 <div class="app">
   <div class="topbar">
-    <a class="brand" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/logo-brand.svg?v=<?= is_file(__DIR__.'/logo-brand.svg') ? filemtime(__DIR__.'/logo-brand.svg') : '1' ?>" alt="ReliCheck"></a>
+    <a class="brand" href="/app-2026v4.php" aria-label="ReliCheck home"><img src="/SS-App-long.png?v=<?= is_file(__DIR__.'/SS-App-long.png') ? filemtime(__DIR__.'/SS-App-long.png') : '1' ?>" alt="ReliCheck Survey Builder"></a>
     <div id="stepsWrap"></div>
     <div class="tb-right" id="tbRight"><button class="avatar"><?= htmlspecialchars($_dv_initials) ?></button></div>
   </div>
