@@ -359,7 +359,7 @@ const state={
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
   reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
-  siriResult:null,siriStale:false,helpPick:null,
+  siriResult:null,siriStale:false,helpPick:null,entry:'scratch',
   questions:[
     {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple Choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -533,6 +533,7 @@ const DB={
     state.projectId=p.id;
     state.study.name=p.title||''; state.study.purpose=p.purpose||''; state.study.population=p.population||'';
     state.study.mode=p.response_mode||''; state.study.dataType=p.data_type||'';
+    state.entry=p.source||'scratch';
     state.settings=p.settings||{}; state.study.launchReadiness=(p.settings&&p.settings.launchReadiness)||{};
     state.groups=(payload.constructs||[]).map(c=>c.name).filter(Boolean);
     state.questions=(payload.items||[]).map(it=>DB.itemHydrate(it));
@@ -663,42 +664,62 @@ function renderStart(){
   $('#app').innerHTML=`<div class="screen">
     <div class="eyebrow">New survey</div>
     <h1 class="title">How would you like to start?</h1>
-    <p class="lede">Pick a starting point. You can change course any time, and ReliCheck guides you the whole way.</p>
+    <p class="lede">Pick how much help you want from ReliCheck Intelligence. You can change course any time.</p>
     <div class="entry">
-      <button class="entry-card" onclick="enter()"><div class="ico">✎</div><h3>Build it myself</h3><p>A clean workspace. Add questions one at a time, with help on tap whenever you want it.</p><span class="go">Start building →</span></button>
-      <button class="entry-card" onclick="state.startFlow='ai';render()"><div class="ico">✨</div><h3>Help me build it</h3><p>Tell ReliCheck your goal and it drafts the questions for you to review and adjust.</p><span class="go">Get a draft →</span></button>
-      <button class="entry-card" onclick="openUpload()"><div class="ico">⤓</div><h3>I already have one</h3><p>Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet.</p><span class="go">Upload it →</span></button>
+      <button class="entry-card" onclick="enter('scratch')"><div class="ico">✎</div><h3>Build it myself</h3><p>A clean workspace, no assistance. You write every question and choose every answer format yourself.</p><span class="go">Start building →</span></button>
+      <button class="entry-card" onclick="enter('ai-assist')"><div class="ico">✨</div><h3>Build with an assistant</h3><p>You build it, with ReliCheck Intelligence suggesting question items and improving your wording as you go.</p><span class="go">Build together →</span></button>
+      <button class="entry-card" onclick="state.startFlow='ai';render()"><div class="ico">⚡</div><h3>Have ReliCheck build it</h3><p>Describe your goal and ReliCheck Intelligence drafts the whole survey for you to review and adjust.</p><span class="go">Get a full draft →</span></button>
     </div>
-    <a class="ailink" href="#" onclick="return false">Or browse ready-made templates →</a>
+    <button class="entry-card" style="width:100%;flex-direction:row;align-items:center;gap:16px;margin-top:16px" onclick="openUpload()"><div class="ico" style="margin:0">⤓</div><div style="flex:1"><h3>I already have a survey</h3><p style="margin-top:2px">Upload from Google Forms, SurveyMonkey, Qualtrics, or a spreadsheet. ReliCheck detects the format.</p></div><span class="go">Upload it →</span></button>
     ${recentSection()}
   </div>`;
 }
 function renderAiGoal(){
   $('#app').innerHTML=`<div class="screen">
-    <div class="eyebrow">Help me build it</div>
+    <div class="eyebrow">Have ReliCheck build it</div>
     <h1 class="title">What do you want to learn?</h1>
-    <p class="lede">Describe your goal in a sentence or two. ReliCheck drafts a first survey you can review and adjust. Nothing is locked in.</p>
+    <p class="lede">Describe your goal and (optionally) who will answer. ReliCheck Intelligence drafts a tailored survey you can review and adjust. Nothing is locked in.</p>
     <div class="card pad" style="max-width:680px">
-      <textarea id="aiGoal" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:15.5px;min-height:96px;resize:vertical">I want to understand why admitted students chose to enroll, and what almost made them choose another school.</textarea>
+      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Your goal or research question</div>
+      <textarea id="aiGoal" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:15.5px;min-height:90px;resize:vertical" placeholder="e.g. I want to understand why admitted students chose to enroll, and what almost made them choose another school."></textarea>
+      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 6px">Who will answer? (optional)</div>
+      <input id="aiPop" style="width:100%;border:1.5px solid var(--line);border-radius:10px;padding:11px 15px;font-family:inherit;font-size:15px" placeholder="e.g. Admitted first-year students">
       <div class="btn-row" style="margin-top:18px"><button class="btn" onclick="state.startFlow=null;render()">← Back</button><div class="spacer"></div><button class="btn primary lg" onclick="aiDraft()">Draft my survey →</button></div>
     </div></div>`;
 }
-function aiDraft(){
-  const goal=(document.getElementById('aiGoal')||{}).value||'';
-  $('#app').innerHTML=`<div class="screen"><div class="card pad" style="text-align:center;max-width:520px;margin:50px auto"><p class="muted" style="font-size:15px">Drafting your survey…</p></div></div>`;
-  setTimeout(async()=>{
-    state.questions=[
-      {t:'How confident did you feel about your decision to enroll here?',type:'Rating Scale',options:null},
-      {t:'What was the single biggest reason you chose us?',type:'Long Answer',options:null},
-      {t:'Which of these did you weigh before deciding? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Program reputation','Financial aid','Campus visit']},
-      {t:'How clear was the application process?',type:'Rating Scale',options:null},
-      {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
-    ];
-    state.startFlow=null; state.groups=[];
-    if(PERSIST.on){ state.study={name:'Survey from your goal',purpose:goal,population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('ai-build'); }catch(e){ degrade(e.message); } }
-    state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();
-    render();toast('ReliCheck drafted 5 questions. Review and adjust.');
-  },800);
+async function aiDraft(){
+  const goal=(document.getElementById('aiGoal')||{}).value.trim();
+  const pop=(document.getElementById('aiPop')||{}).value.trim();
+  if(!goal){ toast('Describe what you want to learn first.'); return; }
+  $('#app').innerHTML=`<div class="screen"><div class="card pad" style="text-align:center;max-width:520px;margin:50px auto"><p class="muted" style="font-size:15px">ReliCheck Intelligence is drafting your survey…</p></div></div>`;
+  state.startFlow=null; state.groups=[]; state.entry='ai-build'; state.aiReason='';
+  // Real path: ask api/dev/ai-build.php for a study tailored to the goal.
+  if(PERSIST.on){
+    try{
+      const r=await DB.call('ai-build.php',{method:'POST',body:{purpose:goal,population:pop}});
+      const study=r.study||{}, items=Array.isArray(study.items)?study.items:[];
+      if(items.length){
+        state.study={name:study.title||'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
+        state.groups=(study.constructs||[]).map(c=>c.name).filter(Boolean);
+        state.questions=items.map(it=>{ const type=normType(mapType(it.type)); return {t:it.prompt,type,options:defaultOptions(type),settings:defaultSettings(type),group:it.construct||''}; });
+        try{ await createProject('ai-build'); }catch(e){ degrade(e.message); }
+        state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
+        toast('ReliCheck drafted '+items.length+' tailored question'+(items.length===1?'':'s')+'. Review and adjust.');
+        return;
+      }
+    }catch(e){ state.aiReason=e.message||''; }
+  }
+  // Fallback: AI unavailable or not signed in → a sample to edit, stated plainly.
+  state.questions=[
+    {t:'How confident did you feel about your decision?',type:'Rating Scale',options:null,settings:defaultSettings('Rating Scale')},
+    {t:'What was the single biggest reason behind your choice?',type:'Long Answer',options:null},
+    {t:'Which of these did you weigh before deciding? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Support','Other']},
+    {t:'How clear was the process?',type:'Rating Scale',options:null,settings:defaultSettings('Rating Scale')},
+  ];
+  state.study={name:'Survey from your goal',purpose:goal,population:pop,mode:'',dataType:'',launchReadiness:{}};
+  if(PERSIST.on){ try{ await createProject('ai-build'); }catch(e){ degrade(e.message); } }
+  state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
+  toast(state.aiReason?('ReliCheck Intelligence is unavailable ('+state.aiReason+'). Loaded a sample to edit.'):'Loaded a sample survey to edit.');
 }
 function renderUpload(){
   $('#app').innerHTML=`<div class="screen">
@@ -744,14 +765,16 @@ function openUpload(){
     }
   });
 }
-async function enter(){
-  state.startFlow=null;
+async function enter(mode){
+  mode=(mode==='ai-assist')?'ai-assist':'scratch';
+  state.startFlow=null; state.entry=mode;
   if(PERSIST.on){
     state.questions=[]; state.groups=[];
     state.study={name:'Untitled survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}};
-    try{ await createProject('scratch'); }catch(e){ degrade(e.message); }
+    try{ await createProject(mode); }catch(e){ degrade(e.message); }
   }
   state.screen='workspace';state.phase='build';state.prevStrength=liveStrength();render();
+  if(mode==='ai-assist') toast('Assistant on — use “Suggest a question” or the wording help on each card.');
 }
 
 /* Build */
@@ -798,10 +821,12 @@ function viewBuild(){
       <h2 class="sec">${qs.length} question${qs.length===1?'':'s'} in your survey</h2>
       ${weakCount?`<button class="tlink" onclick="improveWeakest()">${weakCount} need${weakCount===1?'s':''} a look — improve ${weakCount===1?'it':'them'}</button>`:''}
     </div>`:''}
-    ${list||`<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✎</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">No questions yet</p><p class="faint" style="font-size:14.5px;margin-top:4px">Click “Add question” below to write your first one.</p></div>`}
+    ${list||(state.entry==='ai-assist'
+      ? `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✨</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">Build with ReliCheck Intelligence</p><p class="faint" style="font-size:14.5px;margin:4px 0 14px">Start from a suggestion, or write your own. Wording and clarity help is on every card.</p><div class="btn-row" style="justify-content:center"><button class="btn primary" onclick="suggestQ()">✨ Suggest my first question</button><button class="btn" onclick="addBlankQ()">Write one myself</button></div></div>`
+      : `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✎</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">No questions yet</p><p class="faint" style="font-size:14.5px;margin-top:4px">Click “Add question” below to write your first one.</p></div>`)}
     <div class="btn-row" style="margin-top:18px">
       <button class="btn primary lg" onclick="addBlankQ()">+ Add question</button>
-      <button class="ailink" onclick="suggestQ()">Let ReliCheck suggest one</button>
+      <button class="ailink" onclick="suggestQ()">${state.entry==='ai-assist'?'Suggest the next one':'Let ReliCheck suggest one'}</button>
       <div class="spacer"></div>
       ${qs.length?`<button class="btn primary lg" onclick="goLaunch()">Ready to launch →</button>`:''}
     </div>`;
