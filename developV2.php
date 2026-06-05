@@ -504,7 +504,12 @@ function siriBandOf(s){if(s>=90)return{w:'Strong',c:'green'};if(s>=80)return{w:'
 function sdsiBandColor(k){ if(k==='strong'||k==='good')return 'green'; if(k==='caution'||k==='weak')return 'amber'; return 'red'; }
 function markOf(q,i){
   if(state.bc&&state.bc.flags){
-    const ref=refOf(q,i),fs=state.bc.flags.filter(f=>f.item_ref===ref);
+    const ref=refOf(q,i);
+    // A stem that needs question text, or a response-format mismatch, is pulling
+    // the survey down — regardless of the underlying flag's nominal severity.
+    const sc=(state.bc.itemScores||[]).filter(s=>s.item_ref===ref)[0];
+    if(sc&&(sc.response_fit_status==='cannot_assess'||sc.response_fit_status==='mismatch'))return 'down';
+    const fs=state.bc.flags.filter(f=>f.item_ref===ref);
     if(fs.some(f=>f.severity==='critical'||f.severity==='major'))return 'down';
     if(fs.some(f=>f.severity==='moderate'))return 'flat';
     return 'up';
@@ -1033,20 +1038,26 @@ function toggleWriteGauge(){ state.writeGaugeInfo=!state.writeGaugeInfo; render(
 function viewBuild(){
   if(state.grouping)return viewGrouping();
   const qs=state.questions;
-  const weakCount=qs.filter((q,i)=>markOf(q,i)==='down').length;
+  // Split "needs attention" into needs-question-text (stem quality) vs other look-at items.
+  const needTextCount=(state.bc&&state.bc.writing_quality_needs_text_count)||0;
+  const needFixCount=qs.filter((q,i)=>{const rf=rfFor(q,i);const isText=rf&&rf.status==='cannot_assess';return !isText&&markOf(q,i)==='down';}).length;
   const list=qs.map((q,i)=>state.editing===i?editorCard(q,i):displayCard(q,i)).join('');
   // Writing quality — single-line label + level + info toggle.
   let writeGauge='';
   if(qs.length){
-    const niCount=state.bc&&state.bc.stem_noninterp_count||0;
+    const niCount=state.bc&&state.bc.writing_quality_needs_text_count||0;
     const rfState=state.bc&&state.bc.response_fit_state;
     const rfMisPct=state.bc&&state.bc.response_fit_mismatch_pct||0;
     const rfSens=state.bc&&state.bc.response_fit_sensitive_count||0;
-    // The engine's CAPPED band is the single source of truth — the gauge never
-    // overrides it, so it can never read "Strong/Good" once readiness is capped.
+    // The engine's WRITING-QUALITY verdict is the single source of truth — it honors
+    // the same stem-quality gate as the item cards, so it can never read "Strong"
+    // while any item needs question text. Never computed from the raw number.
     let b;
-    if(state.bc&&state.bc.sdsi_display_band){ b={w:state.bc.sdsi_display_band,c:sdsiBandColor(state.bc.bandKey)}; }
-    else { b=bandOf(strengthValue()); }
+    if(state.bc&&state.bc.writing_quality_band){
+      const wq=state.bc.writing_quality_band;
+      const c=(wq==='Question text needed')?'red':(wq==='Needs revision')?'amber':sdsiBandColor(state.bc.bandKey);
+      b={w:wq,c:c};
+    } else { b=bandOf(strengthValue()); }
     const dotColor=b.c==='green'?'var(--good)':(b.c==='red'?'var(--bad)':'var(--warn)');
     // Warnings explain WHY the band is held down.
     const warns=[];
@@ -1080,7 +1091,7 @@ function viewBuild(){
     ${writeGauge}
     ${qs.length?`<div class="sec-row">
       <h2 class="sec">${qs.length} question${qs.length===1?'':'s'} in your survey</h2>
-      ${weakCount?`<button class="tlink" onclick="improveWeakest()">${weakCount} need${weakCount===1?'s':''} a look — improve ${weakCount===1?'it':'them'}</button>`:''}
+      ${(needTextCount||needFixCount)?`<button class="tlink" onclick="improveWeakest()">${[needTextCount?`${needTextCount} need${needTextCount===1?'s':''} question text`:'',needFixCount?`${needFixCount} need${needFixCount===1?'s':''} a look`:''].filter(Boolean).join(' · ')}</button>`:''}
     </div>`:''}
     ${list||(state.entry==='ai-assist'
       ? `<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✨</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">Build with ReliCheck Intelligence</p><p class="faint" style="font-size:14.5px;margin:4px 0 14px">Start from a suggestion, or write your own. Wording and clarity help is on every card.</p><div class="btn-row" style="justify-content:center"><button class="btn primary" onclick="suggestQ()">✨ Suggest my first question</button><button class="btn" onclick="addBlankQ()">Write one myself</button></div></div>`

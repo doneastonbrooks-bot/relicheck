@@ -1284,16 +1284,26 @@
     // locked principle: "Strong" cannot be claimed while any item is not a real
     // question. Tiers: any -> not Strong; 20% -> Caution; 40% -> Not ready;
     // 60% -> Assessment blocked.
-    var nonInterpCount = itemScores.filter(function (s) { return s.response_fit_status === 'cannot_assess'; }).length;
+    // An item counts as "needs question text" if its STEM has an answerability /
+    // construct / clarity / code / label / metadata / fragment problem — i.e. it
+    // is not a respondent-facing question yet. This is a STEM-QUALITY (question
+    // writing) judgment, distinct from Response Fit, and it is what drives the
+    // Writing Quality band. (cannot_assess is the response-fit echo of the same.)
+    var STEM_QUALITY_FLAGS = { stem_item_code: 1, stem_demographic_label: 1, stem_construct_label: 1, stem_metadata_field: 1, stem_not_answerable: 1, stem_verb_fragment: 1 };
+    var needsTextRefs = {};
+    ctx.review.forEach(function (f) { if (f.item_ref != null && STEM_QUALITY_FLAGS[f.flag_key]) needsTextRefs[f.item_ref] = 1; });
+    itemScores.forEach(function (s) { if (s.response_fit_status === 'cannot_assess') needsTextRefs[s.item_ref] = 1; });
+    var nonInterpCount = Object.keys(needsTextRefs).length;
     var nonInterpPct = N > 0 ? (nonInterpCount / N) : 0;
     var codeItemCount = ctx.ans.filter(function (it) { return ITEM_CODE_RE.test((it.prompt || '').trim()); }).length;
+    // Tiers: any -> not Strong (cap Good); 25% -> Caution; 40% -> Not ready; 60% -> blocked.
     var stemCapKey = nonInterpPct >= 0.6 ? 'codes'
       : (nonInterpPct >= 0.4 ? 'notready'
-      : (nonInterpPct >= 0.2 ? 'caution'
+      : (nonInterpPct >= 0.25 ? 'caution'
       : (nonInterpCount >= 1 ? 'good' : null)));
     var stemValidityState = nonInterpPct >= 0.6 ? 'blocked'
       : (nonInterpPct >= 0.4 ? 'limited'
-      : (nonInterpPct >= 0.2 ? 'caution'
+      : (nonInterpPct >= 0.25 ? 'caution'
       : (nonInterpCount >= 1 ? 'soft' : 'ok')));
     if (stemCapKey) {
       var niStr = Math.round(nonInterpPct * 100) + '% of items (' + nonInterpCount + ' of ' + N + ')';
@@ -1341,6 +1351,20 @@
     if (rfSensitiveCount > 0) {
       var rfSens = rfSensitiveCount + ' identity question' + (rfSensitiveCount === 1 ? ' uses' : 's use') + ' an agreement scale, which is culturally inappropriate. Use respectful self-identification choices and a "Prefer not to answer" option.';
       headline = rfSens + (headline ? ' ' + headline : '');
+    }
+
+    // ── Writing-quality verdict (the gauge label) ────────────────────────────
+    // Honors the same gate as the item cards: it can NEVER read "Strong" while any
+    // item needs question text. Label-stem caps get descriptive wording; if a more
+    // severe cap (blockers / response fit) applies, the band label carries through.
+    var wqCanShowStrong = (nonInterpCount === 0) && (band.key === 'strong');
+    var stemTierRank = nonInterpPct >= 0.40 ? bandSeverityRank('notready')
+      : (nonInterpPct >= 0.25 ? bandSeverityRank('caution') : 999);
+    var writingQualityBand;
+    if (nonInterpCount > 0 && stemTierRank <= bandSeverityRank(band.key)) {
+      writingQualityBand = nonInterpPct >= 0.40 ? 'Question text needed' : 'Needs revision';
+    } else {
+      writingQualityBand = band.label;
     }
 
     // The five 10-point domain cards = the average domain score across items
@@ -1397,6 +1421,10 @@
       stem_noninterp_count: nonInterpCount,
       stem_noninterp_pct: Math.round(nonInterpPct * 100),
       stem_band_cap_key: stemCapKey,
+      // Writing-quality verdict — the gauge MUST use this, never the raw number.
+      writing_quality_band: writingQualityBand,
+      writing_quality_can_show_strong: wqCanShowStrong,
+      writing_quality_needs_text_count: nonInterpCount,
       // Response-fit survey roll-up (drives the band cap + SIRI propagation + UI).
       response_fit_state: responseFitState,
       response_fit_mismatch_count: rfMismatchCount,
