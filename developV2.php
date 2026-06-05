@@ -301,6 +301,14 @@ body.coach-open .companion{transform:translateX(0)}
 @media(max-width:820px){.handoff{grid-template-columns:1fr}}
 .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;font-size:13.5px;font-weight:600;padding:11px 18px;border-radius:10px;box-shadow:var(--sh-lg);opacity:0;pointer-events:none;transition:.2s;z-index:120}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+/* QR modal (launch share) */
+.qr-ov{position:fixed;inset:0;background:rgba(16,24,40,.42);display:flex;align-items:center;justify-content:center;z-index:130;padding:20px}
+.qr-modal{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--sh-lg);width:340px;max-width:94vw;padding:20px 22px}
+.qr-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.qr-modal .cx{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink-3);font-size:16px}
+.qr-modal .cx:hover{background:var(--soft)}
+.qr-link{font-size:12.5px;color:var(--ink-2);text-align:center;word-break:break-all;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:9px 11px;margin-bottom:13px}
+.qr-btns{display:flex;gap:10px;justify-content:center}
 @media(max-width:820px){.entry,.share{grid-template-columns:1fr}}
 </style>
 </head>
@@ -339,6 +347,9 @@ body.coach-open .companion{transform:translateX(0)}
 <!-- Real Build Check (SDSI) engine — the strength ticker reads this client-side -->
 <script src="/apps/sdsi/validity-lens-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/validity-lens-engine.js') ? filemtime(__DIR__.'/apps/sdsi/validity-lens-engine.js') : '1' ?>"></script>
 <script src="/apps/sdsi/buildcheck-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/buildcheck-engine.js') ? filemtime(__DIR__.'/apps/sdsi/buildcheck-engine.js') : '1' ?>"></script>
+<!-- Real SIRI Launch Check engine (100-pt readiness gate): SDSI design + 5 readiness domains -->
+<script src="/apps/sdsi/siri-readiness.js?v=<?= is_file(__DIR__.'/apps/sdsi/siri-readiness.js') ? filemtime(__DIR__.'/apps/sdsi/siri-readiness.js') : '1' ?>"></script>
+<script src="/apps/sdsi/launchcheck-engine.js?v=<?= is_file(__DIR__.'/apps/sdsi/launchcheck-engine.js') ? filemtime(__DIR__.'/apps/sdsi/launchcheck-engine.js') : '1' ?>"></script>
 <!-- Shared ReliCheck upload widget (the ecosystem entry gate) -->
 <script src="/apps/studio/dataset-upload.js?v=<?= is_file(__DIR__.'/apps/studio/dataset-upload.js') ? filemtime(__DIR__.'/apps/studio/dataset-upload.js') : '1' ?>"></script>
 <script src="/apps/studio/studio-footer.js?v=<?= is_file(__DIR__.'/apps/studio/studio-footer.js') ? filemtime(__DIR__.'/apps/studio/studio-footer.js') : '1' ?>"></script>
@@ -348,14 +359,72 @@ const state={
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
   reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
+  siriResult:null,siriStale:false,helpPick:null,
   questions:[
-    {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
-    {t:'How did you first hear about us?',type:'Multiple choice',options:['Friend or family','Social media','College fair','Web search']},
-    {t:'Was the enrollment process clear and did you feel supported the whole way through?',type:'Rating scale',options:null},
+    {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
+    {t:'How did you first hear about us?',type:'Multiple Choice',options:['Friend or family','Social media','College fair','Web search']},
+    {t:'Was the enrollment process clear and did you feel supported the whole way through?',type:'Rating Scale',options:null},
   ],
 };
 const PHASES=[{id:'build',t:'Build'},{id:'launch',t:'Launch'},{id:'analyze',t:'Analyze'}];
-const QTYPES=['Multiple choice','Checkboxes','Rating scale','Yes / No','Short text','Long comment','Number'];
+/* Full question-type catalog — ported from the mature builder so V2 exposes
+   every type, not a subset. `editOpts` types get an answer-choices editor;
+   `structural` types are content (no answer); settings carry per-type config
+   (Likert points/anchors, rating stars, slider range) in the SAME keys the
+   public survey renderer (api/public/survey-dev.php) reads, so they work end
+   to end. */
+const QTYPES={
+  'Multiple Choice':   {label:'Multiple Choice',               group:'Choice Questions',      defOpts:['Option 1','Option 2','Option 3'], editOpts:true},
+  'Checkboxes':        {label:'Checkboxes (multiple answers)', group:'Choice Questions',      defOpts:['Option 1','Option 2','Option 3'], editOpts:true},
+  'Dropdown':          {label:'Dropdown',                      group:'Choice Questions',      defOpts:['Option 1','Option 2','Option 3'], editOpts:true},
+  'Yes/No':            {label:'Yes / No',                      group:'Choice Questions',      defOpts:['Yes','No']},
+  'True/False':        {label:'True / False',                  group:'Choice Questions',      defOpts:['True','False']},
+  'Likert Scale':      {label:'Likert Scale',                  group:'Rating Questions'},
+  'Rating Scale':      {label:'Rating Scale (stars)',          group:'Rating Questions'},
+  'Matrix/Grid':       {label:'Matrix / Grid',                 group:'Rating Questions',      defOpts:['Row 1','Row 2','Row 3'], editOpts:true},
+  'NPS':               {label:'NPS (0–10)',                    group:'Rating Questions'},
+  'Short Answer':      {label:'Short Answer',                  group:'Open Response'},
+  'Long Answer':       {label:'Long Answer',                   group:'Open Response'},
+  'Comment Box':       {label:'Comment Box',                   group:'Open Response'},
+  'Ranking':           {label:'Ranking',                       group:'Ordering and Priority', defOpts:['Item 1','Item 2','Item 3'], editOpts:true},
+  'Slider':            {label:'Slider',                        group:'Ordering and Priority'},
+  'Demographic':       {label:'Demographic Item',              group:'Demographic and Contact', defOpts:['Option 1','Option 2'], editOpts:true},
+  'Email':             {label:'Email',                         group:'Demographic and Contact'},
+  'Phone':             {label:'Phone',                         group:'Demographic and Contact'},
+  'Date':              {label:'Date',                          group:'Demographic and Contact'},
+  'Numeric':           {label:'Numeric',                       group:'Demographic and Contact'},
+  'Section Text':      {label:'Section Text / Instructions',   group:'Survey Structure',      structural:true},
+  'Consent':           {label:'Consent / Agreement',          group:'Survey Structure',      structural:true, defOpts:['I agree to participate.'], editOpts:true},
+  'Page Break':        {label:'Page Break',                    group:'Survey Structure',      structural:true},
+  'Thank-you Message': {label:'Thank-you Message',             group:'Survey Structure',      structural:true},
+};
+const QGROUPS=[
+  {name:'Choice Questions',        types:['Multiple Choice','Checkboxes','Dropdown','Yes/No','True/False']},
+  {name:'Rating Questions',        types:['Likert Scale','Rating Scale','Matrix/Grid','NPS']},
+  {name:'Open Response',           types:['Short Answer','Long Answer','Comment Box']},
+  {name:'Ordering and Priority',   types:['Ranking','Slider']},
+  {name:'Demographic and Contact', types:['Demographic','Email','Phone','Date','Numeric']},
+  {name:'Survey Structure',        types:['Section Text','Consent','Page Break','Thank-you Message']},
+];
+// "Help me choose" — plain-language answer need → best-fit type.
+const QHELP=[
+  {q:'One answer from a list',         type:'Multiple Choice'},
+  {q:'More than one answer',           type:'Checkboxes'},
+  {q:'A rating or level of agreement', type:'Likert Scale'},
+  {q:'A written response',             type:'Long Answer'},
+  {q:'A number',                       type:'Numeric'},
+  {q:'A date',                         type:'Date'},
+  {q:'A ranking',                      type:'Ranking'},
+  {q:'Consent or acknowledgment',      type:'Consent'},
+  {q:'Instructions only',              type:'Section Text'},
+];
+const QDEFAULT_PROMPT={'Section Text':'Add your instructions here.','Consent':'Please review and confirm before continuing.','Page Break':'Page break','Thank-you Message':'Thank you for completing this survey.'};
+function typeLabel(t){ return (QTYPES[t]&&QTYPES[t].label)||t; }
+function isStructural(t){ return !!(QTYPES[t]&&QTYPES[t].structural); }
+// Map legacy/back-compat type names (from old projects + the AI builder) onto the
+// catalog so previews, editors, and exports render them correctly.
+const QTYPE_ALIAS={'Single Choice':'Multiple Choice','Likert (5-pt)':'Likert Scale','Likert (7-pt)':'Likert Scale','Rating':'Rating Scale','Long Text':'Long Answer','Open-Ended':'Long Answer','Instructions':'Section Text','Matrix':'Matrix/Grid'};
+function normType(t){ return QTYPES[t]?t:(QTYPE_ALIAS[t]||t); }
 
 /* ── Quality model — driven by the real Build Check (SDSI) engine.
    The engine (apps/sdsi/buildcheck-engine.js) runs client-side. Heuristic
@@ -396,7 +465,7 @@ function qualityHeuristic(q){
   let s=86;const text=(q.t||'').trim();const words=(text.match(/\b[\w']+\b/g)||[]).length;
   if(/\band\b/i.test(text)&&words>6)s-=26; if(/\bor\b/i.test(text)&&words>9)s-=8;
   if(words>22)s-=12; if(words<3)s-=18; if(!/[?]$/.test(text))s-=6;
-  if(['Multiple choice','Checkboxes'].includes(q.type)){const n=(q.options||[]).length;if(n>=3)s+=4;else if(n<2)s-=10;}
+  if(['Multiple Choice','Checkboxes'].includes(q.type)){const n=(q.options||[]).length;if(n>=3)s+=4;else if(n<2)s-=10;}
   return Math.max(28,Math.min(98,s));
 }
 function strengthHeuristic(qs){if(!qs.length)return 0;let s=qs.reduce((a,q)=>a+qualityHeuristic(q),0)/qs.length;if(qs.length>=4)s+=3;if(qs.length>=8)s+=2;return Math.round(Math.max(0,Math.min(100,s)));}
@@ -411,8 +480,31 @@ const $=s=>document.querySelector(s);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),1900);}
 function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
-function defaultOptions(t){if(t==='Multiple choice'||t==='Checkboxes')return['Option 1','Option 2','Option 3'];if(t==='Yes / No')return['Yes','No'];return null;}
-function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render();}
+function defaultOptions(t){ const d=QTYPES[t]&&QTYPES[t].defOpts; return d?d.slice():null; }
+// Per-type default settings, in the keys the public renderer reads.
+function defaultSettings(t){
+  if(t==='Likert Scale')return{likertPoints:5,likertLow:'Strongly Disagree',likertHigh:'Strongly Agree'};
+  if(t==='Rating Scale')return{ratingStars:5};
+  if(t==='Slider')return{sliderMin:0,sliderMax:100};
+  return null;
+}
+function go(phase){state.phase=phase;state.editing=null;state.aiHelp=null;render(); if(phase==='launch')maybeRunSiri();}
+// SIRI Launch Check (100-pt readiness gate) — runs the real LaunchCheck engine
+// against the survey + the current SDSI Build Check result.
+function maybeRunSiri(){ if((state.questions||[]).length && window.LaunchCheck && window.LaunchCheck.assess && (!state.siriResult||state.siriStale)) runSiriCheck(); }
+function runSiriCheck(){
+  if(!(window.LaunchCheck&&window.LaunchCheck.assess)){ state.siriResult=null; toast('Launch Check engine unavailable'); render(); return; }
+  state.bc=assessNow();                                   // current SDSI design result
+  const r=window.LaunchCheck.assess(buildCheckProject(),{sdsiResult:state.bc});
+  state.siriResult=r; state.siriStale=false;
+  if(PERSIST.on&&state.projectId){
+    const hasTotal=(r.total!=null);
+    DB.call('siri-save.php',{method:'POST',body:{ project_id:state.projectId,
+      total:hasTotal?r.total:r.siri, max:hasTotal?100:50, pct:hasTotal?Math.round(r.total):r.pct,
+      band:hasTotal?r.total_band:'', blocked:(r.deployment_blocker_count||0)>=1, review:r }}).catch(e=>degrade(e.message));
+  }
+  render();
+}
 function withTicker(fn){const before=liveStrength();fn();const after=liveStrength();state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')};state.prevStrength=after;}
 
 /* ── Persistence — mirrors develop.php's proven api/dev DB layer.
@@ -434,7 +526,7 @@ const DB={
   // q.group is the construct name; it rides in the item settings JSON (no construct column).
   itemSettingsOut(q){ const s=Object.assign({},q.settings||{}); delete s.construct; delete s.constructId; if(q.group)s.construct=q.group; return Object.keys(s).length?s:null; },
   itemsWire(){ return (state.questions||[]).map(q=>({ id:q.id, section_id:q.section_id||null, type:q.type, prompt:q.t, flag:q.flag||null, required:q.required?1:0, options:q.options||null, settings:DB.itemSettingsOut(q) })); },
-  itemHydrate(it){ const s=it.settings||{}; const q={ id:it.id, t:it.prompt, type:it.type, flag:it.flag, section_id:it.section_id, required:!!it.required, options:it.options||null, settings:it.settings||null, group:'' }; if(s.construct)q.group=s.construct; return q; },
+  itemHydrate(it){ const s=it.settings||{}; const q={ id:it.id, t:it.prompt, type:normType(it.type), flag:it.flag, section_id:it.section_id, required:!!it.required, options:it.options||null, settings:it.settings||null, group:'' }; if(s.construct)q.group=s.construct; return q; },
   constructsWire(){ return (state.groups||[]).map((g,i)=>({ id:null, name:g, definition:'', position:i })); },
   hydrate(payload){
     const p=payload.project;
@@ -446,6 +538,9 @@ const DB={
     state.questions=(payload.items||[]).map(it=>DB.itemHydrate(it));
     state.responses=payload.responses||0;
     state.deploymentSettings=payload.deployment||null;
+    // Restore the saved SIRI Launch Check (the full engine result rides in .review).
+    state.siriResult=(payload.siri&&payload.siri.review&&(payload.siri.review.siri!=null))?payload.siri.review:null;
+    state.siriStale=false;
     try{ localStorage.setItem(LS_KEY,String(p.id)); }catch(e){}
   },
 };
@@ -462,7 +557,7 @@ async function createProject(source){
   DB.hydrate(r);
   setSaveStatus('saved');
 }
-function persistItems(){ if(PERSIST.on&&state.projectId) saveItemsNow(); }
+function persistItems(){ state.siriStale=true; if(PERSIST.on&&state.projectId) saveItemsNow(); }
 async function saveItemsNow(){
   if(!(PERSIST.on&&state.projectId))return;
   setSaveStatus('saving');
@@ -593,11 +688,11 @@ function aiDraft(){
   $('#app').innerHTML=`<div class="screen"><div class="card pad" style="text-align:center;max-width:520px;margin:50px auto"><p class="muted" style="font-size:15px">Drafting your survey…</p></div></div>`;
   setTimeout(async()=>{
     state.questions=[
-      {t:'How confident did you feel about your decision to enroll here?',type:'Rating scale',options:null},
-      {t:'What was the single biggest reason you chose us?',type:'Long comment',options:null},
+      {t:'How confident did you feel about your decision to enroll here?',type:'Rating Scale',options:null},
+      {t:'What was the single biggest reason you chose us?',type:'Long Answer',options:null},
       {t:'Which of these did you weigh before deciding? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Program reputation','Financial aid','Campus visit']},
-      {t:'How clear was the application process?',type:'Rating scale',options:null},
-      {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
+      {t:'How clear was the application process?',type:'Rating Scale',options:null},
+      {t:'What is your intended major?',type:'Multiple Choice',options:['Biology','Business','Engineering','Undecided']},
     ];
     state.startFlow=null; state.groups=[];
     if(PERSIST.on){ state.study={name:'Survey from your goal',purpose:goal,population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('ai-build'); }catch(e){ degrade(e.message); } }
@@ -615,9 +710,9 @@ function renderUpload(){
 }
 async function uploadDone(){
   state.questions=[
-    {t:'Overall, how satisfied are you with your experience?',type:'Rating scale',options:null},
-    {t:'How likely are you to recommend us to a friend?',type:'Rating scale',options:null},
-    {t:'What could we have done better?',type:'Long comment',options:null},
+    {t:'Overall, how satisfied are you with your experience?',type:'Rating Scale',options:null},
+    {t:'How likely are you to recommend us to a friend?',type:'Rating Scale',options:null},
+    {t:'What could we have done better?',type:'Long Answer',options:null},
   ];
   state.startFlow=null; state.groups=[];
   if(PERSIST.on){ state.study={name:'Imported survey',purpose:'',population:'',mode:'',dataType:'',launchReadiness:{}}; try{ await createProject('existing'); }catch(e){ degrade(e.message); } }
@@ -660,16 +755,35 @@ async function enter(){
 }
 
 /* Build */
+// Read-only preview of how respondents see an item — covers every catalog type.
 function answerPreview(q){
-  const t=q.type;
-  if(t==='Multiple choice')return(q.options||['Option 1','Option 2']).map(o=>`<div class="opt"><span class="dot"></span>${esc(o)}</div>`).join('');
-  if(t==='Checkboxes')return(q.options||['Option 1','Option 2']).map(o=>`<div class="opt"><span class="sq"></span>${esc(o)}</div>`).join('');
-  if(t==='Yes / No')return['Yes','No'].map(o=>`<div class="opt"><span class="dot"></span>${o}</div>`).join('');
-  if(t==='Rating scale')return`<div class="scale">${[1,2,3,4,5].map(n=>`<span>${n}</span>`).join('')}</div><div class="faint" style="font-size:12px;margin-top:6px">Not at all → Completely</div>`;
-  if(t==='Short text')return`<div class="prevtext">Short answer…</div>`;
-  if(t==='Long comment')return`<div class="prevtext" style="min-height:44px">Longer answer…</div>`;
-  if(t==='Number')return`<div class="prevtext" style="max-width:120px">0</div>`;
-  return'';
+  const t=q.type, s=q.settings||{}, opts=(q.options&&q.options.length)?q.options:null;
+  const list=(arr,sq)=>arr.map(o=>`<div class="opt"><span class="${sq?'sq':'dot'}"></span>${esc(o)}</div>`).join('');
+  switch(t){
+    case 'Multiple Choice': return list(opts||['Option 1','Option 2']);
+    case 'Checkboxes':      return list(opts||['Option 1','Option 2'],true);
+    case 'Dropdown': case 'Demographic':
+      return `<div class="prevtext" style="max-width:300px;display:flex;justify-content:space-between;align-items:center">${esc((opts&&opts[0])||'Choose…')}<span class="faint">▾</span></div>`;
+    case 'Yes/No':     return list(['Yes','No']);
+    case 'True/False': return list(['True','False']);
+    case 'Likert Scale':{ const n=s.likertPoints||5; return `<div class="scale">${Array.from({length:n},(_,k)=>`<span>${k+1}</span>`).join('')}</div><div class="faint" style="font-size:12px;margin-top:6px">${esc(s.likertLow||'Strongly Disagree')} → ${esc(s.likertHigh||'Strongly Agree')}</div>`; }
+    case 'Rating Scale':{ const m=s.ratingStars||5; return `<div class="scale">${Array.from({length:m},()=>'<span>★</span>').join('')}</div>`; }
+    case 'NPS':        return `<div class="scale">${Array.from({length:11},(_,k)=>`<span>${k}</span>`).join('')}</div><div class="faint" style="font-size:12px;margin-top:6px">Not likely → Extremely likely</div>`;
+    case 'Matrix/Grid':return `<div class="faint" style="font-size:13.5px">Grid rows: ${(opts||['Row 1','Row 2']).map(esc).join(', ')}</div>`;
+    case 'Ranking':    return `<ol style="margin:0 0 0 20px;color:var(--ink-2);font-size:14.5px">${(opts||['Item 1','Item 2']).map(o=>`<li style="padding:2px 0">${esc(o)}</li>`).join('')}</ol>`;
+    case 'Slider':{ const mn=s.sliderMin??0,mx=s.sliderMax??100; return `<input type="range" disabled min="${mn}" max="${mx}" style="width:240px"> <span class="faint" style="font-size:12.5px">${mn} to ${mx}</span>`; }
+    case 'Short Answer': return `<div class="prevtext">Short answer…</div>`;
+    case 'Long Answer': case 'Comment Box': return `<div class="prevtext" style="min-height:44px">Longer answer…</div>`;
+    case 'Email':   return `<div class="prevtext" style="max-width:260px">name@example.com</div>`;
+    case 'Phone':   return `<div class="prevtext" style="max-width:200px">(555) 555-5555</div>`;
+    case 'Date':    return `<div class="prevtext" style="max-width:200px">MM / DD / YYYY</div>`;
+    case 'Numeric': return `<div class="prevtext" style="max-width:120px">0</div>`;
+    case 'Consent': return `<div class="opt"><span class="sq"></span>${esc((opts&&opts[0])||'I agree to participate.')}</div>`;
+    case 'Section Text':      return `<div class="faint" style="font-style:italic;font-size:14.5px">${esc(q.t||'Instructions')}</div>`;
+    case 'Page Break':        return `<div class="faint" style="font-size:13px;letter-spacing:.04em;text-transform:uppercase">— Page break —</div>`;
+    case 'Thank-you Message': return `<div class="faint" style="font-size:14.5px">${esc(q.t||'Thank you')}</div>`;
+    default: return `<div class="prevtext">Response…</div>`;
+  }
 }
 function viewBuild(){
   if(state.grouping)return viewGrouping();
@@ -679,54 +793,107 @@ function viewBuild(){
   return `
     <div class="eyebrow">Build</div>
     <input class="title title-input" value="${esc(state.study.name||'Untitled survey')}" placeholder="Untitled survey" oninput="setStudyName(this.value)" aria-label="Survey title">
-    <p class="lede">Add your questions one at a time. Watch the strength reading at the top, it moves with each question so you can fix a weak one as you go, not at the end.</p>
-    <div class="composer">
-      <div class="clbl">Add a question</div>
-      <textarea id="qtext" placeholder="Type your question here…"></textarea>
-      <div class="crow">
-        <select id="qtype">${QTYPES.map(t=>`<option>${t}</option>`).join('')}</select>
-        <button class="btn primary sm" onclick="addQ()">Add question</button>
-        <button class="ailink" onclick="suggestQ()">Let ReliCheck suggest one</button>
-      </div>
-    </div>
-    <div class="sec-row">
+    <p class="lede">Build your questions one at a time. Each opens on its own card, where you write the question, choose how people answer, and set the choices right there. Save it, then add the next.</p>
+    ${qs.length?`<div class="sec-row">
       <h2 class="sec">${qs.length} question${qs.length===1?'':'s'} in your survey</h2>
       ${weakCount?`<button class="tlink" onclick="improveWeakest()">${weakCount} need${weakCount===1?'s':''} a look — improve ${weakCount===1?'it':'them'}</button>`:''}
-    </div>
-    ${list||'<p class="muted">No questions yet. Add your first one above.</p>'}
-    <div class="btn-row"><div class="spacer"></div><button class="btn primary lg" onclick="go('launch')">Ready to launch →</button></div>`;
+    </div>`:''}
+    ${list||`<div class="card pad" style="text-align:center;max-width:640px;color:var(--ink-2)"><div style="font-size:30px">✎</div><p style="font-size:16px;font-weight:650;margin-top:8px;color:var(--ink)">No questions yet</p><p class="faint" style="font-size:14.5px;margin-top:4px">Click “Add question” below to write your first one.</p></div>`}
+    <div class="btn-row" style="margin-top:18px">
+      <button class="btn primary lg" onclick="addBlankQ()">+ Add question</button>
+      <button class="ailink" onclick="suggestQ()">Let ReliCheck suggest one</button>
+      <div class="spacer"></div>
+      ${qs.length?`<button class="btn primary lg" onclick="goLaunch()">Ready to launch →</button>`:''}
+    </div>`;
 }
 function displayCard(q,i){
+  const struct=isStructural(q.type);
   const m=markOf(q,i),lbl=m==='up'?'on track':(m==='down'?'pulling it down':'neutral');
+  const meta=struct
+    ? `<span class="faint">Survey structure</span>`
+    : `${esc(typeLabel(q.type))} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>`;
   return `<div class="qcard" id="qc-${i}">
     <div class="qhead">
       <span class="qn">${i+1}</span>
-      <div class="qb"><div class="qt">${esc(q.t)}</div><div class="qmeta">${esc(q.type)} <span class="qmark ${m}"><span class="md"></span>${lbl}</span>${q.group?` · <span style="font-weight:650;color:var(--ink-2)">${esc(q.group)}</span>`:''}</div></div>
+      <div class="qb"><div class="qt">${esc(q.t)}</div><div class="qmeta">${meta}${q.group?` · <span style="font-weight:650;color:var(--ink-2)">${esc(q.group)}</span>`:''}</div></div>
       <div class="qacts"><button class="iconbtn" title="Edit" onclick="editQ(${i})">✎</button><button class="iconbtn" title="Remove" onclick="removeQ(${i})">✕</button></div>
     </div>
     <div class="qprev">${answerPreview(q)}</div>
   </div>`;
 }
 function editorCard(q,i){
-  const optTypes=['Multiple choice','Checkboxes'];
-  const optEditor=optTypes.includes(q.type)?`
-    <div style="margin-top:12px"><div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Answer options</div>
-    ${(q.options||[]).map((o,oi)=>`<div style="display:flex;gap:8px;align-items:center;margin-top:8px"><input style="flex:1;max-width:340px;border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:14px" value="${esc(o)}" oninput="setOpt(${i},${oi},this.value)"><button class="iconbtn" onclick="delOpt(${i},${oi})">✕</button></div>`).join('')}
-    <button class="ailink" onclick="addOpt(${i})" style="margin-top:8px">+ Add option</button></div>`:'';
   const help=(state.aiHelp&&state.aiHelp.i===i)?aiHelpBox(state.aiHelp):'';
+  const isNew=!!q._new, struct=isStructural(q.type);
+  const typeSelect=`<select onchange="setType(${i},this.value)">${QGROUPS.map(g=>`<optgroup label="${esc(g.name)}">${g.types.map(t=>`<option value="${esc(t)}" ${t===q.type?'selected':''}>${esc(typeLabel(t))}</option>`).join('')}</optgroup>`).join('')}</select>`;
+  const helpPick=(state.helpPick===i)?`<div class="aihelp" style="margin-top:12px"><div class="ahl">What kind of answer do you need?</div><div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:9px">${QHELP.map(h=>`<button class="btn sm" onclick="pickHelpType(${i},'${esc(h.type)}')">${esc(h.q)}</button>`).join('')}</div></div>`:'';
+  const promptLbl=struct?(q.type==='Section Text'?'Instructions text':(q.type==='Consent'?'Consent statement':(q.type==='Thank-you Message'?'Thank-you message':'Label (optional)'))):'Your question';
+  const ai=struct?'':`<button class="ailink" onclick="improveWording(${i})">Improve wording</button><button class="ailink" onclick="checkClarity(${i})">Check clarity</button>`;
   return `<div class="qcard" id="qc-${i}" style="border-color:var(--ink-3)">
-    <div class="qhead"><span class="qn">${i+1}</span><div class="qb" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);padding-top:5px">Editing question ${i+1}</div></div>
+    <div class="qhead"><span class="qn">${i+1}</span><div class="qb" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);padding-top:5px">${isNew?'New question':'Editing question '+(i+1)}</div></div>
     <div class="qedit">
-      <textarea id="editText" oninput="setEditText(${i},this.value)">${esc(q.t)}</textarea>
-      <div class="erow">
-        <select onchange="setType(${i},this.value)">${QTYPES.map(t=>`<option ${t===q.type?'selected':''}>${t}</option>`).join('')}</select>
-        <button class="ailink" onclick="improveWording(${i})">Improve wording</button>
-        <button class="ailink" onclick="checkClarity(${i})">Check clarity</button>
+      <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">${promptLbl}</div>
+      <textarea id="editText" placeholder="${struct?'Type the text respondents will see…':'Type your question here…'}" oninput="setEditText(${i},this.value)">${esc(q.t)}</textarea>
+      <div class="erow" style="margin-top:12px">
+        <span class="faint" style="font-size:13px;font-weight:650">Type:</span>
+        ${typeSelect}
+        <button class="ailink" onclick="toggleHelpPick(${i})">Help me choose</button>
+        ${ai}
       </div>
-      ${optEditor}${help}
-      <div class="erow" style="margin-top:15px"><button class="btn primary sm" onclick="saveEdit(${i})">Done</button><button class="btn sm" onclick="cancelEdit()">Cancel</button></div>
+      ${helpPick}
+      ${responseEditor(q,i)}${help}
+      <div class="erow" style="margin-top:18px;padding-top:15px;border-top:1px solid var(--line-2)"><button class="btn primary" onclick="saveEdit(${i})">Save question</button><button class="btn" onclick="removeQ(${i})">Remove</button></div>
     </div>
   </div>`;
+}
+/* The response editor lives ON the card, so the answer (and its choices) is set
+   right where the question is written — no add-then-go-down-and-edit. Covers
+   every catalog type, including per-type settings (Likert, Rating, Slider). */
+function responseEditor(q,i){
+  const t=q.type, s=q.settings||{}, def=QTYPES[t]||{};
+  const lbl=x=>`<div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">${x}</div>`;
+  const inp='border:1.5px solid var(--line);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:14px';
+  // Editable option lists (choices / rows / ranking items / consent statement)
+  if(def.editOpts){
+    const isRow=(t==='Matrix/Grid'), isRank=(t==='Ranking'), isConsent=(t==='Consent');
+    const round=(t!=='Checkboxes');
+    const head=isRow?'Rows':(isRank?'Items to rank':(isConsent?'Agreement statement':'Answer choices — what people pick from'));
+    const ph=isRow?'Row':(isRank?'Item':(isConsent?'Statement':'Choice'));
+    const showMark=!isRow&&!isRank&&!isConsent;
+    return `<div style="margin-top:15px">${lbl(head)}
+      ${(q.options||[]).map((o,oi)=>`<div style="display:flex;gap:10px;align-items:center;margin-top:9px">${showMark?`<span style="width:18px;height:18px;flex-shrink:0;border:1.5px solid var(--ink-3);border-radius:${round?'50%':'5px'}"></span>`:(isConsent?'':`<span class="faint" style="width:16px;flex-shrink:0;font-size:13px">${oi+1}</span>`)}<input style="flex:1;max-width:420px;${inp}" value="${esc(o)}" oninput="setOpt(${i},${oi},this.value)" placeholder="${ph} ${oi+1}"><button class="iconbtn" title="Remove" onclick="delOpt(${i},${oi})">✕</button></div>`).join('')}
+      ${isConsent?'':`<button class="ailink" onclick="addOpt(${i})" style="margin-top:11px">+ Add ${isRow?'row':(isRank?'item':'choice')}</button>`}</div>`;
+  }
+  if(t==='Yes/No')     return `<div style="margin-top:15px">${lbl('Answer choices')}<div class="opt"><span class="dot"></span>Yes</div><div class="opt"><span class="dot"></span>No</div></div>`;
+  if(t==='True/False') return `<div style="margin-top:15px">${lbl('Answer choices')}<div class="opt"><span class="dot"></span>True</div><div class="opt"><span class="dot"></span>False</div></div>`;
+  if(t==='Likert Scale'){
+    const n=s.likertPoints||5;
+    return `<div style="margin-top:15px">${lbl('Likert scale')}
+      <div class="scale">${Array.from({length:n},(_,k)=>`<span>${k+1}</span>`).join('')}</div>
+      <div class="erow" style="margin-top:12px">
+        <span class="faint" style="font-size:12.5px">Points</span>
+        <select onchange="setSetting(${i},'likertPoints',+this.value)">${[3,4,5,6,7].map(p=>`<option ${p===n?'selected':''}>${p}</option>`).join('')}</select>
+        <input style="${inp};max-width:170px" value="${esc(s.likertLow||'Strongly Disagree')}" oninput="setSettingRaw(${i},'likertLow',this.value)" placeholder="Low anchor">
+        <span class="faint">→</span>
+        <input style="${inp};max-width:170px" value="${esc(s.likertHigh||'Strongly Agree')}" oninput="setSettingRaw(${i},'likertHigh',this.value)" placeholder="High anchor">
+      </div></div>`;
+  }
+  if(t==='Rating Scale'){
+    const m=s.ratingStars||5;
+    return `<div style="margin-top:15px">${lbl('Star rating')}
+      <div class="scale">${Array.from({length:m},()=>'<span>★</span>').join('')}</div>
+      <div class="erow" style="margin-top:12px"><span class="faint" style="font-size:12.5px">Highest rating</span>
+        <select onchange="setSetting(${i},'ratingStars',+this.value)">${[3,4,5,7,10].map(p=>`<option ${p===m?'selected':''}>${p}</option>`).join('')}</select></div></div>`;
+  }
+  if(t==='NPS') return `<div style="margin-top:15px">${lbl('How people answer')}<div class="scale">${Array.from({length:11},(_,k)=>`<span>${k}</span>`).join('')}</div><div class="faint" style="font-size:12.5px;margin-top:7px">0 (not likely) to 10 (extremely likely).</div></div>`;
+  if(t==='Slider'){
+    const mn=s.sliderMin??0,mx=s.sliderMax??100;
+    return `<div style="margin-top:15px">${lbl('Slider range')}<div class="erow"><span class="faint" style="font-size:12.5px">From</span><input type="number" value="${mn}" oninput="setSettingRaw(${i},'sliderMin',+this.value)" style="width:90px;${inp}"><span class="faint">to</span><input type="number" value="${mx}" oninput="setSettingRaw(${i},'sliderMax',+this.value)" style="width:90px;${inp}"></div></div>`;
+  }
+  if(t==='Page Break') return `<div class="faint" style="margin-top:13px;font-size:13px">Inserts a page break for respondents. No answer is collected.</div>`;
+  if(def.structural)   return `<div class="faint" style="margin-top:13px;font-size:12.5px">Shown to respondents as text. No answer is collected.</div>`;
+  const open={'Short Answer':'a short typed answer','Long Answer':'a longer written answer','Comment Box':'a longer written comment','Email':'an email address','Phone':'a phone number','Date':'a date','Numeric':'a number'};
+  if(open[t]) return `<div style="margin-top:15px">${lbl('People answer with '+open[t])}${answerPreview(q)}</div>`;
+  return '';
 }
 function aiHelpBox(h){
   if(h.kind==='busy')return `<div class="aihelp"><div class="ahl">ReliCheck Intelligence is ${h.action==='rewrite'?'rewriting your question':'reading your question'}…</div></div>`;
@@ -734,14 +901,43 @@ function aiHelpBox(h){
   if(h.kind==='rewrite')return `<div class="aihelp"><div class="ahl">Question updated${typeof h.delta==='number'?' · strength '+(h.delta>=0?'+'+h.delta:h.delta):''}</div>${(h.notes&&h.notes.length)?`<ul>${h.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}<div class="ahacts"><button class="btn sm" onclick="undoRewrite(${h.i})">Undo</button><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
   return `<div class="aihelp"><div class="ahl">Clarity notes</div><ul>${(h.notes||[]).map(n=>`<li>${esc(n)}</li>`).join('')}</ul><div class="ahacts"><button class="btn sm" onclick="dismissHelp()">Dismiss</button></div></div>`;
 }
-function addQ(){
-  const t=$('#qtext').value.trim();if(!t)return;const type=$('#qtype').value;
-  withTicker(()=>state.questions.push({t,type,options:defaultOptions(type)}));render();persistItems();
-  const d=state.lastDelta;toast(d.dir==='down'?`Added. Strength ${d.amount} — see its mark.`:(d.dir==='up'?`Added. Strength +${d.amount}.`:'Added. Strength unchanged.'));
+// Add a new question and open it for editing immediately — the card IS the
+// composer. A brand-new card stays a local draft (not persisted) until Save.
+async function addBlankQ(){
+  if(state.phase!=='build')state.phase='build';
+  if(state.editing!=null){
+    const cur=state.questions[state.editing];
+    if(cur&&!(cur.t||'').trim()){ focusEditor(); return; }   // already on a blank card
+    // Commit the open one FIRST and wait for its server id to sync (items-save
+    // is a full upsert; pushing the next blank before this resolves would leave
+    // it id-less and risk a duplicate on the following save).
+    if(cur){ delete cur._new; state.editing=null; if(PERSIST.on&&state.projectId) await saveItemsNow(); }
+  }
+  const type='Multiple Choice';
+  state.prevStrength=liveStrength();
+  state.questions.push({t:'',type,options:defaultOptions(type),settings:defaultSettings(type),_new:true});
+  state.editing=state.questions.length-1; state.aiHelp=null; state.helpPick=null;
+  render(); focusEditor();
+}
+function focusEditor(){ setTimeout(()=>{ const el=document.getElementById('editText'); if(el){ el.focus(); el.scrollIntoView({behavior:'smooth',block:'center'}); } },50); }
+// A new card with an empty prompt never persists; drop it when we leave it.
+function dropEmptyDraft(){
+  if(state.editing==null)return;
+  const q=state.questions[state.editing];
+  if(q&&q._new&&!(q.t||'').trim()){ state.questions.splice(state.editing,1); state.editing=null; }
+}
+function goLaunch(){
+  if(state.editing!=null){
+    const q=state.questions[state.editing];
+    if((q.t||'').trim()){ delete q._new; state.editing=null; persistItems(); }
+    else dropEmptyDraft();
+  }
+  go('launch');
 }
 async function suggestQ(){
   if(state.phase!=='build')state.phase='build';
-  const ideas=[{t:'How confident do you feel about your decision to enroll?',type:'Rating scale',options:null},{t:'What is the main reason you chose us over other schools?',type:'Long comment',options:null},{t:'Which of these influenced your decision? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Financial aid']}];
+  dropEmptyDraft();
+  const ideas=[{t:'How confident do you feel about your decision to enroll?',type:'Rating Scale',options:null},{t:'What is the main reason you chose us over other schools?',type:'Long Answer',options:null},{t:'Which of these influenced your decision? (Choose all that apply)',type:'Checkboxes',options:['Cost','Location','Reputation','Financial aid']}];
   if(!PERSIST.on){ const next=ideas[state.questions.length%ideas.length]; withTicker(()=>state.questions.push(Object.assign({},next)));render();persistItems();toast('Added a suggested question.'); return; }
   toast('ReliCheck is thinking…');
   try{
@@ -758,22 +954,55 @@ async function suggestQ(){
 }
 function mapType(label){
   const t=String(label||'').toLowerCase();
+  if(QTYPES[label])return label;                       // already a catalog key
   if(t.includes('checkbox'))return 'Checkboxes';
-  if(t.includes('multiple')||t.includes('dropdown'))return 'Multiple choice';
-  if(t.includes('likert')||t.includes('rating')||t.includes('scale')||t.includes('nps')||t.includes('slider'))return 'Rating scale';
-  if(t.includes('yes')||t.includes('true')||t.includes('boolean'))return 'Yes / No';
-  if(t.includes('long')||t.includes('comment')||t.includes('open')||t.includes('essay')||t.includes('paragraph'))return 'Long comment';
-  if(t.includes('number')||t.includes('numeric')||t.includes('date'))return 'Number';
-  return 'Short text';
+  if(t.includes('dropdown'))return 'Dropdown';
+  if(t.includes('multiple')||t.includes('single choice'))return 'Multiple Choice';
+  if(t.includes('likert'))return 'Likert Scale';
+  if(t.includes('nps')||t.includes('net promoter'))return 'NPS';
+  if(t.includes('rating')||t.includes('scale')||t.includes('slider'))return 'Rating Scale';
+  if(t.includes('rank'))return 'Ranking';
+  if(t.includes('matrix')||t.includes('grid'))return 'Matrix/Grid';
+  if(t.includes('true')||t.includes('false'))return 'True/False';
+  if(t.includes('yes')||t.includes('boolean'))return 'Yes/No';
+  if(t.includes('long')||t.includes('comment')||t.includes('essay')||t.includes('paragraph'))return 'Long Answer';
+  if(t.includes('date'))return 'Date';
+  if(t.includes('email'))return 'Email';
+  if(t.includes('phone'))return 'Phone';
+  if(t.includes('number')||t.includes('numeric'))return 'Numeric';
+  if(t.includes('demographic'))return 'Demographic';
+  if(t.includes('open')||t.includes('short'))return 'Short Answer';
+  return 'Short Answer';
 }
-function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;});render();persistItems();}
-function editQ(i){state.editing=i;state.aiHelp=null;render();}
+function removeQ(i){withTicker(()=>{state.questions.splice(i,1);if(state.editing===i)state.editing=null;else if(state.editing!=null&&state.editing>i)state.editing--;});render();persistItems();toast('Question removed.');}
+function editQ(i){ if(state.editing!=null&&state.editing!==i){ const c=state.questions[state.editing]; if(c&&c._new&&!(c.t||'').trim()){ state.questions.splice(state.editing,1); if(i>state.editing)i--; } } state.prevStrength=liveStrength(); state.editing=i;state.aiHelp=null;render();focusEditor();}
 function cancelEdit(){state.editing=null;state.aiHelp=null;render();}
-function saveEdit(i){state.editing=null;state.aiHelp=null;render();persistItems();toast('Question updated.');}
+function saveEdit(i){
+  const q=state.questions[i];
+  if(!(q.t||'').trim()){ toast('Write the question first, then save.'); focusEditor(); return; }
+  const wasNew=!!q._new; delete q._new;
+  state.editing=null;state.aiHelp=null;
+  const before=state.prevStrength,after=liveStrength();
+  if(typeof before==='number'){ state.lastDelta={amount:after-before,dir:after>before?'up':(after<before?'down':'flat')}; }
+  state.prevStrength=after;
+  render();persistItems();toast(wasNew?'Question added.':'Question saved.');
+}
 function setEditText(i,v){state.questions[i].t=v;}
-function setType(i,v){const q=state.questions[i];q.type=v;if(['Multiple choice','Checkboxes','Yes / No'].includes(v)&&!q.options)q.options=defaultOptions(v);render();}
+function setType(i,v){
+  const q=state.questions[i]; q.type=v; const def=QTYPES[v]||{};
+  if(def.editOpts){ if(!q.options||!q.options.length)q.options=defaultOptions(v); }
+  else { q.options=null; }   // scale/text/structural types carry no editable choices
+  const ds=defaultSettings(v); q.settings = ds ? Object.assign({}, ds, q.settings||{}) : null;
+  // Seed a default prompt for structural items if the box is empty.
+  if(def.structural && !(q.t||'').trim() && QDEFAULT_PROMPT[v]) q.t=QDEFAULT_PROMPT[v];
+  render();
+}
+function setSetting(i,key,val){ const q=state.questions[i]; q.settings=q.settings||{}; q.settings[key]=val; render(); }
+function setSettingRaw(i,key,val){ const q=state.questions[i]; q.settings=q.settings||{}; q.settings[key]=val; }  // no re-render (keeps input focus)
+function toggleHelpPick(i){ state.helpPick=(state.helpPick===i?null:i); render(); }
+function pickHelpType(i,type){ state.helpPick=null; setType(i,type); }
 function setOpt(i,oi,v){state.questions[i].options[oi]=v;}
-function addOpt(i){state.questions[i].options=state.questions[i].options||[];state.questions[i].options.push('Option '+(state.questions[i].options.length+1));render();}
+function addOpt(i){state.questions[i].options=state.questions[i].options||[];const t=state.questions[i].type;const w=(t==='Matrix/Grid')?'Row':(t==='Ranking')?'Item':'Option';state.questions[i].options.push(w+' '+(state.questions[i].options.length+1));render();}
 function delOpt(i,oi){state.questions[i].options.splice(oi,1);render();}
 function jumpTo(i){state.phase='build';state.editing=i;state.aiHelp=null;render();setTimeout(()=>{const el=document.getElementById('qc-'+i);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});},40);}
 function improveWeakest(){
@@ -891,19 +1120,70 @@ function viewLaunch(){
         <div class="linkbox"><code>${esc(link)}</code><button class="btn sm" onclick="copyLink('${esc(link)}')">Copy</button></div>
         <div style="margin-top:11px;font-size:14px;color:var(--ink-2)">Responses are <b>${open?'open':'closed'}</b>. <button class="ailink" onclick="toggleOpen()">${open?'Close':'Open'} collection</button></div></div></div>`
     : `<div class="notice"><div class="ni">🚀</div><div style="flex:1"><div style="font-weight:700;font-size:14.5px">Ready to send it out?</div><p class="muted" style="font-size:14px;margin:3px 0 11px">Publishing creates a shareable link. You can open and close responses any time.</p><button class="btn primary" onclick="publishSurvey()">Publish &amp; get the link</button></div></div>`;
-  const share=live?`<div class="share">
-      <button onclick="toast('Opens your email with the link.')"><span class="si">✉️</span><span class="st">Email it</span></button>
-      <button onclick="toast('Shows a QR code to print or share.')"><span class="si">▦</span><span class="st">QR code</span></button>
+  const share=live?`<div class="sec-row" style="margin-top:24px"><h2 class="sec">Share &amp; collect</h2></div>
+    <div class="share" style="grid-template-columns:repeat(5,1fr)">
+      <button onclick="shareLinkModal('${esc(link)}')"><span class="si">🔗</span><span class="st">Share link</span></button>
+      <button onclick="shareEmail('${esc(link)}')"><span class="si">✉️</span><span class="st">Email it</span></button>
+      <button onclick="showQR('${esc(link)}')"><span class="si">▦</span><span class="st">QR code</span></button>
+      <button onclick="invitePanel('${esc(link)}')"><span class="si">👥</span><span class="st">Invite list</span></button>
       <button onclick="window.open('https://'+${JSON.stringify(link)},'_blank')"><span class="si">👁</span><span class="st">Preview</span></button>
     </div>`:'';
+  // Instrument exports are available anytime — you can hand the blueprint off before publishing.
+  const exportsBlock=`<div class="sec-row" style="margin-top:24px"><h2 class="sec">Export the instrument</h2></div>
+    <p class="muted" style="font-size:14px;max-width:740px;margin-bottom:14px">Take your survey out for offline use or another platform. Your questions and answer formats carry over.</p>
+    <div class="share" style="grid-template-columns:repeat(3,1fr);max-width:560px">
+      <button onclick="exportInstrumentDoc()"><span class="si">📄</span><span class="st">Word / PDF</span></button>
+      <button onclick="exportInstrumentCsv()"><span class="si">▤</span><span class="st">CSV / Excel</span></button>
+      <button onclick="exportInstrumentJson()"><span class="si">{ }</span><span class="st">JSON / Qualtrics</span></button>
+    </div>`;
   return `
     <div class="eyebrow">Launch</div>
     <h1 class="title">Send it out</h1>
-    <p class="lede">Publish your survey to get a shareable link. Answers flow back into Analyze automatically.</p>
+    <p class="lede">A quick readiness check first, then publish to get a shareable link. Answers flow back into Analyze automatically.</p>
+    ${siriCard()}
     ${linkBlock}
     ${share}
-    <div class="card pad" style="max-width:760px;margin-bottom:16px"><div style="font-weight:700;margin-bottom:6px">Before you send it wide</div><p class="muted" style="font-size:14px">Send it to 3 to 5 people first and watch where they pause. The Coach has more on this.</p></div>
-    <div class="btn-row"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('analyze')">Go to Analyze →</button></div>`;
+    ${live?`<div class="card pad" style="max-width:760px;margin:18px 0 0"><div style="font-weight:700;margin-bottom:6px">Before you send it wide</div><p class="muted" style="font-size:14px">Send it to 3 to 5 people first and watch where they pause. The Coach has more on this.</p></div>`:''}
+    ${exportsBlock}
+    <div class="btn-row" style="margin-top:24px"><button class="btn" onclick="go('build')">← Back to Build</button><div class="spacer"></div>${live?'':`<button class="btn" onclick="simulate()">▶ Simulate responses (demo)</button>`}<button class="btn primary lg" onclick="go('analyze')">Go to Analyze →</button></div>`;
+}
+// The SIRI Launch Check (100-pt readiness) card shown on Launch — runs the real engine.
+function siriBandColor(key){ return (key==='strong'||key==='good')?'green':(key==='caution'?'amber':'red'); }
+function siriCard(){
+  const r=state.siriResult;
+  if(!(window.LaunchCheck&&window.LaunchCheck.assess)){
+    return `<div class="notice" style="max-width:820px"><div class="ni">⚠️</div><div><div style="font-weight:700;font-size:14.5px">Launch readiness check unavailable</div><p class="muted" style="font-size:14px;margin-top:3px">The SIRI engine did not load. You can still publish.</p></div></div>`;
+  }
+  if(!r){
+    return `<div class="card pad" style="max-width:820px;margin-bottom:18px"><div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <div style="flex:1"><div style="font-weight:750;font-size:16px">Launch readiness check (SIRI)</div>
+      <p class="muted" style="font-size:14px;margin-top:4px">A 100-point pre-launch review: question design plus deployment readiness, with any blockers to fix before you publish.</p></div>
+      <button class="btn primary" onclick="runSiriCheck()">Run Launch Check →</button></div></div>`;
+  }
+  const hasTotal=(r.total!=null);
+  const score=hasTotal?Math.round(r.total):Math.round(r.siri);
+  const band=hasTotal?(r.total_band||''):'';
+  const color=siriBandColor(hasTotal?(r.total_band_key||''):'');
+  const blockers=r.deployment_blocker_count||0;
+  const domains=(r.domains||[]).map(d=>{const pct=Math.round((d.points/(d.max||10))*100);return `<div class="dom"><div class="dom-head"><span class="nm">${esc(d.name)}</span><span class="pts">${d.points} / ${d.max||10}</span></div><div class="meter"><span style="width:${pct}%"></span></div></div>`;}).join('');
+  const flags=(r.flags||[]).filter(f=>['critical','high','medium'].includes(f.severity)).slice(0,8);
+  const body = blockers
+    ? `<div class="trust hold" style="margin-top:14px"><span class="ti">!</span><div>${esc(r.blocker_headline||(blockers+' deployment blocker'+(blockers===1?'':'s')+' detected.'))}${r.total_band_cap_reason?' '+esc(r.total_band_cap_reason):''}</div></div>`
+    : `<div class="trust ok" style="margin-top:14px"><span class="ti">✓</span><div>No deployment blockers. Your survey is ready to publish.</div></div>`;
+  const flagList = flags.length?`<div style="margin-top:6px">${flags.map(f=>`<div class="fixitem"><div class="fi">!</div><div><div class="ft">${esc(f.domain)}: ${esc(f.message)}</div>${f.suggestion?`<div class="fs">${esc(f.suggestion)}</div>`:''}<button class="fa" onclick="go('build')">Fix in Build →</button></div></div>`).join('')}</div>`:'';
+  const stale=state.siriStale?` <span class="faint" style="font-size:12.5px;font-weight:600">· out of date</span>`:'';
+  return `<div class="card pad" style="max-width:820px;margin-bottom:18px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <span class="tk-dot ${color}" style="width:13px;height:13px"></span>
+      <div class="rv-n" style="font-size:34px;font-weight:800;line-height:1">${score}<span class="faint" style="font-size:16px;font-weight:700">/${hasTotal?100:50}</span></div>
+      <div style="flex:1"><div style="font-weight:750;font-size:16px">Launch readiness${hasTotal&&band?' · '+esc(band):''}${stale}</div>
+      <div class="faint" style="font-size:13px">SIRI Launch Check · ${hasTotal?'survey design + deployment readiness':'readiness lenses'}</div></div>
+      <button class="btn sm" onclick="runSiriCheck()">Re-run</button>
+    </div>
+    ${body}
+    ${flagList}
+    <details class="tech" style="margin-top:12px"><summary>Readiness domains</summary><div class="tbody">${domains||'<p class="faint">No domain detail.</p>'}</div></details>
+  </div>`;
 }
 function publishSurvey(){
   if(!PERSIST.on){ state.deploymentSettings={link_key:'demo-'+((state.projectId)||'x'),responses_open:true}; render(); toast('Published (demo).'); return; }
@@ -921,6 +1201,138 @@ function toggleOpen(){
   DB.call('project-open.php',{method:'POST',body:{project_id:state.projectId,open}}).then(()=>{ ds.responses_open=open; render(); toast(open?'Responses open':'Responses closed'); }).catch(e=>degrade(e.message));
 }
 function copyLink(l){ try{ navigator.clipboard.writeText('https://'+l); }catch(e){} toast('Link copied.'); }
+// Email it — open the user's mail client with the link prefilled.
+function shareEmail(link){
+  const url='https://'+link;
+  const subj=encodeURIComponent('You are invited to take a survey');
+  const body=encodeURIComponent('Please take a moment to complete this survey:\n\n'+url+'\n\nThank you.');
+  window.location.href='mailto:?subject='+subj+'&body='+body;
+}
+// QR code — generated client-side (qrcodejs); the link never leaves the browser.
+function loadQR(){
+  if(window.QRCode)return Promise.resolve(window.QRCode);
+  if(window._qrP)return window._qrP;
+  window._qrP=new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js'; s.onload=()=>res(window.QRCode); s.onerror=()=>rej(new Error('qr load failed')); document.head.appendChild(s); });
+  return window._qrP;
+}
+function showQR(link){
+  const url='https://'+link;
+  const ov=document.createElement('div'); ov.className='qr-ov';
+  ov.innerHTML=`<div class="qr-modal">
+    <div class="qr-head"><div style="font-weight:750;font-size:16px">QR code</div><button class="cx" aria-label="Close">&times;</button></div>
+    <div id="qrBox" style="display:flex;justify-content:center;align-items:center;min-height:220px;padding:6px 0;color:var(--ink-3)">Generating…</div>
+    <div class="qr-link">${esc(link)}</div>
+    <div class="qr-btns"><button class="btn primary sm" id="qrDl" disabled>Download PNG</button><a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">Open survey</a></div>
+    <p class="faint" style="font-size:12.5px;margin-top:10px;text-align:center">Print or display this code for in-person fielding.</p>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  ov.querySelector('.cx').addEventListener('click',()=>ov.remove());
+  document.body.appendChild(ov);
+  loadQR().then(QR=>{
+    const box=ov.querySelector('#qrBox'); if(!box)return; box.innerHTML='';
+    const holder=document.createElement('div'); box.appendChild(holder);
+    try{ new QR(holder,{text:url,width:220,height:220,correctLevel:QR.CorrectLevel.M}); }
+    catch(e){ box.textContent='Could not generate the QR code.'; return; }
+    setTimeout(()=>{ const canvas=holder.querySelector('canvas'),img=holder.querySelector('img'); const dataUrl=canvas?canvas.toDataURL('image/png'):(img?img.src:''); if(!dataUrl)return; const dl=ov.querySelector('#qrDl'); dl.disabled=false; dl.addEventListener('click',()=>{ const a=document.createElement('a'); a.href=dataUrl; a.download='survey-qr-'+link.split('/').pop()+'.png'; document.body.appendChild(a); a.click(); a.remove(); }); },250);
+  }).catch(()=>{ const box=ov.querySelector('#qrBox'); if(box)box.textContent='Could not load the QR generator.'; });
+}
+/* ── Deploy + instrument exports — ported from the old system so every deploy
+   path works: share/embed link, invite list, Word/PDF, CSV/Excel, JSON. ── */
+function instrumentItems(){ return (state.questions||[]).map((q,i)=>({ n:i+1, prompt:q.t||'', type:q.type, required:!!q.required, construct:q.group||'', options:(q.options||[]).slice(), structural:isStructural(q.type), settings:q.settings||{} })); }
+function surveySlug(){ return (((state.study.name||'survey').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''))||'survey'); }
+function downloadFile(name,content,mime){ try{ const b=new Blob([content],{type:mime||'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1500); }catch(e){ toast('Could not download the file.'); } }
+function exportInstrumentCsv(){
+  const items=instrumentItems().filter(it=>!it.structural);
+  if(!items.length){ toast('Add questions before exporting'); return; }
+  const c=v=>{ v=String(v==null?'':v); return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; };
+  const rows=[['No','Question','Type','Required','Construct','Options']];
+  items.forEach(it=>rows.push([it.n,it.prompt,it.type,it.required?'Required':'Optional',it.construct,(it.options||[]).join(' | ')]));
+  downloadFile('instrument-'+surveySlug()+'.csv','﻿'+rows.map(r=>r.map(c).join(',')).join('\r\n'),'text/csv');
+  toast('Instrument CSV exported');
+}
+function exportInstrumentJson(){
+  const items=instrumentItems(); if(!items.filter(it=>!it.structural).length){ toast('Add questions before exporting'); return; }
+  const payload={ title:state.study.name||'Survey', purpose:state.study.purpose||'', population:state.study.population||'', item_count:items.filter(it=>!it.structural).length,
+    items:items.map((it,i)=>({position:i+1,kind:it.structural?'section':'question',prompt:it.prompt,type:it.type,required:it.required,construct:it.construct||null,options:it.options||[],settings:it.settings||{}})) };
+  downloadFile('instrument-'+surveySlug()+'.json',JSON.stringify(payload,null,2),'application/json');
+  toast('Instrument exported for import into another platform');
+}
+function exportInstrumentDoc(){
+  const items=instrumentItems(); if(!items.length){ toast('Add questions before exporting the instrument'); return; }
+  const w=window.open('','_blank'); if(!w){ toast('Allow pop-ups to export the instrument'); return; }
+  w.document.open(); w.document.write(buildInstrumentDoc(items)); w.document.close();
+  const run=()=>{ try{ w.focus(); w.print(); }catch(e){} };
+  if(w.document.readyState==='complete') setTimeout(run,200); else w.onload=()=>setTimeout(run,200);
+}
+function buildInstrumentDoc(items){
+  const title=esc(state.study.name||'Survey');
+  const purpose=state.study.purpose?'<p class="purpose">'+esc(state.study.purpose)+'</p>':'';
+  const body=items.map(it=>{
+    if(it.structural) return '<div class="sec">'+esc(it.prompt||'')+'</div>';
+    const t=it.type, opts=it.options||[], s=it.settings||{}; let ans='<div class="line"></div>';
+    if(t==='Likert Scale'){ const n=s.likertPoints||5; ans='<div class="scale">'+Array.from({length:n},(_,i)=>'<span>'+(i+1)+'</span>').join('')+'</div><div class="anchor">'+esc(s.likertLow||'')+' &rarr; '+esc(s.likertHigh||'')+'</div>'; }
+    else if(t==='Rating Scale'){ const m=s.ratingStars||5; ans='<div class="scale">'+Array.from({length:m},()=>'<span>&#9733;</span>').join('')+'</div>'; }
+    else if(t==='NPS'){ ans='<div class="scale">'+Array.from({length:11},(_,i)=>'<span>'+i+'</span>').join('')+'</div>'; }
+    else if(['Multiple Choice','Dropdown','Yes/No','True/False','Demographic'].includes(t)){ ans='<ul class="opts">'+(opts.length?opts:['Option 1','Option 2']).map(o=>'<li>&#9711; '+esc(o)+'</li>').join('')+'</ul>'; }
+    else if(t==='Checkboxes'){ ans='<ul class="opts">'+(opts.length?opts:['Option 1']).map(o=>'<li>&#9633; '+esc(o)+'</li>').join('')+'</ul>'; }
+    else if(t==='Ranking'){ ans='<ol class="opts num">'+(opts.length?opts:['Item 1']).map(o=>'<li>'+esc(o)+'</li>').join('')+'</ol>'; }
+    else if(t==='Consent'){ ans='<div class="opts">&#9633; '+esc(opts[0]||'I agree to participate.')+'</div>'; }
+    return '<div class="q"><div class="qp">'+it.n+'. '+esc(it.prompt)+(it.required?' <span class="req">*</span>':'')+'</div>'+ans+'</div>';
+  }).join('');
+  return '<!doctype html><html><head><meta charset="utf-8"><title>'+title+'</title><style>'
+    +'body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 24px;color:#16181d;line-height:1.5}'
+    +'h1{font-size:24px;margin:0 0 6px}.purpose{color:#54585f;font-style:italic;margin:0 0 20px}'
+    +'.q{margin:0 0 20px;page-break-inside:avoid}.qp{font-weight:bold;margin-bottom:8px}.req{color:#c1271f}'
+    +'.opts{list-style:none;margin:6px 0 0 8px;padding:0}.opts li{margin:4px 0}ol.opts.num{list-style:decimal;margin-left:26px}'
+    +'.scale span{display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border:1px solid #888;border-radius:6px;margin-right:6px}'
+    +'.anchor{color:#54585f;font-size:13px;margin-top:6px}.line{border-bottom:1px solid #888;height:28px;margin-top:6px}'
+    +'.sec{font-weight:bold;border-top:2px solid #16181d;padding-top:12px;margin:24px 0 8px}@media print{body{margin:0}}'
+    +'</style></head><body><h1>'+title+'</h1>'+purpose+body+'<p style="margin-top:30px;color:#888;font-size:12px">Generated by ReliCheck</p></body></html>';
+}
+// Share-link modal with copyable embed code.
+function shareLinkModal(link){
+  const url='https://'+link;
+  const embed='<iframe src="'+url+'" width="100%" height="800" frameborder="0" style="border:1px solid #ddd;border-radius:8px"></iframe>';
+  const ov=document.createElement('div'); ov.className='qr-ov';
+  ov.innerHTML=`<div class="qr-modal" style="width:460px">
+    <div class="qr-head"><div style="font-weight:750;font-size:16px">Share link</div><button class="cx" aria-label="Close">&times;</button></div>
+    <div class="qr-link" style="text-align:left">${esc(url)}</div>
+    <div class="qr-btns" style="justify-content:flex-start;flex-wrap:wrap"><button class="btn primary sm" id="slCopy">Copy link</button><button class="btn sm" onclick="shareEmail('${esc(link)}')">Email</button><a class="btn sm" href="${esc(url)}" target="_blank" rel="noopener">Open</a></div>
+    <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">Embed on a web page</div>
+    <textarea readonly style="width:100%;height:84px;border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;font-family:ui-monospace,Menlo,monospace;font-size:12px;resize:vertical" id="slEmbed">${esc(embed)}</textarea>
+    <div class="qr-btns" style="justify-content:flex-start;margin-top:10px"><button class="btn sm" id="slEmbedCopy">Copy embed code</button></div>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  ov.querySelector('.cx').addEventListener('click',()=>ov.remove());
+  document.body.appendChild(ov);
+  ov.querySelector('#slCopy').addEventListener('click',()=>{ try{navigator.clipboard.writeText(url);}catch(e){} toast('Link copied.'); });
+  ov.querySelector('#slEmbedCopy').addEventListener('click',()=>{ try{navigator.clipboard.writeText(embed);}catch(e){} toast('Embed code copied.'); });
+  ov.querySelector('#slEmbed').addEventListener('focus',function(){ this.select(); });
+}
+// Invite a list — composes one email with the recipients on BCC.
+function invitePanel(link){
+  const url='https://'+link;
+  const ov=document.createElement('div'); ov.className='qr-ov';
+  ov.innerHTML=`<div class="qr-modal" style="width:460px">
+    <div class="qr-head"><div style="font-weight:750;font-size:16px">Invite a respondent list</div><button class="cx" aria-label="Close">&times;</button></div>
+    <div class="faint" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Email addresses (one per line, or comma separated)</div>
+    <textarea id="invEmails" style="width:100%;height:96px;border:1.5px solid var(--line);border-radius:8px;padding:9px 11px;font-family:inherit;font-size:14px;resize:vertical" placeholder="alex@example.com&#10;sam@example.com"></textarea>
+    <div class="qr-btns" style="justify-content:flex-start;margin-top:12px"><button class="btn primary sm" id="invSend">Compose email</button></div>
+    <p class="faint" style="font-size:12px;margin-top:10px">Opens your email app with the recipients on BCC and the link in the message.</p>
+  </div>`;
+  ov.addEventListener('click',e=>{ if(e.target===ov)ov.remove(); });
+  ov.querySelector('.cx').addEventListener('click',()=>ov.remove());
+  document.body.appendChild(ov);
+  ov.querySelector('#invSend').addEventListener('click',()=>{
+    const raw=ov.querySelector('#invEmails').value||'';
+    const emails=raw.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>/@/.test(s));
+    if(!emails.length){ toast('Add at least one email address'); return; }
+    const subj=encodeURIComponent('You are invited to take a survey');
+    const body=encodeURIComponent('Please take a moment to complete this survey:\n\n'+url+'\n\nThank you.');
+    window.location.href='mailto:?bcc='+encodeURIComponent(emails.join(','))+'&subject='+subj+'&body='+body;
+    ov.remove();
+  });
+}
 function simulate(){state.responses=142;go('analyze');toast('142 responses came in.');}
 function viewAnalyze(){
   if(state.responses===0)return `
