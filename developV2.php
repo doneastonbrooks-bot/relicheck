@@ -106,6 +106,9 @@ body.start .main{grid-column:1/-1}
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:11.5px;font-weight:700;border:none}
 .topbtn{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:8px 13px;font-size:13.5px;font-weight:650;color:var(--ink-2);white-space:nowrap}
 .topbtn:hover{background:var(--soft);color:var(--ink)}
+.savestat{font-size:12.5px;font-weight:650;color:var(--ink-3);white-space:nowrap}
+.savestat:empty{display:none}
+.savestat.saved{color:var(--good)} .savestat.saving{color:var(--ink-3)} .savestat.offline{color:var(--warn)}
 
 /* main: wide, breathing */
 .main{grid-row:2;grid-column:2;overflow-y:auto;padding:48px 52px 110px}
@@ -344,7 +347,7 @@ const state={
   screen:'start',startFlow:null,phase:'build',
   study:{name:'Freshman Enrollment',purpose:'Understand why admitted students chose to enroll, and what nearly sent them to another school',population:'Admitted first-year (freshman) students',mode:'',dataType:'',launchReadiness:{}},
   coachOpen:false,coachTab:'guide',askOpen:null,
-  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,
+  reviewOpen:false,editing:null,aiHelp:null,responses:0,lastDelta:null,prevStrength:null,grouping:false,groups:[],bc:null,projects:null,saveStatus:'',
   questions:[
     {t:'What is your intended major?',type:'Multiple choice',options:['Biology','Business','Engineering','Undecided']},
     {t:'How did you first hear about us?',type:'Multiple choice',options:['Friend or family','Social media','College fair','Web search']},
@@ -417,7 +420,9 @@ function withTicker(fn){const before=liveStrength();fn();const after=liveStrengt
 const PERSIST_REQUESTED = !new URLSearchParams(location.search).has('mock');
 const PERSIST = { on:PERSIST_REQUESTED, degraded:false, reason:'' };
 const LS_KEY = 'sds_v2_project_id';
-function degrade(reason){ if(!PERSIST.degraded){ PERSIST.on=false; PERSIST.degraded=true; PERSIST.reason=reason||''; toast('Working offline — changes are not being saved'); } }
+function degrade(reason){ if(!PERSIST.degraded){ PERSIST.on=false; PERSIST.degraded=true; PERSIST.reason=reason||''; setSaveStatus('offline'); toast('Working offline — changes are not being saved'); } }
+function setSaveStatus(s){ state.saveStatus=s; const el=document.getElementById('saveStat'); if(el){ el.className='savestat '+s; el.textContent=saveStatusText(s); } }
+function saveStatusText(s){ return s==='saving'?'Saving…':(s==='saved'?'Saved':(s==='offline'?'Offline':'')); }
 const DB={
   async call(path,opts={}){
     const res=await fetch('/api/dev/'+path,{method:opts.method||'GET',headers:opts.body?{'Content-Type':'application/json'}:undefined,body:opts.body?JSON.stringify(opts.body):undefined,credentials:'same-origin'});
@@ -445,6 +450,7 @@ const DB={
   },
 };
 async function createProject(source){
+  setSaveStatus('saving');
   const r=await DB.call('project-create.php',{method:'POST',body:{
     title:state.study.name||'Untitled survey', source:source||'scratch',
     purpose:state.study.purpose||'', population:state.study.population||'',
@@ -454,17 +460,21 @@ async function createProject(source){
     constructs:(state.groups||[]).map(g=>({name:g,definition:''})),
   }});
   DB.hydrate(r);
+  setSaveStatus('saved');
 }
 function persistItems(){ if(PERSIST.on&&state.projectId) saveItemsNow(); }
 async function saveItemsNow(){
   if(!(PERSIST.on&&state.projectId))return;
+  setSaveStatus('saving');
   try{
     const r=await DB.call('items-save.php',{method:'POST',body:{project_id:state.projectId,items:DB.itemsWire()}});
-    // Capture server-assigned ids by position WITHOUT replacing the live array,
-    // so an in-progress question can never be wiped by a save response.
+    // Rehydrate from the saved items (same as the working build) ONLY when the
+    // count matches, so a stray response can never wipe an in-progress question.
     const saved=Array.isArray(r.items)?r.items:[];
-    if(saved.length===state.questions.length){ saved.forEach((it,i)=>{ if(state.questions[i]&&it&&it.id!=null) state.questions[i].id=it.id; }); }
+    if(saved.length===state.questions.length){ state.questions=saved.map(it=>DB.itemHydrate(it)); }
     await saveConstructsNow();
+    setSaveStatus('saved');
+    if(state.screen==='workspace'&&state.editing==null)render();
   }catch(e){ degrade(e.message); toast('Could not save: '+e.message); }
 }
 async function saveConstructsNow(){
@@ -522,6 +532,7 @@ function renderTicker(){
   const s=strengthValue(),b=bandOf(s),d=state.lastDelta;
   const delta=d?`<span class="tk-delta ${d.dir}">${d.dir==='flat'?'no change':(d.amount>0?'+'+d.amount:d.amount)}</span>`:'';
   $('#tbRight').innerHTML=`
+    <span class="savestat ${state.saveStatus}" id="saveStat">${saveStatusText(state.saveStatus)}</span>
     <button class="topbtn" onclick="goStart()" title="Start or open another survey">＋ New survey</button>
     <button class="ticker" onclick="openReview()" title="Click for the full review">${delta}
       <span class="tk-l"><span class="tk-k">Strength</span><span class="tk-w">${b.w}</span></span>
